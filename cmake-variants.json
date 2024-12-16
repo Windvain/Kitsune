@@ -1,0 +1,23 @@
+{
+  "buildType": {
+    "default": "Release",
+    "description": "Build Types",
+    "choices": {
+      "Debug": {
+        "short": "Debug",
+        "long": "Build with no optimizations and debug info.",
+        "buildType": "Debug"
+      },
+      "RelWithDbgInfo": {
+        "short": "RelWithDbgInfo",
+        "long": "Build with some optimizations and debug info.",
+        "buildType": "RelWithDbgInfo"
+      },
+      "Release": {
+        "short": "Release",
+        "long": "Build with full optimizations and no debug info.",
+        "buildType": "Release"
+      }
+    }
+  }
+}

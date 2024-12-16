@@ -1,0 +1,6 @@
+# Common direcotry names for CMake output.
+[Bb]uild/
+[Oo]ut/
+
+# IDE and editor configuration directories.
+.vscode/
