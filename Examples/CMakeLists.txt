@@ -5,4 +5,6 @@ else()
 endif()
 
 target_sources(Sandbox PRIVATE "Sandbox/Sandbox.cpp")
-target_link_libraries(Sandbox PRIVATE KitsuneLaunch)
+
+target_include_directories(Sandbox PRIVATE "${KITSUNE_ROOT_DIR}/Source/Runtime")
+target_link_libraries(Sandbox PRIVATE KitsuneLaunch KitsuneApplicationCore)

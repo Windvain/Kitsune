@@ -4,6 +4,8 @@ project(Kitsune)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(KITSUNE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(KITSUNE_DEFAULT_BUILD_TYPE "Release")
 set(KITSUNE_CONFIG_TYPES "Debug" "RelWithDbgInfo" "Release")
 
@@ -13,6 +15,15 @@ option(KITSUNE_BUILD_EXAMPLES "Build Kitsune's example executables." ON)
 if (CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Detected multi-configuration CMake generator.")
     set(CMAKE_CONFIGURATION_TYPES ${KITSUNE_CONFIG_TYPES} CACHE STRING "" FORCE)
+
+    # Hack around some multi-config generators generating specific
+    # directories for each configuration.
+    foreach(OUTPUT_CONFIG ${CMAKE_CONFIGURATION_TYPES})
+        string(TOUPPER ${OUTPUT_CONFIG} OUTPUT_CONFIG)
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUT_CONFIG} "${CMAKE_BINARY_DIR}/lib")
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUT_CONFIG} "${CMAKE_BINARY_DIR}/lib")
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUT_CONFIG} "${CMAKE_BINARY_DIR}/bin")
+    endforeach()
 else()
     message(STATUS "Detected single-configuration CMake generator.")
 
@@ -21,6 +32,11 @@ else()
         set(CMAKE_BUILD_TYPE "${KITSUNE_DEFAULT_BUILD_TYPE}" CACHE
             STRING "" FORCE)
     endif()
+
+    # Bring all binaries into one directory.
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${KITSUNE_CONFIG_TYPES})
 endif()

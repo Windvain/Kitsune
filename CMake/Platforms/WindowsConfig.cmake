@@ -9,12 +9,15 @@ list(APPEND KITSUNE_GLOBAL_COMMON_DEFINITIONS
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS
-        "-Wall"                       # Enable all warnings about construction.
-        "-Wextra"                     # Enable warnings that aren't enabled by -Wall.
-        "-Werror"                     # Turn all warnings into errors.
+        "-Wall"                         # Enable all warnings about construction.
+        "-Wextra"                       # Enable warnings that aren't enabled by -Wall.
+        "-Werror"                       # Turn all warnings into errors.
 
-        "-pedantic"                   # Enable warnings about compiler extensions.
-        "-Wshadow"                    # Warn when a local declaration shadows another.
+        "-pedantic"                     # Enable warnings about compiler extensions.
+        "-Wshadow"                      # Warn when a local declaration shadows another.
+
+        "-fno-ms-compatibility"         # Disable MSVC compatibility.
+        "-fms-compatibility-version=0"  # Remove definition of _MSC_VER.
     )
 
     list(APPEND KITSUNE_GLOBAL_DEBUG_COMPILE_FLAGS

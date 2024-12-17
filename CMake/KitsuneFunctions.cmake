@@ -27,6 +27,7 @@ function(kitsune_add_library)
         )
     endif()
 
+    target_include_directories(${LIBRARY_ARGS_TARGET} PRIVATE "${KITSUNE_ROOT_DIR}/Source/Runtime")
     target_compile_definitions(${LIBRARY_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_DEFINITIONS})
 
     target_compile_options(${LIBRARY_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS})
