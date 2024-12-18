@@ -17,4 +17,20 @@ namespace Kitsune
     {
         s_ApplicationInst = nullptr;
     }
+
+    void Application::Exit(int exitCode)
+    {
+        m_ExitRequested = true;
+        m_ExitCode = exitCode;
+
+        ProcessExitRequest(false, exitCode);
+    }
+
+    void Application::ForceExit(int exitCode)
+    {
+        m_ExitRequested = true;
+        m_ExitCode = exitCode;
+
+        ProcessExitRequest(true, exitCode);
+    }
 }

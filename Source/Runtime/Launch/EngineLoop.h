@@ -15,6 +15,7 @@ namespace Kitsune
 
     public:
         bool IsExitRequested() const;
+        int GetExitCode() const;
 
     private:
         Application* m_Application;

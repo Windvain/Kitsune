@@ -32,6 +32,50 @@ function(kitsune_add_library)
 
     target_compile_options(${LIBRARY_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS})
     target_link_options(${LIBRARY_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_LINKER_FLAGS})
+    target_link_libraries(${LIBRARY_ARGS_TARGET} PRIVATE ${LIBRARY_ARGS_DEPENDENCIES})
+endfunction()
+
+function(kitsune_add_test)
+    set(PARSE_OPTIONS)
+    set(PARSE_SINGLE_VALUE_ARGS TARGET)
+    set(PARSE_MULTI_VALUE_ARGS SOURCES DEPENDENCIES)
+
+    cmake_parse_arguments(
+        TEST_EXE_ARGS
+        "${PARSE_OPTIONS}"
+        "${PARSE_SINGLE_VALUE_ARGS}"
+        "${PARSE_MULTI_VALUE_ARGS}"
+        ${ARGN})
+
+    if (NOT TEST_EXE_ARGS_TARGET)
+        message(FATAL_ERROR "A target name has not been specified.")
+    endif()
+
+    project(${TEST_EXE_ARGS_TARGET})
+
+    if (WIN32)
+        add_executable(${TEST_EXE_ARGS_TARGET} WIN32 ${TEST_EXE_ARGS_SOURCES})
+    else()
+        add_executable(${TEST_EXE_ARGS_TARGET} ${TEST_EXE_ARGS_SOURCES})
+    endif()
+
+    add_test(NAME ${TEST_EXE_ARGS_TARGET} COMMAND ${TEST_EXE_ARGS_TARGET})
+    target_include_directories(${TEST_EXE_ARGS_TARGET} PRIVATE
+        "${KITSUNE_ROOT_DIR}/Source/Runtime"
+        "${KITSUNE_ROOT_DIR}/Source/External/googletest/googletest/include"
+        "${KITSUNE_ROOT_DIR}/Source/External/googletest/googlemock/include"
+    )
+
+    target_link_libraries(${TEST_EXE_ARGS_TARGET} PRIVATE
+        GTest::gtest
+        GTest::gmock
+        KitsuneLaunch
+        KitsuneApplicationCore
+
+        ${TARGET_EXE_ARGS_DEPENDENCIES})
+
+    target_compile_options(${TEST_EXE_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS})
+    target_link_options(${TEST_EXE_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_LINKER_FLAGS})
 endfunction()
 
 function(kitsune_add_platform_sources)

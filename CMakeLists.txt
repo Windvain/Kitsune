@@ -11,6 +11,12 @@ set(KITSUNE_CONFIG_TYPES "Debug" "RelWithDbgInfo" "Release")
 
 option(KITSUNE_BUILD_STATIC "Build all Kitsune libraries as static libs." OFF)
 option(KITSUNE_BUILD_EXAMPLES "Build Kitsune's example executables." ON)
+option(KITSUNE_BUILD_TESTS "Build Kitsune's test executables." ON)
+
+if (KITSUNE_BUILD_TESTS)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    enable_testing()
+endif()
 
 if (CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Detected multi-configuration CMake generator.")
@@ -44,8 +50,13 @@ endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneGlobals.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneFunctions.cmake")
 
+add_subdirectory("Source/External")
 add_subdirectory("Source/Runtime")
 
 if (KITSUNE_BUILD_EXAMPLES)
     add_subdirectory("Examples")
+endif()
+
+if (KITSUNE_BUILD_TESTS)
+    add_subdirectory("Source/Tests")
 endif()

@@ -9,6 +9,7 @@ kitsune_add_library(
 
     DEPENDENCIES
     KitsuneApplicationCore
+    KitsuneFoundation
 )
 
 kitsune_add_platform_sources(

@@ -15,7 +15,7 @@ namespace Kitsune
             engineLoop.Tick();
         }
 
-        return 0;
+        return engineLoop.GetExitCode();
     }
 
     int EngineMain(int argc, char** argv)

@@ -17,9 +17,9 @@ namespace Kitsune
 
 using namespace Kitsune;
 
-struct ScopedCommandLineArgs
+struct WindowsCommandLineArgs
 {
-    ScopedCommandLineArgs()
+    void Create()
     {
         // Get wide command line arguments.
         LPWSTR cmdLine = ::GetCommandLineW();
@@ -54,7 +54,7 @@ struct ScopedCommandLineArgs
         ::LocalFree(wargv);
     }
 
-    ~ScopedCommandLineArgs()
+    void Destroy()
     {
         for (int i = 0; i < Count; ++i)
             std::free(Arguments[i]);
@@ -151,10 +151,14 @@ int StartWindowsEntry()
     if ((::SetProcessDPIAware() == 0) || (!AllocateConsoleInDev()))
         return 1;
 
-    ScopedCommandLineArgs cmdLineArgs;
+    WindowsCommandLineArgs cmdLineArgs;
+    cmdLineArgs.Create();
 
     if (::IsDebuggerPresent())
+    {
+        cmdLineArgs.Destroy();
         return EngineMain(cmdLineArgs.Count, cmdLineArgs.Arguments);
+    }
 
     // MinGW doesn't support SEH (Structured Exception Handling).
     // Only Microsoft VC++ and Borland *really* support SEH.
@@ -171,6 +175,7 @@ int StartWindowsEntry()
     }
 #endif
 
+    cmdLineArgs.Destroy();
     return returnValue;
 }
 
