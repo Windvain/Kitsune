@@ -10,10 +10,6 @@ namespace Kitsune
     class CMallocApi : public IMemoryApi
     {
     public:
-        CMallocApi() = default;
-        ~CMallocApi() = default;
-
-    public:
         inline void* TryAllocate(Usize bytes, Usize alignment) override
         {
             // MSVC doesn't support the aligned_alloc function.

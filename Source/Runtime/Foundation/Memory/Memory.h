@@ -3,7 +3,9 @@
 #include <new>
 #include <type_traits>
 
+#include "Foundation/Common/Types.h"
 #include "Foundation/Common/Macros.h"
+#include "Foundation/Templates/Forward.h"
 
 #include "Foundation/Memory/IMemoryApi.h"
 #include "Foundation/Diagnostics/BadAllocException.h"
@@ -34,7 +36,7 @@ namespace Kitsune
             requires std::is_constructible_v<T, Args...>
         static T* ConstructAt(T* ptr, Args&&... args)
         {
-            new (static_cast<void*>(ptr)) T(std::forward<Args>(args)...);
+            new (static_cast<void*>(ptr)) T(Forward<Args>(args)...);
             return ptr;
         }
 
@@ -49,7 +51,7 @@ namespace Kitsune
         [[nodiscard]] static T* New(Args&&... args)
         {
             T* ptr = (T*)Memory::Allocate(sizeof(T), alignof(T));
-            return ConstructAt(ptr, std::forward<Args>(args)...);
+            return ConstructAt(ptr, Forward<Args>(args)...);
         }
 
         template<typename T>

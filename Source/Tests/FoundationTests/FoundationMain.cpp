@@ -19,6 +19,11 @@ public:
         testing::InitGoogleTest();
         Exit(RUN_ALL_TESTS());
     }
+
+    void OnExit() override
+    {
+        std::cin.get();
+    }
 };
 
 Application* CreateApplication(const CommandLineArgs& /* args */)
