@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
-#include "Foundation/Diagnostics/BadAllocException.h"
+#include "Foundation/Memory/BadAllocException.h"
 
 namespace Kitsune
 {

@@ -8,7 +8,6 @@
 #include "Foundation/Templates/Forward.h"
 
 #include "Foundation/Memory/IMemoryApi.h"
-#include "Foundation/Diagnostics/BadAllocException.h"
 
 namespace Kitsune
 {

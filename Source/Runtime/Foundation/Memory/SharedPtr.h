@@ -8,7 +8,7 @@
 #include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
-#include "Foundation/Templates/Swap.h"
+#include "Foundation/Algorithms/Swap.h"
 #include "Foundation/Templates/Exchange.h"
 
 #include "Foundation/Threading/Interlocked.h"
@@ -278,8 +278,8 @@ namespace Kitsune
     private:
         void Swap(SharedPtr<T, Mode>& ptr)
         {
-            Kitsune::Swap(m_Pointer, ptr.m_Pointer);
-            Kitsune::Swap(m_Data, ptr.m_Data);
+            Algorithms::Swap(m_Pointer, ptr.m_Pointer);
+            Algorithms::Swap(m_Data, ptr.m_Data);
         }
 
         template<typename U>
@@ -526,8 +526,8 @@ namespace Kitsune
     private:
         void Swap(WeakPtr<T, Mode>& ptr)
         {
-            Kitsune::Swap(m_Pointer, ptr.m_Pointer);
-            Kitsune::Swap(m_Data, ptr.m_Data);
+            Algorithms::Swap(m_Pointer, ptr.m_Pointer);
+            Algorithms::Swap(m_Data, ptr.m_Data);
         }
 
         template<typename U>

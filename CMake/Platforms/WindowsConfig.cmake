@@ -5,6 +5,9 @@ list(APPEND KITSUNE_GLOBAL_COMMON_DEFINITIONS
 
     # Disable MIN() and MAX() macros from <Windows.h>.
     NOMINMAX
+
+    # Disable warnings from compilers about using XXX_s (safe functions).
+    _CRT_SECURE_NO_WARNINGS
 )
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -43,8 +46,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "/W4"                         # Enable all reasonable warnings.
         "/WX"                         # Turn all warnings into errors.
         "/permissive"                 # Enable standards conformance.
-
-        "/D_CRT_SECURE_NO_WARNINGS"   # Disables MSVC warnings about using XXX_s (safe functions).
     )
 
     list(APPEND KITSUNE_GLOBAL_DEBUG_COMPILE_FLAGS

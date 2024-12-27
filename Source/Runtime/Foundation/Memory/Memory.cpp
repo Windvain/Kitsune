@@ -1,7 +1,7 @@
 #include "Foundation/Memory/Memory.h"
 
-#include <cstdlib>
 #include "Foundation/Memory/CMallocApi.h"
+#include "Foundation/Memory/BadAllocException.h"
 
 namespace Kitsune
 {

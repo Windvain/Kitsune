@@ -1,4 +1,5 @@
 #include "ApplicationCore/Application.h"
+#include "Foundation/Diagnostics/Assert.h"
 
 namespace Kitsune
 {
@@ -6,10 +7,12 @@ namespace Kitsune
 
     Application::Application(const ApplicationSpecs& specs)
     {
-        // TODO: assert(s_ApplicationInst == nullptr)
-        s_ApplicationInst = this;
+        KITSUNE_ASSERT(s_ApplicationInst == nullptr,
+                       "An application has already been instanced.");
 
+        s_ApplicationInst = this;
         m_ExitRequested = false;
+
         KITSUNE_UNUSED(specs);
     }
 

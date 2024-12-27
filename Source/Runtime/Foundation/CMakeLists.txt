@@ -1,17 +1,36 @@
 kitsune_add_library(
     TARGET KitsuneFoundation
     SOURCES
+    "Algorithms/Internal/AlgoConcepts.h"
+    "Algorithms/Copy.h"
+    "Algorithms/Distance.h"
+    "Algorithms/Equal.h"
+    "Algorithms/Fill.h"
+    "Algorithms/Find.h"
+    "Algorithms/ForEach.h"
+    "Algorithms/Move.h"
+    "Algorithms/Reverse.h"
+    "Algorithms/Swap.h"
+    "Algorithms/Uninitialized.h"
+
     "Common/Features.h"
     "Common/Macros.h"
     "Common/Predefined.h"
     "Common/Types.h"
 
-    "Diagnostics/BadAllocException.h"
+    "Diagnostics/Assert.cpp"
+    "Diagnostics/Assert.h"
     "Diagnostics/IException.h"
     "Diagnostics/OutOfRangeException.h"
+    "Diagnostics/SourceLocation.h"
+
+    "Iterators/Iterator.h"
+    "Iterators/IteratorTraits.h"
+    "Iterators/ReverseIterator.h"
 
     "Memory/AddressOf.h"
     "Memory/Allocator.h"
+    "Memory/BadAllocException.h"
     "Memory/BadWeakPtrException.h"
     "Memory/CMallocApi.h"
     "Memory/Deleter.h"
@@ -25,7 +44,6 @@ kitsune_add_library(
     "Templates/Exchange.h"
     "Templates/Forward.h"
     "Templates/Move.h"
-    "Templates/Swap.h"
 
     "Threading/Interlocked.h"
     "Threading/ThreadSafety.h"

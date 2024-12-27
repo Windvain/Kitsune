@@ -816,7 +816,7 @@ TEST(WeakPtrTests, GetCount)
     EXPECT_EQ(weak.GetCount(), 2);
 }
 
-TEST(WeakPtrTets, IsExpired)
+TEST(WeakPtrTests, IsExpired)
 {
     WeakPtr<B> weak;
     WeakPtr<B> null;

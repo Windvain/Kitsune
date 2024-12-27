@@ -8,7 +8,7 @@
 #include "Foundation/Common/Features.h"
 #include "Foundation/Common/Predefined.h"
 
-#include "Foundation/Diagnostics/BadAllocException.h"
+#include "Foundation/Memory/BadAllocException.h"
 
 namespace Kitsune
 {
