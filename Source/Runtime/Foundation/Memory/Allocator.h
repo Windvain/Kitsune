@@ -15,5 +15,13 @@ namespace Kitsune
             { alloc.Allocate(size, align) } -> std::convertible_to<void*>;
 
             alloc.Free(ptr);
+        } &&
+        requires (T alloc1, T alloc2)
+        {
+            { alloc1 == alloc2 } -> std::convertible_to<bool>;
+            { alloc2 == alloc1 } -> std::convertible_to<bool>;
+
+            { alloc1 != alloc2 } -> std::convertible_to<bool>;
+            { alloc2 != alloc1 } -> std::convertible_to<bool>;
         };
 }

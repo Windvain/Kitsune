@@ -101,25 +101,25 @@ namespace Kitsune
     template<RandomAccessIterator It>
     bool operator>=(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
     {
-        return (it1.GetBase() >= it2.GetBase());
+        return (it1.GetBase() <= it2.GetBase());
     }
 
     template<RandomAccessIterator It>
     bool operator<=(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
     {
-        return (it1.GetBase() <= it2.GetBase());
+        return (it1.GetBase() >= it2.GetBase());
     }
 
     template<RandomAccessIterator It>
     bool operator>(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
     {
-        return (it1.GetBase() > it2.GetBase());
+        return (it1.GetBase() < it2.GetBase());
     }
 
     template<RandomAccessIterator It>
     bool operator<(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
     {
-        return (it1.GetBase() < it2.GetBase());
+        return (it1.GetBase() > it2.GetBase());
     }
 
     template<RandomAccessIterator It>
@@ -127,5 +127,12 @@ namespace Kitsune
                                   const ReverseIterator<It>& it)
     {
         return ReverseIterator<It>(it.GetBase() - offset);
+    }
+
+    template<RandomAccessIterator It1, RandomAccessIterator It2>
+    auto operator-(const ReverseIterator<It1>& it1, const ReverseIterator<It2>& it2)
+        -> decltype(it2.GetBase() - it1.GetBase())
+    {
+        return (it2.GetBase() - it1.GetBase());
     }
 }

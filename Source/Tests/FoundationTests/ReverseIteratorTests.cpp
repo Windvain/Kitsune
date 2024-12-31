@@ -181,35 +181,35 @@ TEST(ReverseIteratorTests, NotEqualOperator)
 TEST(ReverseIteratorTests, GreaterEqualOperator)
 {
     auto it = ReverseIterator<char*>((char*)123123);
-    EXPECT_TRUE(it >= ReverseIterator<char*>((char*)123123));
-    EXPECT_TRUE(it >= ReverseIterator<char*>((char*)123121));
+    EXPECT_FALSE(it >= ReverseIterator<char*>((char*)123121));
 
-    EXPECT_FALSE(it >= ReverseIterator<char*>((char*)9210923));
+    EXPECT_TRUE(it >= ReverseIterator<char*>((char*)123123));
+    EXPECT_TRUE(it >= ReverseIterator<char*>((char*)9210923));
 }
 
 TEST(ReverseIteratorTests, LessEqualOperator)
 {
     auto it = ReverseIterator<char*>((char*)123123);
-    EXPECT_TRUE(it <= ReverseIterator<char*>((char*)123123));
-    EXPECT_TRUE(it <= ReverseIterator<char*>((char*)9210923));
+    EXPECT_FALSE(it <= ReverseIterator<char*>((char*)9210923));
 
-    EXPECT_FALSE(it <= ReverseIterator<char*>((char*)123121));
+    EXPECT_TRUE(it <= ReverseIterator<char*>((char*)123123));
+    EXPECT_TRUE(it <= ReverseIterator<char*>((char*)123121));
 }
 
 TEST(ReverseIteratorTests, GreaterThanOperator)
 {
     auto it = ReverseIterator<char*>((char*)123123);
-    EXPECT_FALSE(it > ReverseIterator<char*>((char*)123123));
-    EXPECT_FALSE(it > ReverseIterator<char*>((char*)9210923));
+    EXPECT_TRUE(it > ReverseIterator<char*>((char*)9210923));
 
-    EXPECT_TRUE(it > ReverseIterator<char*>((char*)123121));
+    EXPECT_FALSE(it > ReverseIterator<char*>((char*)123123));
+    EXPECT_FALSE(it > ReverseIterator<char*>((char*)123121));
 }
 
 TEST(ReverseIteratorTests, LessThanOperator)
 {
     auto it = ReverseIterator<char*>((char*)123123);
-    EXPECT_FALSE(it < ReverseIterator<char*>((char*)123123));
-    EXPECT_FALSE(it < ReverseIterator<char*>((char*)123121));
+    EXPECT_TRUE(it < ReverseIterator<char*>((char*)123121));
 
-    EXPECT_TRUE(it < ReverseIterator<char*>((char*)9210923));
+    EXPECT_FALSE(it < ReverseIterator<char*>((char*)123123));
+    EXPECT_FALSE(it < ReverseIterator<char*>((char*)9210923));
 }

@@ -3,6 +3,7 @@ kitsune_add_library(
     SOURCES
     "Algorithms/Internal/AlgoConcepts.h"
     "Algorithms/Copy.h"
+    "Algorithms/Destroy.h"
     "Algorithms/Distance.h"
     "Algorithms/Equal.h"
     "Algorithms/Fill.h"
@@ -17,6 +18,8 @@ kitsune_add_library(
     "Common/Macros.h"
     "Common/Predefined.h"
     "Common/Types.h"
+
+    "Containers/Array.h"
 
     "Diagnostics/Assert.cpp"
     "Diagnostics/Assert.h"

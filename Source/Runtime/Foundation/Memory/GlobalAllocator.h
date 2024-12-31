@@ -33,4 +33,7 @@ namespace Kitsune
             Memory::Free(ptr);
         }
     };
+
+    inline bool operator==(const GlobalAllocator&, const GlobalAllocator&) { return true; }
+    inline bool operator!=(const GlobalAllocator&, const GlobalAllocator&) { return false; }
 }
