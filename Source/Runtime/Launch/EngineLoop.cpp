@@ -21,7 +21,7 @@ namespace Kitsune
     EngineLoop::~EngineLoop()
     {
         m_Application->OnExit();
-        delete m_Application;
+        Memory::Delete(m_Application);
 
         /* Subsystem Shutdown */
         Memory::Shutdown();

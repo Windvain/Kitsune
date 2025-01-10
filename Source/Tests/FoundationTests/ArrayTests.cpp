@@ -444,9 +444,12 @@ TEST(ArrayTests, InsertFill)
 {
     Array<int> arr = { 54, 657, 123, 677 };
     auto it = arr.Insert(arr.GetBegin(), 7, int(4));
+    auto it2 = arr.Insert(arr.GetEnd(), 1, int(2));
 
     EXPECT_EQ(it, arr.GetBegin());
-    EXPECT_EQ(arr.Size(), 11);
+    EXPECT_EQ(it2, arr.GetEnd() - 1);
+
+    EXPECT_EQ(arr.Size(), 12);
     EXPECT_EQ(arr[0], 4);
     EXPECT_EQ(arr[1], 4);
     EXPECT_EQ(arr[2], 4);
@@ -458,6 +461,7 @@ TEST(ArrayTests, InsertFill)
     EXPECT_EQ(arr[8], 657);
     EXPECT_EQ(arr[9], 123);
     EXPECT_EQ(arr[10], 677);
+    EXPECT_EQ(arr[11], 2);
 }
 
 TEST(ArrayTests, InsertRange)

@@ -3,6 +3,8 @@ kitsune_add_test(
     SOURCES
     "FoundationTests/AddressOfTests.cpp"
     "FoundationTests/ArrayTests.cpp"
+    "FoundationTests/BasicStringTests.cpp"
+    "FoundationTests/CharTraitsTests.cpp"
     "FoundationTests/CompareStrings.h"
     "FoundationTests/CopyTests.cpp"
     "FoundationTests/DestroyTests.cpp"
@@ -19,6 +21,7 @@ kitsune_add_test(
     "FoundationTests/ReverseTests.cpp"
     "FoundationTests/ScopedPtrTests.cpp"
     "FoundationTests/SharedPtrTests.cpp"
+    "FoundationTests/StringViewTests.cpp"
     "FoundationTests/SwapTests.cpp"
     "FoundationTests/TestContainer.h"
     "FoundationTests/UninitializedTests.cpp"

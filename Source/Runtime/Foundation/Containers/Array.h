@@ -50,17 +50,21 @@ namespace Kitsune
         inline Array(Usize cap, const Alloc& alloc)
             : m_Allocator(alloc)
         {
-            m_Begin = MakeAllocation(cap);
+            Usize adjusted = GetAdjustedCapacity(cap);
+
+            m_Begin = MakeAllocation(adjusted);
             m_End = m_Begin;
-            m_StorageEnd = m_Begin + cap;
+            m_StorageEnd = m_Begin + adjusted;
         }
 
         inline explicit Array(Usize cap, Alloc&& alloc = Alloc())
             : m_Allocator(Move(alloc))
         {
-            m_Begin = MakeAllocation(cap);
+            Usize adjusted = GetAdjustedCapacity(cap);
+
+            m_Begin = MakeAllocation(adjusted);
             m_End = m_Begin;
-            m_StorageEnd = m_Begin + cap;
+            m_StorageEnd = m_Begin + adjusted;
         }
 
         inline Array(Usize count, const T& value, const Alloc& alloc)
@@ -120,12 +124,11 @@ namespace Kitsune
             if (this == &array) return *this;       // Ignore self-assigns.
 
             if (m_Allocator != array.GetAllocator())
-            {
                 Clear();
-                m_Allocator = array.GetAllocator();
-            }
 
-            CopyAssign(array.GetBegin(), array.GetEnd());
+            m_Allocator = array.GetAllocator();
+            RangeAssign(array.GetBegin(), array.GetEnd());
+
             return *this;
         }
 
@@ -139,7 +142,7 @@ namespace Kitsune
 
         inline Array& operator=(std::initializer_list<T> ilist)
         {
-            CopyAssign(ilist.begin(), ilist.end());
+            RangeAssign(ilist.begin(), ilist.end());
             return *this;
         }
 
@@ -286,6 +289,9 @@ namespace Kitsune
         inline void Remove(Iterator pos) { return Remove(pos, pos + 1); }
         inline void Remove(Iterator begin, Iterator end)
         {
+            if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) || (end > GetEnd()))
+                throw OutOfRangeException();
+
             Usize removedSize = static_cast<Usize>(Algorithms::Distance(begin, end));
             Algorithms::Destroy(begin, end);
 
@@ -306,13 +312,17 @@ namespace Kitsune
         {
             Usize newSize = Size() + 1;
             if (newSize > Capacity())
-                Reserve(newSize);
+                ReallocateGrow(newSize);
 
             Memory::ConstructAt(m_End, Forward<Args>(args)...);
             return *(m_End++);
         }
 
-        inline void PopBack() { Memory::DestroyAt(--m_End); }
+        inline void PopBack()
+        {
+            if (IsEmpty()) throw OutOfRangeException();
+            Memory::DestroyAt(--m_End);
+        }
 
     public:
         // Should not be called by engine/client code.
@@ -330,13 +340,12 @@ namespace Kitsune
             return static_cast<Usize>(static_cast<float>(cap) * s_AllocationFactor);
         }
 
-        KITSUNE_FORCEINLINE T* MakeAllocation(Usize count)
+        inline T* MakeAllocation(Usize count)
         {
             if (count == 0)
                 return nullptr;
 
-            Usize adjusted = GetAdjustedCapacity(count);
-            return static_cast<T*>(m_Allocator.Allocate(adjusted * sizeof(T), alignof(T)));
+            return static_cast<T*>(m_Allocator.Allocate(count * sizeof(T), alignof(T)));
         }
 
         KITSUNE_FORCEINLINE void FreeAllocation(T* ptr)
@@ -364,7 +373,7 @@ namespace Kitsune
 
     private:
         template<ForwardIterator It>
-        void CopyAssign(It begin, It end)
+        void RangeAssign(It begin, It end)
         {
             Usize size = static_cast<Usize>(Algorithms::Distance(begin, end));
 
@@ -378,10 +387,15 @@ namespace Kitsune
 
         Iterator ShiftEnd(Iterator from, Usize offset)
         {
+            if ((from < GetBegin()) || (from > GetEnd()))
+                throw OutOfRangeException();
+
             Index index = from - GetBegin();
             Index reverseIndex = (Size() - index - 1);
 
-            Reserve(Size() + offset);
+            Usize newSize = Size() + offset;
+            if (Capacity() < newSize)
+                ReallocateGrow(newSize);
 
             for (auto it = GetReverseBegin(); it <= GetReverseBegin() + reverseIndex; ++it)
             {

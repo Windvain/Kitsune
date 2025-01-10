@@ -1,4 +1,6 @@
 #include "ApplicationCore/Application.h"
+#include "Foundation/Memory/Memory.h"
+
 #include <gtest/gtest.h>
 
 using namespace Kitsune;
@@ -29,5 +31,5 @@ public:
 Application* CreateApplication(const CommandLineArgs& /* args */)
 {
     ApplicationSpecs specs;
-    return new FoundationTests(specs);
+    return Memory::New<FoundationTests>(specs);
 }

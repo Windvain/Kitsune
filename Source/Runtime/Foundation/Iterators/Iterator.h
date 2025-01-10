@@ -18,11 +18,6 @@ namespace Kitsune
         {
             typename AddReference<T>;
         };
-
-        template<typename T>
-        concept CanAccessMemberFunc =
-            std::is_pointer_v<T> ||
-            requires (T val) { val.operator->(); };
     }
 
     template<typename It>
@@ -51,8 +46,6 @@ namespace Kitsune
     template<typename It>
     concept ReadableIterator =
         Iterator<It> &&
-        Internal::CanAccessMemberFunc<It> &&
-
         requires (It iterator)
         {
             { *iterator } -> std::convertible_to<typename IteratorTraits<It>::ValueType>;

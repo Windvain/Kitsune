@@ -1,9 +1,5 @@
 #include "ApplicationCore/Application.h"
-#include <cstdlib>
-#include <iostream>
-
-#include "Foundation/Common/Types.h"
-#include "Foundation/Memory/Memory.h"
+#include "Foundation/String/String.h"
 
 using namespace Kitsune;
 
@@ -16,10 +12,18 @@ public:
     }
 
     ~Sandbox() { /* ... */ }
+
+public:
+    void OnStart() override
+    {
+        String str = "+╪½╗êΦï";
+        String move = Move(str);
+    }
+
 };
 
 Application* CreateApplication(const CommandLineArgs& args)
 {
     ApplicationSpecs specs;
-    return new Sandbox(specs);
+    return Memory::New<Sandbox>(specs);
 }

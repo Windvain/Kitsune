@@ -19,6 +19,8 @@ kitsune_add_library(
     "Common/Predefined.h"
     "Common/Types.h"
 
+    "Concepts/Character.h"
+
     "Containers/Array.h"
 
     "Diagnostics/Assert.cpp"
@@ -44,8 +46,13 @@ kitsune_add_library(
     "Memory/ScopedPtr.h"
     "Memory/SharedPtr.h"
 
+    "String/CharTraits.h"
+    "String/String.h"
+    "String/StringView.h"
+
     "Templates/Exchange.h"
     "Templates/Forward.h"
+    "Templates/IsAnyOf.h"
     "Templates/Move.h"
 
     "Threading/Interlocked.h"
