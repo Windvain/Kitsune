@@ -11,8 +11,8 @@ namespace Kitsune
         OutOfRangeException() = default;
 
     public:
-        const char* GetName() const override { return "OutOfRangeException"; }
-        const char* GetDescription() const override
+        const char* GetName() const noexcept override { return "OutOfRangeException"; }
+        const char* GetDescription() const noexcept override
         {
             return "Requested an out of range index";
         }

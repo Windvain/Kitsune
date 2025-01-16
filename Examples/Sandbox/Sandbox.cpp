@@ -1,7 +1,25 @@
 #include "ApplicationCore/Application.h"
-#include "Foundation/String/String.h"
+
+#include <iostream>
+#include "Foundation/String/Format.h"
 
 using namespace Kitsune;
+
+class Base { /* ... */ };
+
+namespace Kitsune
+{
+    template<>
+    class Formatter<Base, char>
+    {
+    public:
+        void Parse(...) { /* ... */ }
+        String Format(Base base)
+        {
+            return "[UNKNOWN]";
+        }
+    };
+}
 
 class Sandbox : public Application
 {
@@ -16,10 +34,9 @@ public:
 public:
     void OnStart() override
     {
-        String str = "+╪½╗êΦï";
-        String move = Move(str);
+        String formatted = Format("Hello, }} {{}}");
+        std::cout << formatted.Raw();
     }
-
 };
 
 Application* CreateApplication(const CommandLineArgs& args)

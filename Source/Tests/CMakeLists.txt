@@ -13,6 +13,7 @@ kitsune_add_test(
     "FoundationTests/FillTests.cpp"
     "FoundationTests/FindTests.cpp"
     "FoundationTests/ForEachTests.cpp"
+    "FoundationTests/FormatTests.cpp"
     "FoundationTests/FoundationMain.cpp"
     "FoundationTests/IteratorWrappers.h"
     "FoundationTests/MemoryTests.cpp"
@@ -23,6 +24,7 @@ kitsune_add_test(
     "FoundationTests/SharedPtrTests.cpp"
     "FoundationTests/StringViewTests.cpp"
     "FoundationTests/SwapTests.cpp"
+    "FoundationTests/ToStringTests.cpp"
     "FoundationTests/TestContainer.h"
     "FoundationTests/UninitializedTests.cpp"
 

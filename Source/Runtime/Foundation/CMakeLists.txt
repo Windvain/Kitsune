@@ -47,8 +47,12 @@ kitsune_add_library(
     "Memory/SharedPtr.h"
 
     "String/CharTraits.h"
+    "String/Format.h"
+    "String/FormatException.h"
+    "String/Formatter.h"
     "String/String.h"
     "String/StringView.h"
+    "String/ToString.h"
 
     "Templates/Exchange.h"
     "Templates/Forward.h"

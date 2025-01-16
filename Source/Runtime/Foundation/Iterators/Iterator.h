@@ -82,7 +82,7 @@ namespace Kitsune
             { n + const_iter } -> std::same_as<It>;
             { iter -= n      } -> std::same_as<It&>;
             { const_iter - n } -> std::same_as<It>;
-            { const_iter[n]  } -> std::same_as<typename IteratorTraits<It>::ValueType&>;        // TODO!
+            { const_iter[n]  } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
         } &&
         requires (const It iter1, const It iter2)
         {

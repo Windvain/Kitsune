@@ -10,8 +10,8 @@ namespace Kitsune
         BadAllocException() = default;
 
     public:
-        const char* GetName() const override { return "BadAllocException"; }
-        const char* GetDescription() const override
+        const char* GetName() const noexcept override { return "BadAllocException"; }
+        const char* GetDescription() const noexcept override
         {
             return "An allocation request failed";
         }
