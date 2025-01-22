@@ -11,24 +11,17 @@ public:
     FoundationTests(const ApplicationSpecs& specs)
         : Application(specs)
     {
-    }
-
-    ~FoundationTests() { /* ... */ }
-
-public:
-    void OnStart() override
-    {
         testing::InitGoogleTest();
         Exit(RUN_ALL_TESTS());
     }
 
-    void OnExit() override
+    ~FoundationTests()
     {
         std::cin.get();
     }
 };
 
-Application* CreateApplication(const CommandLineArgs& /* args */)
+Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
 {
     ApplicationSpecs specs;
     return Memory::New<FoundationTests>(specs);

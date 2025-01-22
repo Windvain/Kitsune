@@ -18,7 +18,7 @@ namespace Kitsune::Internal
         }                                                                           \
     } while (false)
 
-#if !defined(KITSUNE_BUILD_PRODUCTION)
+#if !defined(KITSUNE_BUILD_RELEASE)
     #define KITSUNE_ASSERT KITSUNE_ALWAYS_ASSERT
     #define KITSUNE_VERIFY KITSUNE_ALWAYS_ASSERT
 #else

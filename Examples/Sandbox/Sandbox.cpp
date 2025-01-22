@@ -1,25 +1,12 @@
 #include "ApplicationCore/Application.h"
+#include <Windows.h>
 
-#include <iostream>
-#include "Foundation/String/Format.h"
+#include "Foundation/Logging/Logger.h"
+#include "Foundation/Logging/Logging.h"
+#include "ApplicationCore/Environment.h"
+#include "Foundation/Logging/ConsoleLoggerSink.h"
 
 using namespace Kitsune;
-
-class Base { /* ... */ };
-
-namespace Kitsune
-{
-    template<>
-    class Formatter<Base, char>
-    {
-    public:
-        void Parse(...) { /* ... */ }
-        String Format(Base base)
-        {
-            return "[UNKNOWN]";
-        }
-    };
-}
 
 class Sandbox : public Application
 {
@@ -29,17 +16,17 @@ public:
     {
     }
 
-    ~Sandbox() { /* ... */ }
+    ~Sandbox()
+    {
+    }
 
 public:
-    void OnStart() override
+    void Update()
     {
-        String formatted = Format("Hello, }} {{}}");
-        std::cout << formatted.Raw();
     }
 };
 
-Application* CreateApplication(const CommandLineArgs& args)
+Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
 {
     ApplicationSpecs specs;
     return Memory::New<Sandbox>(specs);

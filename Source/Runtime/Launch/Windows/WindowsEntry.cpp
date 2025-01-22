@@ -17,55 +17,6 @@ namespace Kitsune
 
 using namespace Kitsune;
 
-struct WindowsCommandLineArgs
-{
-    void Create()
-    {
-        // Get wide command line arguments.
-        LPWSTR cmdLine = ::GetCommandLineW();
-        wchar_t** wargv = ::CommandLineToArgvW(cmdLine, &Count);
-
-        // Translate to UTF-8 argv.
-        Arguments = (char**)std::malloc(Count * sizeof(char*));
-        if (Arguments == nullptr)
-            throw BadAllocException();
-
-        for (int i = 0; i < Count; ++i)
-        {
-            int wideLen = static_cast<int>(std::wcslen(wargv[i]));
-            int length = ::WideCharToMultiByte(CP_UTF8, 0, wargv[i], wideLen,
-                nullptr, 0, nullptr, nullptr);
-
-            Arguments[i] = (char*)std::malloc((length + 1) * sizeof(char));
-            if (Arguments[i] == nullptr)
-            {
-                for (int j = 0; j < i; ++j)
-                    std::free(Arguments[j]);
-
-                std::free(Arguments);
-                throw BadAllocException();
-            }
-
-            ::WideCharToMultiByte(CP_UTF8, 0, wargv[i], wideLen, Arguments[i],
-                (length + 1) * sizeof(char), 0, 0);
-        }
-
-        // Free ::CommandLineToArgvW().
-        ::LocalFree(wargv);
-    }
-
-    void Destroy()
-    {
-        for (int i = 0; i < Count; ++i)
-            std::free(Arguments[i]);
-
-        std::free(Arguments);
-    }
-
-    int Count;
-    char** Arguments;
-};
-
 const char* FormatExceptionCode(DWORD code)
 {
     switch (code)
@@ -151,13 +102,16 @@ int StartWindowsEntry()
     if ((::SetProcessDPIAware() == 0) || (!AllocateConsoleInDev()))
         return 1;
 
-    WindowsCommandLineArgs cmdLineArgs;
-    cmdLineArgs.Create();
+    // Most things passed in via the terminal will be in ASCII, so for now I don't see a need
+    // to transcode the UTF-16 output of CommandLineToArgvW() to UTF-8.
+    // If unicode support is ever needed in the terminal, do not rollback the change here,
+    // that implementation is incorrect and messy.
+    int argc = __argc;
+    char** argv = __argv;
 
     if (::IsDebuggerPresent())
     {
-        cmdLineArgs.Destroy();
-        return EngineMain(cmdLineArgs.Count, cmdLineArgs.Arguments);
+        return EngineMain(argc, argv);
     }
 
     // MinGW doesn't support SEH (Structured Exception Handling).
@@ -166,7 +120,7 @@ int StartWindowsEntry()
     __try
 #endif
     {
-        returnValue = EngineMain(cmdLineArgs.Count, cmdLineArgs.Arguments);
+        returnValue = EngineMain(argc, argv);
     }
 #if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
     __except (ProcessSehException(GetExceptionInformation()))
@@ -175,13 +129,14 @@ int StartWindowsEntry()
     }
 #endif
 
-    cmdLineArgs.Destroy();
     return returnValue;
 }
 
 void ShutdownWindowsEntry()
 {
+#if !defined(KITSUNE_BUILD_RELEASE)
     ::FreeConsole();
+#endif
 }
 
 // MSVC just works as long as a WinMain() function was forward-declared.
@@ -195,5 +150,6 @@ int WINAPI WinMain(HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
 {
     int success = StartWindowsEntry();
     ShutdownWindowsEntry();
+
     return success;
 }

@@ -3,37 +3,19 @@
 
 namespace Kitsune
 {
-    Application* Application::s_ApplicationInst = nullptr;
+    Application* Application::s_Instance = nullptr;
 
     Application::Application(const ApplicationSpecs& specs)
     {
-        KITSUNE_ASSERT(s_ApplicationInst == nullptr,
+        KITSUNE_ASSERT(s_Instance == nullptr,
                        "An application has already been instanced.");
 
-        s_ApplicationInst = this;
-        m_ExitRequested = false;
-
-        KITSUNE_UNUSED(specs);
+        s_Instance = this;
+        m_ApplicationSpecs = specs;
     }
 
     Application::~Application()
     {
-        s_ApplicationInst = nullptr;
-    }
-
-    void Application::Exit(int exitCode)
-    {
-        m_ExitRequested = true;
-        m_ExitCode = exitCode;
-
-        ProcessExitRequest(false, exitCode);
-    }
-
-    void Application::ForceExit(int exitCode)
-    {
-        m_ExitRequested = true;
-        m_ExitCode = exitCode;
-
-        ProcessExitRequest(true, exitCode);
+        s_Instance = nullptr;
     }
 }

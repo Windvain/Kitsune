@@ -3,6 +3,9 @@ kitsune_add_library(
     SOURCES
     "Application.cpp"
     "Application.h"
+    "CommandLineArguments.h"
+    "Environment.cpp"
+    "Environment.h"
 
     DEPENDENCIES
     KitsuneFoundation

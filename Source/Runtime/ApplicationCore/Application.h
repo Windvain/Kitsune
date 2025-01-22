@@ -1,18 +1,13 @@
 #pragma once
 
-#include "Foundation/Common/Macros.h"
-#include "Launch/EngineLoop.h"
+#include "Foundation/String/String.h"
+#include "ApplicationCore/CommandLineArguments.h"
 
 namespace Kitsune
 {
     struct ApplicationSpecs
     {
-    };
-
-    struct CommandLineArgs
-    {
-        int Count;
-        char** Args;
+        String Name;
     };
 
     class Application
@@ -22,30 +17,21 @@ namespace Kitsune
         KITSUNE_API_ virtual ~Application();
 
     public:
-        bool IsExitRequested() const { return m_ExitRequested; }
+        virtual void Update() { /* ... */ }
+
+    public:
+        inline bool IsExitRequested() const { return m_ExitRequested; }
 
         KITSUNE_API_ void Exit(int exitCode);
         KITSUNE_API_ void ForceExit(int exitCode);
 
-    public:
-        virtual void OnStart() { /* ... */ }
-        virtual void OnUpdate() { /* ... */ }
-        virtual void OnExit() { /* ... */ }
-
     private:
-        void ProcessExitRequest(bool forced, int exitCode);
+        static Application* s_Instance;
 
-    private:
-        friend class EngineLoop;
-        static Application* s_ApplicationInst;
-
-    private:
+        ApplicationSpecs m_ApplicationSpecs;
         bool m_ExitRequested = false;
-        int m_ExitCode = 0;
-
-        CommandLineArgs m_CommandLineArgs;
     };
-}
 
-// Should be defined in client code.
-extern Kitsune::Application* CreateApplication(const Kitsune::CommandLineArgs& cmdLineArgs);
+    // Should be defined in client code.
+    extern Kitsune::Application* CreateApplication(const Kitsune::CommandLineArguments&);
+}
