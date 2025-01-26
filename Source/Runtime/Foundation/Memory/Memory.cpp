@@ -58,6 +58,4 @@ namespace Kitsune
         if (!s_Initialized) Memory::InitializeExplicit();
         s_MemoryApi->Free(ptr);
     }
-
-    Usize Memory::GetDefaultAlignment() { return s_MemoryApi->GetDefaultAlignment(); }
 }

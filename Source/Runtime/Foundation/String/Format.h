@@ -65,9 +65,9 @@ namespace Kitsune
         };
 
         template<typename T, Character Ch,
-            bool IsString = IsAnyOf<std::remove_cvref_t<std::decay_t<T>>, Ch*, BasicStringView<Ch>, BasicString<Ch>>,
-            bool IsPointer = std::is_pointer_v<T>,
-            bool IsCustom = std::is_class_v<T> || std::is_union_v<T> || std::is_enum_v<T>>
+            bool IsString  = (std::is_convertible_v<std::remove_cvref_t<T>, BasicStringView<Ch>>),
+            bool IsPointer = (std::is_pointer_v<T>),
+            bool IsCustom  = (std::is_class_v<T> || std::is_union_v<T> || std::is_enum_v<T>)>
         struct NormalizedFormatType
         {
             using Type = std::remove_cvref_t<std::decay_t<T>>;

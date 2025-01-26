@@ -26,12 +26,23 @@ kitsune_add_library(
     "Diagnostics/Assert.cpp"
     "Diagnostics/Assert.h"
     "Diagnostics/IException.h"
+    "Diagnostics/InvalidArgumentException.h"
     "Diagnostics/OutOfRangeException.h"
     "Diagnostics/SourceLocation.h"
 
     "Iterators/Iterator.h"
     "Iterators/IteratorTraits.h"
     "Iterators/ReverseIterator.h"
+
+    "Logging/ConsoleLoggerSink.cpp"
+    "Logging/ConsoleLoggerSink.h"
+    "Logging/ILoggerSink.h"
+    "Logging/Logger.cpp"
+    "Logging/Logger.h"
+    "Logging/Logging.cpp"
+    "Logging/Logging.h"
+    "Logging/LogMessage.h"
+    "Logging/LogSeverity.h"
 
     "Memory/AddressOf.h"
     "Memory/Allocator.h"

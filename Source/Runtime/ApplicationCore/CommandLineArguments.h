@@ -4,6 +4,7 @@
 #include "Foundation/Diagnostics/Assert.h"
 
 #include "Foundation/Diagnostics/OutOfRangeException.h"
+#include "Foundation/Diagnostics/InvalidArgumentException.h"
 
 namespace Kitsune
 {
@@ -22,7 +23,8 @@ namespace Kitsune
             // Clients *may* input negative or zero values.
             // POSIX does specify that `argc` can be 0, but just because it can be inputted
             // doesn't mean it should be.
-            KITSUNE_ASSERT(argc >= 0, "Arguments count should be non-negative.");
+            if (argc < 0)
+                throw InvalidArgumentException("Arguments count should be non-negative.");
         }
 
     public:

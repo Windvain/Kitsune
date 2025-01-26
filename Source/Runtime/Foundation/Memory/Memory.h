@@ -28,7 +28,10 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        KITSUNE_API_ static Usize GetDefaultAlignment();
+        static inline Usize GetDefaultAlignment()
+        {
+            return s_MemoryApi->GetDefaultAlignment();
+        }
 
     public:
         template<typename T, typename... Args>
@@ -61,7 +64,7 @@ namespace Kitsune
         }
 
     private:
-        static IMemoryApi* s_MemoryApi;
         static bool s_Initialized;
+        KITSUNE_API_ static IMemoryApi* s_MemoryApi;
     };
 }

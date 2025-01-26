@@ -5,6 +5,9 @@
 
 #include "Foundation/Memory/Memory.h"
 
+#include "Foundation/Logging/Logging.h"
+#include "Foundation/Logging/ConsoleLoggerSink.h"
+
 #include "ApplicationCore/Application.h"
 #include "ApplicationCore/Environment.h"
 
@@ -12,8 +15,17 @@ namespace Kitsune
 {
     int UnguardedEngineMain(int argc, char** argv)
     {
-        /* Subsystem Initialization */
+        /* Foundation Subsystems Initialization */
         Memory::InitializeExplicit();
+
+        // Initialize the global logger.
+        Logger* globalLogger = Memory::New<Logger>("GLOBAL", MakeShared<ConsoleLoggerSink>());
+        globalLogger->SetFlushSeverity(LogSeverity::Error);
+        globalLogger->SetMinimumSeverity(LogSeverity::Trace);
+
+        Logging::SetGlobalLogger(globalLogger);
+
+        /* Remaining Subsystems Initialization */
         Environment::Initialize(argc, argv);
 
         /* App Startup */
@@ -27,7 +39,13 @@ namespace Kitsune
         // Applications *should* be created via the Memory::New<T>() function.
         Memory::Delete(app);
 
-        /* Subsystem Shutdown */
+        /* Remaining Subsystems Shutdown */
+        Environment::Shutdown();
+
+        /* Foundation Subsystems Shutdown */
+        Memory::Delete(Logging::GetGlobalLogger());
+        Logging::SetGlobalLogger(nullptr);
+
         Memory::Shutdown();
         return 0;
     }
