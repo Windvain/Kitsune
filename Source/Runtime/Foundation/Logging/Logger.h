@@ -16,14 +16,14 @@ namespace Kitsune
     public:
         Logger() = default;
 
-        inline explicit Logger(const StringView& name) : m_Name(name) { /* ... */ }
-        inline Logger(const StringView& name, const SharedPtr<ILoggerSink>& sink)
+        inline explicit Logger(const StringView name) : m_Name(name) { /* ... */ }
+        inline Logger(const StringView name, const SharedPtr<ILoggerSink>& sink)
             : m_Name(name), m_Sinks{sink}
         {
         }
 
         template<ForwardIterator It>
-        inline Logger(const StringView& name, It begin, It end)
+        inline Logger(const StringView name, It begin, It end)
             : m_Name(name), m_Sinks(begin, end)
         {
         }
@@ -38,20 +38,20 @@ namespace Kitsune
         Logger& operator=(Logger&& logger) = default;
 
     public:
-        KITSUNE_API_ void Log(LogSeverity severity, const StringView& message);
+        KITSUNE_API_ void Log(LogSeverity severity, const StringView message);
         KITSUNE_API_ void Flush();
 
-        inline void Log(const StringView& message) { Log(m_MinimumSeverity, message); }
+        inline void Log(const StringView message) { Log(m_MinimumSeverity, message); }
 
         template<typename... Args>
-        inline void LogFormat(LogSeverity severity, const StringView& format, Args&&... args)
+        inline void LogFormat(LogSeverity severity, const StringView format, Args&&... args)
         {
             String formatted = Format(format, Forward<Args>(args)...);
             Log(severity, formatted);
         }
 
         template<typename... Args>
-        inline void LogFormat(const StringView& format, Args&&... args)
+        inline void LogFormat(const StringView format, Args&&... args)
         {
             LogFormat(m_MinimumSeverity, format, Forward<Args>(args)...);
         }

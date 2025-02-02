@@ -170,7 +170,7 @@ namespace Kitsune
     {
     public:
         void Parse(const ParseContext<char>&) { /* ... */ }
-        String Format(const StringView& strv)
+        String Format(const StringView strv)
         {
             return String(strv);
         }

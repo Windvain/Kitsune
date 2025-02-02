@@ -116,3 +116,42 @@ function(kitsune_add_platform_sources)
         target_sources(${TARGET_ARGS_TARGET} PRIVATE ${TARGET_ARGS_MSVC})
     endif()
 endfunction()
+
+function(kitsune_add_platform_dependencies)
+    set(PARSE_OPTIONS)
+    set(PARSE_SINGLE_VALUE_ARGS TARGET)
+    set(PARSE_MULTI_VALUE_ARGS WINDOWS LINUX GCC CLANG MSVC)
+
+    cmake_parse_arguments(
+        TARGET_ARGS
+        "${PARSE_OPTIONS}"
+        "${PARSE_SINGLE_VALUE_ARGS}"
+        "${PARSE_MULTI_VALUE_ARGS}"
+        ${ARGN})
+
+    # Check for missing arguments.
+    if (NOT TARGET_ARGS_TARGET)
+        message(FATAL_ERROR "Target has not been specified.")
+    endif()
+
+    # Add platform-specific files.
+    if (TARGET_ARGS_WINDOWS AND WIN32)
+        target_link_libraries(${TARGET_ARGS_TARGET} PRIVATE ${TARGET_ARGS_WINDOWS})
+    endif()
+
+    if (TARGET_ARGS_LINUX AND ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux"))
+        target_link_libraries(${TARGET_ARGS_TARGET} PRIVATE ${TARGET_ARGS_LINUX})
+    endif()
+
+    if (TARGET_ARGS_GCC AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"))
+        target_link_libraries(${TARGET_ARGS_TARGET} PRIVATE ${TARGET_ARGS_GCC})
+    endif()
+
+    if (TARGET_ARGS_CLANG AND ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang"))
+        target_link_libraries(${TARGET_ARGS_TARGET} PRIVATE ${TARGET_ARGS_CLANG})
+    endif()
+
+    if (TARGET_ARGS_MSVC AND MSVC)
+        target_link_libraries(${TARGET_ARGS_TARGET} PRIVATE ${TARGET_ARGS_MSVC})
+    endif()
+endfunction()

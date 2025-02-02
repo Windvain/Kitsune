@@ -27,6 +27,8 @@ kitsune_add_library(
     "Diagnostics/Assert.h"
     "Diagnostics/IException.h"
     "Diagnostics/InvalidArgumentException.h"
+    "Diagnostics/IsDebuggerAttached.h"
+    "Diagnostics/MessageBox.h"
     "Diagnostics/OutOfRangeException.h"
     "Diagnostics/SourceLocation.h"
 
@@ -61,6 +63,7 @@ kitsune_add_library(
     "String/Format.h"
     "String/FormatException.h"
     "String/Formatter.h"
+    "String/InvalidUnicodeException.h"
     "String/String.h"
     "String/StringView.h"
     "String/ToString.h"
@@ -77,8 +80,19 @@ kitsune_add_library(
 kitsune_add_platform_sources(
     TARGET KitsuneFoundation
     CLANG
-    "Clang/ClangInterlocked.inl"
+    "Threading/ClangInterlocked.inl"
+    "KitsuneFoundation.rc"
 
     MSVC
-    "MSVC/MSVCInterlocked.inl"
+    "Threading/MSVCInterlocked.inl"
+    "KitsuneFoundation.manifest"
+
+    WINDOWS
+    "Diagnostics/WindowsDebuggerAttached.cpp"
+    "Diagnostics/WindowsMessageBox.cpp"
+)
+
+kitsune_add_platform_dependencies(
+    TARGET KitsuneFoundation
+    WINDOWS "comctl32.lib"
 )

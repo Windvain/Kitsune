@@ -3,7 +3,7 @@
 
 namespace Kitsune
 {
-    void Logger::Log(LogSeverity severity, const StringView& message)
+    void Logger::Log(LogSeverity severity, const StringView message)
     {
         if (!IsLogged(severity)) return;
 

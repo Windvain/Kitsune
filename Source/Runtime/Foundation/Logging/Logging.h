@@ -12,20 +12,20 @@ namespace Kitsune
         static inline Logger* GetGlobalLogger()            { return s_Logger;   }
 
     public:
-        static inline void Log(LogSeverity severity, const StringView& message)
+        static inline void Log(LogSeverity severity, const StringView message)
         {
             KITSUNE_ASSERT(s_Logger != nullptr, "A global logger has not been set.");
             s_Logger->Log(severity, message);
         }
 
-        static inline void Log(const StringView& message)
+        static inline void Log(const StringView message)
         {
             KITSUNE_ASSERT(s_Logger != nullptr, "A global logger has not been set.");
             s_Logger->Log(message);
         }
 
         template<typename... Args>
-        static inline void LogFormat(LogSeverity severity, const StringView& message,
+        static inline void LogFormat(LogSeverity severity, const StringView message,
                                      Args&&... args)
         {
             KITSUNE_ASSERT(s_Logger != nullptr, "A global logger has not been set.");
@@ -33,7 +33,7 @@ namespace Kitsune
         }
 
         template<typename... Args>
-        static inline void LogFormat(const StringView& message, Args&&... args)
+        static inline void LogFormat(const StringView message, Args&&... args)
         {
             KITSUNE_ASSERT(s_Logger != nullptr, "A global logger has not been set.");
             s_Logger->LogFormat(message, Forward<Args>(args)...);
@@ -47,29 +47,29 @@ namespace Kitsune
 
     public:
         template<typename... Args>
-        static inline void Trace(const StringView& message, Args&&... args)
+        static inline void Trace(const StringView message, Args&&... args)
         {
             LogFormat(LogSeverity::Trace, message, Forward<Args>(args)...);
         }
 
         template<typename... Args>
-        static inline void Info(const StringView& message, Args&&... args)
+        static inline void Info(const StringView message, Args&&... args)
         {
             LogFormat(LogSeverity::Info, message, Forward<Args>(args)...);
         }
 
         template<typename... Args>
-        static inline void Warn(const StringView& message, Args&&... args)
+        static inline void Warn(const StringView message, Args&&... args)
         {
             LogFormat(LogSeverity::Warning, message, Forward<Args>(args)...);
         }
         template<typename... Args>
-        static inline void Error(const StringView& message, Args&&... args)
+        static inline void Error(const StringView message, Args&&... args)
         {
             LogFormat(LogSeverity::Error, message, Forward<Args>(args)...);
         }
         template<typename... Args>
-        static inline void Fatal(const StringView& message, Args&&... args)
+        static inline void Fatal(const StringView message, Args&&... args)
         {
             LogFormat(LogSeverity::Fatal, message, Forward<Args>(args)...);
         }

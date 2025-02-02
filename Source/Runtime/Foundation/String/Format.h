@@ -284,7 +284,9 @@ namespace Kitsune
         public:
             FormatArgument<Char> Get(Usize index) const
             {
-                if (index >= m_Size) throw OutOfRangeException();
+                if (index >= m_Size)
+                    throw FormatException("Tried to index an out-of-bounds element.");
+
                 return m_Args[index];
             }
 
@@ -421,7 +423,7 @@ namespace Kitsune
     }
 
     template<typename... Args>
-    String Format(const StringView& format, Args&&... args)
+    String Format(const StringView format, Args&&... args)
     {
         return Internal::GenericFormat<char>(format, Forward<Args>(args)...);
     }
