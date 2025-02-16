@@ -1,17 +1,24 @@
-#include "ApplicationCore/Application.h"
+#include "ApplicationCore/Windows/WindowsApplication.h"
 #include <Windows.h>
 
 namespace Kitsune
 {
-    void Application::Exit(int exitCode)
+    void WindowsApplication::Exit(int exitCode)
     {
         m_ExitRequested = true;
+        m_ExitCode = exitCode;
+
         ::PostQuitMessage(exitCode);
     }
 
-    void Application::ForceExit(int exitCode)
+    void WindowsApplication::ForceExit(int exitCode)
     {
         Exit(exitCode);
         ::TerminateProcess(::GetCurrentProcess(), static_cast<UINT>(exitCode));
+    }
+
+    ScopedPtr<IPlatformApplication> IPlatformApplication::CreateApplicationImpl()
+    {
+        return MakeScoped<WindowsApplication>();
     }
 }

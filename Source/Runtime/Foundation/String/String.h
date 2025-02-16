@@ -61,7 +61,7 @@ namespace Kitsune
         }
 
         inline explicit BasicString(Usize capacity, Alloc&& alloc = Alloc())
-            : m_Allocator(alloc)
+            : m_Allocator(Move(alloc))
         {
             InitializeCapacity(capacity);
         }
@@ -514,6 +514,8 @@ namespace Kitsune
                 m_Data.Pointer = MakeAllocation(adjusted + 1);
                 m_Data.Shared.Capacity = adjusted;
             }
+
+            *m_Data.Pointer = T();
         }
 
         inline void Swap(BasicString& str)
@@ -581,7 +583,10 @@ namespace Kitsune
 
             inline void Swap(StringData& data)
             {
-                Algorithms::Swap(Pointer, data.Pointer);
+                T* dataPointer = data.Pointer;
+                data.Pointer = IsLocal() ? data.Shared.Buffer : Pointer;
+                Pointer = (dataPointer == data.Shared.Buffer) ? Shared.Buffer : dataPointer;
+
                 Algorithms::Swap(Size, data.Size);
                 Algorithms::Swap(Shared, data.Shared);
             }

@@ -48,7 +48,7 @@ namespace Kitsune
         Iterator<It> &&
         requires (It iterator)
         {
-            { *iterator } -> std::convertible_to<typename IteratorTraits<It>::ValueType>;
+            { *iterator } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
         };
 
     template<typename It>

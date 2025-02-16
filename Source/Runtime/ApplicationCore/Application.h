@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Foundation/String/String.h"
+#include "Foundation/Memory/ScopedPtr.h"
+
 #include "ApplicationCore/CommandLineArguments.h"
+#include "ApplicationCore/IPlatformApplication.h"
 
 namespace Kitsune
 {
@@ -17,19 +20,25 @@ namespace Kitsune
         KITSUNE_API_ virtual ~Application();
 
     public:
-        virtual void Update() { /* ... */ }
+        KITSUNE_API_ void Update();
 
     public:
-        inline bool IsExitRequested() const { return m_ExitRequested; }
+        inline bool IsExitRequested() const { return m_PlatformImpl->IsExitRequested(); }
 
-        KITSUNE_API_ void Exit(int exitCode);
-        KITSUNE_API_ void ForceExit(int exitCode);
+        inline void Exit(int exitCode)      { return m_PlatformImpl->Exit(exitCode); }
+        inline void ForceExit(int exitCode) { return m_PlatformImpl->ForceExit(exitCode); }
+
+        inline int GetExitCode()            { return m_PlatformImpl->GetExitCode(); }
+
+    public:
+        virtual void OnUpdate() { /* ... */ }
 
     private:
         static Application* s_Instance;
 
+    private:
         ApplicationSpecs m_ApplicationSpecs;
-        bool m_ExitRequested = false;
+        ScopedPtr<IPlatformApplication> m_PlatformImpl;
     };
 
     // Should be defined in client code.

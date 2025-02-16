@@ -46,6 +46,9 @@ kitsune_add_library(
     "Logging/LogMessage.h"
     "Logging/LogSeverity.h"
 
+    "Maths/Vector2.h"
+    "Maths/VectorBase.h"
+
     "Memory/AddressOf.h"
     "Memory/Allocator.h"
     "Memory/BadAllocException.h"
@@ -90,6 +93,8 @@ kitsune_add_platform_sources(
     WINDOWS
     "Diagnostics/WindowsDebuggerAttached.cpp"
     "Diagnostics/WindowsMessageBox.cpp"
+
+    "Windows/StringConversions.h"
 )
 
 kitsune_add_platform_dependencies(

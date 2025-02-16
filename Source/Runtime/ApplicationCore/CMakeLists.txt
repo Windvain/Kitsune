@@ -6,6 +6,7 @@ kitsune_add_library(
     "CommandLineArguments.h"
     "Environment.cpp"
     "Environment.h"
+    "IPlatformApplication.h"
 
     DEPENDENCIES
     KitsuneFoundation
@@ -15,4 +16,5 @@ kitsune_add_platform_sources(
     TARGET KitsuneApplicationCore
     WINDOWS
     "Windows/WindowsApplication.cpp"
+    "Windows/WindowsApplication.h"
 )

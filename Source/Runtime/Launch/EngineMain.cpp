@@ -32,11 +32,9 @@ namespace Kitsune
         // This is where client code gets called for the first time.
         Application* app = Kitsune::CreateApplication(Environment::GetCommandLineArguments());     // << Here..
         while (!app->IsExitRequested())
-        {
             app->Update();
-        }
 
-        // Applications *should* be created via the Memory::New<T>() function.
+        int exitCode = app->GetExitCode();
         Memory::Delete(app);
 
         /* Remaining Subsystems Shutdown */
@@ -47,7 +45,8 @@ namespace Kitsune
         Logging::SetGlobalLogger(nullptr);
 
         Memory::Shutdown();
-        return 0;
+
+        return exitCode;
     }
 
     int EngineMain(int argc, char** argv)

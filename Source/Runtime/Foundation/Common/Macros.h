@@ -112,6 +112,16 @@
     #define KITSUNE_IGNORE_MSVC_WARNING(code)
 #endif
 
+#if defined(KITSUNE_COMPILER_CLANG)
+    #define KITSUNE_PUSH_COMPILER_WARNINGS() _Pragma("clang diagnostic push")
+    #define KITSUNE_POP_COMPILER_WARNINGS() _Pragma("clang diagnostic pop")
+
+    #define KITSUNE_IGNORE_CLANG_WARNING_HELPER_(param) _Pragma(#param)
+    #define KITSUNE_IGNORE_CLANG_WARNING(code) KITSUNE_IGNORE_CLANG_WARNING_HELPER_(clang diagnostic ignored #code)
+#else
+    #define KITSUNE_IGNORE_CLANG_WARNING(code)
+#endif
+
 // Basic maths function macros.
 #define KITSUNE_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define KITSUNE_MAX(x, y) (((x) > (y)) ? (x) : (y))

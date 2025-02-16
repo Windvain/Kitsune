@@ -3,36 +3,26 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 
-#include "Foundation/String/InvalidUnicodeException.h"
+#include "Foundation/Windows/StringConversions.h"
 
 namespace Kitsune
 {
-    WideString ConvertToUtf16(const StringView string)
-    {
-        int wideSize = ::MultiByteToWideChar(CP_UTF8, 0, string.Data(), string.Size(), nullptr, 0);
-        if (wideSize == ERROR_NO_UNICODE_TRANSLATION)
-            throw InvalidUnicodeException();
-
-        WideString wideString(wideSize, '\0');
-        ::MultiByteToWideChar(CP_UTF8, 0, string.Data(), string.Size(), wideString.Data(), wideSize);
-
-        return wideString;
-    }
-
     bool ShowMessageBox(const MessageBoxSpecs& specs, MessageBoxButtonId* pressed)
     {
+        using namespace Internal;
+
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 
-        WideString wideTitle = ConvertToUtf16(specs.Title);
-        WideString wideDescription = ConvertToUtf16(specs.Description);
+        WideString wideTitle = WindowsConvertToUtf16(specs.Title);
+        WideString wideDescription = WindowsConvertToUtf16(specs.Description);
 
         Array<WideString> buttonTexts(specs.Buttons.Size());
         Array<TASKDIALOG_BUTTON> buttons(specs.Buttons.Size());
 
         for (const MessageBoxButton& button : specs.Buttons)
         {
-            buttonTexts.PushBack(ConvertToUtf16(button.Text));
+            buttonTexts.PushBack(WindowsConvertToUtf16(button.Text));
 
             TASKDIALOG_BUTTON nativeButton;
             nativeButton.nButtonID = button.Id;
@@ -46,7 +36,7 @@ namespace Kitsune
         config.pszContent = wideDescription.Raw();
 
         config.pButtons = buttons.Data();
-        config.cButtons = buttons.Size();
+        config.cButtons = static_cast<UINT>(buttons.Size());
 
         switch (specs.Icon)
         {

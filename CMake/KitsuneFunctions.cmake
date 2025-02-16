@@ -73,9 +73,6 @@ function(kitsune_add_test)
         KitsuneApplicationCore
 
         ${TARGET_EXE_ARGS_DEPENDENCIES})
-
-    target_compile_options(${TEST_EXE_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS})
-    target_link_options(${TEST_EXE_ARGS_TARGET} PRIVATE ${KITSUNE_GLOBAL_COMMON_LINKER_FLAGS})
 endfunction()
 
 function(kitsune_add_platform_sources)

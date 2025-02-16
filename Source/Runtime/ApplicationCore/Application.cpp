@@ -11,11 +11,18 @@ namespace Kitsune
                        "An application has already been instanced.");
 
         s_Instance = this;
+
         m_ApplicationSpecs = specs;
+        m_PlatformImpl = IPlatformApplication::CreateApplicationImpl();
     }
 
     Application::~Application()
     {
         s_Instance = nullptr;
+    }
+
+    void Application::Update()
+    {
+        OnUpdate();
     }
 }
