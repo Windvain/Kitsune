@@ -13,6 +13,9 @@ namespace Kitsune
         inline bool IsExitRequested() const override { return m_ExitRequested; }
         inline int GetExitCode() const override { return m_ExitCode; }
 
+    public:
+        KITSUNE_API_ void PollEvents() override;
+
     private:
         bool m_ExitRequested = false;
         int m_ExitCode = 0;

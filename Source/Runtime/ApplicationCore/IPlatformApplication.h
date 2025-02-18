@@ -19,6 +19,9 @@ namespace Kitsune
         virtual int GetExitCode() const = 0;
 
     public:
+        virtual void PollEvents() = 0;
+
+    public:
         // To be implemented in the platform-specific implementation.
         KITSUNE_API_ static ScopedPtr<IPlatformApplication> CreateApplicationImpl();
     };
