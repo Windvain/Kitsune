@@ -17,19 +17,22 @@ namespace Kitsune
         m_ApplicationSpecs = specs;
         m_PlatformImpl = IPlatformApplication::CreateApplicationImpl();
 
+        /* Allocate the primary monitor, will be needed for window creation */
+        m_PrimaryMonitor = m_PlatformImpl->AllocatePrimaryMonitor();
+
         /* Create the primary window */
         WindowProperties windowProps;
         windowProps.Title = specs.Name;
         windowProps.Position = specs.WindowPosition;
+        windowProps.VideoMode = GetPrimaryMonitor()->GetCurrentVideoMode();
 
         if (specs.ViewportSize == Vector2<Uint32>(0, 0))    // Yeah we're not sizing it to [0, 0]
             windowProps.Size = { 640, 480 };
         else
             windowProps.Size = specs.ViewportSize;
 
-        // Console apps don't have windows, but it would be stupid to try
-        // and check whether the application is a console app every time an operation
-        // needs to be done to the window.
+        // Reroute calls to a no-op window implementation, no need
+        // for repeated checks.
         if (m_ApplicationSpecs.IsConsoleApp)
             m_PrimaryWindow = MakeNullWindow(windowProps);
         else

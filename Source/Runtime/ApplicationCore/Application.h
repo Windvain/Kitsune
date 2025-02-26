@@ -4,8 +4,8 @@
 #include "Foundation/Memory/ScopedPtr.h"
 
 #include "ApplicationCore/IWindow.h"
-#include "ApplicationCore/CommandLineArguments.h"
 #include "ApplicationCore/IPlatformApplication.h"
+#include "ApplicationCore/CommandLineArguments.h"
 
 KITSUNE_PUSH_COMPILER_WARNINGS()
 
@@ -38,10 +38,11 @@ namespace Kitsune
         inline void Exit(int exitCode)      { return m_PlatformImpl->Exit(exitCode); }
         inline void ForceExit(int exitCode) { return m_PlatformImpl->ForceExit(exitCode); }
 
-        inline int GetExitCode()            { return m_PlatformImpl->GetExitCode(); }
+        inline int GetExitCode()      const { return m_PlatformImpl->GetExitCode(); }
 
     public:
-        inline SharedPtr<IWindow> GetPrimaryWindow() { return m_PrimaryWindow; }
+        inline SharedPtr<IWindow>  GetPrimaryWindow()  const { return m_PrimaryWindow; }
+        inline SharedPtr<IMonitor> GetPrimaryMonitor() const { return m_PrimaryMonitor; }
 
     public:
         virtual void OnUpdate() { /* ... */ }
@@ -63,6 +64,7 @@ namespace Kitsune
         ScopedPtr<IPlatformApplication> m_PlatformImpl;
 
         SharedPtr<IWindow> m_PrimaryWindow;
+        SharedPtr<IMonitor> m_PrimaryMonitor;
     };
 
     // Should be defined in client code.

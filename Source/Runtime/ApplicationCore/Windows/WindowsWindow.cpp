@@ -5,12 +5,20 @@
 #include "ApplicationCore/Application.h"
 #include "ApplicationCore/BadWindowCreationException.h"
 
+// Copied from Windows.h, just made it work with signed integers instead.
+#define KITSUNE_SIGNED_LOWORD_(lparam) static_cast<INT16>(reinterpret_cast<LONG_PTR>(lparam) & 0xFFFF)
+#define KITSUNE_SIGNED_HIWORD_(lparam) static_cast<INT16>((reinterpret_cast<LONG_PTR>(lparam) >> 16) & 0xFFFF)
+
 namespace Kitsune
 {
-    WindowsWindow::WindowsWindow(StringView title, const Vector2<int>& size,
-                                                   const Vector2<int>& pos)
+    Uint32 WindowsWindow::s_WindowCount = 0;
+
+    WindowsWindow::WindowsWindow(const VideoMode& videoMode, StringView title,
+                                 const Vector2<int>& size, const Vector2<int>& pos)
         : m_Application(Application::GetInstance())
     {
+        KITSUNE_ASSERT(m_Application != nullptr, "Application has not been instanced.");
+
         WNDCLASSEXW windowClass = GetWindowClass();
         if (::RegisterClassExW(&windowClass) == 0)
             throw BadWindowCreationException("Failed to register window class");
@@ -34,11 +42,19 @@ namespace Kitsune
 
         ::SetWindowLongPtrW(m_NativeHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
         ::ShowWindow(m_NativeHandle, SW_SHOW);
+
+        m_VideoMode = videoMode;
+        ++s_WindowCount;
     }
 
     WindowsWindow::~WindowsWindow()
     {
         ::DestroyWindow(m_NativeHandle);
+
+        if (s_WindowCount == 1)
+            ::UnregisterClassW(s_WindowClassName, nullptr);
+        else
+            --s_WindowCount;
     }
 
     void WindowsWindow::SetSize(const Vector2<Uint32>& size)
@@ -151,9 +167,11 @@ namespace Kitsune
 
         case WM_MOVE:
         {
-            window->m_Position = { static_cast<Int32>(LOWORD(lparam)), static_cast<Int32>(HIWORD(lparam)) };
-            app->OnWindowMove(*window, window->GetPosition());
+            // LOWORD() and HIWORD() underflow when dealing with negative position values.
+            window->m_Position = { static_cast<Int32>(KITSUNE_SIGNED_LOWORD_(lparam)),
+                                   static_cast<Int32>(KITSUNE_SIGNED_HIWORD_(lparam)) };
 
+            app->OnWindowMove(*window, window->GetPosition());
             break;
         }
 
@@ -189,9 +207,28 @@ namespace Kitsune
     SharedPtr<IWindow> MakeWindow(const WindowProperties& props)
     {
         if (props.Size == Vector2<Uint32>(0, 0))
-            throw BadWindowCreationException();
+            throw BadWindowCreationException("Cannot create a window with a size of [0, 0]");
 
-        return MakeScoped<WindowsWindow>(props.Title, static_cast<Vector2<int>>(props.Size),
+        // If the video mode was not set..
+        VideoMode modifiedVideoMode;
+        if (props.VideoMode != VideoMode())
+            modifiedVideoMode = props.VideoMode;
+        else
+        {
+            DEVMODEW devMode;
+            devMode.dmSize = sizeof(devMode);
+            devMode.dmDriverExtra = 0;
+
+            if (::EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &devMode) == 0)
+                throw BadWindowCreationException("Failed to get the current display's settings");
+
+            modifiedVideoMode = VideoMode(devMode.dmBitsPerPel,
+                                          Vector2<Uint32>(devMode.dmPelsWidth, devMode.dmPelsHeight),
+                                          devMode.dmDisplayFrequency);
+        }
+
+        return MakeScoped<WindowsWindow>(modifiedVideoMode, props.Title,
+                                         static_cast<Vector2<int>>(props.Size),
                                          props.Position);
     }
 }

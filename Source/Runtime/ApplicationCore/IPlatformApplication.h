@@ -1,7 +1,11 @@
 #pragma once
 
 #include "Foundation/Common/Macros.h"
+
 #include "Foundation/Memory/ScopedPtr.h"
+#include "Foundation/Memory/SharedPtr.h"
+
+#include "ApplicationCore/IMonitor.h"
 
 namespace Kitsune
 {
@@ -20,6 +24,9 @@ namespace Kitsune
 
     public:
         virtual void PollEvents() = 0;
+
+    public:
+        virtual SharedPtr<IMonitor> AllocatePrimaryMonitor() = 0;
 
     public:
         // To be implemented in the platform-specific implementation.

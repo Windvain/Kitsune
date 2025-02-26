@@ -45,6 +45,15 @@ const char* FormatExceptionCode(DWORD code)
     }
 }
 
+KITSUNE_FORCEINLINE bool SetDpiAwareness()
+{
+#if defined(KITSUNE_COMPILER_MSVC)
+    return (::SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != nullptr);
+#else
+    return (::SetProcessDPIAware() != 0);
+#endif
+}
+
 inline bool AllocateConsoleInDev()
 {
 #if defined(KITSUNE_BUILD_RELEASE)
@@ -99,7 +108,8 @@ DWORD ProcessSehException(LPEXCEPTION_POINTERS exceptionInfo)
 int StartWindowsEntry()
 {
     int returnValue = 0;
-    if ((::SetProcessDPIAware() == 0) || (!AllocateConsoleInDev()))
+
+    if ((!SetDpiAwareness()) || (!AllocateConsoleInDev()))
         return 1;
 
     // Most things passed in via the terminal will be in ASCII, so for now I don't see a need

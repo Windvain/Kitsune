@@ -6,6 +6,8 @@
 #include "Foundation/String/String.h"
 #include "Foundation/Memory/SharedPtr.h"
 
+#include "ApplicationCore/VideoMode.h"
+
 KITSUNE_PUSH_COMPILER_WARNINGS()
 
 KITSUNE_IGNORE_MSVC_WARNING(4100)       // 'XXX': Unreferenced format parameter (in virtual functions)
@@ -26,6 +28,7 @@ namespace Kitsune
         Vector2<Uint32> Size;
 
         String Title;
+        VideoMode VideoMode;
     };
 
     class IWindow

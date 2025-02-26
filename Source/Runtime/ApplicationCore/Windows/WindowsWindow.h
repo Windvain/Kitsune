@@ -10,8 +10,8 @@ namespace Kitsune
     class WindowsWindow : public IWindow
     {
     public:
-        KITSUNE_API_ WindowsWindow(StringView title, const Vector2<int>& size,
-                                                     const Vector2<int>& pos);
+        KITSUNE_API_ WindowsWindow(const VideoMode& videoMode, StringView title,
+                                   const Vector2<int>& size, const Vector2<int>& pos);
 
         KITSUNE_API_ ~WindowsWindow();
 
@@ -55,6 +55,9 @@ namespace Kitsune
         friend LRESULT WindowsWindow::KitsuneWindowProc(HWND, UINT, WPARAM, LPARAM);
 
     private:
+        static Uint32 s_WindowCount;
+
+    private:
         HWND m_NativeHandle;
         Application* m_Application;
 
@@ -62,8 +65,9 @@ namespace Kitsune
         Vector2<Int32> m_Position;
 
         String m_Title;
-        WindowState m_State;
+        VideoMode m_VideoMode;
 
+        WindowState m_State;
         bool m_Visible;
     };
 }

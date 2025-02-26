@@ -12,11 +12,12 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        SharedPtr<IWindow> window = GetPrimaryWindow();
-        AABB2<Int32> rect = window->GetFrameBoundingBox();
+        SharedPtr<IMonitor> monitor = GetPrimaryMonitor();
+        VideoMode vidMode = monitor->GetCurrentVideoMode();
 
-        Logging::LogFormat("[{0}, {1}]", window->GetSize().x, window->GetSize().y);
-        Logging::LogFormat("[[{0}, {1}], [{2}, {3}]]", rect.TopLeft.x, rect.TopLeft.y, rect.BottomRight.x, rect.BottomRight.y);
+        Logging::LogFormat("Res: [{0}, {1}]", vidMode.Resolution.x, vidMode.Resolution.y);
+        Logging::LogFormat("BPP: {0}", vidMode.BitsPerPixel);
+        Logging::LogFormat("Hz: {0}", vidMode.RefreshRate);
     }
 
     ~Sandbox()
