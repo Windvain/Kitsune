@@ -589,6 +589,52 @@ TEST(SharedPtrTests, GetCount)
     EXPECT_EQ(ptr1.GetCount(), 4);
 }
 
+TEST(SharedPtrTests, SwapMemberFn)
+{
+    SharedPtr<int> ptr = MakeShared<int>(5);
+    SharedPtr<int> ptr2 = MakeShared<int>(10);
+
+    SharedPtr<int> dummyCpy = ptr;
+    KITSUNE_UNUSED(dummyCpy);       // Hopefully this doesn't get optimized out..
+
+    int* rawPtr = ptr.Get();
+    int* rawPtr2 = ptr2.Get();
+
+    Usize cnt = ptr.GetCount();
+    Usize cnt2 = ptr2.GetCount();
+
+    ptr.Swap(ptr2);
+
+    EXPECT_EQ(ptr.Get(), rawPtr2);
+    EXPECT_EQ(ptr2.Get(), rawPtr);
+
+    EXPECT_EQ(ptr.GetCount(), cnt2);
+    EXPECT_EQ(ptr2.GetCount(), cnt);
+}
+
+TEST(SharedPtrTests, SwapAlgorithm)
+{
+    SharedPtr<int> ptr = MakeShared<int>(5);
+    SharedPtr<int> ptr2 = MakeShared<int>(10);
+
+    SharedPtr<int> dummyCpy = ptr;
+    KITSUNE_UNUSED(dummyCpy);       // Hopefully this doesn't get optimized out..
+
+    int* rawPtr = ptr.Get();
+    int* rawPtr2 = ptr2.Get();
+
+    Usize cnt = ptr.GetCount();
+    Usize cnt2 = ptr2.GetCount();
+
+    Algorithms::Swap(ptr, ptr2);
+
+    EXPECT_EQ(ptr.Get(), rawPtr2);
+    EXPECT_EQ(ptr2.Get(), rawPtr);
+
+    EXPECT_EQ(ptr.GetCount(), cnt2);
+    EXPECT_EQ(ptr2.GetCount(), cnt);
+}
+
 TEST(SharedPtrTests, Comparison)
 {
     int *mem1, *mem2, *mem3;
@@ -842,4 +888,38 @@ TEST(WeakPtrTests, Lock)
     }
 
     EXPECT_EQ(weak.Lock(), nullptr);
+}
+
+TEST(WeakPtrTests, SwapMemberFn)
+{
+    SharedPtr<int> ptr = MakeShared<int>(5);
+    SharedPtr<int> ptr2 = MakeShared<int>(10);
+
+    WeakPtr<int> weakPtr = ptr;
+    WeakPtr<int> weakPtr2 = ptr2;
+
+    int* rawPtr = ptr.Get();
+    int* rawPtr2 = ptr2.Get();
+
+    weakPtr.Swap(weakPtr2);
+
+    EXPECT_EQ(weakPtr.Lock().Get(), rawPtr2);
+    EXPECT_EQ(weakPtr2.Lock().Get(), rawPtr);
+}
+
+TEST(WeakPtrTests, SwapAlgorithm)
+{
+    SharedPtr<int> ptr = MakeShared<int>(5);
+    SharedPtr<int> ptr2 = MakeShared<int>(10);
+
+    WeakPtr<int> weakPtr = ptr;
+    WeakPtr<int> weakPtr2 = ptr2;
+
+    int* rawPtr = ptr.Get();
+    int* rawPtr2 = ptr2.Get();
+
+    Algorithms::Swap(weakPtr, weakPtr2);
+
+    EXPECT_EQ(weakPtr.Lock().Get(), rawPtr2);
+    EXPECT_EQ(weakPtr2.Lock().Get(), rawPtr);
 }

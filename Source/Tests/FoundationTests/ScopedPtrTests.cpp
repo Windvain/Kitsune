@@ -303,6 +303,34 @@ TEST(ScopedPtrTests, Reset)
     EXPECT_EQ(ptr.Get(), x);
 }
 
+TEST(ScopedPtrTests, SwapMemberFn)
+{
+    ScopedPtr<int> ptr = MakeScoped<int>(5);
+    ScopedPtr<int> ptr2 = MakeScoped<int>(10);
+
+    int* rawPtr = ptr.Get();
+    int* rawPtr2 = ptr2.Get();
+
+    ptr.Swap(ptr2);
+
+    EXPECT_EQ(ptr.Get(), rawPtr2);
+    EXPECT_EQ(ptr2.Get(), rawPtr);
+}
+
+TEST(ScopedPtrTests, SwapAlgorithm)
+{
+    ScopedPtr<int> ptr = MakeScoped<int>(5);
+    ScopedPtr<int> ptr2 = MakeScoped<int>(10);
+
+    int* rawPtr = ptr.Get();
+    int* rawPtr2 = ptr2.Get();
+
+    Algorithms::Swap(ptr, ptr2);
+
+    EXPECT_EQ(ptr.Get(), rawPtr2);
+    EXPECT_EQ(ptr2.Get(), rawPtr);
+}
+
 TEST(ScopedPtrTests, Comparison)
 {
     int* mem = (int*)Memory::Allocate(sizeof(int) * 3);

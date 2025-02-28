@@ -586,3 +586,47 @@ TEST(ArrayTests, Equal)
     EXPECT_FALSE(arr != arr2);
     EXPECT_TRUE(arr != diff);
 }
+
+TEST(ArrayTests, SwapMemberFn)
+{
+    Array<O> arr1 = { 14, 23, 4343, 121 };
+    Array<O> arr2 = { 32, 54, 11, 43, 11 };
+
+    arr1.Swap(arr2);
+
+    EXPECT_EQ(arr1.Size(), 5);
+    EXPECT_EQ(arr2.Size(), 4);
+
+    EXPECT_EQ(arr1[0].ID, 32);
+    EXPECT_EQ(arr1[1].ID, 54);
+    EXPECT_EQ(arr1[2].ID, 11);
+    EXPECT_EQ(arr1[3].ID, 43);
+    EXPECT_EQ(arr1[4].ID, 11);
+
+    EXPECT_EQ(arr2[0].ID, 14);
+    EXPECT_EQ(arr2[1].ID, 23);
+    EXPECT_EQ(arr2[2].ID, 4343);
+    EXPECT_EQ(arr2[3].ID, 121);
+}
+
+TEST(ArrayTests, SwapAlgorithm)
+{
+    Array<O> arr1 = { 14, 23, 4343, 121 };
+    Array<O> arr2 = { 32, 54, 11, 43, 11 };
+
+    Algorithms::Swap(arr1, arr2);
+
+    EXPECT_EQ(arr1.Size(), 5);
+    EXPECT_EQ(arr2.Size(), 4);
+
+    EXPECT_EQ(arr1[0].ID, 32);
+    EXPECT_EQ(arr1[1].ID, 54);
+    EXPECT_EQ(arr1[2].ID, 11);
+    EXPECT_EQ(arr1[3].ID, 43);
+    EXPECT_EQ(arr1[4].ID, 11);
+
+    EXPECT_EQ(arr2[0].ID, 14);
+    EXPECT_EQ(arr2[1].ID, 23);
+    EXPECT_EQ(arr2[2].ID, 4343);
+    EXPECT_EQ(arr2[3].ID, 121);
+}
