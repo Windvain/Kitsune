@@ -8,7 +8,6 @@ kitsune_add_library(
     "BadMonitorCreationException.h"
     "BadWindowCreationException.h"
     "CommandLineArguments.h"
-    "Environment.cpp"
     "Environment.h"
     "IMonitor.h"
     "IPlatformApplication.h"
@@ -24,6 +23,7 @@ kitsune_add_platform_sources(
     WINDOWS
     "Windows/WindowsApplication.cpp"
     "Windows/WindowsApplication.h"
+    "Windows/WindowsEnvironment.cpp"
     "Windows/WindowsMonitor.cpp"
     "Windows/WindowsMonitor.h"
     "Windows/WindowsWindow.cpp"

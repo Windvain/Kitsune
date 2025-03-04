@@ -29,6 +29,7 @@ kitsune_add_test(
     "FoundationTests/TestContainer.h"
     "FoundationTests/UninitializedTests.cpp"
     "FoundationTests/Vector2Tests.cpp"
+    "FoundationTests/WindowsPathTests.cpp"
 
     DEPENDENCIES
     KitsuneFoundation

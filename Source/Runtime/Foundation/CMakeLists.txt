@@ -32,6 +32,10 @@ kitsune_add_library(
     "Diagnostics/OutOfRangeException.h"
     "Diagnostics/SourceLocation.h"
 
+    "Filesystem/Path.h"
+    "Filesystem/WindowsPath.cpp"
+    "Filesystem/WindowsPath.h"
+
     "Iterators/Iterator.h"
     "Iterators/IteratorTraits.h"
     "Iterators/ReverseIterator.h"

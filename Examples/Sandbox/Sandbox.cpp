@@ -1,8 +1,11 @@
 #include "ApplicationCore/Application.h"
-#include <Windows.h>
-
 #include "Foundation/Logging/Logging.h"
 #include "ApplicationCore/IWindow.h"
+
+#include "ApplicationCore/Environment.h"
+#include "Foundation/Filesystem/Path.h"
+
+#include <iostream>
 
 using namespace Kitsune;
 
@@ -12,12 +15,8 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        SharedPtr<IMonitor> monitor = GetPrimaryMonitor();
-        VideoMode vidMode = monitor->GetCurrentVideoMode();
-
-        Logging::LogFormat("Res: [{0}, {1}]", vidMode.Resolution.x, vidMode.Resolution.y);
-        Logging::LogFormat("BPP: {0}", vidMode.BitsPerPixel);
-        Logging::LogFormat("Hz: {0}", vidMode.RefreshRate);
+        Path path = Environment::GetExecutablePath();
+        std::wcout << std::wstring(path.Native().Raw(), path.Native().Size());
     }
 
     ~Sandbox()
