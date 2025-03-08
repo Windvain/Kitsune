@@ -1,8 +1,8 @@
 kitsune_add_library(
     TARGET KitsuneFoundation
     SOURCES
-    "Algorithms/Internal/AlgoConcepts.h"
     "Algorithms/Copy.h"
+    "Algorithms/Count.h"
     "Algorithms/Destroy.h"
     "Algorithms/Distance.h"
     "Algorithms/Equal.h"
@@ -10,6 +10,7 @@ kitsune_add_library(
     "Algorithms/Find.h"
     "Algorithms/ForEach.h"
     "Algorithms/Move.h"
+    "Algorithms/Replace.h"
     "Algorithms/Reverse.h"
     "Algorithms/Swap.h"
     "Algorithms/Uninitialized.h"
