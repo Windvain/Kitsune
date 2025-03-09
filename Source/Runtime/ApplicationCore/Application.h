@@ -17,8 +17,11 @@ namespace Kitsune
     struct ApplicationSpecs
     {
         String Name;
-        Vector2<Uint32> ViewportSize;
-        Vector2<Int32> WindowPosition;
+        Vector2<Uint32> ViewportSize = { 640, 480 };
+
+        Vector2<Int32> Position;
+        WindowPositionHint PositionHint;
+        WindowState WindowState;
 
         bool IsConsoleApp = false;
     };
@@ -26,7 +29,7 @@ namespace Kitsune
     class Application
     {
     public:
-        KITSUNE_API_ Application(const ApplicationSpecs& specs);
+        KITSUNE_API_ Application(ApplicationSpecs specs);
         KITSUNE_API_ virtual ~Application();
 
     public:

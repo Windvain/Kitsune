@@ -13,37 +13,71 @@ namespace Kitsune
 {
     Uint32 WindowsWindow::s_WindowCount = 0;
 
-    WindowsWindow::WindowsWindow(const VideoMode& videoMode, StringView title,
-                                 const Vector2<int>& size, const Vector2<int>& pos)
+    WindowsWindow::WindowsWindow(const WindowProperties& props)
         : m_Application(Application::GetInstance())
     {
         KITSUNE_ASSERT(m_Application != nullptr, "Application has not been instanced.");
 
         WNDCLASSEXW windowClass = GetWindowClass();
-        if (::RegisterClassExW(&windowClass) == 0)
+        if ((s_WindowCount == 0) && (::RegisterClassExW(&windowClass) == 0))
             throw BadWindowCreationException("Failed to register window class");
 
         DWORD exStyle = GetExtendedWindowStyles();
         DWORD style = GetWindowStyles();
-        WideString wideTitle = Internal::WindowsConvertToUtf16(title);
+        WideString wideTitle = Internal::WindowsConvertToUtf16(props.Title);
 
-        RECT rect = { pos.x, pos.y, size.x, size.y };
-        ::AdjustWindowRectEx(&rect, GetWindowStyles(), false, GetExtendedWindowStyles());
+        Vector2<Int32> pos;
+        Vector2<Uint32> size;
+
+        if (props.PositionHint == WindowPositionHint::UsePosition)
+        {
+            RECT rect = { props.Position.x, props.Position.y,
+                          static_cast<LONG>(props.Position.x + props.Size.x),
+                          static_cast<LONG>(props.Position.y + props.Size.y) };
+
+            ::AdjustWindowRectEx(&rect, GetWindowStyles(), false, GetExtendedWindowStyles());
+
+            pos = { rect.left, rect.top };
+            size = { static_cast<Uint32>(rect.right - rect.left),
+                     static_cast<Uint32>(rect.bottom - rect.top) };
+        }
+        else
+        {
+            RECT rect = { 0, 0, static_cast<LONG>(props.Size.x), static_cast<LONG>(props.Size.y) };
+            ::AdjustWindowRectEx(&rect, GetWindowStyles(), false, GetExtendedWindowStyles());
+
+            size = { static_cast<Uint32>(rect.right - rect.left),
+                     static_cast<Uint32>(rect.bottom - rect.top) };
+
+            if (props.PositionHint == WindowPositionHint::DefaultPosition)
+                pos = { CW_USEDEFAULT, CW_USEDEFAULT };
+            else if (props.PositionHint == WindowPositionHint::ScreenCenter)
+            {
+                pos = (props.VideoMode.Resolution / 2) - (size / 2);
+            }
+        }
 
         m_NativeHandle = ::CreateWindowExW(
             exStyle, s_WindowClassName,
             wideTitle.Raw(), style,
-            rect.left, rect.top,
-            rect.right - rect.left, rect.bottom - rect.top,
+            pos.x, pos.y,
+            size.x, size.y,
             nullptr, nullptr, nullptr, nullptr);
 
         if (m_NativeHandle == nullptr)
             throw BadWindowCreationException("Failed to create a window");
 
         ::SetWindowLongPtrW(m_NativeHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-        ::ShowWindow(m_NativeHandle, SW_SHOW);
 
-        m_VideoMode = videoMode;
+        int showWindowFlags = SW_SHOW;
+        if (props.WindowState == WindowState::Minimized)
+            showWindowFlags = SW_SHOWMINIMIZED;
+        else
+            showWindowFlags = SW_SHOWMAXIMIZED;
+
+        ::ShowWindow(m_NativeHandle, showWindowFlags);
+
+        m_VideoMode = props.VideoMode;
         ++s_WindowCount;
     }
 
@@ -209,10 +243,10 @@ namespace Kitsune
         if (props.Size == Vector2<Uint32>(0, 0))
             throw BadWindowCreationException("Cannot create a window with a size of [0, 0]");
 
-        // If the video mode was not set..
-        VideoMode modifiedVideoMode;
+        WindowProperties modifiedProps = props;
+
         if (props.VideoMode != VideoMode())
-            modifiedVideoMode = props.VideoMode;
+            modifiedProps.VideoMode = props.VideoMode;
         else
         {
             DEVMODEW devMode;
@@ -222,13 +256,11 @@ namespace Kitsune
             if (::EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &devMode) == 0)
                 throw BadWindowCreationException("Failed to get the current display's settings");
 
-            modifiedVideoMode = VideoMode(devMode.dmBitsPerPel,
-                                          Vector2<Uint32>(devMode.dmPelsWidth, devMode.dmPelsHeight),
-                                          devMode.dmDisplayFrequency);
+            modifiedProps.VideoMode = VideoMode(devMode.dmBitsPerPel,
+                                                Vector2<Uint32>(devMode.dmPelsWidth, devMode.dmPelsHeight),
+                                                devMode.dmDisplayFrequency);
         }
 
-        return MakeScoped<WindowsWindow>(modifiedVideoMode, props.Title,
-                                         static_cast<Vector2<int>>(props.Size),
-                                         props.Position);
+        return MakeScoped<WindowsWindow>(modifiedProps);
     }
 }

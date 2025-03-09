@@ -2,34 +2,39 @@
 #include "Foundation/Diagnostics/Assert.h"
 
 #include "ApplicationCore/Null/NullWindow.h"
+#include "Foundation/Diagnostics/InvalidArgumentException.h"
 
 namespace Kitsune
 {
     Application* Application::s_Instance = nullptr;
 
-    Application::Application(const ApplicationSpecs& specs)
+    Application::Application(ApplicationSpecs specs)
     {
         KITSUNE_ASSERT(s_Instance == nullptr,
                        "An application has already been instanced.");
 
         s_Instance = this;
 
-        m_ApplicationSpecs = specs;
-        m_PlatformImpl = IPlatformApplication::CreateApplicationImpl();
+        /* Filter out invalid arguments passed by the user */
+        if (specs.ViewportSize == Vector2<Uint32>())
+            throw InvalidArgumentException();
+
+        m_ApplicationSpecs = Move(specs);
 
         /* Allocate the primary monitor, will be needed for window creation */
+        m_PlatformImpl = IPlatformApplication::CreateApplicationImpl();
         m_PrimaryMonitor = m_PlatformImpl->AllocatePrimaryMonitor();
 
         /* Create the primary window */
         WindowProperties windowProps;
         windowProps.Title = specs.Name;
-        windowProps.Position = specs.WindowPosition;
-        windowProps.VideoMode = GetPrimaryMonitor()->GetCurrentVideoMode();
 
-        if (specs.ViewportSize == Vector2<Uint32>(0, 0))    // Yeah we're not sizing it to [0, 0]
-            windowProps.Size = { 640, 480 };
-        else
-            windowProps.Size = specs.ViewportSize;
+        windowProps.Position = specs.Position;
+        windowProps.PositionHint = specs.PositionHint;
+        windowProps.WindowState = specs.WindowState;
+
+        windowProps.VideoMode = GetPrimaryMonitor()->GetCurrentVideoMode();
+        windowProps.Size = specs.ViewportSize;
 
         // Reroute calls to a no-op window implementation, no need
         // for repeated checks.

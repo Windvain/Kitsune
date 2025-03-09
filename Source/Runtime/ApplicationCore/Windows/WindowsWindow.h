@@ -10,9 +10,7 @@ namespace Kitsune
     class WindowsWindow : public IWindow
     {
     public:
-        KITSUNE_API_ WindowsWindow(const VideoMode& videoMode, StringView title,
-                                   const Vector2<int>& size, const Vector2<int>& pos);
-
+        KITSUNE_API_ WindowsWindow(const WindowProperties& props);
         KITSUNE_API_ ~WindowsWindow();
 
     public:

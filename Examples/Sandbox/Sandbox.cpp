@@ -18,6 +18,9 @@ public:
         Logging::LogFormat("Res: [{0}, {1}]", vidMode.Resolution.x, vidMode.Resolution.y);
         Logging::LogFormat("BPP: {0}", vidMode.BitsPerPixel);
         Logging::LogFormat("Hz: {0}", vidMode.RefreshRate);
+
+        Vector2<Uint32> size = GetPrimaryWindow()->GetSize();
+        Logging::LogFormat("Window Size: [{0}, {1}]", size.x, size.y);
     }
 
     ~Sandbox()
@@ -40,6 +43,8 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
 {
     ApplicationSpecs specs;
     specs.Name = "你好，世界";
+    specs.PositionHint = WindowPositionHint::ScreenCenter;
+    specs.WindowState = WindowState::Minimized;
 
     return Memory::New<Sandbox>(specs);
 }

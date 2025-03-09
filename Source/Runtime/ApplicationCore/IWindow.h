@@ -22,13 +22,23 @@ namespace Kitsune
         Maximized
     };
 
+    enum class WindowPositionHint
+    {
+        UsePosition,
+        DefaultPosition,
+        ScreenCenter
+    };
+
     struct WindowProperties
     {
         Vector2<Int32> Position;
-        Vector2<Uint32> Size;
+        Vector2<Uint32> Size = { 640, 480 };
 
         String Title;
         VideoMode VideoMode;
+
+        WindowState WindowState = WindowState::Floating;
+        WindowPositionHint PositionHint = WindowPositionHint::UsePosition;
     };
 
     class IWindow
