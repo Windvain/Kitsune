@@ -27,14 +27,14 @@ namespace Kitsune
 
         /* Create the primary window */
         WindowProperties windowProps;
-        windowProps.Title = specs.Name;
+        windowProps.Title = m_ApplicationSpecs.Name;
 
-        windowProps.Position = specs.Position;
-        windowProps.PositionHint = specs.PositionHint;
-        windowProps.WindowState = specs.WindowState;
+        windowProps.Position = m_ApplicationSpecs.WindowPosition;
+        windowProps.PositionHint = m_ApplicationSpecs.WindowPositionHint;
+        windowProps.WindowState = m_ApplicationSpecs.WindowState;
 
         windowProps.VideoMode = GetPrimaryMonitor()->GetCurrentVideoMode();
-        windowProps.Size = specs.ViewportSize;
+        windowProps.Size = m_ApplicationSpecs.ViewportSize;
 
         // Reroute calls to a no-op window implementation, no need
         // for repeated checks.

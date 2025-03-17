@@ -19,9 +19,9 @@ namespace Kitsune
         String Name;
         Vector2<Uint32> ViewportSize = { 640, 480 };
 
-        Vector2<Int32> Position;
-        WindowPositionHint PositionHint;
-        WindowState WindowState;
+        Vector2<Int32> WindowPosition;
+        WindowPositionHint WindowPositionHint = WindowPositionHint::UsePosition;
+        WindowState WindowState = WindowState::Floating;
 
         bool IsConsoleApp = false;
     };

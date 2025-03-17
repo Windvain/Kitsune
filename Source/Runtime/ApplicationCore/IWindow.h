@@ -50,8 +50,8 @@ namespace Kitsune
         virtual Vector2<Uint32> GetSize() const = 0;
         virtual Vector2<Int32> GetPosition() const = 0;
 
-        virtual void SetSize(const Vector2<Uint32>& size) { /* ... */ }
-        virtual void SetPosition(const Vector2<Int32>& pos) { /* ... */ }
+        virtual void SetSize(const Vector2<Uint32>& size) = 0;
+        virtual void SetPosition(const Vector2<Int32>& pos) = 0;
 
     public:
         virtual AABB2<Int32> GetFrameBoundingBox() const = 0;
@@ -72,17 +72,21 @@ namespace Kitsune
         virtual String GetTitle() const = 0;
 
     public:
-        virtual void Minimize() { /* ... */ }
-        virtual void Maximize() { /* ... */ }
-        virtual void Restore() { /* ... */ }
+        virtual void SetState(WindowState state) = 0;
+        virtual WindowState GetState() const = 0;
 
-        virtual bool IsMinimized() const = 0;
-        virtual bool IsMaximized() const = 0;
-        virtual bool IsFloating() const = 0;
+        virtual void Restore() = 0;
+
+        inline void Minimize() { SetState(WindowState::Minimized); }
+        inline void Maximize() { SetState(WindowState::Maximized); }
+
+        inline bool IsMinimized() const { return (GetState() == WindowState::Minimized); }
+        inline bool IsMaximized() const { return (GetState() == WindowState::Maximized); }
+        inline bool IsFloating()  const { return (GetState() == WindowState::Floating); }
 
     public:
-        virtual void Show() { /* ... */ }
-        virtual void Hide() { /* ... */ }
+        virtual void Show() = 0;
+        virtual void Hide() = 0;
 
         virtual bool IsShown() const = 0;
     };

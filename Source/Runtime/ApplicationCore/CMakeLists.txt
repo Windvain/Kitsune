@@ -1,6 +1,7 @@
 kitsune_add_library(
     TARGET KitsuneApplicationCore
     SOURCES
+    "Null/NullWindow.cpp"
     "Null/NullWindow.h"
 
     "Application.cpp"
