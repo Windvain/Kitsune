@@ -22,6 +22,6 @@ namespace Kitsune
         }
 
     private:
-        const char* m_Description = "";
+        const char* m_Description = "Invalid argument passed";
     };
 }

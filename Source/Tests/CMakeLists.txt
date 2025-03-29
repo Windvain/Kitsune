@@ -27,7 +27,6 @@ kitsune_add_test(
     "FoundationTests/SharedPtrTests.cpp"
     "FoundationTests/StringViewTests.cpp"
     "FoundationTests/SwapTests.cpp"
-    "FoundationTests/ToStringTests.cpp"
     "FoundationTests/TestContainer.h"
     "FoundationTests/UninitializedTests.cpp"
     "FoundationTests/Vector2Tests.cpp"

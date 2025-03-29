@@ -24,18 +24,18 @@ namespace Kitsune
     public:
         static SourceLocation Current(const char* file = KITSUNE_BUILTIN_FILE_(),
                                       const char* func = KITSUNE_BUILTIN_FUNC_(),
-                                      Int32 line = KITSUNE_BUILTIN_LINE_())
+                                      Uint32 line = KITSUNE_BUILTIN_LINE_())
         {
             return SourceLocation(file, func, line);
         }
 
     public:
-        const char* FileName() const { return m_FileName; }
-        const char* FunctionName() const { return m_FunctionName; }
-        Int32 Line() const { return m_Line; }
+        [[nodiscard]] const char* FileName()     const { return m_FileName; }
+        [[nodiscard]] const char* FunctionName() const { return m_FunctionName; }
+        [[nodiscard]] Uint32 Line()              const { return m_Line; }
 
     private:
-        SourceLocation(const char* file, const char* func, Int32 line)
+        SourceLocation(const char* file, const char* func, Uint32 line)
             : m_FileName(file), m_FunctionName(func), m_Line(line)
         {
         }
@@ -44,6 +44,6 @@ namespace Kitsune
         const char* m_FileName;
         const char* m_FunctionName;
 
-        Int32 m_Line;
+        Uint32 m_Line;
     };
 }

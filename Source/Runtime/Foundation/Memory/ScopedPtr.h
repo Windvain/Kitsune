@@ -13,12 +13,6 @@
 
 namespace Kitsune
 {
-    namespace Internal
-    {
-        template<typename Del, typename T>
-        concept IsValidDeleter = requires (Del del, T* ptr) { del(ptr); };
-    }
-
     template<typename T, Deleter Del = DefaultDeleter<T>>
     class ScopedPtr
     {
@@ -28,7 +22,8 @@ namespace Kitsune
 
         using DeleterType = Del;
 
-        static_assert(Internal::IsValidDeleter<Del, T>, "Invalid deleter used in ScopedPtr<T>.");
+        static_assert(std::is_convertible_v<T*, typename Del::ValueType*>,
+            "The deleter used was invalid.");
 
     public:
         inline ScopedPtr() : m_Pointer() { /* ... */ }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
+#include "Foundation/Common/Macros.h"
+
 #include "Foundation/Memory/BadAllocException.h"
 
 namespace Kitsune

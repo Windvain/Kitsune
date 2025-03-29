@@ -1,6 +1,8 @@
 #include "Foundation/Logging/Logger.h"
 #include "Foundation/Algorithms/ForEach.h"
 
+#include "Foundation/Diagnostics/Assert.h"
+
 namespace Kitsune
 {
     void Logger::Log(LogSeverity severity, const StringView message)

@@ -2,11 +2,32 @@
 #include "Foundation/Logging/Logging.h"
 #include "ApplicationCore/IWindow.h"
 
-#include "ApplicationCore/Environment.h"
-#include "Foundation/Filesystem/Path.h"
+#include "Foundation/String/FormatArguments.h"
 
 #include <iostream>
 
+class X
+{
+public:
+
+};
+
+namespace Kitsune
+{
+    template<>
+    class Formatter<X>
+    {
+    public:
+        void Parse(const ParseContext&) {}
+
+        template<typename It>
+        It Format(const FormatContext<X, It>& context)
+        {
+            StringView str = "<CUSTOM>";
+            return Algorithms::Copy(str.GetBegin(), str.GetEnd(), context.GetOutput());
+        }
+    };
+}
 using namespace Kitsune;
 
 class Sandbox : public Application
@@ -15,8 +36,10 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        Path path = Environment::GetExecutablePath();
-        std::wcout << std::wstring(path.Native().Raw(), path.Native().Size());
+        String str = Format("{0}", X());
+        std::cout << str.Raw();
+
+//         Logging::LogFormat("{{ {0},  {1} }}", 2, 2);
     }
 
     ~Sandbox()

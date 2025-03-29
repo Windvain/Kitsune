@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Foundation/Iterators/Iterator.h"
+#include "Foundation/Iterators/IteratorTraits.h"
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator It, ForwardIterator OutIt>
+    template<ForwardIterator It,
+             WritableIterator<typename IteratorTraits<It>::ValueType> OutIt>
     OutIt Copy(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
@@ -13,7 +15,8 @@ namespace Kitsune::Algorithms
         return outBegin;
     }
 
-    template<ForwardIterator It, typename Sz, ForwardIterator OutIt>
+    template<ForwardIterator It, typename Sz,
+             WritableIterator<typename IteratorTraits<It>::ValueType> OutIt>
     OutIt CopyN(It begin, Sz n, OutIt outBegin)
     {
         for (; n > 0; ++begin, ++outBegin, --n)
@@ -22,7 +25,8 @@ namespace Kitsune::Algorithms
         return outBegin;
     }
 
-    template<ForwardIterator It, ForwardIterator OutIt, typename Pred>
+    template<ForwardIterator It,
+             WritableIterator<typename IteratorTraits<It>::ValueType> OutIt, typename Pred>
     OutIt CopyIf(It begin, It end, OutIt outBegin, Pred pred)
     {
         for (; begin != end; ++begin)

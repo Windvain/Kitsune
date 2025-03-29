@@ -28,6 +28,16 @@ TEST(BasicStringViewTests, CstringLenCtor)
     EXPECT_GENERAL_STREQ(str.Data(), u"Hello, there!");
 }
 
+TEST(BasicStringViewTests, IteratorCtor)
+{
+    char32_t array[4] = U"eao";
+    BasicStringView<char32_t> str(array, array + 3);
+
+    EXPECT_GENERAL_STREQ(str.Data(), array);
+    EXPECT_EQ(str.GetBegin(), array);
+    EXPECT_EQ(str.Size(), 3);
+}
+
 TEST(BasicStringViewTests, CopyCtor)
 {
     BasicStringView<char32_t> str = U"I am a string.";
@@ -89,15 +99,6 @@ TEST(BasicStringViewTests, IsEmpty)
     EXPECT_FALSE(str.IsEmpty());
 }
 
-// TEST(BasicStringViewTests, Length)
-// {
-//     BasicStringView<char8_t> str = u8"┬↔╓Æ╧ª";
-//     BasicStringView<char8_t> empty = u8"";
-
-//     EXPECT_EQ(str.Length(), 6);
-//     EXPECT_EQ(empty.Length(), 0);
-// }
-
 TEST(BasicStringViewTests, RemovePrefix)
 {
     BasicStringView<char16_t> str = u"Hello, World!";
@@ -134,18 +135,6 @@ TEST(BasicStringViewTests, Iterators)
     EXPECT_EQ(*str.GetReverseBegin(), str.Back());
     EXPECT_EQ(str.GetReverseEnd(), str.GetReverseBegin() + (Ptrdiff)str.Size());
 }
-
-// TEST(BasicStringViewTests, CodepointIterators)
-// {
-//     BasicStringView<char> str = "🌞♦Nâeÿ♠n┘l";
-//     auto end = str.GetCodepointBegin();
-
-//     for (Usize i = 0; i < 10; ++i)
-//         ++end;
-
-//     EXPECT_EQ(*str.GetCodepointBegin(), 0x1F31E);
-//     EXPECT_EQ(str.GetCodepointEnd(), end);
-// }
 
 TEST(BasicStringViewTests, RangedForLoop)
 {
