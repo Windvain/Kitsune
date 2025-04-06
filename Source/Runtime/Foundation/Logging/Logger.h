@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Foundation/Memory/SharedPtr.h"
-#include "Foundation/Containers/Array.h"
+#include "Foundation/Logging/ILogSink.h"
+#include "Foundation/Logging/LogMessage.h"
 
 #include "Foundation/String/String.h"
-#include "Foundation/String/Format.h"
+#include "Foundation/Memory/SharedPtr.h"
 
-#include "Foundation/Logging/ILoggerSink.h"
-#include "Foundation/Logging/LogSeverity.h"
+#include "Foundation/Containers/Array.h"
+#include "Foundation/Algorithms/ForEach.h"
 
 namespace Kitsune
 {
@@ -15,10 +15,13 @@ namespace Kitsune
     {
     public:
         Logger() = default;
+        inline Logger(const StringView name)
+            : m_Name(name)
+        {
+        }
 
-        inline explicit Logger(const StringView name) : m_Name(name) { /* ... */ }
-        inline Logger(const StringView name, const SharedPtr<ILoggerSink>& sink)
-            : m_Name(name), m_Sinks{sink}
+        inline Logger(const StringView name, const SharedPtr<ILogSink>& sink)
+            : m_Name(name), m_Sinks(1, sink)
         {
         }
 
@@ -28,55 +31,103 @@ namespace Kitsune
         {
         }
 
-        Logger(const Logger& logger) = default;
-        Logger(Logger&& logger) = default;
+        inline Logger(const StringView name, std::initializer_list<SharedPtr<ILogSink>> sinks)
+            : m_Name(name), m_Sinks(sinks.begin(), sinks.end())
+        {
+        }
 
         ~Logger() = default;
 
     public:
-        Logger& operator=(const Logger& logger) = default;
-        Logger& operator=(Logger&& logger) = default;
-
-    public:
-        KITSUNE_API_ void Log(LogSeverity severity, const StringView message);
-        KITSUNE_API_ void Flush();
-
-        inline void Log(const StringView message) { Log(m_MinimumSeverity, message); }
-
-        template<typename... Args>
-        inline void LogFormat(LogSeverity severity, const StringView format, Args&&... args)
+        void Log(LogSeverity severity, SourceLocation loc, const StringView message)
         {
-            String formatted = Format(format, Forward<Args>(args)...);
-            Log(severity, formatted);
+            if (!IsLogged(severity)) return;
+
+            LogMessage logMessage(message, m_Name, Move(loc), severity);
+            Algorithms::ForEach(m_Sinks.GetBegin(), m_Sinks.GetEnd(), [&](const auto& sink)
+            {
+                sink->Log(logMessage);
+            });
+
+            if (IsFlushed(severity))
+                Flush();
+        }
+
+        KITSUNE_FORCEINLINE void Log(LogSeverity severity, const StringView message)
+        {
+            Log(severity, SourceLocation(), message);
+        }
+
+        KITSUNE_FORCEINLINE void Log(SourceLocation loc, const StringView message)
+        {
+            Log(m_MinSeverity, Move(loc), message);
+        }
+
+        KITSUNE_FORCEINLINE void Log(const StringView message)
+        {
+            Log(m_MinSeverity, SourceLocation(), message);
         }
 
         template<typename... Args>
-        inline void LogFormat(const StringView format, Args&&... args)
+        void LogFormat(LogSeverity severity, SourceLocation loc, const StringView fmt, Args&&... args)
         {
-            LogFormat(m_MinimumSeverity, format, Forward<Args>(args)...);
+            String formatted = Format(fmt, Forward<Args>(args)...);
+            Log(severity, Move(loc), formatted);
+        }
+
+        template<typename... Args>
+        KITSUNE_FORCEINLINE void LogFormat(LogSeverity severity, const StringView fmt, Args&&... args)
+        {
+            LogFormat(severity, fmt, Forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        KITSUNE_FORCEINLINE void LogFormat(SourceLocation loc, const StringView fmt, Args&&... args)
+        {
+            LogFormat(m_MinSeverity, Move(loc), fmt, Forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        KITSUNE_FORCEINLINE void LogFormat(const StringView fmt, Args&&... args)
+        {
+            LogFormat(m_MinSeverity, SourceLocation(), fmt, Forward<Args>(args)...);
         }
 
     public:
-        inline StringView  GetName()            const { return m_Name;            }
-        inline LogSeverity GetMinimumSeverity() const { return m_MinimumSeverity; }
-        inline LogSeverity GetFlushSeverity()   const { return m_FlushSeverity;   }
-
-        inline void SetMinimumSeverity(LogSeverity severity) { m_MinimumSeverity = severity; }
-        inline void SetFlushSeverity(LogSeverity severity)   { m_FlushSeverity = severity;   }
-
-    public:
-        inline bool IsLogged(LogSeverity severity)  { return (severity >= m_MinimumSeverity); }
-        inline bool IsFlushed(LogSeverity severity) { return (severity >= m_FlushSeverity);   }
+        void Flush()
+        {
+            Algorithms::ForEach(m_Sinks.GetBegin(), m_Sinks.GetEnd(),
+                                [&](const auto& sink) { sink->Flush(); });
+        }
 
     public:
-        inline       Array<SharedPtr<ILoggerSink>>& GetSinks()       { return m_Sinks; }
-        inline const Array<SharedPtr<ILoggerSink>>& GetSinks() const { return m_Sinks; }
+        inline bool IsLogged(LogSeverity severity) const { return (severity >= m_MinSeverity); }
+        inline bool IsFlushed(LogSeverity severity) const { return (severity >= m_FlushSeverity); }
+
+    public:
+        inline String GetName() const { return m_Name; }
+
+        inline Array<SharedPtr<ILogSink>>& GetSinks()             { return m_Sinks; }
+        inline const Array<SharedPtr<ILogSink>>& GetSinks() const { return m_Sinks; }
+
+        inline LogSeverity GetMinimumSeverity() const { return m_MinSeverity; }
+        inline LogSeverity GetFlushSeverity() const { return m_FlushSeverity; }
+
+        inline void SetMinimumSeverity(LogSeverity severity)
+        {
+            m_MinSeverity = severity;
+        }
+
+        inline void SetFlushSeverity(LogSeverity severity)
+        {
+            m_FlushSeverity = severity;
+        }
 
     private:
-        LogSeverity m_MinimumSeverity = LogSeverity::Trace;
-        LogSeverity m_FlushSeverity = LogSeverity::Error;
-
         String m_Name;
-        Array<SharedPtr<ILoggerSink>> m_Sinks;
+        Array<SharedPtr<ILogSink>> m_Sinks;
+
+        LogSeverity m_MinSeverity = LogSeverity::Trace;
+        LogSeverity m_FlushSeverity = LogSeverity::Warning;
     };
 }

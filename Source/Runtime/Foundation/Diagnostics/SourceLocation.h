@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 #include "Foundation/Common/Types.h"
 #include "Foundation/Common/Macros.h"
 
@@ -19,7 +21,11 @@ namespace Kitsune
     class SourceLocation
     {
     public:
-        SourceLocation() = default;
+        SourceLocation()
+            : m_FileName("<unknown>"), m_FunctionName("<unknown>"),
+              m_Line(0)
+        {
+        }
 
     public:
         static SourceLocation Current(const char* file = KITSUNE_BUILTIN_FILE_(),
@@ -46,4 +52,11 @@ namespace Kitsune
 
         Uint32 m_Line;
     };
+
+    inline bool operator==(const SourceLocation& loc1, const SourceLocation& loc2)
+    {
+        return (loc1.Line() == loc2.Line()) &&
+               (std::strcmp(loc1.FileName(), loc2.FileName()) == 0) &&
+               (std::strcmp(loc1.FunctionName(), loc2.FunctionName()) == 0);
+    }
 }

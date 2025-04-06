@@ -1,15 +1,32 @@
 #pragma once
 
 #include "Foundation/String/StringView.h"
-#include "Foundation/Logging/LogSeverity.h"
+#include "Foundation/Diagnostics/SourceLocation.h"
 
 namespace Kitsune
 {
-    struct LogMessage
+    enum class LogSeverity
     {
-        StringView Message;
-        LogSeverity Severity;
+        Trace, Info,
+        Warning, Error, Fatal
+    };
 
+    class LogMessage
+    {
+    public:
+        LogMessage() = default;
+        LogMessage(const StringView message, const StringView loggerName,
+                   SourceLocation loc, LogSeverity severity)
+            : Message(message), LoggerName(loggerName),
+              Location(Move(loc)), Severity(severity)
+        {
+        }
+
+    public:
+        StringView Message;
         StringView LoggerName;
+
+        SourceLocation Location;
+        LogSeverity Severity;
     };
 }

@@ -54,12 +54,12 @@ namespace Kitsune
             scanner.Step();
             formatSpecs = scanner.GetFormatSpecs();
 
+            out = Algorithms::Copy(pointer, formatSpecs.GetBegin(), out);
+
             if (formatSpecs.Size() == 0)
                 break;
 
-            out = Algorithms::Copy(pointer, formatSpecs.GetBegin(), out);
             out = Scanner::ParseFormatSpecs(out, formatSpecs, argumentPack);
-
             pointer = formatSpecs.GetEnd();
         }
     }

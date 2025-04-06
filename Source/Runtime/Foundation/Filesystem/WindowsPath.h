@@ -38,20 +38,20 @@ namespace Kitsune
         inline WindowsPath& operator=(WindowsPath&&) = default;
 
     public:
-        inline StringType& Native()             { return m_String; }
-        inline const StringType& Native() const { return m_String; }
+        [[nodiscard]] inline StringType& Native()             { return m_String; }
+        [[nodiscard]] inline const StringType& Native() const { return m_String; }
 
     public:
         inline void Clear() { m_String.Clear(); }
 
     public:
-        KITSUNE_API_ bool Exists() const;
+        [[nodiscard]] KITSUNE_API_ bool Exists() const;
 
-        KITSUNE_API_ bool IsFile() const;
-        KITSUNE_API_ bool IsDirectory() const;
+        [[nodiscard]] KITSUNE_API_ bool IsFile() const;
+        [[nodiscard]] KITSUNE_API_ bool IsDirectory() const;
 
-        KITSUNE_API_ bool IsAbsolute() const;
-        inline bool IsRelative() const { return !IsAbsolute(); }
+        [[nodiscard]] KITSUNE_API_ bool IsAbsolute() const;
+        [[nodiscard]] inline bool IsRelative() const { return !IsAbsolute(); }
 
     private:
         WideString m_String;

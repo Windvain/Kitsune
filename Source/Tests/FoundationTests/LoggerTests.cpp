@@ -5,26 +5,25 @@
 
 using namespace Kitsune;
 
-namespace LoggerTesting
+namespace
 {
-    class DummySink : public ILoggerSink
+    class DummySink : public ILogSink
     {
     public:
         void Log(const LogMessage&) override { /* ... */ };
     };
 
-    class A : public ILoggerSink
+    class A : public ILogSink
     {
     public:
         void Log(const LogMessage& message) override { Message = message; }
         void Flush() override { Flushed = true; }
+
     public:
         LogMessage Message;
         bool Flushed = false;
     };
 }
-
-using namespace LoggerTesting;
 
 TEST(LoggerTests, NameCtor)
 {
@@ -43,7 +42,7 @@ TEST(LoggerTests, NameAndSinkCtor)
 
 TEST(LoggerTests, NameAndRangeCtor)
 {
-    SharedPtr<ILoggerSink> sinks[3] = { MakeShared<DummySink>(), MakeShared<DummySink>(), MakeShared<DummySink>() };
+    SharedPtr<ILogSink> sinks[3] = { MakeShared<DummySink>(), MakeShared<DummySink>(), MakeShared<DummySink>() };
     Logger logger = Logger("Hello!", sinks, sinks + 3);
 
     EXPECT_GENERAL_STREQ(logger.GetName().Data(), "Hello!");
@@ -52,24 +51,73 @@ TEST(LoggerTests, NameAndRangeCtor)
     EXPECT_EQ(logger.GetSinks()[2], sinks[2]);
 }
 
+TEST(LoggerTests, InitListCtor)
+{
+    SharedPtr<ILogSink> sinks[3] = { MakeShared<DummySink>(), MakeShared<DummySink>(), MakeShared<DummySink>() };
+    Logger logger = Logger("Hello!", { sinks[0], sinks[1], sinks[2] });
+
+    EXPECT_GENERAL_STREQ(logger.GetName().Data(), "Hello!");
+    EXPECT_EQ(logger.GetSinks()[0], sinks[0]);
+    EXPECT_EQ(logger.GetSinks()[1], sinks[1]);
+    EXPECT_EQ(logger.GetSinks()[2], sinks[2]);
+}
+
+TEST(LoggerTests, LogComplete)
+{
+    Logger logger("LOGGER", MakeShared<A>());
+    logger.Log(LogSeverity::Error, SourceLocation(), "Hello!");
+
+    A* sink = dynamic_cast<A*>(logger.GetSinks()[0].Get());
+    LogMessage message = sink->Message;
+
+    EXPECT_STREQ(message.Message.Data(), "Hello!");
+    EXPECT_EQ(message.Location, SourceLocation());
+    EXPECT_EQ(message.LoggerName, "LOGGER");
+    EXPECT_EQ(message.Severity, LogSeverity::Error);
+}
+
+TEST(LoggerTests, LogWithLocation)
+{
+    SourceLocation loc = SourceLocation::Current();
+
+    Logger logger("LOGGER", MakeShared<A>());
+    logger.Log(loc, "Hello!");
+
+    A* sink = dynamic_cast<A*>(logger.GetSinks()[0].Get());
+    LogMessage message = sink->Message;
+
+    EXPECT_STREQ(message.Message.Data(), "Hello!");
+    EXPECT_EQ(message.Location, loc);
+    EXPECT_EQ(message.LoggerName, "LOGGER");
+    EXPECT_EQ(message.Severity, logger.GetMinimumSeverity());
+}
+
 TEST(LoggerTests, LogWithSeverity)
 {
-    SharedPtr<A> sinks[2] = { MakeShared<A>(), MakeShared<A>() };
-    Logger logger = Logger("Logger", sinks, sinks + 2);
+    Logger logger("LOGGER", MakeShared<A>());
+    logger.Log(LogSeverity::Error, "Hello!");
 
-    logger.Log(LogSeverity::Error, "Yep.");
+    A* sink = dynamic_cast<A*>(logger.GetSinks()[0].Get());
+    LogMessage message = sink->Message;
 
-    LogMessage message1 = sinks[0]->Message;
-    LogMessage message2 = sinks[1]->Message;
+    EXPECT_STREQ(message.Message.Data(), "Hello!");
+    EXPECT_EQ(message.Location, SourceLocation());
+    EXPECT_EQ(message.LoggerName, "LOGGER");
+    EXPECT_EQ(message.Severity, LogSeverity::Error);
+}
 
-    EXPECT_GENERAL_STREQ(message1.LoggerName.Data(), "Logger");
-    EXPECT_GENERAL_STREQ(message2.LoggerName.Data(), "Logger");
+TEST(LoggerTests, Log)
+{
+    Logger logger("LOGGER", MakeShared<A>());
+    logger.Log("Hello!");
 
-    EXPECT_GENERAL_STREQ(message1.Message.Data(), "Yep.");
-    EXPECT_GENERAL_STREQ(message2.Message.Data(), "Yep.");
+    A* sink = dynamic_cast<A*>(logger.GetSinks()[0].Get());
+    LogMessage message = sink->Message;
 
-    EXPECT_EQ(message1.Severity, LogSeverity::Error);
-    EXPECT_EQ(message2.Severity, LogSeverity::Error);
+    EXPECT_STREQ(message.Message.Data(), "Hello!");
+    EXPECT_EQ(message.Location, SourceLocation());
+    EXPECT_EQ(message.LoggerName, "LOGGER");
+    EXPECT_EQ(message.Severity, logger.GetMinimumSeverity());
 }
 
 TEST(LoggerTests, LogFlushCheck)
@@ -84,26 +132,6 @@ TEST(LoggerTests, LogFlushCheck)
 
     logger.Log(LogSeverity::Error, "Random");
     EXPECT_EQ(sink->Flushed, true);
-}
-
-TEST(LoggerTests, LogWithoutSeverity)
-{
-    SharedPtr<A> sinks[2] = { MakeShared<A>(), MakeShared<A>() };
-    Logger logger = Logger("Logger", sinks, sinks + 2);
-
-    logger.Log("Yep.");
-
-    LogMessage message1 = sinks[0]->Message;
-    LogMessage message2 = sinks[1]->Message;
-
-    EXPECT_GENERAL_STREQ(message1.LoggerName.Data(), "Logger");
-    EXPECT_GENERAL_STREQ(message2.LoggerName.Data(), "Logger");
-
-    EXPECT_GENERAL_STREQ(message1.Message.Data(), "Yep.");
-    EXPECT_GENERAL_STREQ(message2.Message.Data(), "Yep.");
-
-    EXPECT_EQ(message1.Severity, logger.GetMinimumSeverity());
-    EXPECT_EQ(message2.Severity, logger.GetMinimumSeverity());
 }
 
 TEST(LoggerTests, SetGetMinimumSeverity)
