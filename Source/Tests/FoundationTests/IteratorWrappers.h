@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace Testing
 {
     template<typename T>
@@ -27,10 +29,12 @@ namespace Testing
 
     public:
         ForwardIteratorWrapper& operator++() { ++m_Pointer; return *this; }
-        ForwardIteratorWrapper operator++(int) const
+        ForwardIteratorWrapper operator++(int)
         {
-            ForwardIteratorWrapper it;
-            return (++it);
+            ForwardIteratorWrapper it = *this;
+            ++(*this);
+
+            return it;
         }
 
     public:

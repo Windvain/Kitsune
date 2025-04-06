@@ -23,6 +23,24 @@ TEST(ForEachTests, ForEach)
     EXPECT_EQ(n, 5);
 }
 
+TEST(ForEachTests, ForEachN)
+{
+    int arr[5] = { 1, 2, 3, 4, 5 };
+    TestContainer cont(arr, arr + 5);
+
+    int n = 0;
+    int k = 0;
+    Algorithms::ForEachN(cont.Begin, 5, [&](int x)
+    {
+        EXPECT_EQ(k + 1, x);
+        n += x;
+        ++k;
+    });
+
+    EXPECT_EQ(n, 15);
+}
+
+
 TEST(ForEachTests, ForEachIf)
 {
     int arr[5] = { 1, 2, 75, 2, 2 };

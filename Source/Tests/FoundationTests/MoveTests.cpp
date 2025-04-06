@@ -32,6 +32,7 @@ namespace MoveTesting
 
 using namespace MoveTesting;
 using TestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<A>>;
+using BTestContainer = Testing::TestContainer<Testing::BidirIteratorWrapper<A>>;
 
 TEST(MoveTests, Move)
 {
@@ -67,6 +68,30 @@ TEST(MoveTests, MoveN)
 
     auto it = Algorithms::MoveN(cont.Begin, 5, dest.Begin);
     EXPECT_EQ(it, dest.End);
+
+    EXPECT_EQ(arr[0].Value, 0);
+    EXPECT_EQ(arr[1].Value, 0);
+    EXPECT_EQ(arr[2].Value, 0);
+    EXPECT_EQ(arr[3].Value, 0);
+    EXPECT_EQ(arr[4].Value, 0);
+
+    EXPECT_EQ(destArr[0].Value, 2);
+    EXPECT_EQ(destArr[1].Value, 3);
+    EXPECT_EQ(destArr[2].Value, 1);
+    EXPECT_EQ(destArr[3].Value, 4);
+    EXPECT_EQ(destArr[4].Value, 6);
+}
+
+TEST(MoveTests, MoveBackwards)
+{
+    A arr[5] = { 2, 3, 1, 4, 6 };
+    A destArr[5] = { 54, 1, 2, 6, 3 };
+
+    BTestContainer cont(arr, arr + 5);
+    BTestContainer dest(destArr, destArr + 5);
+
+    auto it = Algorithms::MoveBackwards(cont.Begin, cont.End, dest.End);
+    EXPECT_EQ(it, dest.Begin);
 
     EXPECT_EQ(arr[0].Value, 0);
     EXPECT_EQ(arr[1].Value, 0);

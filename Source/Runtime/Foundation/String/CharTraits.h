@@ -39,6 +39,7 @@ namespace Kitsune
             }
         }
 
+        [[nodiscard]]
         static inline int Compare(const T* str1, const T* str2, Usize count)
         {
             for (; count > 0; --count, ++str1, ++str2)
@@ -50,6 +51,7 @@ namespace Kitsune
             return 0;
         }
 
+        [[nodiscard]]
         static inline const T* Find(const T* haystack, Usize count, T needle)
         {
             for (; count > 0; --count, ++haystack)
@@ -78,14 +80,16 @@ namespace Kitsune
             return dest;
         }
 
-        KITSUNE_FORCEINLINE
-        static int Compare(const char* str1, const char* str2, Usize count)
+        [[nodiscard]]
+        KITSUNE_FORCEINLINE static int Compare(const char* str1, const char* str2,
+                                               Usize count)
         {
             return std::memcmp(str1, str2, count * sizeof(char));
         }
 
-        KITSUNE_FORCEINLINE
-        static const char* Find(const char* str, Usize count, char ch)
+        [[nodiscard]]
+        KITSUNE_FORCEINLINE static const char* Find(const char* str, Usize count,
+                                                    char ch)
         {
             return static_cast<const char*>(std::memchr(str, ch, count * sizeof(char)));
         }
@@ -106,14 +110,16 @@ namespace Kitsune
             return std::wmemcpy(dest, source, count);
         }
 
-        KITSUNE_FORCEINLINE
-        static int Compare(const wchar_t* str1, const wchar_t* str2, Usize count)
+        [[nodiscard]]
+        KITSUNE_FORCEINLINE static int Compare(const wchar_t* str1, const wchar_t* str2,
+                                               Usize count)
         {
             return std::wmemcmp(str1, str2, count);
         }
 
-        KITSUNE_FORCEINLINE
-        static const wchar_t* Find(const wchar_t* str, Usize count, wchar_t ch)
+        [[nodiscard]]
+        KITSUNE_FORCEINLINE static const wchar_t* Find(const wchar_t* str, Usize count,
+                                                       wchar_t ch)
         {
             return std::wmemchr(str, ch, count);
         }

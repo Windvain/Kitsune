@@ -2,11 +2,13 @@ kitsune_add_test(
     TARGET FoundationTests
     SOURCES
     "FoundationTests/AddressOfTests.cpp"
+    "FoundationTests/AnsiColorSinkTests.cpp"
     "FoundationTests/ArrayTests.cpp"
     "FoundationTests/BasicStringTests.cpp"
     "FoundationTests/CharTraitsTests.cpp"
     "FoundationTests/CompareStrings.h"
     "FoundationTests/CopyTests.cpp"
+    "FoundationTests/CountTests.cpp"
     "FoundationTests/DestroyTests.cpp"
     "FoundationTests/DistanceTests.cpp"
     "FoundationTests/EqualTests.cpp"
@@ -19,16 +21,19 @@ kitsune_add_test(
     "FoundationTests/LoggerTests.cpp"
     "FoundationTests/MemoryTests.cpp"
     "FoundationTests/MoveTests.cpp"
+    "FoundationTests/ReplaceTests.cpp"
     "FoundationTests/ReverseIteratorTests.cpp"
     "FoundationTests/ReverseTests.cpp"
     "FoundationTests/ScopedPtrTests.cpp"
     "FoundationTests/SharedPtrTests.cpp"
+    "FoundationTests/StreamBufferTests.cpp"
     "FoundationTests/StringViewTests.cpp"
     "FoundationTests/SwapTests.cpp"
-    "FoundationTests/ToStringTests.cpp"
     "FoundationTests/TestContainer.h"
     "FoundationTests/UninitializedTests.cpp"
     "FoundationTests/Vector2Tests.cpp"
+    "FoundationTests/WindowsPathTests.cpp"
+    "FoundationTests/WriteStreamIteratorTests.cpp"
 
     DEPENDENCIES
     KitsuneFoundation

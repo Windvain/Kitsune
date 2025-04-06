@@ -6,8 +6,8 @@
 #include "ApplicationCore/BadWindowCreationException.h"
 
 // Copied from Windows.h, just made it work with signed integers instead.
-#define KITSUNE_SIGNED_LOWORD_(lparam) static_cast<INT16>(reinterpret_cast<LONG_PTR>(lparam) & 0xFFFF)
-#define KITSUNE_SIGNED_HIWORD_(lparam) static_cast<INT16>((reinterpret_cast<LONG_PTR>(lparam) >> 16) & 0xFFFF)
+#define KITSUNE_SIGNED_LOWORD_(lparam) static_cast<INT16>(static_cast<LONG_PTR>(lparam) & 0xFFFF)
+#define KITSUNE_SIGNED_HIWORD_(lparam) static_cast<INT16>((static_cast<LONG_PTR>(lparam) >> 16) & 0xFFFF)
 
 namespace Kitsune
 {

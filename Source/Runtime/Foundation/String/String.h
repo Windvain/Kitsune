@@ -314,6 +314,13 @@ namespace Kitsune
         }
 
     public:
+        inline void Swap(BasicString& str)
+        {
+            Algorithms::Swap(m_Allocator, str.GetAllocator());
+            m_Data.Swap(str.m_Data);
+        }
+
+    public:
         inline void Clear()
         {
             if (IsLocal()) return;
@@ -518,12 +525,6 @@ namespace Kitsune
             *m_Data.Pointer = T();
         }
 
-        inline void Swap(BasicString& str)
-        {
-            Algorithms::Swap(m_Allocator, str.GetAllocator());
-            m_Data.Swap(str.m_Data);
-        }
-
         inline Iterator ShiftEnd(Iterator from, Usize offset)
         {
             if ((from < GetBegin()) || (from > GetEnd()))
@@ -608,6 +609,15 @@ namespace Kitsune
         StringData m_Data;
         Alloc m_Allocator;
     };
+
+    namespace Algorithms
+    {
+        template<Character T, Allocator Alloc>
+        inline void Swap(BasicString<T, Alloc>& str1, BasicString<T, Alloc>& str2)
+        {
+            str1.Swap(str2);
+        }
+    }
 
     template<Character T, Allocator Alloc1, Allocator Alloc2>
     inline bool operator==(const BasicString<T, Alloc1>& str1, const BasicString<T, Alloc2>& str2)

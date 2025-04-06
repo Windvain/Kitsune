@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Foundation/Common/Macros.h"
+#include "Foundation/Filesystem/Path.h"
+
 #include "ApplicationCore/CommandLineArguments.h"
 
 namespace Kitsune
@@ -12,10 +14,12 @@ namespace Kitsune
         KITSUNE_API_ static void Shutdown();
 
     public:
-        static inline CommandLineArguments GetCommandLineArguments() { return s_CmdLineArgs; }
+        KITSUNE_API_ static CommandLineArguments GetCommandLineArguments();
 
-    private:
-        KITSUNE_API_ static CommandLineArguments s_CmdLineArgs;
-        static bool s_Initialized;
+        KITSUNE_API_ static Path GetCurrentWorkingDirectory();
+        KITSUNE_API_ static void SetCurrentWorkingDirectory(const Path& path);
+
+    public:
+        KITSUNE_API_ static Path GetExecutablePath();
     };
 }

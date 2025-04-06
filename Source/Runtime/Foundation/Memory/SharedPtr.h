@@ -24,7 +24,7 @@ namespace Kitsune
         class ReferenceCountBase
         {
         public:
-            ReferenceCountBase(Int32 sharedCount = 1, Int32 weakCount = 1)
+            inline ReferenceCountBase(Int32 sharedCount = 1, Int32 weakCount = 1)
                 : m_SharedCount(sharedCount), m_WeakCount(weakCount)
             {
             }
@@ -36,7 +36,7 @@ namespace Kitsune
             virtual void DeleteReferenceCount() = 0;
 
         public:
-            Int32 GetCount() const
+            inline Int32 GetCount() const
             {
                 if constexpr (Mode == ThreadSafety::NotThreadSafe)
                     return m_SharedCount;
@@ -44,7 +44,7 @@ namespace Kitsune
                     return Interlocked::Load(&m_SharedCount);
             }
 
-            void IncrementReferenceCount()
+            inline void IncrementReferenceCount()
             {
                 if constexpr (Mode == ThreadSafety::NotThreadSafe)
                 {
@@ -58,7 +58,7 @@ namespace Kitsune
                 }
             }
 
-            void IncrementWeakRefCount()
+            inline void IncrementWeakRefCount()
             {
                 if constexpr (Mode == ThreadSafety::NotThreadSafe)
                     ++m_WeakCount;
@@ -66,7 +66,7 @@ namespace Kitsune
                     Interlocked::Increment(&m_WeakCount);
             }
 
-            void ReleaseOwnership()
+            inline void ReleaseOwnership()
             {
                 if (Decrement(&m_SharedCount) == 0)
                     DeleteValue();
@@ -74,14 +74,14 @@ namespace Kitsune
                 ReleaseWeakOwnership();
             }
 
-            void ReleaseWeakOwnership()
+            inline void ReleaseWeakOwnership()
             {
                 if (Decrement(&m_WeakCount) == 0)
                     DeleteReferenceCount();
             }
 
         private:
-            Int32 Decrement(Int32* ptr)
+            inline Int32 Decrement(Int32* ptr)
             {
                 if constexpr (Mode == ThreadSafety::NotThreadSafe)
                     return (--*ptr);
@@ -98,21 +98,21 @@ namespace Kitsune
         class TypedReferenceCount : public ReferenceCountBase<Mode>
         {
         public:
-            TypedReferenceCount(T* ptr, const Alloc& alloc, const Del& del)
+            inline TypedReferenceCount(T* ptr, const Alloc& alloc, const Del& del)
                 : m_Pointer(ptr), m_Allocator(alloc), m_Deleter(del) { /* ... */ }
 
-            TypedReferenceCount(T* ptr, const Alloc& alloc, Del&& del)
+            inline TypedReferenceCount(T* ptr, const Alloc& alloc, Del&& del)
                 : m_Pointer(ptr), m_Allocator(alloc), m_Deleter(Move(del)) { /* ... */ }
 
-            TypedReferenceCount(T* ptr, Alloc&& alloc, const Del& del)
+            inline TypedReferenceCount(T* ptr, Alloc&& alloc, const Del& del)
                 : m_Pointer(ptr), m_Allocator(Move(alloc)), m_Deleter(del) { /* ... */ }
 
-            TypedReferenceCount(T* ptr, Alloc&& alloc, Del&& del)
+            inline TypedReferenceCount(T* ptr, Alloc&& alloc, Del&& del)
                 : m_Pointer(ptr), m_Allocator(Move(alloc)), m_Deleter(Move(del)) { /* ... */ }
 
         public:
-            void DeleteValue() { if (m_Pointer) m_Deleter(m_Pointer); }
-            void DeleteReferenceCount()
+            inline void DeleteValue() { if (m_Pointer) m_Deleter(m_Pointer); }
+            inline void DeleteReferenceCount()
             {
                 Alloc alloc = Move(m_Allocator);
 
@@ -147,12 +147,12 @@ namespace Kitsune
         using WeakType = WeakPtr<T, Mode>;
 
     public:
-        SharedPtr()               : m_Pointer(nullptr), m_Data(nullptr) { /* ... */ }
-        SharedPtr(std::nullptr_t) : m_Pointer(nullptr), m_Data(nullptr) { /* ... */ }
+        inline SharedPtr()               : m_Pointer(nullptr), m_Data(nullptr) { /* ... */ }
+        inline SharedPtr(std::nullptr_t) : m_Pointer(nullptr), m_Data(nullptr) { /* ... */ }
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
-        explicit SharedPtr(U* ptr)
+        inline explicit SharedPtr(U* ptr)
             : m_Pointer(ptr)
         {
             AllocateInternalData(ptr, GlobalAllocator(), DefaultDeleter<U>());
@@ -160,33 +160,33 @@ namespace Kitsune
 
         template<typename U, Internal::IsDeleterOrRef Del>
             requires std::is_convertible_v<U*, T*>
-        SharedPtr(U* ptr, Del&& del)
+        inline SharedPtr(U* ptr, Del&& del)
             : m_Pointer(ptr)
         {
             AllocateInternalData(ptr, GlobalAllocator(), Forward<Del>(del));
         }
 
         template<Internal::IsDeleterOrRef Del>
-        SharedPtr(std::nullptr_t, Del&& del)
+        inline SharedPtr(std::nullptr_t, Del&& del)
             : SharedPtr(static_cast<T*>(nullptr), Forward<Del>(del))
         {
         }
 
         template<typename U, Internal::IsDeleterOrRef Del, Internal::IsAllocatorOrRef Alloc>
             requires std::is_convertible_v<U*, T*>
-        SharedPtr(U* ptr, Del&& del, Alloc&& alloc)
+        inline SharedPtr(U* ptr, Del&& del, Alloc&& alloc)
             : m_Pointer(ptr)
         {
             AllocateInternalData<T>(ptr, Forward<Alloc>(alloc), Forward<Del>(del));
         }
 
         template<Internal::IsDeleterOrRef Del, Internal::IsAllocatorOrRef Alloc>
-        SharedPtr(std::nullptr_t, Del&& del, Alloc&& alloc)
+        inline SharedPtr(std::nullptr_t, Del&& del, Alloc&& alloc)
             : SharedPtr(static_cast<T*>(nullptr), Forward<Del>(del), Forward<Alloc>(alloc))
         {
         }
 
-        SharedPtr(const SharedPtr& ptr)
+        inline SharedPtr(const SharedPtr& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(ptr.m_Data)
         {
             if (m_Data != nullptr)
@@ -195,14 +195,14 @@ namespace Kitsune
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
-        SharedPtr(const SharedPtr<U, Mode>& ptr)
+        inline SharedPtr(const SharedPtr<U, Mode>& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(ptr.m_Data)
         {
             if (m_Data != nullptr)
                 m_Data->IncrementReferenceCount();
         }
 
-        SharedPtr(SharedPtr&& ptr)
+        inline SharedPtr(SharedPtr&& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(Exchange(ptr.m_Data, nullptr))
         {
         }
@@ -216,7 +216,7 @@ namespace Kitsune
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
-        explicit SharedPtr(const WeakPtr<U, Mode>& ptr)
+        inline explicit SharedPtr(const WeakPtr<U, Mode>& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(ptr.m_Data)
         {
             if (m_Data != nullptr)
@@ -228,62 +228,69 @@ namespace Kitsune
 
         template<typename U, Deleter Del>
             requires std::is_convertible_v<U*, T*>
-        SharedPtr(ScopedPtr<U, Del>&& ptr)
+        inline SharedPtr(ScopedPtr<U, Del>&& ptr)
             : m_Pointer(ptr.Get())
         {
             AllocateInternalData(ptr.Release(), GlobalAllocator(), Move(ptr.GetDeleter()));
         }
 
-        ~SharedPtr()
+        inline ~SharedPtr()
         {
             if (m_Data != nullptr)
                 m_Data->ReleaseOwnership();
         }
 
     public:
-        SharedPtr& operator=(const SharedPtr& ptr) { return Assign(ptr); }
-        SharedPtr& operator=(SharedPtr&& ptr) { return Assign(Move(ptr)); }
+        inline SharedPtr& operator=(const SharedPtr& ptr) { return Assign(ptr); }
+        inline SharedPtr& operator=(SharedPtr&& ptr) { return Assign(Move(ptr)); }
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
-        SharedPtr& operator=(const SharedPtr<U, Mode>& ptr) { return Assign(ptr); }
+        inline SharedPtr& operator=(const SharedPtr<U, Mode>& ptr) { return Assign(ptr); }
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
-        SharedPtr& operator=(SharedPtr<U, Mode>&& ptr) { return Assign(Move(ptr)); }
+        inline SharedPtr& operator=(SharedPtr<U, Mode>&& ptr) { return Assign(Move(ptr)); }
 
         template<typename U, Deleter UDel>
             requires std::is_convertible_v<U*, T*>
-        SharedPtr& operator=(ScopedPtr<U, UDel>&& ptr)
+        inline SharedPtr& operator=(ScopedPtr<U, UDel>&& ptr)
         {
             SharedPtr(Move(ptr)).Swap(*this);
             return *this;
         }
 
     public:
-        T& operator*() const { return *m_Pointer; }
-        T* operator->() const { return m_Pointer; }
+        inline T& operator*() const { return *m_Pointer; }
+        inline T* operator->() const { return m_Pointer; }
 
-        explicit operator bool() const { return m_Pointer != nullptr; }
+        inline explicit operator bool() const
+        {
+            return m_Pointer != nullptr;
+        }
 
     public:
-        [[nodiscard]] T* Get() const { return m_Pointer; }
+        [[nodiscard]] inline T* Get() const
+        {
+            return m_Pointer;
+        }
 
         [[nodiscard]]
-        Int32 GetCount() const
+        inline Int32 GetCount() const
         {
             return (m_Data != nullptr) ? m_Data->GetCount() : 0;
         }
 
-    private:
-        void Swap(SharedPtr<T, Mode>& ptr)
+    public:
+        inline void Swap(SharedPtr<T, Mode>& ptr)
         {
             Algorithms::Swap(m_Pointer, ptr.m_Pointer);
             Algorithms::Swap(m_Data, ptr.m_Data);
         }
 
+    private:
         template<typename U>
-        SharedPtr& Assign(const SharedPtr<U, Mode>& ptr)
+        inline SharedPtr& Assign(const SharedPtr<U, Mode>& ptr)
         {
             if (m_Pointer != ptr.m_Pointer)
                 SharedPtr(ptr).Swap(*this);
@@ -292,7 +299,7 @@ namespace Kitsune
         }
 
         template<typename U>
-        SharedPtr& Assign(SharedPtr<U, Mode>&& ptr)
+        inline SharedPtr& Assign(SharedPtr<U, Mode>&& ptr)
         {
             if (m_Pointer != ptr.m_Pointer)
                 SharedPtr(Move(ptr)).Swap(*this);
@@ -301,7 +308,7 @@ namespace Kitsune
         }
 
         template<typename U, Internal::IsAllocatorOrRef Alloc, Internal::IsDeleterOrRef Del>
-        void AllocateInternalData(U* ptr, Alloc&& alloc, Del&& del)
+        inline void AllocateInternalData(U* ptr, Alloc&& alloc, Del&& del)
         {
             using PureAlloc = std::remove_reference_t<Alloc>;
             using PureDel = std::remove_reference_t<Del>;
@@ -330,115 +337,124 @@ namespace Kitsune
     };
 
     template<typename T, typename... Args>
-    [[nodiscard]] SharedPtr<T> MakeShared(Args&&... args)
+    [[nodiscard]] inline SharedPtr<T> MakeShared(Args&&... args)
     {
         return SharedPtr<T>(Memory::New<T>(Forward<Args>(args)...));
     }
 
+    namespace Algorithms
+    {
+        template<typename T, ThreadSafety Mode>
+        inline void Swap(SharedPtr<T, Mode>& ptr1, SharedPtr<T, Mode>& ptr2)
+        {
+            return ptr1.Swap(ptr2);
+        }
+    }
+
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
-    bool operator==(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
+    inline bool operator==(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
     {
         return (ptr1.Get() == ptr2.Get());
     }
 
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
-    bool operator!=(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
+    inline bool operator!=(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
     {
         return (ptr1.Get() != ptr2.Get());
     }
 
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
-    bool operator>=(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
+    inline bool operator>=(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
     {
         return (ptr1.Get() >= ptr2.Get());
     }
 
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
-    bool operator<=(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
+    inline bool operator<=(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
     {
         return (ptr1.Get() <= ptr2.Get());
     }
 
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
-    bool operator>(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
+    inline bool operator>(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
     {
         return (ptr1.Get() > ptr2.Get());
     }
 
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
-    bool operator<(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
+    inline bool operator<(const SharedPtr<T, Mode>& ptr1, const SharedPtr<U, UMode>& ptr2)
     {
         return (ptr1.Get() < ptr2.Get());
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator==(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
+    inline bool operator==(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
     {
         return (ptr.Get() == nullptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator!=(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
+    inline bool operator!=(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
     {
         return (ptr.Get() != nullptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator>=(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
+    inline bool operator>=(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
     {
         return !(nullptr < ptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator<=(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
+    inline bool operator<=(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
     {
         return !(nullptr > ptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator>(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
+    inline bool operator>(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
     {
         return (static_cast<T*>(nullptr) > ptr.Get());
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator<(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
+    inline bool operator<(std::nullptr_t, const SharedPtr<T, Mode>& ptr)
     {
         return (static_cast<T*>(nullptr) < ptr.Get());
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator==(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
+    inline bool operator==(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
     {
         return (ptr.Get() == nullptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator!=(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
+    inline bool operator!=(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
     {
         return (ptr.Get() != nullptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator>=(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
+    inline bool operator>=(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
     {
         return !(ptr < nullptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator<=(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
+    inline bool operator<=(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
     {
         return !(ptr > nullptr);
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator>(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
+    inline bool operator>(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
     {
         return (ptr.Get() > static_cast<T*>(nullptr));
     }
 
     template<typename T, ThreadSafety Mode>
-    bool operator<(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
+    inline bool operator<(const SharedPtr<T, Mode>& ptr, std::nullptr_t)
     {
         return (ptr.Get() < static_cast<T*>(nullptr));
     }
@@ -451,17 +467,17 @@ namespace Kitsune
         using PointerType = T*;
 
     public:
-        WeakPtr() : m_Pointer(nullptr), m_Data(nullptr) { /* ... */ }
+        inline WeakPtr() : m_Pointer(nullptr), m_Data(nullptr) { /* ... */ }
 
         template<typename U>
-        WeakPtr(const SharedPtr<U, Mode>& ptr)
+        inline WeakPtr(const SharedPtr<U, Mode>& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(ptr.m_Data)
         {
             if (m_Data != nullptr)
                 m_Data->IncrementWeakRefCount();
         }
 
-        WeakPtr(const WeakPtr& ptr)
+        inline WeakPtr(const WeakPtr& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(ptr.m_Data)
         {
             if (m_Data != nullptr)
@@ -469,38 +485,38 @@ namespace Kitsune
         }
 
         template<typename U>
-        WeakPtr(const WeakPtr<U, Mode>& ptr)
+        inline WeakPtr(const WeakPtr<U, Mode>& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(ptr.m_Data)
         {
             if (m_Data != nullptr)
                 m_Data->IncrementWeakRefCount();
         }
 
-        WeakPtr(WeakPtr&& ptr)
+        inline WeakPtr(WeakPtr&& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(Exchange(ptr.m_Data, nullptr)) { /* ... */ }
 
         template<typename U>
-        WeakPtr(WeakPtr<U, Mode>&& ptr)
+        inline WeakPtr(WeakPtr<U, Mode>&& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(Exchange(ptr.m_Data, nullptr)) { /* ... */ }
 
-        ~WeakPtr()
+        inline ~WeakPtr()
         {
             if (m_Data != nullptr)
                 m_Data->ReleaseWeakOwnership();
         }
 
     public:
-        WeakPtr& operator=(const WeakPtr& ptr) { return Assign(ptr); }
-        WeakPtr& operator=(WeakPtr&& ptr) { return Assign(Move(ptr)); }
+        inline WeakPtr& operator=(const WeakPtr& ptr) { return Assign(ptr); }
+        inline WeakPtr& operator=(WeakPtr&& ptr) { return Assign(Move(ptr)); }
 
         template<typename U>
-        WeakPtr& operator=(const WeakPtr<U, Mode>& ptr) { return Assign(ptr); }
+        inline WeakPtr& operator=(const WeakPtr<U, Mode>& ptr) { return Assign(ptr); }
 
         template<typename U>
-        WeakPtr& operator=(WeakPtr<U, Mode>&& ptr) { return Assign(Move(ptr)); }
+        inline WeakPtr& operator=(WeakPtr<U, Mode>&& ptr) { return Assign(Move(ptr)); }
 
         template<typename U>
-        WeakPtr& operator=(const SharedPtr<U>& ptr)
+        inline WeakPtr& operator=(const SharedPtr<U>& ptr)
         {
             if (m_Pointer != ptr.m_Pointer)
                 WeakPtr(ptr).Swap(*this);
@@ -509,7 +525,7 @@ namespace Kitsune
         }
 
     public:
-        void Reset()
+        inline void Reset()
         {
             if (m_Data != nullptr)
                 m_Data->ReleaseWeakOwnership();
@@ -517,21 +533,21 @@ namespace Kitsune
             m_Data = nullptr;
         }
 
-    public:
-        Int32 GetCount() const { return (m_Data != nullptr) ? m_Data->GetCount() : 0; }
-        bool IsExpired() const { return (GetCount() == 0); }
-
-        SharedPtr<T> Lock() const { return IsExpired() ? SharedPtr<T>() : SharedPtr<T>(*this); }
-
-    private:
-        void Swap(WeakPtr<T, Mode>& ptr)
+        inline void Swap(WeakPtr<T, Mode>& ptr)
         {
             Algorithms::Swap(m_Pointer, ptr.m_Pointer);
             Algorithms::Swap(m_Data, ptr.m_Data);
         }
 
+    public:
+        inline Int32 GetCount() const { return (m_Data != nullptr) ? m_Data->GetCount() : 0; }
+        inline bool IsExpired() const { return (GetCount() == 0); }
+
+        inline SharedPtr<T> Lock() const { return IsExpired() ? SharedPtr<T>() : SharedPtr<T>(*this); }
+
+    private:
         template<typename U>
-        WeakPtr& Assign(const WeakPtr<U, Mode>& ptr)
+        inline WeakPtr& Assign(const WeakPtr<U, Mode>& ptr)
         {
             if (m_Pointer != ptr.m_Pointer)
                 WeakPtr(ptr).Swap(*this);
@@ -540,7 +556,7 @@ namespace Kitsune
         }
 
         template<typename U>
-        WeakPtr& Assign(WeakPtr<U, Mode>&& ptr)
+        inline WeakPtr& Assign(WeakPtr<U, Mode>&& ptr)
         {
             if (m_Pointer != ptr.m_Pointer)
                 WeakPtr(Move(ptr)).Swap(*this);
@@ -556,4 +572,13 @@ namespace Kitsune
         T* m_Pointer;
         Internal::ReferenceCountBase<Mode>* m_Data;
     };
+
+    namespace Algorithms
+    {
+        template<typename T, ThreadSafety Mode>
+        inline void Swap(WeakPtr<T, Mode>& ptr1, WeakPtr<T, Mode>& ptr2)
+        {
+            return ptr1.Swap(ptr2);
+        }
+    }
 }

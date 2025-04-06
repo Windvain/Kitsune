@@ -5,25 +5,44 @@
 
 #include "Foundation/Memory/Memory.h"
 
-#include "Foundation/Logging/Logging.h"
-#include "Foundation/Logging/ConsoleLoggerSink.h"
+#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/AnsiColorSink.h"
 
 #include "ApplicationCore/Application.h"
 #include "ApplicationCore/Environment.h"
 
 namespace Kitsune
 {
+    class MemorySubsystemGuard
+    {
+    public:
+        MemorySubsystemGuard() { Memory::InitializeExplicit(); }
+        ~MemorySubsystemGuard()
+        {
+            Memory::Shutdown();
+        }
+    };
+
     int UnguardedEngineMain(int argc, char** argv)
     {
         /* Foundation Subsystems Initialization */
-        Memory::InitializeExplicit();
+        // Make sure the memory subsystem gets shutdown last, there
+        // might be stack variables in the initialization code which
+        // could attempt to free memory **after** Memory::Shutdown().
+        MemorySubsystemGuard memoryGuard{};
 
         // Initialize the global logger.
-        Logger* globalLogger = Memory::New<Logger>("GLOBAL", MakeShared<ConsoleLoggerSink>());
-        globalLogger->SetFlushSeverity(LogSeverity::Error);
-        globalLogger->SetMinimumSeverity(LogSeverity::Trace);
+        ScopedPtr<Logger> globalLogger = MakeScoped<Logger>("GLOBAL");
+        SetGlobalLogger(globalLogger.Get());
 
-        Logging::SetGlobalLogger(globalLogger);
+        // Create streams to stdout and stderr, if they exist.
+#if !defined(KITSUNE_BUILD_RELEASE)
+        ConsoleOutputStream consoleOutStream(/* Error stream: */ false);
+        ConsoleOutputStream consoleErrorStream(/* Error stream: */ true);
+
+        globalLogger->GetSinks().PushBack(
+            MakeShared<AnsiColorSink>(consoleOutStream, consoleErrorStream));
+#endif
 
         /* Remaining Subsystems Initialization */
         Environment::Initialize(argc, argv);
@@ -41,10 +60,8 @@ namespace Kitsune
         Environment::Shutdown();
 
         /* Foundation Subsystems Shutdown */
-        Memory::Delete(Logging::GetGlobalLogger());
-        Logging::SetGlobalLogger(nullptr);
-
-        Memory::Shutdown();
+        // Just in case, who knows what might happen..
+        SetGlobalLogger(nullptr);
 
         return exitCode;
     }

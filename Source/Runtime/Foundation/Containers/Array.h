@@ -241,6 +241,16 @@ namespace Kitsune
         inline void ShrinkToFit() { ReallocateGrowExact(Size()); }
 
     public:
+        void Swap(Array& array)
+        {
+            Algorithms::Swap(m_Begin, array.m_Begin);
+            Algorithms::Swap(m_End, array.m_End);
+            Algorithms::Swap(m_StorageEnd, array.m_StorageEnd);
+
+            Algorithms::Swap(m_Allocator, array.m_Allocator);
+        }
+
+    public:
         inline void Clear()
         {
             if (m_Begin != nullptr)
@@ -407,15 +417,6 @@ namespace Kitsune
             return GetBegin() + index;
         }
 
-        void Swap(Array& array)
-        {
-            Algorithms::Swap(m_Begin, array.m_Begin);
-            Algorithms::Swap(m_End, array.m_End);
-            Algorithms::Swap(m_StorageEnd, array.m_StorageEnd);
-
-            Algorithms::Swap(m_Allocator, array.m_Allocator);
-        }
-
     private:
         static constexpr float s_AllocationFactor = 1.5f;
 
@@ -429,5 +430,14 @@ namespace Kitsune
         requires requires (T val1, U val2) { val1 == val2; }
     {
         return Algorithms::Equal(arr1.GetBegin(), arr1.GetEnd(), arr2.GetBegin(), arr2.GetEnd());
+    }
+
+    namespace Algorithms
+    {
+        template<typename T, Allocator Alloc>
+        void Swap(Array<T, Alloc>& arr1, Array<T, Alloc>& arr2)
+        {
+            arr1.Swap(arr2);
+        }
     }
 }

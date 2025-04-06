@@ -45,3 +45,25 @@ TEST(FindTests, FindIf)
     EXPECT_EQ(Algorithms::FindIf(cont.Begin, cont.End, [](int x) -> bool { return x == 2; }), firstOccurrence);
     EXPECT_EQ(Algorithms::FindIf(cont.Begin, cont.End, [](int x) -> bool { return x == -1; }), cont.End);
 }
+
+TEST(FindTests, FindLastIf)
+{
+    int arr[5] = { 1, 2, 54, 2, 1 };
+    TestContainer cont(arr, arr + 5);
+
+    auto last = Testing::ForwardIteratorWrapper<int>(arr + 4);
+    auto pred = [](int x) -> bool { return (x % 2) != 0; };
+
+    EXPECT_EQ(Algorithms::FindLastIf(cont.Begin, cont.End, pred), last);
+}
+
+TEST(FindTests, FindLast)
+{
+    int arr[5] = { 1, 2, 54, 2, 1 };
+    TestContainer cont(arr, arr + 5);
+
+    auto last = Testing::ForwardIteratorWrapper<int>(arr + 3);
+
+    EXPECT_EQ(Algorithms::FindLast(cont.Begin, cont.End, 2), last);
+    EXPECT_EQ(Algorithms::FindLast(cont.Begin, cont.End, -1), cont.End);
+}

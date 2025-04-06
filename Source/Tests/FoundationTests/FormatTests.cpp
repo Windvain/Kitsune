@@ -1,116 +1,100 @@
 #include <gtest/gtest.h>
 #include "CompareStrings.h"
 
-#include <typeinfo>
 #include "Foundation/String/Format.h"
 
-using namespace Kitsune;
-
-namespace FormatTesting
+namespace
 {
-    class C { /* ... */ };
+    class A { /* ... */ };
 }
 
-using namespace FormatTesting;
 namespace Kitsune
 {
     template<>
-    class Formatter<C, char>
+    class Formatter<A>
     {
     public:
-        void Parse(const ParseContext<char>& ctx)
+        void Parse(const ParseContext& context)
         {
-            auto it = ctx.GetBegin();
-            if (it == ctx.GetEnd()) return;
+            auto it = context.GetBegin();
+            if (it == context.GetEnd()) return;
 
             if (*it == 'f')
                 m_Flag = true;
-
-            ++it;
         }
-        String Format(C) { return m_Flag ? "[FLAG SET]" : "[UNKNOWN]"; }
+
+        template<typename Out>
+        Out Format(const FormatContext<A, Out>& context)
+        {
+            StringView str = (m_Flag) ? "<FLAG SET>" : "<FLAG NOT SET>";
+            return Algorithms::Copy(str.GetBegin(), str.GetEnd(), context.GetOutput());
+        }
 
     private:
         bool m_Flag = false;
     };
 }
 
-TEST(FormatTests, ThrowingFormatStrings)
+using namespace Kitsune;
+
+TEST(FormatTests, CustomFormatter)
 {
-    EXPECT_THROW(Format("{}"), FormatException);
-    EXPECT_THROW(Format("}"), FormatException);
-    EXPECT_THROW(Format("{"), FormatException);
-    EXPECT_THROW(Format("}{"), FormatException);
+    EXPECT_GENERAL_STREQ(Format("{0}", A()).Data(), "<FLAG NOT SET>");
+    EXPECT_GENERAL_STREQ(Format("{0:???}", A()).Data(), "<FLAG NOT SET>");
+    EXPECT_GENERAL_STREQ(Format("{0:fer}", A()).Data(), "<FLAG SET>");
 }
 
-TEST(FormatTests, CallsFormatter)
+TEST(FormatTests, Indexing)
 {
-    EXPECT_GENERAL_STREQ(Format("{0}", C()).Raw(), "[UNKNOWN]");
-    EXPECT_GENERAL_STREQ(Format("{0:?}", C()).Raw(), "[UNKNOWN]");
-    EXPECT_GENERAL_STREQ(Format("{0:f}", C()).Raw(), "[FLAG SET]");
-}
-
-TEST(FormatTests, NoFormattingUsage)
-{
-    EXPECT_GENERAL_STREQ(Format("Hello, I am just a regular string.").Raw(), "Hello, I am just a regular string.");
-}
-
-TEST(FormatTests, CorrectIndexing)
-{
-    EXPECT_GENERAL_STREQ(Format("{1}, {0}!", "World", "Hello").Raw(), "Hello, World!");
+    EXPECT_GENERAL_STREQ(Format("{1}, {0}", "World!", "Hello").Data(), "Hello, World!");
 }
 
 TEST(FormatTests, BooleanFormatting)
 {
     EXPECT_GENERAL_STREQ(Format("{0} {1}", true, false).Raw(), "true false");
-    EXPECT_GENERAL_STREQ(Format("{0:s} {1:s}", true, false).Raw(), "true false");
-    EXPECT_GENERAL_STREQ(Format("{0:S} {1:S}", true, false).Raw(), "true false");
-    EXPECT_GENERAL_STREQ(Format("{0:?} {1:?}", true, false).Raw(), "1 0");
+    EXPECT_GENERAL_STREQ(Format("{0:?} {1:?}", true, false).Raw(), "true false");
+
+    EXPECT_GENERAL_STREQ(Format("{0:i} {1:i}", true, false).Raw(), "1 0");
+    EXPECT_GENERAL_STREQ(Format("{0:I} {1:I}", true, false).Raw(), "1 0");
 }
 
 TEST(FormatTests, IntegralFormatting)
 {
-    EXPECT_GENERAL_STREQ(Format("{0}", -27).Raw(), ToString(-27, 10).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:d}", -3).Raw(), ToString(-3, 10).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:D}", -3).Raw(), ToString(-3, 10).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0}", -27).Raw(), "-27");
+    EXPECT_GENERAL_STREQ(Format("{0:d}", -3).Raw(),"-3");
+    EXPECT_GENERAL_STREQ(Format("{0:D}", -3).Raw(), "-3");
 
-    EXPECT_GENERAL_STREQ(Format("{0:b}", -3).Raw(), ToString(-3, 2).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:B}", -63).Raw(), ToString(-63, 2).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0:b}", -3).Raw(), "1111111111111111111111111111111111111111111111111111111111111101");
+    EXPECT_GENERAL_STREQ(Format("{0:B}", -63).Raw(), "1111111111111111111111111111111111111111111111111111111111000001");
 
-    EXPECT_GENERAL_STREQ(Format("{0:o}", -3).Raw(), ToString(-3, 8).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:O}", -3).Raw(), ToString(-3, 8).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0:o}", -3).Raw(), "1777777777777777777775");
+    EXPECT_GENERAL_STREQ(Format("{0:O}", -3).Raw(), "1777777777777777777775");
 
-    EXPECT_GENERAL_STREQ(Format("{0:x}", -3).Raw(), ToString(-3, 16).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:X}", -3).Raw(), ToString(-3, 16).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0:x}", -3).Raw(), "FFFFFFFFFFFFFFFD");
+    EXPECT_GENERAL_STREQ(Format("{0:X}", -3).Raw(), "FFFFFFFFFFFFFFFD");
 
-    EXPECT_GENERAL_STREQ(Format("{0:d}", 256).Raw(), ToString(256, 10).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:D}", 256).Raw(), ToString(256, 10).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0:d}", 256).Raw(), "256");
+    EXPECT_GENERAL_STREQ(Format("{0:D}", 256).Raw(), "256");
 
-    EXPECT_GENERAL_STREQ(Format("{0:b}", 72).Raw(), ToString(72, 2).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:B}", 256).Raw(), ToString(256, 2).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0:b}", 72).Raw(), "1001000");
+    EXPECT_GENERAL_STREQ(Format("{0:B}", 256).Raw(), "100000000");
 
-    EXPECT_GENERAL_STREQ(Format("{0:o}", 256).Raw(), ToString(256, 8).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:O}", 256).Raw(), ToString(256, 8).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0:o}", 256).Raw(), "400");
+    EXPECT_GENERAL_STREQ(Format("{0:O}", 256).Raw(), "400");
 
-    EXPECT_GENERAL_STREQ(Format("{0:x}", 256).Raw(), ToString(256, 16).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0:X}", 256).Raw(), ToString(256, 16).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0:x}", 256).Raw(), "100");
+    EXPECT_GENERAL_STREQ(Format("{0:X}", 256).Raw(), "100");
 }
 
 TEST(FormatTests, FloatingPointFormatting)
 {
-    EXPECT_GENERAL_STREQ(Format("{0}", 2.0f).Raw(), ToString(2.0f).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0}", -32.0f).Raw(), ToString(-32.0f).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0}", 2.531).Raw(), ToString(2.531).Raw());
-    EXPECT_GENERAL_STREQ(Format("{0}", -9.7).Raw(), ToString(-9.7).Raw());
+    // Implemented using std::snprintf()..
 }
 
 TEST(FormatTests, CharFormatting)
 {
     EXPECT_GENERAL_STREQ(Format("{0}", 'c').Raw(), "c");
-    EXPECT_GENERAL_STREQ(Format("{0:?}", 'c').Raw(), ToString('c').Raw());
-
-    EXPECT_GENERAL_STREQ(Format("{0:c}", 'c').Raw(), "c");
-    EXPECT_GENERAL_STREQ(Format("{0:C}", 'c').Raw(), "c");
+    EXPECT_GENERAL_STREQ(Format("{0:?}", 'c').Raw(), "c");
 }
 
 TEST(FormatTests, PointerFormatting)
@@ -121,7 +105,7 @@ TEST(FormatTests, PointerFormatting)
     Uintptr ptrRep;
     std::memcpy(&ptrRep, &ptr, sizeof(void*));
 
-    EXPECT_GENERAL_STREQ(Format("{0}", ptr).Raw(), ToString<Uintptr>(ptrRep, 16).Raw());
+    EXPECT_GENERAL_STREQ(Format("{0}", ptr).Raw(), Format("{0:x}", ptrRep).Raw());
 }
 
 TEST(FormatTests, StringFormatting)

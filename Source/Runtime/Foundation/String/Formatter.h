@@ -1,178 +1,254 @@
 #pragma once
 
-#include <memory>
-#include <concepts>
+#include <cstdio>
 
-#include "Foundation/Concepts/Character.h"
-#include "Foundation/Iterators/Iterator.h"
-
-#include "Foundation/String/ToString.h"
+#include "Foundation/String/String.h"
 #include "Foundation/String/FormatException.h"
+
+#include "Foundation/Algorithms/Copy.h"
+#include "Foundation/Algorithms/Reverse.h"
 
 namespace Kitsune
 {
     namespace Internal
     {
         [[noreturn]]
-        KITSUNE_FORCEINLINE void ThrowIncorrectFormatSpecs()
+        KITSUNE_FORCEINLINE void ThrowTypeInvalidSpecifier()
         {
-            throw FormatException("The format string contains an invalid format specification.");
+            throw FormatException("Formatter<T> tried to parse an invalid format specifier.");
         }
     }
 
-    template<Character Char>
     class ParseContext
     {
     public:
-        using CharType = Char;
-        using ViewType = BasicStringView<Char>;
+        using ViewType = StringView;
 
         using Iterator = ViewType::ConstIterator;
         using ConstIterator = ViewType::ConstIterator;
 
     public:
         ParseContext() = default;
-        explicit ParseContext(const ViewType& formatSpec)
-            : m_FormatSpec(formatSpec)
+        explicit ParseContext(const ViewType specifier)
+            : m_FormatSpecifier(specifier)
         {
-        };
+        }
 
     public:
-        ConstIterator GetBegin() const { return m_FormatSpec.GetBegin(); }
-        ConstIterator GetEnd() const { return m_FormatSpec.GetEnd(); }
+        [[nodiscard]]
+        inline ConstIterator GetBegin() const
+        {
+            return m_FormatSpecifier.GetBegin();
+        }
+
+        [[nodiscard]]
+        inline ConstIterator GetEnd() const
+        {
+            return m_FormatSpecifier.GetEnd();
+        }
+
+    public:
+        [[nodiscard]]
+        inline Usize GetSpecifierLength() const
+        {
+            return m_FormatSpecifier.Size();
+        }
 
     private:
-        ViewType m_FormatSpec;
+        StringView m_FormatSpecifier;
     };
 
-    template<typename T, Character Char>
-    class Formatter
+    template<typename T, WritableIterator<char> Iter>
+    class FormatContext
     {
     public:
-        static_assert(false,
-            "A valid specicalization for Formatter<T> has not been defined.");
+        using Iterator = Iter;
+
+    public:
+        explicit FormatContext(Iter outputIter, const T& value)
+            : m_OutputIter(outputIter), m_Value(value)
+        {
+        }
+
+    public:
+        [[nodiscard]] inline Iterator GetOutput() const { return m_OutputIter; }
+        [[nodiscard]] inline const T& GetValue()  const { return m_Value; }
+
+    private:
+        Iter m_OutputIter;
+        const T& m_Value;
+    };
+
+    template<typename T>
+    class Formatter { /* ... */ };
+
+    template<>
+    class Formatter<bool>
+    {
+    public:
+        void Parse(const ParseContext& context)
+        {
+            if (context.GetSpecifierLength() > 1)
+                Internal::ThrowTypeInvalidSpecifier();
+
+            if (context.GetSpecifierLength() == 0)
+                m_AsInteger = false;
+            else
+            {
+               m_AsInteger = (*context.GetBegin() == 'i') ||
+                             (*context.GetBegin() == 'I');
+            }
+        }
+
+        template<WritableIterator<char> Iter>
+        Iter Format(const FormatContext<bool, Iter>& context)
+        {
+            StringView str = (m_AsInteger) ? (context.GetValue() ? "1"    : "0") :
+                                             (context.GetValue() ? "true" : "false");
+
+            return Algorithms::Copy(str.GetBegin(), str.GetEnd(),
+                                    context.GetOutput());
+        }
+
+    private:
+        bool m_AsInteger;
     };
 
     template<>
-    class Formatter<bool, char>
+    class Formatter<char>
     {
     public:
-        void Parse(const ParseContext<char>& context)
+        void Parse(const ParseContext& /* context */)
         {
-            auto it = context.GetBegin();
-            if (it == context.GetEnd())
-                return;
-
-            m_ShowInt = (*it != 's') && (*it != 'S');
-            ++it;
-
-            // Make sure we only have one argument.
-            if (it != context.GetEnd())
-                Internal::ThrowIncorrectFormatSpecs();
         }
 
-        String Format(bool val)
+        template<WritableIterator<char> Iter>
+        Iter Format(const FormatContext<char, Iter>& context)
         {
-            String out;
-            if (!m_ShowInt) out = val ? "true" : "false";
-            else            out = val ? "1" : "0";
-
-            return out;
+            return Algorithms::CopyN(&context.GetValue(), 1, context.GetOutput());
         }
-
-    private:
-        bool m_ShowInt = false;
     };
 
+
     template<std::integral T>
-    class Formatter<T, char>
+    class Formatter<T>
     {
     public:
-        void Parse(const ParseContext<char>& context)
+        void Parse(const ParseContext& context)
         {
-            auto it = context.GetBegin();
-            if (it == context.GetEnd())
-                return;
+            if (context.GetSpecifierLength() > 1)
+                Internal::ThrowTypeInvalidSpecifier();
 
+            auto it = context.GetBegin();
             m_Base = ((*it == 'b') || (*it == 'B')) ? 2 :
                      ((*it == 'o') || (*it == 'O')) ? 8 :
                      ((*it == 'd') || (*it == 'D')) ? 10 :
                      ((*it == 'x') || (*it == 'X')  ? 16 :
-                     10);
-
-            ++it;
-            if (it != context.GetEnd())
-                Internal::ThrowIncorrectFormatSpecs();
+                                                      10);
         }
 
-        String Format(T integer)
+        template<WritableIterator<char> Iter>
+        Iter Format(const FormatContext<T, Iter>& context)
         {
-            return ToString(integer, m_Base);
+            using UnsignedType = std::make_unsigned_t<T>;
+            String str;
+
+            UnsignedType remainder;
+            UnsignedType value;
+
+            bool isNegative = (context.GetValue() < 0);
+
+            if ((m_Base != 10) || !isNegative)
+                std::memcpy(&value, &context.GetValue(), sizeof(T));
+            else
+            {
+                value = static_cast<UnsignedType>(~context.GetValue()) + 1;
+            }
+
+            do
+            {
+                remainder = value % m_Base;
+                str += s_DigitsRep[remainder];
+
+                value /= m_Base;
+            } while (value != 0);
+
+            if (isNegative && (m_Base == 10))
+                str += '-';
+
+            Algorithms::Reverse(str.GetBegin(), str.GetEnd());
+            return Algorithms::Copy(str.GetBegin(), str.GetEnd(),
+                                    context.GetOutput());
         }
 
     private:
-        T m_Base = 10;
+        constexpr static char s_DigitsRep[] = "0123456789ABCDEF";
+        T m_Base;
     };
 
     template<std::floating_point T>
-    class Formatter<T, char>
+    class Formatter<T>
     {
     public:
-        void Parse(const ParseContext<char>&) { /* ... */ }
-        String Format(T val) { return ToString(val); }
-    };
-
-    template<>
-    class Formatter<char, char>
-    {
-    public:
-        void Parse(const ParseContext<char>& context)
+        void Parse(const ParseContext& /* context */)
         {
-            auto it = context.GetBegin();
-            if (it == context.GetEnd())
-                return;
-
-            m_IntPresent = ((*it != 'c') && (*it != 'C'));
-            ++it;
-
-            if (it != context.GetEnd())
-                Internal::ThrowIncorrectFormatSpecs();
         }
 
-        String Format(char ch)
+        template<WritableIterator<char> Iter>
+        Iter Format(const FormatContext<T, Iter>& context)
         {
-            if (m_IntPresent)
-                return ToString(ch);
+            long double value = static_cast<long double>(context.GetValue());
+            Usize count = static_cast<Usize>(std::snprintf(nullptr, 0, "%Lf", value) - 1);
 
-            return String(1, ch);
+            String str(count, '\0');
+            std::snprintf(str.Data(), count, "%Lf", value);
+
+            return Algorithms::Copy(str.GetBegin(), str.GetEnd(), context.GetOutput());
         }
 
     private:
-        bool m_IntPresent = false;
+        constexpr static char s_DigitsRep[] = "0123456789ABCDEF";
+        T m_Base;
     };
 
-    template<>
-    class Formatter<void*, char>
+    template<typename T>
+    class Formatter<T*>
     {
     public:
-        void Parse(const ParseContext<char>&) { /* ... */ };
-        String Format(void* ptr)
+        void Parse(const ParseContext& /* context */)
         {
-            Uintptr intRep;
-            std::memcpy(&intRep, &ptr, sizeof(void*));
-
-            return ToString(intRep, Uintptr(16));
+            StringView specs = "X";
+            m_Formatter.Parse(ParseContext(specs));
         }
+
+        template<WritableIterator<char> Iter>
+        Iter Format(const FormatContext<T*, Iter>& context)
+        {
+            Uintptr ptr;
+            std::memcpy(&ptr, &context.GetValue(), sizeof(void*));
+
+            auto modified = FormatContext<Uintptr, Iter>(context.GetOutput(), ptr);
+            return m_Formatter.Format(modified);
+        }
+
+    private:
+        Formatter<Uint64> m_Formatter;
     };
 
     template<>
-    class Formatter<StringView, char>
+    class Formatter<StringView>
     {
     public:
-        void Parse(const ParseContext<char>&) { /* ... */ }
-        String Format(const StringView strv)
+        void Parse(const ParseContext& /* context */)
         {
-            return String(strv);
+        }
+
+        template<WritableIterator<char> Iter>
+        Iter Format(const FormatContext<StringView, Iter>& context)
+        {
+            StringView str = context.GetValue();
+            return Algorithms::Copy(str.GetBegin(), str.GetEnd(),
+                                    context.GetOutput());
         }
     };
 }

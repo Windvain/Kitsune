@@ -38,6 +38,12 @@ namespace Kitsune
         {
         }
 
+        template<RandomAccessIterator It>
+        BasicStringView(It begin, It end)
+            : m_Pointer(begin), m_Size(end - begin)
+        {
+        }
+
         BasicStringView(const BasicStringView&) = default;
 
     public:

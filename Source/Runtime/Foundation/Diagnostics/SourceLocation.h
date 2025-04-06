@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 #include "Foundation/Common/Types.h"
 #include "Foundation/Common/Macros.h"
 
@@ -19,23 +21,27 @@ namespace Kitsune
     class SourceLocation
     {
     public:
-        SourceLocation() = default;
+        SourceLocation()
+            : m_FileName("<unknown>"), m_FunctionName("<unknown>"),
+              m_Line(0)
+        {
+        }
 
     public:
         static SourceLocation Current(const char* file = KITSUNE_BUILTIN_FILE_(),
                                       const char* func = KITSUNE_BUILTIN_FUNC_(),
-                                      Int32 line = KITSUNE_BUILTIN_LINE_())
+                                      Uint32 line = KITSUNE_BUILTIN_LINE_())
         {
             return SourceLocation(file, func, line);
         }
 
     public:
-        const char* FileName() const { return m_FileName; }
-        const char* FunctionName() const { return m_FunctionName; }
-        Int32 Line() const { return m_Line; }
+        [[nodiscard]] const char* FileName()     const { return m_FileName; }
+        [[nodiscard]] const char* FunctionName() const { return m_FunctionName; }
+        [[nodiscard]] Uint32 Line()              const { return m_Line; }
 
     private:
-        SourceLocation(const char* file, const char* func, Int32 line)
+        SourceLocation(const char* file, const char* func, Uint32 line)
             : m_FileName(file), m_FunctionName(func), m_Line(line)
         {
         }
@@ -44,6 +50,13 @@ namespace Kitsune
         const char* m_FileName;
         const char* m_FunctionName;
 
-        Int32 m_Line;
+        Uint32 m_Line;
     };
+
+    inline bool operator==(const SourceLocation& loc1, const SourceLocation& loc2)
+    {
+        return (loc1.Line() == loc2.Line()) &&
+               (std::strcmp(loc1.FileName(), loc2.FileName()) == 0) &&
+               (std::strcmp(loc1.FunctionName(), loc2.FunctionName()) == 0);
+    }
 }

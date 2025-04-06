@@ -3,7 +3,9 @@
 #include <cstdio>
 #include <cinttypes>
 
-#include "Foundation/Logging/Logging.h"
+#include "Foundation/String/Format.h"
+#include "Foundation/Logging/GlobalLog.h"
+
 #include "Foundation/Diagnostics/MessageBox.h"
 
 namespace Kitsune::Internal
@@ -48,13 +50,15 @@ namespace Kitsune::Internal
     bool HandleAssertionFailure(const char* expression, const char* message,
                                 SourceLocation loc)
     {
-        if (Logging::GetGlobalLogger() == nullptr)
+        Logger* logger = GetGlobalLogger();
+        if (logger == nullptr)
             FallbackLogAssertionMessage(expression, message, loc);
         else
         {
-            Logging::Fatal("Assertion `{0}` has failed.\n"
-                           "`{1}` [In function {2}, file {3}:{4}]",
-                           expression, message, loc.FunctionName(), loc.FileName(), loc.Line());
+            logger->LogFormat(LogSeverity::Fatal, Move(loc),
+                              "Assertion `{0}` has failed.\n"
+                              "`{1}`",
+                              expression, message);
         }
 
         return (ShowAssertMessageBox(expression, message, loc) == MessageBoxAbortId);

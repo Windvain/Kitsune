@@ -1,8 +1,8 @@
 kitsune_add_library(
     TARGET KitsuneFoundation
     SOURCES
-    "Algorithms/Internal/AlgoConcepts.h"
     "Algorithms/Copy.h"
+    "Algorithms/Count.h"
     "Algorithms/Destroy.h"
     "Algorithms/Distance.h"
     "Algorithms/Equal.h"
@@ -10,6 +10,7 @@ kitsune_add_library(
     "Algorithms/Find.h"
     "Algorithms/ForEach.h"
     "Algorithms/Move.h"
+    "Algorithms/Replace.h"
     "Algorithms/Reverse.h"
     "Algorithms/Swap.h"
     "Algorithms/Uninitialized.h"
@@ -32,19 +33,26 @@ kitsune_add_library(
     "Diagnostics/OutOfRangeException.h"
     "Diagnostics/SourceLocation.h"
 
+    "Filesystem/Path.h"
+    "Filesystem/WindowsPath.cpp"
+    "Filesystem/WindowsPath.h"
+
     "Iterators/Iterator.h"
     "Iterators/IteratorTraits.h"
     "Iterators/ReverseIterator.h"
 
-    "Logging/ConsoleLoggerSink.cpp"
-    "Logging/ConsoleLoggerSink.h"
-    "Logging/ILoggerSink.h"
-    "Logging/Logger.cpp"
-    "Logging/Logger.h"
-    "Logging/Logging.cpp"
-    "Logging/Logging.h"
+    "Logging/AnsiColorSink.cpp"
+    "Logging/AnsiColorSink.h"
+    "Logging/ConsoleStream.cpp"
+    "Logging/ConsoleStream.h"
+    "Logging/GlobalLog.cpp"
+    "Logging/GlobalLog.h"
+    "Logging/ILogSink.h"
+    "Logging/IStream.h"
     "Logging/LogMessage.h"
-    "Logging/LogSeverity.h"
+    "Logging/Logger.h"
+    "Logging/StreamBuffer.h"
+    "Logging/WriteStreamIterator.h"
 
     "Maths/Vector2.h"
     "Maths/VectorBase.h"
@@ -64,12 +72,14 @@ kitsune_add_library(
 
     "String/CharTraits.h"
     "String/Format.h"
+    "String/FormatArguments.h"
     "String/FormatException.h"
+    "String/FormatScanner.cpp"
+    "String/FormatScanner.h"
     "String/Formatter.h"
     "String/InvalidUnicodeException.h"
     "String/String.h"
     "String/StringView.h"
-    "String/ToString.h"
 
     "Templates/Exchange.h"
     "Templates/Forward.h"
@@ -77,6 +87,8 @@ kitsune_add_library(
     "Templates/Move.h"
 
     "Threading/Interlocked.h"
+    "Threading/LockGuard.h"
+    "Threading/Mutex.h"
     "Threading/ThreadSafety.h"
 )
 
@@ -93,6 +105,10 @@ kitsune_add_platform_sources(
     WINDOWS
     "Diagnostics/WindowsDebuggerAttached.cpp"
     "Diagnostics/WindowsMessageBox.cpp"
+
+    "Logging/WindowsConsoleStream.cpp"
+
+    "Threading/WindowsMutex.cpp"
 
     "Windows/StringConversions.h"
 )

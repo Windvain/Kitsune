@@ -556,6 +556,51 @@ TEST(BasicStringTests, RangedForLoop)
     }
 }
 
+TEST(BasicStringTests, SwapMemberFn)
+{
+    BasicString<char16_t> str1 = { 14, 23, 4343, 121 };
+    BasicString<char16_t> str2 = { 32, 54, 11, 43, 11 };
+
+    str1.Swap(str2);
+
+    EXPECT_EQ(str1.Size(), 5);
+    EXPECT_EQ(str2.Size(), 4);
+
+    EXPECT_EQ(str1[0], 32);
+    EXPECT_EQ(str1[1], 54);
+    EXPECT_EQ(str1[2], 11);
+    EXPECT_EQ(str1[3], 43);
+    EXPECT_EQ(str1[4], 11);
+
+    EXPECT_EQ(str2[0], 14);
+    EXPECT_EQ(str2[1], 23);
+    EXPECT_EQ(str2[2], 4343);
+    EXPECT_EQ(str2[3], 121);
+}
+
+
+TEST(BasicStringTests, SwapAlgorithm)
+{
+    BasicString<char16_t> str1 = { 14, 23, 4343, 121 };
+    BasicString<char16_t> str2 = { 32, 54, 11, 43, 11 };
+
+    Algorithms::Swap(str1, str2);
+
+    EXPECT_EQ(str1.Size(), 5);
+    EXPECT_EQ(str2.Size(), 4);
+
+    EXPECT_EQ(str1[0], 32);
+    EXPECT_EQ(str1[1], 54);
+    EXPECT_EQ(str1[2], 11);
+    EXPECT_EQ(str1[3], 43);
+    EXPECT_EQ(str1[4], 11);
+
+    EXPECT_EQ(str2[0], 14);
+    EXPECT_EQ(str2[1], 23);
+    EXPECT_EQ(str2[2], 4343);
+    EXPECT_EQ(str2[3], 121);
+}
+
 TEST(BasicStringTests, Equal)
 {
     BasicString<char32_t> arr = U"Cras risus odio, tempus feugiat velit maximus, sollicitudin elementum magna.";
