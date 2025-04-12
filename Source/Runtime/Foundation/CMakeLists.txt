@@ -26,12 +26,16 @@ kitsune_add_library(
 
     "Diagnostics/Assert.cpp"
     "Diagnostics/Assert.h"
+    "Diagnostics/IException.cpp"
     "Diagnostics/IException.h"
     "Diagnostics/InvalidArgumentException.h"
     "Diagnostics/IsDebuggerAttached.h"
     "Diagnostics/MessageBox.h"
     "Diagnostics/OutOfRangeException.h"
     "Diagnostics/SourceLocation.h"
+    "Diagnostics/StackFrame.h"
+    "Diagnostics/StackTrace.h"
+    "Diagnostics/StackTraceException.h"
 
     "Filesystem/Path.h"
     "Filesystem/WindowsPath.cpp"
@@ -89,16 +93,21 @@ kitsune_add_library(
     "Threading/Interlocked.h"
     "Threading/LockGuard.h"
     "Threading/Mutex.h"
+    "Threading/ThisThread.cpp"
+    "Threading/ThisThread.h"
     "Threading/ThreadSafety.h"
 )
 
 kitsune_add_platform_sources(
     TARGET KitsuneFoundation
     CLANG
+    "Diagnostics/ClangStackTrace.cpp"
     "Threading/ClangInterlocked.inl"
+
     "KitsuneFoundation.rc"
 
     MSVC
+    "Diagnostics/MSVCStackTrace.cpp"
     "Threading/MSVCInterlocked.inl"
     "KitsuneFoundation.manifest"
 
@@ -116,4 +125,7 @@ kitsune_add_platform_sources(
 kitsune_add_platform_dependencies(
     TARGET KitsuneFoundation
     WINDOWS "comctl32.lib"
+
+    MSVC  "DbgHelp.lib"
+    CLANG "libbacktrace"
 )

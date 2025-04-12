@@ -45,7 +45,7 @@ namespace Kitsune
         HANDLE handle = ::GetStdHandle(STD_INPUT_HANDLE);
         DWORD countRead;
 
-        ::ReadFile(handle, m_Buffer.GetBegin(), m_Buffer.GetSize(), &countRead, nullptr);
+        ::ReadFile(handle, m_Buffer.GetBegin(), static_cast<DWORD>(m_Buffer.GetSize()), &countRead, nullptr);
         m_Buffer.SetPointer(m_Buffer.GetBegin() + countRead);
     }
 }

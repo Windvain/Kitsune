@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cinttypes>
 
 #include "Foundation/Common/Macros.h"
 #include "Foundation/Diagnostics/IException.h"
@@ -7,6 +8,8 @@
 
 #include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Logging/AnsiColorSink.h"
+
+#include "Foundation/Threading/ThisThread.h"
 
 #include "ApplicationCore/Application.h"
 #include "ApplicationCore/Environment.h"
@@ -66,6 +69,29 @@ namespace Kitsune
         return exitCode;
     }
 
+    void PrintStackTrace()
+    {
+        StackTrace* stackTrace = ThisThread::GetExceptionStackTrace();
+        if (stackTrace == nullptr)
+        {
+            std::printf("No stack traces were created.\n");
+            return;
+        }
+
+        std::printf("Stack trace: \nThread Name: %s\n",
+                    stackTrace->GetCallingThreadName().Raw());
+
+        Uint32 index = 0;
+        for (auto& frame : *stackTrace)
+        {
+             std::printf("#%" PRIu32 ": (0x%p) %s\n\tfrom %s:%" PRIu32 "\n",
+                         index, frame.GetFunctionAddress(), frame.GetFunctionName().Raw(),
+                         frame.GetFileName().Raw(), frame.GetLineNumber());
+
+            ++index;
+        }
+    }
+
     int EngineMain(int argc, char** argv)
     {
         // The try/catch makes it harder to debug, just add it in when compiling release builds.
@@ -78,11 +104,14 @@ namespace Kitsune
 #if defined(KITSUNE_BUILD_RELEASE)
         catch (const IException& exception)
         {
+            // Can't use Logger API here.. Just output whatever we can
+            // to the console instead.
             std::printf(
-                "An IException has been thrown. (Name: %s)\nDescription: %s",
+                "An IException has been thrown. (Name: %s)\nDescription: %s\n",
                 exception.GetName(), exception.GetDescription()
             );
 
+            PrintStackTrace();
             return 1;
         }
 #endif

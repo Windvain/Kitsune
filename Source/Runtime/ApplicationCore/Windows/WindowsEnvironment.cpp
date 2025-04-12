@@ -65,7 +65,7 @@ namespace Kitsune
 
         do
         {
-            pathLen = ::GetModuleFileNameW(nullptr, exePath.Data(), exePath.Size() + 1);
+            pathLen = ::GetModuleFileNameW(nullptr, exePath.Data(), DWORD(exePath.Size() + 1));
             if (pathLen == 0)
                 return Path(L"");
 

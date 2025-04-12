@@ -5,14 +5,23 @@
 #include "Foundation/Common/Types.h"
 #include "Foundation/Common/Macros.h"
 
-#if KITSUNE_HAS_BUILTIN(__builtin_FILE) && KITSUNE_HAS_BUILTIN(__builtin_LINE) && \
-    KITSUNE_HAS_BUILTIN(__builtin_FUNCTION)
+#if KITSUNE_HAS_BUILTIN(__builtin_FILE) || defined(KITSUNE_COMPILER_MSVC)
     #define KITSUNE_BUILTIN_FILE_() __builtin_FILE()
-    #define KITSUNE_BUILTIN_LINE_() __builtin_LINE()
-    #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCTION()
 #else
     #define KITSUNE_BUILTIN_FILE_() "<unknown>"
+#endif
+
+#if KITSUNE_HAS_BUILTIN(__builtin_LINE) || defined(KITSUNE_COMPILER_MSVC)
+    #define KITSUNE_BUILTIN_LINE_() __builtin_LINE()
+#else
     #define KITSUNE_BUILTIN_LINE_() 0
+#endif
+
+#if KITSUNE_HAS_BUILTIN(__builtin_FUNCTION)
+    #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCTION()
+#elif defined(KITSUNE_COMPILER_MSVC)
+    #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCSIG()
+#else
     #define KITSUNE_BUILTIN_FUNC_() "<unknown>"
 #endif
 
@@ -60,3 +69,7 @@ namespace Kitsune
                (std::strcmp(loc1.FunctionName(), loc2.FunctionName()) == 0);
     }
 }
+
+#undef KITSUNE_BUILTIN_FILE_
+#undef KITSUNE_BUILTIN_LINE_
+#undef KITSUNE_BUILTIN_FUNC_

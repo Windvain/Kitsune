@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Foundation/String/String.h"
+#include "Foundation/String/Format.h"
+
 #include "Foundation/Logging/ILogSink.h"
 #include "Foundation/Logging/LogMessage.h"
 
-#include "Foundation/String/String.h"
-#include "Foundation/Memory/SharedPtr.h"
-
 #include "Foundation/Containers/Array.h"
+#include "Foundation/Memory/SharedPtr.h"
 #include "Foundation/Algorithms/ForEach.h"
 
 namespace Kitsune
