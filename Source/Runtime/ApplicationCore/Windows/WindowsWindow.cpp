@@ -1,9 +1,12 @@
 #include "ApplicationCore/Windows/WindowsWindow.h"
+
+#include "Foundation/Threading/Interlocked.h"
 #include "Foundation/Windows/StringConversions.h"
 
 #include "ApplicationCore/IWindow.h"
 #include "ApplicationCore/Application.h"
-#include "ApplicationCore/BadWindowCreationException.h"
+
+#include "ApplicationCore/WindowException.h"
 
 // Copied from Windows.h, just made it work with signed integers instead.
 #define KITSUNE_SIGNED_LOWORD_(lparam) static_cast<INT16>(static_cast<LONG_PTR>(lparam) & 0xFFFF)
@@ -11,83 +14,50 @@
 
 namespace Kitsune
 {
-    Uint32 WindowsWindow::s_WindowCount = 0;
+    volatile Int32 WindowsWindow::s_WindowCount = 0;
 
-    WindowsWindow::WindowsWindow(const WindowProperties& props)
-        : m_Application(Application::GetInstance())
+    WindowsWindow::WindowsWindow(int width, int height, int x, int y,
+                                 const wchar_t* title, WindowState state, WindowFlag flags)
+        : m_WindowFlags(flags)
     {
-        KITSUNE_ASSERT(m_Application != nullptr, "Application has not been instanced.");
-
         WNDCLASSEXW windowClass = GetWindowClass();
-        if ((s_WindowCount == 0) && (::RegisterClassExW(&windowClass) == 0))
-            throw BadWindowCreationException("Failed to register window class");
+        if (Interlocked::Load(&s_WindowCount) == 0)
+            ::RegisterClassExW(&windowClass);
 
         DWORD exStyle = GetExtendedWindowStyles();
         DWORD style = GetWindowStyles();
-        WideString wideTitle = Internal::WindowsConvertToUtf16(props.Title);
 
-        Vector2<Int32> pos;
-        Vector2<Uint32> size;
-
-        if (props.PositionHint == WindowPositionHint::UsePosition)
-        {
-            RECT rect = { props.Position.x, props.Position.y,
-                          static_cast<LONG>(props.Position.x + props.Size.x),
-                          static_cast<LONG>(props.Position.y + props.Size.y) };
-
-            ::AdjustWindowRectEx(&rect, GetWindowStyles(), false, GetExtendedWindowStyles());
-
-            pos = { rect.left, rect.top };
-            size = { static_cast<Uint32>(rect.right - rect.left),
-                     static_cast<Uint32>(rect.bottom - rect.top) };
-        }
-        else
-        {
-            RECT rect = { 0, 0, static_cast<LONG>(props.Size.x), static_cast<LONG>(props.Size.y) };
-            ::AdjustWindowRectEx(&rect, GetWindowStyles(), false, GetExtendedWindowStyles());
-
-            size = { static_cast<Uint32>(rect.right - rect.left),
-                     static_cast<Uint32>(rect.bottom - rect.top) };
-
-            if (props.PositionHint == WindowPositionHint::DefaultPosition)
-                pos = { CW_USEDEFAULT, CW_USEDEFAULT };
-            else if (props.PositionHint == WindowPositionHint::ScreenCenter)
-            {
-                pos = (props.VideoMode.Resolution / 2) - (size / 2);
-            }
-        }
+        RECT adjustedRect = { x, y, x + width, y + height };
+        ::AdjustWindowRectEx(&adjustedRect, style, false, exStyle);
 
         m_NativeHandle = ::CreateWindowExW(
             exStyle, s_WindowClassName,
-            wideTitle.Raw(), style,
-            pos.x, pos.y,
-            size.x, size.y,
+            title, style,
+            adjustedRect.left, adjustedRect.top,
+            adjustedRect.right - adjustedRect.left,
+            adjustedRect.bottom - adjustedRect.top,
             nullptr, nullptr, nullptr, nullptr);
 
         if (m_NativeHandle == nullptr)
-            throw BadWindowCreationException("Failed to create a window");
+            throw WindowException("Failed to create a window");
 
-        m_VideoMode = props.VideoMode;
         ::SetWindowLongPtrW(m_NativeHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
-        int showWindowFlags = SW_SHOW;
-        if (props.WindowState == WindowState::Minimized)
-            showWindowFlags = SW_SHOWMINIMIZED;
-        else if (props.WindowState == WindowState::Maximized)
-            showWindowFlags = SW_SHOWMAXIMIZED;
+        ::ShowWindow(m_NativeHandle, SW_SHOW);
+        SetState(state);
 
-        ::ShowWindow(m_NativeHandle, showWindowFlags);
-        ++s_WindowCount;
+        if ((m_WindowFlags & WindowFlag::Resizable) == WindowFlag::None)
+            ::GetWindowRect(m_NativeHandle, &m_UnresizableRect);
     }
 
     WindowsWindow::~WindowsWindow()
     {
         ::DestroyWindow(m_NativeHandle);
 
-        if (s_WindowCount == 1)
-            ::UnregisterClassW(s_WindowClassName, nullptr);
+        if (Interlocked::Load(&s_WindowCount) != 1)
+            Interlocked::Decrement(&s_WindowCount);
         else
-            --s_WindowCount;
+            ::UnregisterClassW(s_WindowClassName, nullptr);
     }
 
     Vector2<Int32> WindowsWindow::GetPosition() const
@@ -110,7 +80,7 @@ namespace Kitsune
 
     void WindowsWindow::SetSize(const Vector2<Uint32>& size)
     {
-        if (!IsFloating()) Restore();
+        if (!IsWindowed()) Restore();
 
         RECT rect = { 0, 0, static_cast<LONG>(size.x), static_cast<LONG>(size.y) };
         ::AdjustWindowRectEx(&rect, GetWindowStyles(), false, GetExtendedWindowStyles());
@@ -122,21 +92,13 @@ namespace Kitsune
 
     void WindowsWindow::SetPosition(const Vector2<Int32>& pos)
     {
-        if (!IsFloating()) Restore();
+        if (!IsWindowed()) Restore();
 
         auto size = static_cast<Vector2<LONG>>(GetSize());
         RECT rect = { pos.x, pos.y, size.x, size.y };
 
         ::AdjustWindowRectEx(&rect, GetWindowStyles(), false, GetExtendedWindowStyles());
         ::SetWindowPos(m_NativeHandle, nullptr, rect.left, rect.top, 0, 0, SWP_NOSIZE);
-    }
-
-    AABB2<Int32> WindowsWindow::GetFrameBoundingBox() const
-    {
-        RECT rect;
-        ::GetWindowRect(m_NativeHandle, &rect);
-
-        return AABB2<Int32>({ rect.left, rect.top }, { rect.right, rect.bottom });
     }
 
     void WindowsWindow::SetTitle(StringView title)
@@ -149,31 +111,59 @@ namespace Kitsune
 
     void WindowsWindow::SetState(WindowState state)
     {
-        DWORD showCmd = (state == WindowState::Minimized) ? SW_MINIMIZE :
-                        (state == WindowState::Maximized) ? SW_MAXIMIZE :
-                                                            SW_NORMAL;
+        // There is currently no way of changing the state of a window without showing it.
+        // Wasn't worth rolling out our own ShowWindow(), because debugging was a pain due to
+        // Microsoft's talent in not documenting anything.
 
-        if (IsShown() || (showCmd != SW_MAXIMIZE))
-            ::ShowWindow(m_NativeHandle, showCmd);
+        int showCmd = (state == WindowState::Maximized) ? SW_MAXIMIZE :
+                      (state == WindowState::Minimized) ? SW_MINIMIZE :
+                                                          SW_RESTORE;
+
+        if (state == WindowState::Fullscreen)
+            Fullscreen();
         else
         {
-            // There is currently no way of maximizing
-            // Maximize by setting pos & size instead, no other option.
-            // HACK: Set style, then set position.
-            DWORD style = ::GetWindowLongW(m_NativeHandle, GWL_STYLE);
-            style |= WS_MAXIMIZE;
-            ::SetWindowLongW(m_NativeHandle, GWL_STYLE, style);
-
-            Vector2<Uint32> res = m_VideoMode.Resolution;
-            ::SetWindowPos(m_NativeHandle, nullptr, 0, 0, res.x, res.y,
-                           SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+            if (m_Fullscreen) UndoFullscreen();
+            ::ShowWindow(m_NativeHandle, showCmd);
         }
     }
 
-    void WindowsWindow::Restore()
+    WindowState WindowsWindow::GetState() const
     {
-        ::ShowWindow(m_NativeHandle, SW_NORMAL);
+        if (m_Fullscreen)
+            return WindowState::Fullscreen;
+
+        LONG style = ::GetWindowLongW(m_NativeHandle, GWL_STYLE);
+        return (style & WS_MAXIMIZE) ? WindowState::Maximized :
+               (style & WS_MINIMIZE) ? WindowState::Minimized :
+                                       WindowState::Windowed;
     }
+
+    void WindowsWindow::Fullscreen()
+    {
+        // Minimized -> Fullscreen doesn't work. Why? Who knows! Undocumented.
+        // Source from Raymond Chen: https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353
+
+        ::ShowWindow(m_NativeHandle, SW_RESTORE);
+        m_Fullscreen = true;
+
+        HMONITOR monitor = ::MonitorFromWindow(m_NativeHandle, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO monitorInfo;
+
+        monitorInfo.cbSize = sizeof(MONITORINFO);
+        ::GetMonitorInfoW(monitor, &monitorInfo);
+
+        ::GetWindowPlacement(m_NativeHandle, &m_FullscreenPrev);
+
+        DWORD style = GetWindowLong(m_NativeHandle, GWL_STYLE);
+        ::SetWindowLongW(m_NativeHandle, GWL_STYLE, style & ~GetWindowStyles());
+
+        RECT& monitorRect = monitorInfo.rcMonitor;
+        ::SetWindowPos(m_NativeHandle, HWND_TOP, monitorRect.left, monitorRect.top,
+                       monitorRect.right - monitorRect.left,
+                       monitorRect.bottom - monitorRect.top,
+                       SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+    };
 
     void WindowsWindow::Show() { ::ShowWindow(m_NativeHandle, SW_SHOW); }
     void WindowsWindow::Hide() { ::ShowWindow(m_NativeHandle, SW_HIDE); }
@@ -207,20 +197,47 @@ namespace Kitsune
     LRESULT WindowsWindow::KitsuneWindowProc(HWND windowHandle, UINT message,
                                              WPARAM wparam, LPARAM lparam)
     {
+        Application& app = Application::GetInstance();
         auto* window = reinterpret_cast<WindowsWindow*>(::GetWindowLongPtrW(windowHandle, GWLP_USERDATA));
+
         if (window == nullptr)      // ::CreateWindowExW() calls the window procedure with WM_CREATE.
             return ::DefWindowProcW(windowHandle, message, wparam, lparam);
 
-        Application* app = window->m_Application;
         switch (message)
         {
         case WM_CLOSE:
         {
-            SharedPtr<IWindow> primaryWindow = app->GetPrimaryWindow();
-            if (primaryWindow.Get() == window)
-                app->Exit(app->GetExitCode());
+            app.Exit(app.GetExitCode());
+            return 0;
+        }
+
+        case WM_SIZING:
+        {
+            // Disabling WS_MAXIMIZEBOX and WS_SIZEBOX still allows for the window to be resized by
+            // dragging the title bar.
+            if ((window->m_WindowFlags & WindowFlag::Resizable) == WindowFlag::None)
+            {
+                RECT* rect = reinterpret_cast<RECT*>(lparam);
+                *rect = window->m_UnresizableRect;
+
+                return 0;
+            }
 
             break;
+        }
+
+        case WM_SIZE:
+        {
+            Vector2<Uint32> size = { static_cast<Uint32>(LOWORD(lparam)),
+                                     static_cast<Uint32>(HIWORD(lparam)) };
+
+            if (wparam == SIZE_MINIMIZED)
+                app.OnWindowMaximize();
+            else if (wparam == SIZE_MINIMIZED)
+                app.OnWindowMinimize();
+
+            app.OnWindowResize(size);
+            return 0;
         }
 
         case WM_MOVE:
@@ -229,68 +246,38 @@ namespace Kitsune
             Vector2<Int32> position = { static_cast<Int32>(KITSUNE_SIGNED_LOWORD_(lparam)),
                                         static_cast<Int32>(KITSUNE_SIGNED_HIWORD_(lparam)) };
 
-            app->OnWindowMove(*window, position);
+            app.OnWindowMove(position);
             break;
         }
-
-        case WM_SIZE:
-        {
-            window->m_State = (wparam == SIZE_MINIMIZED) ? WindowState::Minimized :
-                              (wparam == SIZE_MAXIMIZED) ? WindowState::Maximized :
-                                                           WindowState::Floating;
-
-            Vector2<Uint32> size = { static_cast<Uint32>(LOWORD(lparam)),
-                                     static_cast<Uint32>(HIWORD(lparam)) };
-
-            if (window->m_State == WindowState::Maximized)
-                app->OnWindowMaximize(*window);
-            else if (window->m_State == WindowState::Minimized)
-                app->OnWindowMinimize(*window);
-
-            app->OnWindowResize(*window, size);
-            break;
         }
 
-        default:
-            return ::DefWindowProcW(windowHandle, message, wparam, lparam);
-        }
-
-        return 0;
+        return ::DefWindowProcW(windowHandle, message, wparam, lparam);
     }
 
-    DWORD WindowsWindow::GetExtendedWindowStyles()
+    DWORD WindowsWindow::GetExtendedWindowStyles() const
     {
         return WS_EX_APPWINDOW;
     }
 
-    DWORD WindowsWindow::GetWindowStyles()
+    DWORD WindowsWindow::GetWindowStyles() const
     {
-        return WS_OVERLAPPEDWINDOW;
+        DWORD styles = WS_OVERLAPPEDWINDOW;
+        if ((m_WindowFlags & WindowFlag::Resizable) == WindowFlag::None)
+            styles &= ~(WS_MAXIMIZEBOX | WS_SIZEBOX);
+
+        return styles;
     }
 
-    SharedPtr<IWindow> MakeWindow(const WindowProperties& props)
+    void WindowsWindow::UndoFullscreen()
     {
-        if (props.Size == Vector2<Uint32>(0, 0))
-            throw BadWindowCreationException("Cannot create a window with a size of [0, 0]");
+        m_Fullscreen = false;
 
-        WindowProperties modifiedProps = props;
+        LONG style = ::GetWindowLongW(m_NativeHandle, GWL_STYLE);
+        SetWindowLong(m_NativeHandle, GWL_STYLE, style | GetWindowStyles());
 
-        if (props.VideoMode != VideoMode())
-            modifiedProps.VideoMode = props.VideoMode;
-        else
-        {
-            DEVMODEW devMode;
-            devMode.dmSize = sizeof(devMode);
-            devMode.dmDriverExtra = 0;
-
-            if (::EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &devMode) == 0)
-                throw BadWindowCreationException("Failed to get the current display's settings");
-
-            modifiedProps.VideoMode = VideoMode(devMode.dmBitsPerPel,
-                                                Vector2<Uint32>(devMode.dmPelsWidth, devMode.dmPelsHeight),
-                                                devMode.dmDisplayFrequency);
-        }
-
-        return MakeScoped<WindowsWindow>(modifiedProps);
+        SetWindowPlacement(m_NativeHandle, &m_FullscreenPrev);
+        SetWindowPos(m_NativeHandle, NULL, 0, 0, 0, 0,
+                       SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                       SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
 }

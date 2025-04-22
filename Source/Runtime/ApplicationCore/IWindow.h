@@ -1,12 +1,10 @@
 #pragma once
 
 #include "Foundation/Maths/Vector2.h"
-#include "Foundation/Maths/AABB.h"
-
 #include "Foundation/String/String.h"
-#include "Foundation/Memory/SharedPtr.h"
 
-#include "ApplicationCore/VideoMode.h"
+#include "Foundation/Utilities/EnumFlags.h"
+#include "Foundation/Utilities/NonCopyable.h"
 
 KITSUNE_PUSH_COMPILER_WARNINGS()
 
@@ -17,31 +15,31 @@ namespace Kitsune
 {
     enum class WindowState
     {
-        Floating,
+        Windowed,
+        Maximized,
         Minimized,
-        Maximized
+        Fullscreen
     };
 
-    enum class WindowPositionHint
+    enum class WindowFlag
     {
-        UsePosition,
-        DefaultPosition,
-        ScreenCenter
+        None = 0,
+        Resizable = 1 << 0
     };
+
+    KITSUNE_OVERLOAD_FLAGS_OPERATORS(WindowFlag);
 
     struct WindowProperties
     {
         Vector2<Int32> Position;
-        Vector2<Uint32> Size = { 640, 480 };
+        Vector2<Uint32> Size;
 
         String Title;
-        VideoMode VideoMode;
-
-        WindowState WindowState = WindowState::Floating;
-        WindowPositionHint PositionHint = WindowPositionHint::UsePosition;
+        WindowState State = WindowState::Windowed;
+        WindowFlag Flags = WindowFlag::Resizable;
     };
 
-    class IWindow
+    class IWindow : public NonCopyable
     {
     public:
         virtual ~IWindow() { /* ... */ }
@@ -54,35 +52,23 @@ namespace Kitsune
         virtual void SetPosition(const Vector2<Int32>& pos) = 0;
 
     public:
-        virtual AABB2<Int32> GetFrameBoundingBox() const = 0;
-        inline AABB2<Int32> GetBoundingBox() const
-        {
-            Vector2<Int32> pos = GetPosition();
-            return AABB2<Int32>(pos, pos + GetSize());
-        }
-
-        inline void SetBoundingBox(const AABB2<Int32>& newBB)
-        {
-            SetPosition(newBB.TopLeft);
-            SetSize(newBB.BottomRight - newBB.TopLeft);
-        }
-
-    public:
-        virtual void SetTitle(StringView title) = 0;
+        virtual void SetTitle(const StringView title) = 0;
         virtual String GetTitle() const = 0;
 
     public:
         virtual void SetState(WindowState state) = 0;
         virtual WindowState GetState() const = 0;
 
+        virtual void Fullscreen() = 0;
+        virtual bool IsFullscreen() const = 0;
+
+        virtual void Minimize() = 0;
+        virtual void Maximize() = 0;
         virtual void Restore() = 0;
 
-        inline void Minimize() { SetState(WindowState::Minimized); }
-        inline void Maximize() { SetState(WindowState::Maximized); }
-
-        inline bool IsMinimized() const { return (GetState() == WindowState::Minimized); }
-        inline bool IsMaximized() const { return (GetState() == WindowState::Maximized); }
-        inline bool IsFloating()  const { return (GetState() == WindowState::Floating); }
+        virtual bool IsMinimized() const = 0;
+        virtual bool IsMaximized() const = 0;
+        virtual bool IsWindowed() const = 0;
 
     public:
         virtual void Show() = 0;
@@ -90,8 +76,6 @@ namespace Kitsune
 
         virtual bool IsShown() const = 0;
     };
-
-    KITSUNE_API_ SharedPtr<IWindow> MakeWindow(const WindowProperties& props);
 }
 
 KITSUNE_POP_COMPILER_WARNINGS()

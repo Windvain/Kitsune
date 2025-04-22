@@ -10,40 +10,35 @@ namespace Kitsune
         KITSUNE_API_ NullWindow(const WindowProperties& props);
 
     public:
-        Vector2<Uint32> GetSize()    const override { return m_Size; }
-        Vector2<Int32> GetPosition() const override { return m_Position; }
+        [[nodiscard]] inline Vector2<Uint32> GetSize()    const override { return m_Size; }
+        [[nodiscard]] inline Vector2<Int32> GetPosition() const override { return m_Position; }
 
-        void SetSize(const Vector2<Uint32>& size)   override { m_Size = size; }
-        void SetPosition(const Vector2<Int32>& pos) override { m_Position = pos; }
-
-    public:
-        AABB2<Int32> GetFrameBoundingBox() const override
-        {
-            return GetBoundingBox();
-        }
+        inline void SetSize(const Vector2<Uint32>& size)   override { m_Size = size; }
+        inline void SetPosition(const Vector2<Int32>& pos) override { m_Position = pos; }
 
     public:
-        void SetTitle(StringView title) override { m_Title = title; }
-        String GetTitle()         const override { return m_Title; }
+        inline void SetTitle(StringView title) override { m_Title = title; }
+        [[nodiscard]] inline String GetTitle() const override { return m_Title; }
 
     public:
         KITSUNE_API_ void SetState(WindowState state) override;
-        WindowState GetState() const override { return m_State; }
+        [[nodiscard]] inline WindowState GetState() const override { return m_State; }
 
-        void Restore() override
-        {
-            SetState(WindowState::Floating);
-        }
+        inline void Minimize() override   { return SetState(WindowState::Minimized); }
+        inline void Maximize() override   { return SetState(WindowState::Maximized); }
+        inline void Restore()  override   { return SetState(WindowState::Windowed); }
+        inline void Fullscreen() override { SetState(WindowState::Fullscreen); }
+
+        [[nodiscard]] inline bool IsMinimized()  const override { return GetState() == WindowState::Minimized; }
+        [[nodiscard]] inline bool IsMaximized()  const override { return GetState() == WindowState::Maximized; }
+        [[nodiscard]] inline bool IsWindowed()   const override { return GetState() == WindowState::Windowed; }
+        [[nodiscard]] inline bool IsFullscreen() const override { return GetState() == WindowState::Fullscreen; }
 
     public:
         void Show() override { /* ... */ }
         void Hide() override { /* ... */ }
 
         bool IsShown() const override { return false; }
-
-    private:
-        KITSUNE_API_ static Vector2<Int32> GetPosFromHint(
-            const WindowProperties& props);
 
     private:
         Vector2<Uint32> m_Size;
@@ -54,12 +49,5 @@ namespace Kitsune
 
         String m_Title;
         WindowState m_State;
-
-        VideoMode m_VideoMode;
     };
-
-    inline SharedPtr<NullWindow> MakeNullWindow(const WindowProperties& props)
-    {
-        return MakeShared<NullWindow>(props);
-    }
 }

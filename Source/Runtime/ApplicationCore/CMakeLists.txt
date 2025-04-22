@@ -1,19 +1,20 @@
 kitsune_add_library(
     TARGET KitsuneApplicationCore
     SOURCES
+    "Null/NullMonitor.h"
     "Null/NullWindow.cpp"
     "Null/NullWindow.h"
 
     "Application.cpp"
     "Application.h"
-    "BadMonitorCreationException.h"
-    "BadWindowCreationException.h"
     "CommandLineArguments.h"
+    "CoreApplication.h"
     "Environment.h"
     "IMonitor.h"
-    "IPlatformApplication.h"
     "IWindow.h"
+    "MonitorException.h"
     "VideoMode.h"
+    "WindowException.h"
 
     DEPENDENCIES
     KitsuneFoundation
@@ -22,8 +23,7 @@ kitsune_add_library(
 kitsune_add_platform_sources(
     TARGET KitsuneApplicationCore
     WINDOWS
-    "Windows/WindowsApplication.cpp"
-    "Windows/WindowsApplication.h"
+    "Windows/WindowsCoreApplication.cpp"
     "Windows/WindowsEnvironment.cpp"
     "Windows/WindowsMonitor.cpp"
     "Windows/WindowsMonitor.h"

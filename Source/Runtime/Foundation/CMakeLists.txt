@@ -96,6 +96,9 @@ kitsune_add_library(
     "Threading/ThisThread.cpp"
     "Threading/ThisThread.h"
     "Threading/ThreadSafety.h"
+
+    "Utilities/EnumFlags.h"
+    "Utilities/NonCopyable.h"
 )
 
 kitsune_add_platform_sources(

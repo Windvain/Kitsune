@@ -7,7 +7,7 @@ namespace Kitsune
 {
     IException::IException()
     {
-#if defined(KITSUNE_BULD_RELEASE)
+#if defined(KITSUNE_BUILD_RELEASE)
         auto* stackTrace = static_cast<StackTrace*>(Memory::TryAllocate(sizeof(StackTrace)));
         if (stackTrace == nullptr)
             return;

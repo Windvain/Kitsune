@@ -10,25 +10,72 @@ namespace Kitsune
     class WindowsWindow : public IWindow
     {
     public:
-        KITSUNE_API_ WindowsWindow(const WindowProperties& props);
+        KITSUNE_API_ WindowsWindow(int width, int height, int x, int y,
+                                   const wchar_t* title, WindowState state, WindowFlag flags);
+
         KITSUNE_API_ ~WindowsWindow();
 
     public:
-        KITSUNE_API_ Vector2<Uint32> GetSize() const override;
-        KITSUNE_API_ Vector2<Int32> GetPosition() const override;
+        [[nodiscard]] KITSUNE_API_ Vector2<Uint32> GetSize() const override;
+        [[nodiscard]] KITSUNE_API_ Vector2<Int32> GetPosition() const override;
 
         KITSUNE_API_ void SetSize(const Vector2<Uint32>& size) override;
         KITSUNE_API_ void SetPosition(const Vector2<Int32>& pos) override;
 
-        KITSUNE_API_ WindowState GetState() const override { return m_State; }
-        KITSUNE_API_ AABB2<Int32> GetFrameBoundingBox() const override;
+    public:
+        KITSUNE_API_ void SetTitle(const StringView title) override;
 
-        KITSUNE_API_ void SetTitle(StringView title) override;
-        inline String GetTitle() const override { return m_Title; }
+        [[nodiscard]]
+        inline String GetTitle() const override
+        {
+            return m_Title;
+        }
 
     public:
         KITSUNE_API_ void SetState(WindowState state) override;
-        KITSUNE_API_ void Restore() override;
+
+        [[nodiscard]]
+        KITSUNE_API_ WindowState GetState() const override;
+
+    public:
+        KITSUNE_API_ void Fullscreen() override;
+
+        [[nodiscard]]
+        inline bool IsFullscreen() const override
+        {
+            return (GetState() == WindowState::Fullscreen);
+        }
+
+    public:
+        inline void Minimize() override
+        {
+            return SetState(WindowState::Minimized);
+        }
+
+        inline void Maximize() override
+        {
+            return SetState(WindowState::Maximized);
+        }
+
+        inline void Restore() override
+        {
+            return SetState(WindowState::Windowed);
+        }
+
+        [[nodiscard]] inline bool IsMinimized()  const override
+        {
+            return (GetState() == WindowState::Minimized);
+        }
+
+        [[nodiscard]] inline bool IsMaximized()  const override
+        {
+            return (GetState() == WindowState::Maximized);
+        }
+
+        [[nodiscard]] inline bool IsWindowed()   const override
+        {
+            return (GetState() == WindowState::Windowed);
+        }
 
     public:
         KITSUNE_API_ void Show() override;
@@ -41,23 +88,25 @@ namespace Kitsune
         KITSUNE_API_ static LRESULT KitsuneWindowProc(HWND windowHandle, UINT message,
                                                       WPARAM wparam, LPARAM lparam);
 
-        KITSUNE_API_ static DWORD GetWindowStyles();
-        KITSUNE_API_ static DWORD GetExtendedWindowStyles();
+        KITSUNE_API_ DWORD GetWindowStyles() const;
+        KITSUNE_API_ DWORD GetExtendedWindowStyles() const;
+
+        KITSUNE_API_ void UndoFullscreen();
 
     private:
-        static constexpr const wchar_t* s_WindowClassName = L"KitsuneWindows";
-        friend LRESULT WindowsWindow::KitsuneWindowProc(HWND, UINT, WPARAM, LPARAM);
+        static constexpr const wchar_t* s_WindowClassName = L"Kitsune_WindowClass";
 
     private:
-        static Uint32 s_WindowCount;
+        static volatile Int32 s_WindowCount;
 
     private:
-        HWND m_NativeHandle;
-        Application* m_Application;
-
         String m_Title;
-        VideoMode m_VideoMode;
+        HWND m_NativeHandle;
 
-        WindowState m_State;
+        bool m_Fullscreen;
+        WINDOWPLACEMENT m_FullscreenPrev;
+
+        WindowFlag m_WindowFlags;
+        RECT m_UnresizableRect;
     };
 }

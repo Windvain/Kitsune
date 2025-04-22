@@ -1,21 +1,25 @@
 #pragma once
 
-#include "ApplicationCore/VideoMode.h"
-
+#include "Foundation/Maths/Vector2.h"
 #include "Foundation/String/String.h"
-#include "Foundation/Containers/Array.h"
+
+#include "ApplicationCore/VideoMode.h"
+#include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    // Unlike IWindow, we hide the construction APIs behind IPlatformApplication.
-    // Makes sure no one tries to construct a monitor class.
-    class IMonitor
+    class IMonitor : public NonCopyable
     {
     public:
         virtual ~IMonitor() { /* ... */ }
 
     public:
-        virtual String GetMonitorName() const = 0;
-        virtual VideoMode GetCurrentVideoMode() const = 0;
+        virtual Vector2<Int32> GetVirtualPosition() const = 0;
+        virtual String GetName() const = 0;
+
+        virtual VideoMode GetVideoMode() const = 0;
+        virtual void SetVideoMode(const VideoMode& videoMode) = 0;
+
+        virtual bool IsPrimaryMonitor() const = 0;
     };
 }

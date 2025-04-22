@@ -24,7 +24,7 @@ public:
 Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
 {
     ApplicationSpecs specs;
-    specs.IsConsoleApp = true;
+    specs.Headless = true;
 
     return Memory::New<FoundationTests>(specs);
 }
