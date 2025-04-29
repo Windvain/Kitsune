@@ -5,7 +5,7 @@
 
 namespace Kitsune
 {
-    namespace Internal
+    namespace Details
     {
         class IMutexImpl
         {
@@ -43,6 +43,6 @@ namespace Kitsune
         }
 
     private:
-        ScopedPtr<Internal::IMutexImpl> m_MutexImpl;
+        ScopedPtr<Details::IMutexImpl> m_MutexImpl;
     };
 }

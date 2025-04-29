@@ -6,7 +6,7 @@
 namespace Kitsune
 {
     template<typename T, typename U = T>
-    T Exchange(T& val, U&& newValue)
+    inline T Exchange(T& val, U&& newValue)
     {
         T tmp = Move(val);
         val = Forward<U>(newValue);

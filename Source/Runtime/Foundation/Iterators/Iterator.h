@@ -8,7 +8,7 @@
 
 namespace Kitsune
 {
-    namespace Internal
+    namespace Details
     {
         template<typename T>
         using AddReference = T&;
@@ -27,7 +27,7 @@ namespace Kitsune
 
         requires (It iterator)
         {
-            { *iterator } -> Internal::CanDereference;
+            { *iterator } -> Details::CanDereference;
             { ++iterator } -> std::same_as<It&>;
             { iterator++ } -> std::same_as<It>;
 

@@ -9,7 +9,7 @@ namespace Kitsune
     void DefaultFormatScanner::Step()
     {
         // Heavily based off GCC's format code.
-        using namespace Internal;
+        using namespace Details;
 
         auto lbr = Algorithms::Find(m_EndSpecs, m_EndFormat, '{');
         auto rbr = Algorithms::Find(m_EndSpecs, m_EndFormat, '}');

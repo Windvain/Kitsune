@@ -17,10 +17,10 @@
     #define KITSUNE_BUILTIN_LINE_() 0
 #endif
 
-#if KITSUNE_HAS_BUILTIN(__builtin_FUNCTION)
-    #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCTION()
-#elif defined(KITSUNE_COMPILER_MSVC)
+#if defined(KITSUNE_COMPILER_MSVC)      // MSVC defines both __builtin_FUNCTION() and __builtin_FUNCSIG().
     #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCSIG()
+#elif KITSUNE_HAS_BUILTIN(__builtin_FUNCTION)
+    #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCTION()
 #else
     #define KITSUNE_BUILTIN_FUNC_() "<unknown>"
 #endif

@@ -24,22 +24,21 @@ namespace Kitsune
         using ReverseConstIterator = Kitsune::ReverseIterator<ConstIterator>;
 
     public:
-        BasicStringView() = default;
-        BasicStringView(std::nullptr_t) = delete;
+        inline BasicStringView() = default;
+        inline BasicStringView(std::nullptr_t) = delete;
 
-
-        BasicStringView(const T* str)
+        inline BasicStringView(const T* str)
             : m_Pointer(str), m_Size(ThisCharTraits::Length(str))
         {
         }
 
-        BasicStringView(const T* str, Usize size)
+        inline BasicStringView(const T* str, Usize size)
             : m_Pointer(str), m_Size(size)
         {
         }
 
         template<RandomAccessIterator It>
-        BasicStringView(It begin, It end)
+        inline BasicStringView(It begin, It end)
             : m_Pointer(begin), m_Size(end - begin)
         {
         }
@@ -50,7 +49,7 @@ namespace Kitsune
         BasicStringView& operator=(const BasicStringView&) = default;
 
     public:
-        const T& operator[](Index index) const
+        inline const T& operator[](Index index) const
         {
             if (index >= Size())
                 throw OutOfRangeException();
@@ -59,7 +58,7 @@ namespace Kitsune
         }
 
     public:
-        [[nodiscard]] const T& Front() const
+        [[nodiscard]] inline const T& Front() const
         {
             if (m_Pointer == nullptr)
                 throw OutOfRangeException();
@@ -67,7 +66,7 @@ namespace Kitsune
             return m_Pointer[0];
         }
 
-        [[nodiscard]] const T& Back() const
+        [[nodiscard]] inline const T& Back() const
         {
             if (m_Pointer == nullptr)
                 throw OutOfRangeException();
@@ -75,14 +74,14 @@ namespace Kitsune
             return m_Pointer[m_Size - 1];
         }
 
-        [[nodiscard]] const T* Data() const { return m_Pointer; }
+        [[nodiscard]] inline const T* Data() const { return m_Pointer; }
 
     public:
-        [[nodiscard]] Usize Size()   const { return m_Size; }
-        [[nodiscard]] bool IsEmpty() const { return (m_Size == 0); }
+        [[nodiscard]] inline Usize Size()   const { return m_Size; }
+        [[nodiscard]] inline bool IsEmpty() const { return (m_Size == 0); }
 
     public:
-        void RemovePrefix(Usize n)
+        inline void RemovePrefix(Usize n)
         {
             if (n > Size())
                 throw OutOfRangeException();
@@ -91,7 +90,7 @@ namespace Kitsune
             m_Size -= n;
         }
 
-        void RemoveSuffix(Usize n)
+        inline void RemoveSuffix(Usize n)
         {
             if (n > Size())
                 throw OutOfRangeException();
@@ -100,7 +99,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        BasicStringView Substring(Usize startPos = 0, Usize count = 0) const
+        inline BasicStringView Substring(Usize startPos = 0, Usize count = 0) const
         {
             if (startPos > Size())
                 throw OutOfRangeException();
@@ -109,26 +108,26 @@ namespace Kitsune
         }
 
     public:
-        [[nodiscard]] Iterator GetBegin()            { return m_Pointer; }
-        [[nodiscard]] ConstIterator GetBegin() const { return m_Pointer; }
+        [[nodiscard]] inline Iterator GetBegin()            { return m_Pointer; }
+        [[nodiscard]] inline ConstIterator GetBegin() const { return m_Pointer; }
 
-        [[nodiscard]] Iterator GetEnd()            { return (m_Pointer + m_Size); }
-        [[nodiscard]] ConstIterator GetEnd() const { return (m_Pointer + m_Size); }
+        [[nodiscard]] inline Iterator GetEnd()            { return (m_Pointer + m_Size); }
+        [[nodiscard]] inline ConstIterator GetEnd() const { return (m_Pointer + m_Size); }
 
-        [[nodiscard]] ReverseIterator GetReverseBegin()            { return ReverseIterator(GetEnd()); }
-        [[nodiscard]] ReverseConstIterator GetReverseBegin() const { return ReverseIterator(GetEnd()); }
+        [[nodiscard]] inline ReverseIterator GetReverseBegin()            { return ReverseIterator(GetEnd()); }
+        [[nodiscard]] inline ReverseConstIterator GetReverseBegin() const { return ReverseIterator(GetEnd()); }
 
-        [[nodiscard]] ReverseIterator GetReverseEnd()            { return ReverseIterator(GetBegin()); }
-        [[nodiscard]] ReverseConstIterator GetReverseEnd() const { return ReverseIterator(GetBegin()); }
+        [[nodiscard]] inline ReverseIterator GetReverseEnd()            { return ReverseIterator(GetBegin()); }
+        [[nodiscard]] inline ReverseConstIterator GetReverseEnd() const { return ReverseIterator(GetBegin()); }
 
     public:
         // Should not be called by engine/client code.
         // Made public so that the compiler can generate code for range-based for loops.
-        Iterator begin() { return GetBegin(); }
-        Iterator begin() const { return GetBegin(); }
+        inline Iterator begin() { return GetBegin(); }
+        inline Iterator begin() const { return GetBegin(); }
 
-        Iterator end() { return GetEnd(); }
-        Iterator end() const { return GetEnd(); }
+        inline Iterator end() { return GetEnd(); }
+        inline Iterator end() const { return GetEnd(); }
 
     private:
         const T* m_Pointer = nullptr;
@@ -136,14 +135,14 @@ namespace Kitsune
     };
 
     template<Character T>
-    bool operator==(const BasicStringView<T>& str1, const BasicStringView<T>& str2)
+    inline bool operator==(const BasicStringView<T>& str1, const BasicStringView<T>& str2)
     {
         return (str1.Size() == str2.Size()) &&
                (CharTraits<T>::Compare(str1.Data(), str2.Data(), str1.Size()) == 0);
     }
 
     template<Character T>
-    bool operator==(const BasicStringView<T>& str1, const T* str2)
+    inline bool operator==(const BasicStringView<T>& str1, const T* str2)
     {
         return (str1 == BasicStringView<T>(str2));
     }

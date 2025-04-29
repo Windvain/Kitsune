@@ -81,7 +81,7 @@ kitsune_add_library(
     "String/FormatScanner.cpp"
     "String/FormatScanner.h"
     "String/Formatter.h"
-    "String/InvalidUnicodeException.h"
+    "String/UnicodeException.h"
     "String/String.h"
     "String/StringView.h"
 

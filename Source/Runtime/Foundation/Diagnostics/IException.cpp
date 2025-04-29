@@ -5,15 +5,30 @@
 
 namespace Kitsune
 {
-    IException::IException()
+    // Makes sure that if anything throws in the exception constructor,
+    // that it doesn't keep calling itself, causing a stack overflow.
+    thread_local bool g_WritingToExceptionStackTrace = false;
+
+    IException::IException() noexcept
     {
 #if defined(KITSUNE_BUILD_RELEASE)
+        if (g_WritingToExceptionStackTrace)
+            return;
+
         auto* stackTrace = static_cast<StackTrace*>(Memory::TryAllocate(sizeof(StackTrace)));
         if (stackTrace == nullptr)
             return;
 
-        Memory::ConstructAt(stackTrace, MakeStackTrace(1));
-        ThisThread::SetExceptionStackTrace(stackTrace);
+        try
+        {
+            g_WritingToExceptionStackTrace = true;
+
+            Memory::ConstructAt(stackTrace, MakeStackTrace(1));
+            ThisThread::SetExceptionStackTrace(stackTrace);
+
+            g_WritingToExceptionStackTrace = false;
+        }
+        catch (...) { /* Just ignore the exception. */ }
 #endif
     }
 

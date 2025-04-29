@@ -10,6 +10,9 @@
 
 #include "Foundation/Memory/BadAllocException.h"
 
+// Undocumented exception code.
+#define KITSUNE_EXCEPTION_CPP_EXCEPTION 0xE06D7363
+
 namespace Kitsune
 {
     extern int EngineMain(int argc, char** argv);
@@ -41,6 +44,7 @@ const char* FormatExceptionCode(DWORD code)
     case EXCEPTION_INT_OVERFLOW:             return "Integer Overflow";
 
     case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occured";
+    case KITSUNE_EXCEPTION_CPP_EXCEPTION:    return "C++ Exception";
     default:                                 return "Unknown";
     }
 }
@@ -97,10 +101,43 @@ DWORD ProcessSehException(LPEXCEPTION_POINTERS exceptionInfo)
 
     std::printf(
         "The engine has been terminated by an SEH exception. (Code: 0x%lx)\n"
-        "Description: %s",
+        "Description: %s\n",
         exceptionCode,
         FormatExceptionCode(exceptionCode)
     );
+
+    for (DWORD i = 0; i < exceptionRecord->NumberParameters; ++i)
+    {
+        void* ptr = reinterpret_cast<void*>(exceptionRecord->ExceptionInformation[i]);
+        std::printf("Parameter[%lx]: 0x%p\n", i, ptr);
+    }
+
+    if (exceptionCode == KITSUNE_EXCEPTION_CPP_EXCEPTION)
+    {
+        // https://devblogs.microsoft.com/oldnewthing/20100730-00/?p=13273
+        IException& cppException = *reinterpret_cast<IException*>(exceptionRecord->ExceptionInformation[1]);
+        std::printf("\nC++ exception name: %s\n"
+                    "C++ exception description: %s\n",
+                    cppException.GetName(), cppException.GetDescription());
+    }
+    else if ((exceptionCode == EXCEPTION_ACCESS_VIOLATION) || (exceptionCode == EXCEPTION_IN_PAGE_ERROR))
+    {
+        ULONG_PTR rwx = exceptionRecord->ExceptionInformation[0];
+        const char* desc;
+
+        switch (rwx)
+        {
+        case 0: desc = "Attempted to write to an inaccessible address"; break;
+        case 1: desc = "Attempted to read to an inaccessible address"; break;
+        case 8: desc = "The thread caused a user-mode data execution prevention violation"; break;
+        default:
+            KITSUNE_UNREACHABLE();
+        };
+
+        std::printf("\nAccess violation description: %s\n"
+                    "Virtual data accessed: 0x%p",
+                    desc, reinterpret_cast<void*>(exceptionRecord->ExceptionInformation[1]));
+    }
 
     return EXCEPTION_CONTINUE_SEARCH;       // Continue finding exception filters.
 }

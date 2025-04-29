@@ -9,7 +9,7 @@ namespace Kitsune
 {
     bool ShowMessageBox(const MessageBoxSpecs& specs, MessageBoxButtonId* pressed)
     {
-        using namespace Internal;
+        using namespace Details;
 
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));

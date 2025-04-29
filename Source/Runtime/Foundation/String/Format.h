@@ -8,7 +8,7 @@
 
 namespace Kitsune
 {
-    namespace Internal
+    namespace Details
     {
         class StringFormatIterator
         {
@@ -67,7 +67,7 @@ namespace Kitsune
     template<typename... Args>
     [[nodiscard]] String Format(const StringView fmt, Args&&... args)
     {
-        using namespace Internal;
+        using namespace Details;
 
         String string(fmt.Size());
         FormatTo(StringFormatIterator(string), DefaultFormatScanner(fmt), fmt,

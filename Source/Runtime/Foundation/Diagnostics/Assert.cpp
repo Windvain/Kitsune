@@ -8,7 +8,7 @@
 
 #include "Foundation/Diagnostics/MessageBox.h"
 
-namespace Kitsune::Internal
+namespace Kitsune::Details
 {
     constexpr int MessageBoxAbortId = 1;
     constexpr int MessageBoxIgnoreId = 2;

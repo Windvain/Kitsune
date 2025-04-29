@@ -11,10 +11,54 @@
 
 namespace Kitsune
 {
-    struct WindowsSymbol
+    class WindowsSymbol
     {
+    public:
+        WindowsSymbol(HANDLE process, const STACKFRAME64& stackFrame)
+            : m_Process(process), m_PCOffset(stackFrame.AddrPC.Offset)
+        {
+            ZeroMemory(&SymbolInfo, sizeof(SYMBOL_INFO) + sizeof(Buffer));
+            SymbolInfo.SizeOfStruct = sizeof(SYMBOL_INFO);
+            SymbolInfo.MaxNameLen = WindowsSymbol::MaxNameLength;
+
+            ::SymFromAddr(m_Process, m_PCOffset, nullptr, &SymbolInfo);
+
+            constexpr char UnknownString[] = "<unknown>";
+            static_assert(WindowsSymbol::MaxNameLength >= KITSUNE_ARRAY_SIZE(UnknownString), "Oh no.");
+
+            if (std::strlen(SymbolInfo.Name) == 0)
+                std::memcpy(SymbolInfo.Name, UnknownString, KITSUNE_ARRAY_SIZE(UnknownString));
+        }
+
+    public:
+        void GetSourceInfo(String* filename, DWORD* lineNumber, void** address)
+        {
+            IMAGEHLP_LINE64 line;
+            line.SizeOfStruct = sizeof(line);
+
+            DWORD offset;
+            if (::SymGetLineFromAddr64(m_Process, m_PCOffset, &offset, &line))
+            {
+                *filename = line.FileName;
+                *lineNumber = line.LineNumber;
+                *address = reinterpret_cast<void*>(line.Address);
+            }
+            else
+            {
+                *filename = "<unknown>";
+                *lineNumber = 0;
+                *address = nullptr;
+            }
+        }
+
+    public:
         static constexpr ULONG MaxNameLength = 1024;
 
+    private:
+        HANDLE m_Process;
+        DWORD64 m_PCOffset;
+
+    public:
         SYMBOL_INFO SymbolInfo;
         TCHAR Buffer[MaxNameLength];
     };
@@ -55,10 +99,12 @@ namespace Kitsune
         ::EnumProcessModules(process, nullptr, 0, &bytesNeeded);
 
         Array<HMODULE> moduleHandles(bytesNeeded / sizeof(HMODULE), HMODULE());
-        ::EnumProcessModules(process, moduleHandles.Data(), static_cast<DWORD>(moduleHandles.Size() * sizeof(HMODULE)),
+        ::EnumProcessModules(process, moduleHandles.Data(), DWORD(moduleHandles.Size() * sizeof(HMODULE)),
                              &bytesNeeded);
 
+        constexpr Usize BufferSize = 1024;
         Array<WindowsModuleInfo> moduleInfos(moduleHandles.Size());
+
         for (HMODULE module : moduleHandles)
         {
             WindowsModuleInfo modInfo;
@@ -68,7 +114,7 @@ namespace Kitsune
             modInfo.Address = winModInfo.lpBaseOfDll;
             modInfo.LoadSize = winModInfo.SizeOfImage;
 
-            wchar_t temp[1024] = { 0 };
+            wchar_t temp[BufferSize] = { 0 };
 
             ::GetModuleFileNameExW(process, module, temp, sizeof(temp));
             modInfo.ImageName = temp;
@@ -128,42 +174,16 @@ namespace Kitsune
 
         while (currDepth < maxDepth)
         {
-            if (currDepth >= skipCount)
+            if ((currDepth >= skipCount) && (stackFrame.AddrPC.Offset != 0))
             {
-                if (stackFrame.AddrPC.Offset != 0)
-                {
-                    constexpr char UnknownString[] = "<unknown>";
+                String filename;
+                void* address;
+                DWORD lineNumber;
 
-                    auto symbol = MakeScoped<WindowsSymbol>();
-                    SYMBOL_INFO* winSymbol = &symbol->SymbolInfo;
+                WindowsSymbol symbol(process, stackFrame);
+                symbol.GetSourceInfo(&filename, &lineNumber, &address);
 
-                    const char* filename = UnknownString;
-                    DWORD lineNumber = 0;
-                    void* address = (void*)0;
-
-                    ZeroMemory(symbol.Get(), sizeof(WindowsSymbol));
-                    winSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-                    winSymbol->MaxNameLen = WindowsSymbol::MaxNameLength;
-
-                    ::SymFromAddr(process, stackFrame.AddrPC.Offset, nullptr, winSymbol);
-
-                    IMAGEHLP_LINE64 line;
-                    line.SizeOfStruct = sizeof(line);
-
-                    DWORD offset;
-                    if (::SymGetLineFromAddr64(process, stackFrame.AddrPC.Offset, &offset, &line))
-                    {
-                        filename = line.FileName;
-                        lineNumber = line.LineNumber;
-                        address = reinterpret_cast<void*>(line.Address);
-                    }
-
-                    // Should fit in name buffer?
-                    if (std::strlen(winSymbol->Name) == 0)
-                        std::memcpy(winSymbol->Name, UnknownString, sizeof(UnknownString) / sizeof(char));
-
-                    stackframes.PushBack(StackFrame(winSymbol->Name, filename, address, lineNumber));
-                }
+                stackframes.EmplaceBack(filename, symbol.SymbolInfo.Name, address, lineNumber);
             }
 
             if (::StackWalk64(machineType, process, thread, &stackFrame, &context, nullptr,

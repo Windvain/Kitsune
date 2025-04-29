@@ -8,8 +8,8 @@ namespace Kitsune
     class IException : public std::exception
     {
     public:
-        KITSUNE_API_ IException();
-        KITSUNE_API_ virtual ~IException();
+        KITSUNE_API_ IException() noexcept;
+        KITSUNE_API_ virtual ~IException() noexcept;
 
     public:
         virtual const char* GetName() const noexcept = 0;

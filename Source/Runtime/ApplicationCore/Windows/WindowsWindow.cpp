@@ -103,7 +103,7 @@ namespace Kitsune
 
     void WindowsWindow::SetTitle(StringView title)
     {
-        WideString wideTitle = Internal::WindowsConvertToUtf16(title);
+        WideString wideTitle = Details::WindowsConvertToUtf16(title);
         ::SetWindowTextW(m_NativeHandle, wideTitle.Raw());
 
         m_Title = title;

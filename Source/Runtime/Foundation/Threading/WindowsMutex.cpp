@@ -3,7 +3,7 @@
 
 namespace Kitsune
 {
-    class WindowsMutex : public Internal::IMutexImpl
+    class WindowsMutex : public Details::IMutexImpl
     {
     public:
         inline WindowsMutex()

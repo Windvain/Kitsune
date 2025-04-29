@@ -87,7 +87,7 @@ namespace Kitsune
             window = MakeScoped<NullWindow>(props);
         else
         {
-            WideString wideTitle = Internal::WindowsConvertToUtf16(props.Title);
+            WideString wideTitle = Details::WindowsConvertToUtf16(props.Title);
             window = MakeScoped<WindowsWindow>(props.Size.x, props.Size.y,
                                                props.Position.x, props.Position.y,
                                                wideTitle.Raw(), props.State, props.Flags);

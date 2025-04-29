@@ -3,7 +3,7 @@
 #include "Foundation/Common/Macros.h"
 #include "Foundation/Diagnostics/SourceLocation.h"
 
-namespace Kitsune::Internal
+namespace Kitsune::Details
 {
     KITSUNE_API_ bool HandleAssertionFailure(const char* expression, const char* message,
                                              SourceLocation loc = SourceLocation::Current());
@@ -12,7 +12,7 @@ namespace Kitsune::Internal
 #define KITSUNE_ALWAYS_ASSERT(expr, message)                                        \
     do                                                                              \
     {                                                                               \
-        if (!(expr) && ::Kitsune::Internal::HandleAssertionFailure(#expr, message)) \
+        if (!(expr) && ::Kitsune::Details::HandleAssertionFailure(#expr, message)) \
         {                                                                           \
             KITSUNE_DEBUGBREAK();                                                   \
         }                                                                           \

@@ -10,7 +10,7 @@
 
 namespace Kitsune
 {
-    namespace Internal
+    namespace Details
     {
         [[noreturn]]
         KITSUNE_FORCEINLINE void ThrowTypeInvalidSpecifier()
@@ -89,7 +89,7 @@ namespace Kitsune
         void Parse(const ParseContext& context)
         {
             if (context.GetSpecifierLength() > 1)
-                Internal::ThrowTypeInvalidSpecifier();
+                Details::ThrowTypeInvalidSpecifier();
 
             if (context.GetSpecifierLength() == 0)
                 m_AsInteger = false;
@@ -137,7 +137,7 @@ namespace Kitsune
         void Parse(const ParseContext& context)
         {
             if (context.GetSpecifierLength() > 1)
-                Internal::ThrowTypeInvalidSpecifier();
+                Details::ThrowTypeInvalidSpecifier();
 
             auto it = context.GetBegin();
             m_Base = ((*it == 'b') || (*it == 'B')) ? 2 :

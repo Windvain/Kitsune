@@ -5,7 +5,7 @@
 namespace Kitsune
 {
     template<typename T>
-    [[nodiscard]] T* AddressOf(T& ref)
+    [[nodiscard]] inline T* AddressOf(T& ref)
     {
 #if KITSUNE_HAS_BUILTIN(__builtin_addressof)
         return __builtin_addressof(ref);

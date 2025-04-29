@@ -18,7 +18,7 @@
 
 namespace Kitsune
 {
-    namespace Internal
+    namespace Details
     {
         template<ThreadSafety Mode>
         class ReferenceCountBase
@@ -158,7 +158,7 @@ namespace Kitsune
             AllocateInternalData(ptr, GlobalAllocator(), DefaultDeleter<U>());
         }
 
-        template<typename U, Internal::IsDeleterOrRef Del>
+        template<typename U, Details::IsDeleterOrRef Del>
             requires std::is_convertible_v<U*, T*>
         inline SharedPtr(U* ptr, Del&& del)
             : m_Pointer(ptr)
@@ -166,13 +166,13 @@ namespace Kitsune
             AllocateInternalData(ptr, GlobalAllocator(), Forward<Del>(del));
         }
 
-        template<Internal::IsDeleterOrRef Del>
+        template<Details::IsDeleterOrRef Del>
         inline SharedPtr(std::nullptr_t, Del&& del)
             : SharedPtr(static_cast<T*>(nullptr), Forward<Del>(del))
         {
         }
 
-        template<typename U, Internal::IsDeleterOrRef Del, Internal::IsAllocatorOrRef Alloc>
+        template<typename U, Details::IsDeleterOrRef Del, Details::IsAllocatorOrRef Alloc>
             requires std::is_convertible_v<U*, T*>
         inline SharedPtr(U* ptr, Del&& del, Alloc&& alloc)
             : m_Pointer(ptr)
@@ -180,7 +180,7 @@ namespace Kitsune
             AllocateInternalData<T>(ptr, Forward<Alloc>(alloc), Forward<Del>(del));
         }
 
-        template<Internal::IsDeleterOrRef Del, Internal::IsAllocatorOrRef Alloc>
+        template<Details::IsDeleterOrRef Del, Details::IsAllocatorOrRef Alloc>
         inline SharedPtr(std::nullptr_t, Del&& del, Alloc&& alloc)
             : SharedPtr(static_cast<T*>(nullptr), Forward<Del>(del), Forward<Alloc>(alloc))
         {
@@ -307,13 +307,13 @@ namespace Kitsune
             return *this;
         }
 
-        template<typename U, Internal::IsAllocatorOrRef Alloc, Internal::IsDeleterOrRef Del>
+        template<typename U, Details::IsAllocatorOrRef Alloc, Details::IsDeleterOrRef Del>
         inline void AllocateInternalData(U* ptr, Alloc&& alloc, Del&& del)
         {
             using PureAlloc = std::remove_reference_t<Alloc>;
             using PureDel = std::remove_reference_t<Del>;
 
-            using InternalData = Internal::TypedReferenceCount<U, Mode, PureAlloc, PureDel>;
+            using InternalData = Details::TypedReferenceCount<U, Mode, PureAlloc, PureDel>;
 
             try
             {
@@ -333,7 +333,7 @@ namespace Kitsune
 
     private:
         T* m_Pointer;
-        Internal::ReferenceCountBase<Mode>* m_Data;
+        Details::ReferenceCountBase<Mode>* m_Data;
     };
 
     template<typename T, typename... Args>
@@ -570,7 +570,7 @@ namespace Kitsune
 
     private:
         T* m_Pointer;
-        Internal::ReferenceCountBase<Mode>* m_Data;
+        Details::ReferenceCountBase<Mode>* m_Data;
     };
 
     namespace Algorithms

@@ -1,9 +1,9 @@
 #pragma once
 
 #define EXPECT_GENERAL_STREQ(str1, str2) \
-    EXPECT_PRED_FORMAT2(::Testing::Internal::StringsEqual, str1, str2)
+    EXPECT_PRED_FORMAT2(::Testing::Details::StringsEqual, str1, str2)
 
-namespace Testing::Internal
+namespace Testing::Details
 {
     template<typename TChar>
     ::testing::AssertionResult StringsEqual(const char* str1Expr, const char* str2Expr,

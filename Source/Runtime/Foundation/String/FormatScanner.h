@@ -13,7 +13,7 @@
 
 namespace Kitsune
 {
-    namespace Internal
+    namespace Details
     {
         [[noreturn]]
         KITSUNE_FORCEINLINE void ThrowInvalidFormatSpecs()
@@ -63,7 +63,7 @@ namespace Kitsune
         inline static OutIt ParseFormatSpecs(OutIt out, const StringView formatSpecs,
                                              const FormatArgumentPack<OutIt>& argumentPack)
         {
-            using namespace Internal;
+            using namespace Details;
 
             if (formatSpecs.Size() == 2)
             {

@@ -31,7 +31,7 @@ namespace Kitsune
         Array<String> argv(argc);
         for (int i = 0; i < argc; ++i)
         {
-            argv.PushBack(Internal::WindowsConvertToUtf8(wargv[i]));
+            argv.PushBack(Details::WindowsConvertToUtf8(wargv[i]));
         }
 
        ::LocalFree(wargv);

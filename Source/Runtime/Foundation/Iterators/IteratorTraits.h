@@ -5,7 +5,7 @@
 
 namespace Kitsune
 {
-    namespace Internal
+    namespace Details
     {
         template<typename It>
         struct GetDifferenceType { /* ... */ };
@@ -43,7 +43,7 @@ namespace Kitsune
     class IteratorTraits
     {
     public:
-        using ValueType = Internal::GetValueType<It>::Type;
-        using DifferenceType = Internal::GetDifferenceType<It>::Type;
+        using ValueType = Details::GetValueType<It>::Type;
+        using DifferenceType = Details::GetDifferenceType<It>::Type;
     };
 }

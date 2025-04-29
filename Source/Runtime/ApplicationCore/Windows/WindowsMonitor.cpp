@@ -13,7 +13,7 @@ namespace Kitsune
     };
 
     WindowsMonitor::WindowsMonitor(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor)
-        : m_Device(adapter), m_Name(Internal::WindowsConvertToUtf8(monitor.DeviceString))
+        : m_Device(adapter), m_Name(Details::WindowsConvertToUtf8(monitor.DeviceString))
     {
         MonitorEnumProcData data{ .MonitorHandle = nullptr, .Name = adapter.DeviceName };
         ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure, reinterpret_cast<LPARAM>(&data));
