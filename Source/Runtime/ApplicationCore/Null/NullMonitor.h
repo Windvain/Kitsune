@@ -7,6 +7,11 @@ namespace Kitsune
     class NullMonitor : public IMonitor
     {
     public:
+        inline NullMonitor()
+            : NullMonitor(VideoMode(32, { 1920, 1080 }, 60), true)
+        {
+        }
+
         inline NullMonitor(const VideoMode& videoMode, bool primary)
             : m_VideoMode(videoMode), m_Primary(primary)
         {

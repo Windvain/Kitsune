@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Foundation/Memory/ScopedPtr.h"
+
 #include "ApplicationCore/IWindow.h"
+#include "ApplicationCore/Null/NullMonitor.h"
 
 namespace Kitsune
 {
@@ -49,5 +52,7 @@ namespace Kitsune
 
         String m_Title;
         WindowState m_State;
+
+        ScopedPtr<NullMonitor> m_NullMonitor;
     };
 }

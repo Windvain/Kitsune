@@ -1,4 +1,4 @@
-#include "ApplicationCore/Application.h"
+#include "Application/Application.h"
 #include "Foundation/Memory/Memory.h"
 
 #include <gtest/gtest.h>

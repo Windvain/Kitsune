@@ -98,6 +98,8 @@ kitsune_add_library(
     "Threading/ThreadSafety.h"
 
     "Utilities/EnumFlags.h"
+    "Utilities/Function.h"
+    "Utilities/MemberFunction.h"
     "Utilities/NonCopyable.h"
 )
 

@@ -11,7 +11,7 @@
 
 #include "Foundation/Threading/ThisThread.h"
 
-#include "ApplicationCore/Application.h"
+#include "Application/Application.h"
 #include "ApplicationCore/Environment.h"
 
 namespace Kitsune

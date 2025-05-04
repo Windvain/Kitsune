@@ -4,13 +4,15 @@
 #include "Foundation/Windows/StringConversions.h"
 
 #include "ApplicationCore/IWindow.h"
-#include "ApplicationCore/Application.h"
-
 #include "ApplicationCore/WindowException.h"
+
+#include "ApplicationCore/CoreApplication.h"
 
 // Copied from Windows.h, just made it work with signed integers instead.
 #define KITSUNE_SIGNED_LOWORD_(lparam) static_cast<INT16>(static_cast<LONG_PTR>(lparam) & 0xFFFF)
 #define KITSUNE_SIGNED_HIWORD_(lparam) static_cast<INT16>((static_cast<LONG_PTR>(lparam) >> 16) & 0xFFFF)
+
+#define KITSUNE_CHECKED_CALL_(fn, ...) { if (fn) { fn(__VA_ARGS__); } }
 
 namespace Kitsune
 {
@@ -197,7 +199,7 @@ namespace Kitsune
     LRESULT WindowsWindow::KitsuneWindowProc(HWND windowHandle, UINT message,
                                              WPARAM wparam, LPARAM lparam)
     {
-        Application& app = Application::GetInstance();
+        auto& app = CoreApplication::GetInstance();
         auto* window = reinterpret_cast<WindowsWindow*>(::GetWindowLongPtrW(windowHandle, GWLP_USERDATA));
 
         if (window == nullptr)      // ::CreateWindowExW() calls the window procedure with WM_CREATE.
@@ -232,11 +234,15 @@ namespace Kitsune
                                      static_cast<Uint32>(HIWORD(lparam)) };
 
             if (wparam == SIZE_MINIMIZED)
-                app.OnWindowMaximize();
+            {
+                KITSUNE_CHECKED_CALL_(window->m_MaximizeCallback);
+            }
             else if (wparam == SIZE_MINIMIZED)
-                app.OnWindowMinimize();
+            {
+                KITSUNE_CHECKED_CALL_(window->m_MinimizeCallback);
+            }
 
-            app.OnWindowResize(size);
+            KITSUNE_CHECKED_CALL_(window->m_ResizeCallback, size);
             return 0;
         }
 
@@ -246,7 +252,7 @@ namespace Kitsune
             Vector2<Int32> position = { static_cast<Int32>(KITSUNE_SIGNED_LOWORD_(lparam)),
                                         static_cast<Int32>(KITSUNE_SIGNED_HIWORD_(lparam)) };
 
-            app.OnWindowMove(position);
+            KITSUNE_CHECKED_CALL_(window->m_MoveCallback, position);
             break;
         }
         }

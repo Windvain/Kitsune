@@ -17,6 +17,7 @@ kitsune_add_test(
     "FoundationTests/ForEachTests.cpp"
     "FoundationTests/FormatTests.cpp"
     "FoundationTests/FoundationMain.cpp"
+    "FoundationTests/FunctionTests.cpp"
     "FoundationTests/IteratorWrappers.h"
     "FoundationTests/LoggerTests.cpp"
     "FoundationTests/MemoryTests.cpp"

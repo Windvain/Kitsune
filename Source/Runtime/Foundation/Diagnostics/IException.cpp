@@ -32,7 +32,7 @@ namespace Kitsune
 #endif
     }
 
-    IException::~IException()
+    IException::~IException() noexcept
     {
 #if defined(KITSUNE_BUILD_RELEASE)
         StackTrace* stackTrace = ThisThread::GetExceptionStackTrace();

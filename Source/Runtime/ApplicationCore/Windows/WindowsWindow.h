@@ -62,17 +62,17 @@ namespace Kitsune
             return SetState(WindowState::Windowed);
         }
 
-        [[nodiscard]] inline bool IsMinimized()  const override
+        [[nodiscard]] inline bool IsMinimized() const override
         {
             return (GetState() == WindowState::Minimized);
         }
 
-        [[nodiscard]] inline bool IsMaximized()  const override
+        [[nodiscard]] inline bool IsMaximized() const override
         {
             return (GetState() == WindowState::Maximized);
         }
 
-        [[nodiscard]] inline bool IsWindowed()   const override
+        [[nodiscard]] inline bool IsWindowed() const override
         {
             return (GetState() == WindowState::Windowed);
         }

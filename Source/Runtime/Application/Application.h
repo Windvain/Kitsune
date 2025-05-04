@@ -1,10 +1,14 @@
 #pragma once
 
+#include "Foundation/Maths/Vector2.h"
+#include "Foundation/String/String.h"
+
 #include "Foundation/Diagnostics/Assert.h"
 
 #include "ApplicationCore/IWindow.h"
-#include "ApplicationCore/CoreApplication.h"
+#include "ApplicationCore/IMonitor.h"
 
+#include "ApplicationCore/CoreApplication.h"
 #include "ApplicationCore/CommandLineArguments.h"
 
 KITSUNE_PUSH_COMPILER_WARNINGS()
@@ -14,7 +18,31 @@ KITSUNE_IGNORE_CLANG_WARNING(-Wunused-parameter)
 
 namespace Kitsune
 {
-    class Application : private CoreApplication
+    enum class WindowPositionHint
+    {
+        UsePosition,
+        PrimaryScreenCenter,
+        ScreenCenter
+    };
+
+    struct ApplicationSpecs
+    {
+        Vector2<Uint32> ViewportSize = { 640, 480 };
+        Vector2<Int32> WindowPosition;
+
+        WindowState WindowState = WindowState::Windowed;
+        WindowPositionHint WindowPositionHint = WindowPositionHint::ScreenCenter;
+
+        Index WindowMonitorIndex = 0;
+
+        bool WindowResizable = true;
+        bool Headless = false;
+
+        String Name;
+        String VersionString;
+    };
+
+    class Application : public CoreApplication
     {
     public:
         KITSUNE_API_ Application(const ApplicationSpecs& specs);
@@ -33,29 +61,6 @@ namespace Kitsune
         virtual void OnWindowMinimize() { /* ... */ }
 
     public:
-        inline bool IsExitRequested() const
-        {
-            return m_ExitRequested;
-        }
-
-        [[nodiscard]]
-        inline int GetExitCode() const
-        {
-            return m_ExitCode;
-        }
-
-        inline void Exit(int exitCode)
-        {
-            CoreApplication::PlatformExit(exitCode);
-        }
-
-        [[noreturn]]
-        inline void ForceExit(int exitCode)
-        {
-            CoreApplication::PlatformForceExit(exitCode);
-        }
-
-    public:
         [[nodiscard]]
         inline String GetName() const
         {
@@ -70,9 +75,9 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline IMonitor* GetMonitor(Index index) const
+        inline SharedPtr<IMonitor> GetMonitor(Index index) const
         {
-            return m_Monitors[index].Get();
+            return m_Monitors[index];
         }
 
         [[nodiscard]]
@@ -82,17 +87,17 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline IMonitor* GetPrimaryMonitor() const
+        inline SharedPtr<IMonitor> GetPrimaryMonitor() const
         {
             auto it = Algorithms::FindIf(m_Monitors.GetBegin(), m_Monitors.GetEnd(),
-                [](const ScopedPtr<IMonitor>& monitor) -> bool { return monitor->IsPrimaryMonitor(); });
+                [](const SharedPtr<IMonitor>& monitor) -> bool { return monitor->IsPrimaryMonitor(); });
 
             KITSUNE_ASSERT(it != m_Monitors.GetEnd(), "No primary monitor was found.");
-            return it->Get();
+            return *it;
         }
 
         [[nodiscard]]
-        inline IWindow* GetWindow() const { return m_PrimaryWindow.Get(); }
+        inline SharedPtr<IWindow> GetWindow() const { return m_PrimaryWindow; }
 
     public:
         [[nodiscard]] static inline Application& GetInstance()
@@ -104,10 +109,19 @@ namespace Kitsune
         }
 
     private:
+        KITSUNE_API_ void PlatformUpdate();
+        KITSUNE_API_ Array<SharedPtr<IMonitor>> RetrieveAllMonitors();
+
         KITSUNE_API_ static void VerifyApplicationSpecs(const ApplicationSpecs& specs);
 
     private:
         KITSUNE_API_ static Application* s_Instance;
+
+    private:
+        ApplicationSpecs m_ApplicationSpecs;
+
+        SharedPtr<IWindow> m_PrimaryWindow;
+        Array<SharedPtr<IMonitor>> m_Monitors;
     };
 
     // Should be defined in client code.

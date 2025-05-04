@@ -6,6 +6,7 @@ kitsune_add_library(
     "EngineMain.cpp"
 
     DEPENDENCIES
+    KitsuneApplication
     KitsuneApplicationCore
     KitsuneFoundation
 )

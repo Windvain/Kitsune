@@ -3,6 +3,7 @@
 #include "Foundation/Maths/Vector2.h"
 #include "Foundation/String/String.h"
 
+#include "Foundation/Utilities/Function.h"
 #include "Foundation/Utilities/EnumFlags.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
@@ -75,6 +76,34 @@ namespace Kitsune
         virtual void Hide() = 0;
 
         virtual bool IsShown() const = 0;
+
+    public:
+        inline void SetMaximizeCallback(const Function<void()>& callback)
+        {
+            m_MaximizeCallback = callback;
+        }
+
+        inline void SetMinimizeCallback(const Function<void()>& callback)
+        {
+            m_MinimizeCallback = callback;
+        }
+
+        inline void SetResizeCallback(const Function<void(const Vector2<Uint32>&)>& callback)
+        {
+            m_ResizeCallback = callback;
+        }
+
+        inline void SetMoveCallback(const Function<void(const Vector2<Int32>&)>& callback)
+        {
+            m_MoveCallback = callback;
+        }
+
+    protected:
+        Function<void()> m_MaximizeCallback;
+        Function<void()> m_MinimizeCallback;
+
+        Function<void(const Vector2<Uint32>&)> m_ResizeCallback;
+        Function<void(const Vector2<Int32>&)> m_MoveCallback;
     };
 }
 

@@ -5,14 +5,13 @@ kitsune_add_library(
     "Null/NullWindow.cpp"
     "Null/NullWindow.h"
 
-    "Application.cpp"
-    "Application.h"
     "CommandLineArguments.h"
-    "CoreApplication.h"
     "Environment.h"
     "IMonitor.h"
     "IWindow.h"
     "MonitorException.h"
+    "CoreApplication.cpp"
+    "CoreApplication.h"
     "VideoMode.h"
     "WindowException.h"
 
