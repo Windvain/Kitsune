@@ -1,3 +1,6 @@
 [submodule "Source/External/googletest"]
 	path = Source/External/googletest
 	url = https://github.com/google/googletest
+[submodule "Source/External/DirectX-Headers"]
+	path = Source/External/DirectX-Headers
+	url = https://github.com/microsoft/DirectX-Headers

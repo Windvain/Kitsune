@@ -83,6 +83,9 @@ namespace Kitsune
 
         KITSUNE_API_ bool IsShown() const override;
 
+    public:
+        inline HWND GetWindowsHandle() const { return m_NativeHandle; }
+
     private:
         KITSUNE_API_ static WNDCLASSEXW GetWindowClass();
         KITSUNE_API_ static LRESULT KitsuneWindowProc(HWND windowHandle, UINT message,

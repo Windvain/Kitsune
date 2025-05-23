@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Foundation/Threading/Mutex.h"
+#include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    class LockGuard
+    class LockGuard : public NonCopyable
     {
     public:
         LockGuard(Mutex& mutex)
@@ -17,10 +18,6 @@ namespace Kitsune
         {
             m_Mutex.Release();
         }
-
-    public:
-        LockGuard(const LockGuard&) = delete;
-        LockGuard& operator=(const LockGuard&) = delete;
 
     private:
         Mutex& m_Mutex;

@@ -40,11 +40,13 @@ namespace Kitsune
 
         // Create streams to stdout and stderr, if they exist.
 #if !defined(KITSUNE_BUILD_RELEASE)
-        ConsoleOutputStream consoleOutStream(/* Error stream: */ false);
-        ConsoleOutputStream consoleErrorStream(/* Error stream: */ true);
+        {
+            ConsoleOutputStream consoleOutStream(/* Error stream: */ false);
+            ConsoleOutputStream consoleErrorStream(/* Error stream: */ true);
 
-        globalLogger->GetSinks().PushBack(
-            MakeShared<AnsiColorSink>(consoleOutStream, consoleErrorStream));
+            globalLogger->GetSinks().PushBack(
+                MakeShared<AnsiColorSink>(consoleOutStream, consoleErrorStream));
+        }
 #endif
 
         /* Remaining Subsystems Initialization */

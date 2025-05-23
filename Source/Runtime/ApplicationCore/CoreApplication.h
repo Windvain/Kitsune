@@ -14,16 +14,8 @@ namespace Kitsune
     class CoreApplication
     {
     public:
-        inline CoreApplication()
-        {
-            KITSUNE_ASSERT(s_Instance == nullptr, "CoreApplication has already been instanced.");
-            s_Instance = this;
-        }
-
-        inline ~CoreApplication()
-        {
-            s_Instance = nullptr;
-        }
+        KITSUNE_API_ CoreApplication();
+        KITSUNE_API_ ~CoreApplication();
 
     public:
         KITSUNE_API_ void Exit(int exitCode);

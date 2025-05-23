@@ -34,7 +34,7 @@ namespace Kitsune
                 break;
 
             begin += str.Size();
-            ::WriteConsoleW(handle, convBuffer, DWORD(wideLength), nullptr, 0);
+            ::WriteConsoleW(handle, convBuffer, DWORD(wideLength), nullptr, nullptr);
         }
 
         m_Buffer.SetPointer(m_Buffer.GetBegin());
