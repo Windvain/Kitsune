@@ -2,7 +2,7 @@
 #include "ApplicationCore/MonitorException.h"
 
 #include <cwchar>
-#include "Foundation/Windows/StringConversions.h"
+#include "Foundation/String/UnicodeConversion.h"
 
 namespace Kitsune
 {
@@ -12,8 +12,16 @@ namespace Kitsune
         const wchar_t* Name;
     };
 
+    String WindowsConvertToUtf8(WideStringView wideString)
+    {
+        String string;
+        Unicode::Convert(wideString.GetBegin(), wideString.GetEnd(), BackInsertIterator<String>(string));
+
+        return string;
+    }
+
     WindowsMonitor::WindowsMonitor(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor)
-        : m_Device(adapter), m_Name(Details::WindowsConvertToUtf8(monitor.DeviceString))
+        : m_Device(adapter), m_Name(WindowsConvertToUtf8(monitor.DeviceString))
     {
         MonitorEnumProcData data{ .MonitorHandle = nullptr, .Name = adapter.DeviceName };
         ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure, reinterpret_cast<LPARAM>(&data));

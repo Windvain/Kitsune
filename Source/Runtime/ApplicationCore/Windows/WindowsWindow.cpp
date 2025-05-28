@@ -1,7 +1,7 @@
 #include "ApplicationCore/Windows/WindowsWindow.h"
 
 #include "Foundation/Threading/Interlocked.h"
-#include "Foundation/Windows/StringConversions.h"
+#include "Foundation/String/UnicodeConversion.h"
 
 #include "ApplicationCore/IWindow.h"
 #include "ApplicationCore/WindowException.h"
@@ -105,9 +105,10 @@ namespace Kitsune
 
     void WindowsWindow::SetTitle(StringView title)
     {
-        WideString wideTitle = Details::WindowsConvertToUtf16(title);
-        ::SetWindowTextW(m_NativeHandle, wideTitle.Raw());
+        WideString wideTitle;
+        Unicode::Convert(title.GetBegin(), title.GetEnd(), BackInsertIterator<WideString>(wideTitle));
 
+        ::SetWindowTextW(m_NativeHandle, wideTitle.Raw());
         m_Title = title;
     }
 

@@ -1,9 +1,10 @@
 #include "ApplicationCore/Environment.h"
 
+#include <cwchar>
 #include <cstdlib>
-#include <Windows.h>
 
-#include "Foundation/Windows/StringConversions.h"
+#include <Windows.h>
+#include "Foundation/String/UnicodeConversion.h"
 
 namespace Kitsune
 {
@@ -21,9 +22,8 @@ namespace Kitsune
 
     CommandLineArguments Environment::GetCommandLineArguments()
     {
-        LPWSTR commandLine = ::GetCommandLineW();
-
         int argc;
+        LPWSTR commandLine = ::GetCommandLineW();
         LPWSTR* wargv = ::CommandLineToArgvW(commandLine, &argc);
 
         KITSUNE_ASSERT(wargv != nullptr, "::CommandLineToArgvW() should not have failed..");
@@ -31,7 +31,11 @@ namespace Kitsune
         Array<String> argv(argc);
         for (int i = 0; i < argc; ++i)
         {
-            argv.PushBack(Details::WindowsConvertToUtf8(wargv[i]));
+            String utf8Argument;
+            Usize wideLen = std::wcslen(wargv[i]);
+
+            Unicode::Convert(wargv[i], wargv[i] + wideLen, BackInsertIterator<String>(utf8Argument));
+            argv.PushBack(utf8Argument);
         }
 
        ::LocalFree(wargv);

@@ -35,6 +35,6 @@ namespace Kitsune
         inline IWriteStream<T>* GetStream() const { return m_Stream; }
 
     private:
-        IWriteStream<T>* m_Stream;
+        IWriteStream<T>* m_Stream = nullptr;
     };
 }

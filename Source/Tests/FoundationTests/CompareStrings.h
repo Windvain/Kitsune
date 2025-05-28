@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gtest/gtest.h>
+
 #define EXPECT_GENERAL_STREQ(str1, str2) \
     EXPECT_PRED_FORMAT2(::Testing::Details::StringsEqual, str1, str2)
 

@@ -21,7 +21,7 @@ namespace Kitsune
         s_Instance = this;
 
         /* Retrieve all of the connected monitors */
-        if (specs.Headless)
+        if (!specs.Headless)
             m_Monitors = RetrieveAllMonitors();
         else
             m_Monitors.PushBack(MakeShared<NullMonitor>());

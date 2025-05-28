@@ -41,6 +41,7 @@ kitsune_add_library(
     "Filesystem/WindowsPath.cpp"
     "Filesystem/WindowsPath.h"
 
+    "Iterators/BackInsertIterator.h"
     "Iterators/Iterator.h"
     "Iterators/IteratorTraits.h"
     "Iterators/ReverseIterator.h"
@@ -81,9 +82,14 @@ kitsune_add_library(
     "String/FormatScanner.cpp"
     "String/FormatScanner.h"
     "String/Formatter.h"
-    "String/UnicodeException.h"
+    "String/FromCodepoints.h"
     "String/String.h"
     "String/StringView.h"
+    "String/ToCodepoints.h"
+    "String/UnicodeConversion.h"
+    "String/UnicodeException.h"
+    "String/UnicodeTypes.h"
+    "String/UnicodeValidity.h"
 
     "Templates/Exchange.h"
     "Templates/Forward.h"
@@ -123,8 +129,6 @@ kitsune_add_platform_sources(
     "Logging/WindowsConsoleStream.cpp"
 
     "Threading/WindowsMutex.cpp"
-
-    "Windows/StringConversions.h"
 )
 
 kitsune_add_platform_dependencies(

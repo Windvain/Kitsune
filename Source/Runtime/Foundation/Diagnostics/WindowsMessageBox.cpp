@@ -3,14 +3,20 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 
-#include "Foundation/Windows/StringConversions.h"
+#include "Foundation/String/UnicodeConversion.h"
 
 namespace Kitsune
 {
+    WideString WindowsConvertToUtf16(StringView string)
+    {
+        WideString wideString;
+        Unicode::Convert(string.GetBegin(), string.GetEnd(), BackInsertIterator<WideString>(wideString));
+
+        return wideString;
+    }
+
     bool ShowMessageBox(const MessageBoxSpecs& specs, MessageBoxButtonId* pressed)
     {
-        using namespace Details;
-
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 

@@ -1,8 +1,7 @@
 #include "ApplicationCore/CoreApplication.h"
-
 #include <Windows.h>
-#include "Foundation/Windows/StringConversions.h"
 
+#include "Foundation/String/UnicodeConversion.h"
 #include "ApplicationCore/Windows/WindowsWindow.h"
 
 KITSUNE_PUSH_COMPILER_WARNINGS()
@@ -27,7 +26,10 @@ namespace Kitsune
     SharedPtr<IWindow> CoreApplication::MakeWindow(const WindowProperties& props)
     {
         VerifyWindowProperties(props);
-        WideString wideTitle = Details::WindowsConvertToUtf16(props.Title);
+
+        WideString wideTitle;
+        Unicode::Convert(props.Title.GetBegin(), props.Title.GetEnd(),
+                         BackInsertIterator<WideString>(wideTitle));
 
         return MakeShared<WindowsWindow>(props.Size.x, props.Size.y,
                                          props.Position.x, props.Position.y,
