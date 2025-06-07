@@ -41,8 +41,6 @@ namespace Kitsune
 
     private:
         static StringView VendorIdToString(Uint32 vendorId);
-        static void D3D12DebugMessageCallback(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY,
-                                              D3D12_MESSAGE_ID, LPCSTR, void*);
 
     private:
         DirectX::ComPtr<IDXGIAdapter4> m_Adapter;

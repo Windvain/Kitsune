@@ -1,8 +1,5 @@
 #include "RenderingCore/D3D12/D3D12PhysicalDevice.h"
 
-#include "RenderingCore/D3D12/D3D12Instance.h"
-
-#include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Windows/StringConversions.h"
 #include "Foundation/Diagnostics/InvalidArgumentException.h"
 
@@ -44,16 +41,5 @@ namespace Kitsune
         }
 
         KITSUNE_UNREACHABLE();
-    }
-
-    void D3D12PhysicalDevice::D3D12DebugMessageCallback(D3D12_MESSAGE_CATEGORY /* category */, D3D12_MESSAGE_SEVERITY severity,
-                                                        D3D12_MESSAGE_ID /* id */, LPCSTR desc, void* /* context */)
-    {
-        LogSeverity logSeverity = (severity == D3D12_MESSAGE_SEVERITY_CORRUPTION) ? LogSeverity::Fatal :
-                                  (severity == D3D12_MESSAGE_SEVERITY_ERROR)      ? LogSeverity::Error :
-                                  (severity == D3D12_MESSAGE_SEVERITY_WARNING)    ? LogSeverity::Warning :
-                                                                                    LogSeverity::Info;
-
-        GetGlobalLogger()->LogFormat(logSeverity, "A DirectX 12 error has occured: \"{0}\"", desc);
     }
 }

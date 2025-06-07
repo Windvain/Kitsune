@@ -1,38 +1,28 @@
 #pragma once
 
-#include "Foundation/Maths/Vector2.h"
-#include "Foundation/Memory/SharedPtr.h"
-
 #include "ApplicationCore/IWindow.h"
+#include "RenderingCore/IRenderTarget.h"
+
+#include "Foundation/Memory/SharedPtr.h"
+#include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    class IFence;
-
     struct SwapChainSpecs
     {
-        bool Vsync = false;
+        SharedPtr<IWindow> Window;
         Uint32 BufferCount;
 
-        SharedPtr<IWindow> Window;
+        bool VsyncEnabled;
     };
 
-    class ISwapChain
+    class ISwapChain : public NonCopyable
     {
     public:
         virtual ~ISwapChain() { /* ... */ }
 
     public:
         virtual void Present() = 0;
-        virtual void Resize(const Vector2<Uint32>& size) = 0;
-
-        virtual Uint32 GetCurrentBackBufferIndex() const = 0;
-        virtual SharedPtr<IFence> GetFence() = 0;
-
-        virtual void WaitForPreviousFrame() = 0;
-
-    public:
-        virtual void SetVsyncEnabled(bool vsync) = 0;
-        virtual bool IsVsyncEnabled() const = 0;
+        virtual SharedPtr<IRenderTarget> GetCurrentBackBuffer() const = 0;
     };
 }

@@ -1,10 +1,6 @@
 #pragma once
 
 #include "Foundation/String/String.h"
-#include "Foundation/Memory/SharedPtr.h"
-#include "Foundation/Containers/Array.h"
-
-#include "Foundation/Utilities/EnumFlags.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune

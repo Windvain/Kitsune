@@ -132,6 +132,18 @@ namespace Kitsune
 
         template<typename T>
         concept IsAllocatorOrRef = Allocator<std::remove_reference_t<T>>;
+
+        template<typename To, typename From>
+        concept StaticPointerCastable = requires { static_cast<To*>((From*)nullptr); };
+
+        template<typename To, typename From>
+        concept DynamicPointerCastable = requires { dynamic_cast<To*>((From*)nullptr); };
+
+        template<typename To, typename From>
+        concept ConstPointerCastable = requires { const_cast<To*>((From*)nullptr); };
+
+        template<typename To, typename From>
+        concept ReinterpretPointerCastable = requires { reinterpret_cast<To*>((From*)nullptr); };
     }
 
     // Forward-declare..
@@ -202,6 +214,14 @@ namespace Kitsune
                 m_Data->IncrementReferenceCount();
         }
 
+        template<typename U>
+        inline SharedPtr(const SharedPtr<U, Mode>& shared, T* ptr)
+            : m_Pointer(ptr), m_Data(shared.m_Data)
+        {
+            if (m_Data != nullptr)
+                m_Data->IncrementReferenceCount();
+        }
+
         inline SharedPtr(SharedPtr&& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(Exchange(ptr.m_Data, nullptr))
         {
@@ -211,6 +231,12 @@ namespace Kitsune
             requires std::is_convertible_v<U*, T*>
         SharedPtr(SharedPtr<U, Mode>&& ptr)
             : m_Pointer(ptr.m_Pointer), m_Data(Exchange(ptr.m_Data, nullptr))
+        {
+        }
+
+        template<typename U>
+        inline SharedPtr(SharedPtr<U, Mode>&& shared, T* ptr)
+            : m_Pointer(ptr), m_Data(Exchange(shared.m_Data, nullptr))
         {
         }
 
@@ -261,7 +287,14 @@ namespace Kitsune
         }
 
     public:
-        inline T& operator*() const { return *m_Pointer; }
+        inline std::add_lvalue_reference_t<T> operator*() const
+        {
+            if constexpr (!std::is_void_v<T>)
+                return *m_Pointer;
+
+            /* Turns into a void function, returns nothing. */
+        }
+
         inline T* operator->() const { return m_Pointer; }
 
         inline explicit operator bool() const
@@ -340,15 +373,6 @@ namespace Kitsune
     [[nodiscard]] inline SharedPtr<T> MakeShared(Args&&... args)
     {
         return SharedPtr<T>(Memory::New<T>(Forward<Args>(args)...));
-    }
-
-    namespace Algorithms
-    {
-        template<typename T, ThreadSafety Mode>
-        inline void Swap(SharedPtr<T, Mode>& ptr1, SharedPtr<T, Mode>& ptr2)
-        {
-            return ptr1.Swap(ptr2);
-        }
     }
 
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
@@ -573,8 +597,78 @@ namespace Kitsune
         Details::ReferenceCountBase<Mode>* m_Data;
     };
 
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::StaticPointerCastable<T, U>
+    SharedPtr<T, Mode> StaticPointerCast(const SharedPtr<U, Mode>& ptr)
+    {
+        auto castPointer = static_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(ptr, castPointer);
+    }
+
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::StaticPointerCastable<T, U>
+    SharedPtr<T, Mode> StaticPointerCast(SharedPtr<U, Mode>&& ptr)
+    {
+        auto castPointer = static_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(Move(ptr), castPointer);
+    }
+
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::DynamicPointerCastable<T, U>
+    SharedPtr<T, Mode> DynamicPointerCast(const SharedPtr<U, Mode>& ptr)
+    {
+        auto* castPointer = dynamic_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(ptr, castPointer);
+    }
+
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::DynamicPointerCastable<T, U>
+    SharedPtr<T, Mode> DynamicPointerCast(SharedPtr<U, Mode>&& ptr)
+    {
+        auto* castPointer = dynamic_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(Move(ptr), castPointer);
+    }
+
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::ConstPointerCastable<T, U>
+    SharedPtr<T, Mode> ConstPointerCast(const SharedPtr<U, Mode>& ptr)
+    {
+        auto* castPointer = const_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(ptr, castPointer);
+    }
+
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::ConstPointerCastable<T, U>
+    SharedPtr<T, Mode> ConstPointerCast(SharedPtr<U, Mode>&& ptr)
+    {
+        auto* castPointer = const_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(Move(ptr), castPointer);
+    }
+
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::ReinterpretPointerCastable<T, U>
+    SharedPtr<T, Mode> ReinterpretPointerCast(const SharedPtr<U, Mode>& ptr)
+    {
+        auto* castPointer = reinterpret_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(ptr, castPointer);
+    }
+
+    template<typename T, ThreadSafety Mode, typename U>
+        requires Details::ReinterpretPointerCastable<T, U>
+    SharedPtr<T, Mode> ReinterpretPointerCast(SharedPtr<U, Mode>&& ptr)
+    {
+        auto* castPointer = reinterpret_cast<T*>(ptr.Get());
+        return SharedPtr<T, Mode>(Move(ptr), castPointer);
+    }
+
     namespace Algorithms
     {
+        template<typename T, ThreadSafety Mode>
+        inline void Swap(SharedPtr<T, Mode>& ptr1, SharedPtr<T, Mode>& ptr2)
+        {
+            return ptr1.Swap(ptr2);
+        }
+
         template<typename T, ThreadSafety Mode>
         inline void Swap(WeakPtr<T, Mode>& ptr1, WeakPtr<T, Mode>& ptr2)
         {

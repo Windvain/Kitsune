@@ -3,9 +3,9 @@
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Logging/GlobalLog.h"
 
-#include "RenderingCore/IGraphicsInstance.h"
+#include "RenderingCore/IGraphicsDevice.h"
 
-using namespace Kitsune;
+#define CONV_TO_MB 1048576
 
 namespace Kitsune
 {
@@ -29,79 +29,69 @@ namespace Kitsune
     };
 }
 
+using namespace Kitsune;
+
 class Sandbox : public Application
 {
 public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        SharedPtr<IGraphicsInstance> instance = CreateGraphicsInstance(GraphicsBackend::DirectX12);
-        Array<SharedPtr<IPhysicalDevice>> physDevices = instance->EnumeratePhysicalDevices(PhysicalDevicePreference::PowerSaving);
+        /* Create Graphics Device */
+        GraphicsDeviceSpecs deviceSpecs;
+        deviceSpecs.Backend = GraphicsBackend::DirectX12;
+        deviceSpecs.GpuHint = GpuPreference::PowerSaving;
+        deviceSpecs.UseDebug = true;
 
-        Uint32 index = 0;
-        for (SharedPtr<IPhysicalDevice>& physDevice : physDevices)
-        {
-            ++index;
-            if (physDevice->GetType() == PhysicalDeviceType::Software)
-                continue;
+        m_Device = CreateGraphicsDevice(deviceSpecs);
 
-            KITSUNE_TRACE_FORMAT("Using GPU {0}: {1} [Type: {2}, Vendor: {3}, Dedicated sysMem: {4} MB, Dedicated vidMem: {5} MB, Shared sysMem: {6} MB, Total Mem: {7} MB]",
-                index, physDevice->GetName(), physDevice->GetType(), physDevice->GetVendorName(),
-                physDevice->GetDedicatedSystemMemory() / 1048576, physDevice->GetDedicatedVideoMemory() / 1048576,
-                physDevice->GetSharedSystemMemory() / 1048576, physDevice->GetTotalAvailableGraphicsMemory() / 1048576);
+        /* Log GPU Information */
+        SharedPtr<IPhysicalDevice> gpuHandle = m_Device->GetPhysicalDevice();
+        KITSUNE_TRACE_FORMAT("Using GPU: {0} [Type: {1}, Vendor: {2}, Dedicated sysMem: {3} MB, Dedicated vidMem: {4} MB, Shared sysMem: {5} MB, Total Mem: {6} MB]",
+            gpuHandle->GetName(), gpuHandle->GetType(), gpuHandle->GetVendorName(),
+            gpuHandle->GetDedicatedSystemMemory() / CONV_TO_MB,
+            gpuHandle->GetDedicatedVideoMemory() / CONV_TO_MB,
+            gpuHandle->GetSharedSystemMemory() / CONV_TO_MB,
+            gpuHandle->GetTotalAvailableGraphicsMemory() / CONV_TO_MB);
 
-            break;
-        }
+        /* Retrieve the command queue */
+        m_CommandQueue = m_Device->GetGraphicsCommandQueue();
 
-        m_Device = instance->CreateGraphicsDevice(physDevices[0]);
-        m_CommandQueue = m_Device->GetCommandQueue(CommandBufferType::Graphics);
-
+        /* Create Swap Chain */
         SwapChainSpecs swapChainSpecs;
         swapChainSpecs.BufferCount = s_BufferCount;
-        swapChainSpecs.Vsync = true;
+        swapChainSpecs.VsyncEnabled = true;
         swapChainSpecs.Window = GetWindow();
 
         m_SwapChain = m_Device->CreateSwapChain(swapChainSpecs);
-
-        for (Uint32 i = 0; i < s_BufferCount; ++i)
-            m_GraphicsCommandBuffers.PushBack(m_Device->CreateCommandBuffer(CommandBufferType::Graphics));
     }
 
     void OnUpdate()
     {
-        Uint32 frameIndex = m_SwapChain->GetCurrentBackBufferIndex();
-        auto& currentCmdBuffer = m_GraphicsCommandBuffers[frameIndex];
-
-        currentCmdBuffer->BeginRecording(m_SwapChain);
-
-        // Clear the render target with the specified colour.
-        currentCmdBuffer->ClearColor(0.5f, 0.0f, 1.0f, 1.0f);
-
-        currentCmdBuffer->EndRecording();
-        m_CommandQueue->Submit({ currentCmdBuffer });
-
-        m_SwapChain->GetFence()->Signal();
-        m_CommandQueue->Signal(m_SwapChain->GetFence());
+        m_CommandQueue->BeginCommandList();
+        {
+            m_CommandQueue->SetRenderTargets({ m_SwapChain->GetCurrentBackBuffer() });
+            m_CommandQueue->ClearRenderTargets(0.5f, 0.0f, 1.0f, 1.0f);
+        }
+        m_CommandQueue->EndCommandList();
+        m_CommandQueue->ExecuteCommandLists();
 
         m_SwapChain->Present();
-        m_SwapChain->WaitForPreviousFrame();
+        m_CommandQueue->WaitFinished();
     }
 
     ~Sandbox()
     {
-        m_SwapChain->GetFence()->Signal();
-        m_CommandQueue->Signal(m_SwapChain->GetFence());
     }
 
 private:
     static constexpr Uint32 s_BufferCount = 3;
 
 private:
-    SharedPtr<ILogicalDevice> m_Device;
+    SharedPtr<IGraphicsDevice> m_Device;
     SharedPtr<ISwapChain> m_SwapChain;
 
     SharedPtr<ICommandQueue> m_CommandQueue;
-    Array<SharedPtr<ICommandBuffer>> m_GraphicsCommandBuffers;
 };
 
 Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)

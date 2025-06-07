@@ -2,14 +2,13 @@ kitsune_add_library(
     TARGET KitsuneRenderingCore
     SOURCES
     "GraphicsBackend.h"
-    "ICommandBuffer.h"
     "ICommandQueue.h"
-    "IFence.h"
-    "IGraphicsInstance.cpp"
-    "IGraphicsInstance.h"
-    "ILogicalDevice.h"
+    "IGraphicsDevice.cpp"
+    "IGraphicsDevice.h"
     "IPhysicalDevice.h"
+    "IRenderTarget.h"
     "ISwapChain.h"
+    "ITexture.h"
     "RenderException.h"
 
     DEPENDENCIES
@@ -18,24 +17,24 @@ kitsune_add_library(
 
 option(KITSUNE_INCLUDE_D3D12_IMPLEMENTATION "Compile Kitsune with D3D12 support." ON)
 
-if (KITSUNE_INCLUDE_D3D12_IMPLEMENTATION)
+if (KITSUNE_INCLUDE_D3D12_IMPLEMENTATION AND MSVC)
     kitsune_add_library(
         TARGET KitsuneRenderingCore_D3D12
         SOURCES
-        "D3D12/D3D12CommandBuffer.cpp"
-        "D3D12/D3D12CommandBuffer.h"
         "D3D12/D3D12CommandQueue.cpp"
         "D3D12/D3D12CommandQueue.h"
-        "D3D12/D3D12Fence.cpp"
-        "D3D12/D3D12Fence.h"
-        "D3D12/D3D12Instance.cpp"
-        "D3D12/D3D12Instance.h"
-        "D3D12/D3D12LogicalDevice.cpp"
-        "D3D12/D3D12LogicalDevice.h"
+        "D3D12/D3D12DescriptorHeap.cpp"
+        "D3D12/D3D12DescriptorHeap.h"
+        "D3D12/D3D12GraphicsDevice.cpp"
+        "D3D12/D3D12GraphicsDevice.h"
         "D3D12/D3D12PhysicalDevice.cpp"
         "D3D12/D3D12PhysicalDevice.h"
+        "D3D12/D3D12RenderTarget.cpp"
+        "D3D12/D3D12RenderTarget.h"
         "D3D12/D3D12SwapChain.cpp"
         "D3D12/D3D12SwapChain.h"
+        "D3D12/D3D12Texture.cpp"
+        "D3D12/D3D12Texture.h"
         "D3D12/DirectX12Core.h"
 
         DEPENDENCIES
