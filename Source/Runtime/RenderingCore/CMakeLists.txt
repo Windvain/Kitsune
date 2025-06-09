@@ -17,7 +17,7 @@ kitsune_add_library(
 
 option(KITSUNE_INCLUDE_D3D12_IMPLEMENTATION "Compile Kitsune with D3D12 support." ON)
 
-if (KITSUNE_INCLUDE_D3D12_IMPLEMENTATION AND MSVC)
+if (KITSUNE_INCLUDE_D3D12_IMPLEMENTATION)
     kitsune_add_library(
         TARGET KitsuneRenderingCore_D3D12
         SOURCES
@@ -43,6 +43,13 @@ if (KITSUNE_INCLUDE_D3D12_IMPLEMENTATION AND MSVC)
 
         "d3d12.lib"
         "dxgi.lib"
+
+        # Remember to always read the documentation before using a library.
+        # ld.exe will not be able to find the definitions of uuid<T>() if dxguids.lib/DirectX-Guids
+        # is not linked.
+        #
+        # Hours wasted: 4
+        Microsoft::DirectX-Guids
     )
 
     # HACK: We include <d3dx12.h> in some header files.

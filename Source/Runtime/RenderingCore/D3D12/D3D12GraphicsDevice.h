@@ -65,7 +65,5 @@ namespace Kitsune
         SharedPtr<D3D12CommandQueue> m_GraphicsCommandQueue;
 
         SharedPtr<D3D12DescriptorHeap> m_RtvDescriptorHeap;
-
-        HANDLE m_FenceEvent;
     };
 }

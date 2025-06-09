@@ -83,7 +83,10 @@ namespace Kitsune
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC D3D12SwapChain::CreateDxgiSwapChainFullscreenDesc(
             const SharedPtr<WindowsWindow>& window)
     {
-        DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = { 0 };
+        DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc;
+        fullscreenDesc.RefreshRate = { 0, 0 };
+        fullscreenDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+        fullscreenDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
         fullscreenDesc.Windowed = !window->IsFullscreen();
 
         return fullscreenDesc;

@@ -28,7 +28,17 @@ namespace Kitsune
 
     D3D12_CPU_DESCRIPTOR_HANDLE D3D12DescriptorHeap::GetHeapStartCpuHandle() const
     {
+        // MSVC and MinGW builds have different signatures for this function. Don't know why.
+        // D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandleForHeapStart();                              <-- MSVC
+        // D3D12_CPU_DESCRIPTOR_HANDLE* GetCPUDescriptorHandleForHeapStart(D3D12_CPU_DESCRIPTOR_HANDLE*); <-- MinGW
+#if defined(KITSUNE_COMPILER_MSVC)
         return m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+#else
+        D3D12_CPU_DESCRIPTOR_HANDLE handle;
+        m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(&handle);
+
+        return handle;
+#endif
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE D3D12DescriptorHeap::GetHeapCpuHandle(UINT index) const

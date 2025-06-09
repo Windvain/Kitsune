@@ -46,6 +46,13 @@
     #define KITSUNE_COMPILER_VERSION_MINOR __clang_minor__
     #define KITSUNE_COMPILER_VERSION_PATCH __clang_patchlevel__
 
+    // We previously specified -fno-ms-compatibility, it did absolutely nothing.
+    // Just #undef manually, don't rely on the compiler.
+    #if defined(_MSC_VER) && defined(_MSC_FULL_VER)
+        #undef _MSC_VER
+        #undef _MSC_FULL_VER
+    #endif
+
 #elif defined(_MSC_VER) && !defined(KITSUNE_COMPILER_INTEL) && !defined(__clang__)
     #define KITSUNE_COMPILER_MSVC 1
 

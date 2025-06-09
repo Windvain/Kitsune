@@ -23,6 +23,11 @@ namespace Kitsune
             return m_DescriptorCapacity;
         }
 
+        inline D3D12_DESCRIPTOR_HEAP_TYPE GetType() const
+        {
+            return m_Type;
+        }
+
     public:
         KITSUNE_API_ UINT AllocateDescriptor();
 

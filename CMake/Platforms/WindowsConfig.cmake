@@ -18,9 +18,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
         "-pedantic"                     # Enable warnings about compiler extensions.
         "-Wshadow"                      # Warn when a local declaration shadows another.
-
-        "-fno-ms-compatibility"         # Disable MSVC compatibility.
-        "-fms-compatibility-version=0"  # Remove definition of _MSC_VER.
     )
 
     list(APPEND KITSUNE_GLOBAL_DEBUG_COMPILE_FLAGS

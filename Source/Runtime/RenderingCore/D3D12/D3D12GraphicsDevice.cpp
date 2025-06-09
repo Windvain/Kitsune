@@ -11,7 +11,7 @@ namespace Kitsune
     namespace DirectX
     {
         // Using DXGI_DEBUG_ALL causes a linking error because we aren't linking to DXGIDebug.dll.
-        const GUID DxgiDebugAll = { 0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 };
+        const GUID DxgiDebugAll = { 0xe48ae283, 0xda80, 0x490b, { 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 } };
 
         DXGI_GPU_PREFERENCE ConvertEngineToDirectX(GpuPreference pref)
         {
