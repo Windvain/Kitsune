@@ -1,6 +1,9 @@
 #include "Application/Application.h"
 
 #include <Windows.h>
+#include "Foundation/String/UnicodeConversion.h"
+
+#include "ApplicationCore/Windows/WindowsWindow.h"
 #include "ApplicationCore/Windows/WindowsMonitor.h"
 
 namespace Kitsune
@@ -15,7 +18,20 @@ namespace Kitsune
         }
     }
 
-    Array<SharedPtr<IMonitor>> Application::RetrieveAllMonitors()
+    SharedPtr<IWindow> Application::MakePlatformWindow(const WindowProperties& props)
+    {
+        VerifyWindowProperties(props);
+
+        WideString wideTitle;
+        Unicode::Convert(props.Title.GetBegin(), props.Title.GetEnd(),
+                         BackInsertIterator<WideString>(wideTitle));
+
+        return MakeShared<WindowsWindow>(props.Size.x, props.Size.y,
+                                         props.Position.x, props.Position.y,
+                                         wideTitle.Raw(), props.State, props.Flags);
+    }
+
+    Array<SharedPtr<IMonitor>> Application::RetrieveMonitors()
     {
         Array<SharedPtr<IMonitor>> monitors;
         for (DWORD adapterIndex = 0; /* ... */; ++adapterIndex)

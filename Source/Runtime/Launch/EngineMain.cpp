@@ -1,25 +1,24 @@
 #include <cstdio>
 #include <cinttypes>
 
+#include "Launch/EngineLoop.h"
+
 #include "Foundation/Common/Macros.h"
 #include "Foundation/Diagnostics/IException.h"
 
 #include "Foundation/Memory/Memory.h"
-
-#include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Logging/AnsiColorSink.h"
-
 #include "Foundation/Threading/ThisThread.h"
-
-#include "Application/Application.h"
-#include "ApplicationCore/Environment.h"
 
 namespace Kitsune
 {
     class MemorySubsystemGuard
     {
     public:
-        MemorySubsystemGuard() { Memory::InitializeExplicit(); }
+        MemorySubsystemGuard()
+        {
+            Memory::InitializeExplicit();
+        }
+
         ~MemorySubsystemGuard()
         {
             Memory::Shutdown();
@@ -28,45 +27,15 @@ namespace Kitsune
 
     int UnguardedEngineMain(int argc, char** argv)
     {
-        /* Foundation Subsystems Initialization */
-        // Make sure the memory subsystem gets shutdown last, there
-        // might be stack variables in the initialization code which
-        // could attempt to free memory **after** Memory::Shutdown().
+        // EngineLoop needs to allocate heap memory, initialize the memory
+        // subsystem first.
         MemorySubsystemGuard memoryGuard{};
 
-        // Initialize the global logger.
-        ScopedPtr<Logger> globalLogger = MakeScoped<Logger>("GLOBAL");
-        SetGlobalLogger(globalLogger.Get());
+        EngineLoop engineLoop(argc, argv);
+        engineLoop.Run();
 
-        // Create streams to stdout and stderr, if they exist.
-#if !defined(KITSUNE_BUILD_RELEASE)
-        ConsoleOutputStream consoleOutStream(/* Error stream: */ false);
-        ConsoleOutputStream consoleErrorStream(/* Error stream: */ true);
-
-        globalLogger->GetSinks().PushBack(
-            MakeShared<AnsiColorSink>(consoleOutStream, consoleErrorStream));
-#endif
-
-        /* Remaining Subsystems Initialization */
-        Environment::Initialize(argc, argv);
-
-        /* App Startup */
-        // This is where client code gets called for the first time.
-        Application* app = Kitsune::CreateApplication(Environment::GetCommandLineArguments());     // << Here..
-        while (!app->IsExitRequested())
-            app->Update();
-
-        int exitCode = app->GetExitCode();
-        Memory::Delete(app);
-
-        /* Remaining Subsystems Shutdown */
-        Environment::Shutdown();
-
-        /* Foundation Subsystems Shutdown */
-        // Just in case, who knows what might happen..
-        SetGlobalLogger(nullptr);
-
-        return exitCode;
+        Application* app = engineLoop.GetApplicationInstance();
+        return app->GetExitCode();
     }
 
     void PrintStackTrace()

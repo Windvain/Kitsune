@@ -46,6 +46,8 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "/W4"                         # Enable all reasonable warnings.
         "/WX"                         # Turn all warnings into errors.
         "/permissive"                 # Enable standards conformance.
+
+        "/wd4244"                     # Disable "conversion from 'type1' to 'type2', possible loss of data".
     )
 
     list(APPEND KITSUNE_GLOBAL_DEBUG_COMPILE_FLAGS

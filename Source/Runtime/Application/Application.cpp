@@ -1,4 +1,5 @@
 #include "Application/Application.h"
+#include "ApplicationCore/WindowException.h"
 
 #include "ApplicationCore/Null/NullMonitor.h"
 #include "ApplicationCore/Null/NullWindow.h"
@@ -8,21 +9,14 @@
 
 namespace Kitsune
 {
-    Application* Application::s_Instance = nullptr;
-
     Application::Application(const ApplicationSpecs& specs)
     {
-        KITSUNE_ASSERT(s_Instance == nullptr,
-                       "An application has already been instanced.");
-
         VerifyApplicationSpecs(specs);
         m_ApplicationSpecs = specs;
 
-        s_Instance = this;
-
         /* Retrieve all of the connected monitors */
         if (!specs.Headless)
-            m_Monitors = RetrieveAllMonitors();
+            m_Monitors = RetrieveMonitors();
         else
             m_Monitors.PushBack(MakeShared<NullMonitor>());
 
@@ -49,7 +43,9 @@ namespace Kitsune
         if (specs.Headless)
             m_PrimaryWindow = MakeShared<NullWindow>(windowProps);
         else
-            m_PrimaryWindow = MakeWindow(windowProps);
+        {
+            m_PrimaryWindow = MakePlatformWindow(windowProps);
+        }
 
         // Set window callbacks.
         m_PrimaryWindow->SetResizeCallback(MemberFunction(*this, &Application::OnWindowResize));
@@ -61,7 +57,6 @@ namespace Kitsune
 
     Application::~Application()
     {
-        s_Instance = nullptr;
     }
 
     void Application::Update()
@@ -74,5 +69,11 @@ namespace Kitsune
     {
         if (specs.ViewportSize == Vector2<Uint32>())
             throw InvalidArgumentException("Viewport size must not be [0, 0].");
+    }
+
+    void Application::VerifyWindowProperties(const WindowProperties& windowProps)
+    {
+        if (windowProps.Size == Vector2<Uint32>())
+            throw InvalidArgumentException("Cannot create a window with a size of [0, 0].");
     }
 }

@@ -1,11 +1,8 @@
 #include "Application/Application.h"
 #include "Foundation/Memory/Memory.h"
 
-#include "Foundation/Diagnostics/StackTrace.h"
 #include "Foundation/Logging/GlobalLog.h"
-
 #include "Foundation/Utilities/Function.h"
-#include "Foundation/Utilities/MemberFunction.h"
 
 using namespace Kitsune;
 
@@ -36,10 +33,7 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
     ApplicationSpecs specs;
     specs.Name = "你好，世界";
     specs.WindowState = WindowState::Windowed;
-    // specs.Headless = true;
-    // specs.WindowResizable = false;
-    specs.WindowPositionHint = WindowPositionHint::UsePosition;
-    specs.WindowPosition = { 240, 480 };
+    specs.WindowPositionHint = WindowPositionHint::PrimaryScreenCenter;
     specs.ViewportSize = { 640, 422 };
 
     return Memory::New<Sandbox>(specs);

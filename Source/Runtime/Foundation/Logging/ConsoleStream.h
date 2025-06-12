@@ -10,9 +10,8 @@ namespace Kitsune
     class ConsoleOutputStream : public IWriteStream<char>
     {
     public:
-        inline explicit ConsoleOutputStream(bool useStderr)
-            : m_ErrorStream(useStderr), m_RawBuffer(),
-              m_Buffer(m_RawBuffer, m_RawBuffer + BufferSize)
+        inline explicit ConsoleOutputStream()
+            : m_StreamBuffer(m_RawBuffer, m_RawBuffer + BufferSize)
         {
         }
 
@@ -27,18 +26,16 @@ namespace Kitsune
         static constexpr Usize BufferSize = 128;
 
     private:
-        bool m_ErrorStream;
-
         char m_RawBuffer[BufferSize];
-        StreamBuffer<char> m_Buffer;
+        StreamBuffer<char> m_StreamBuffer;
     };
 
     class ConsoleInputStream : public IReadStream<char>
     {
     public:
         ConsoleInputStream(IWriteStream<char>& stream)
-            : m_OutStream(stream), m_RawBuffer(),
-              m_Buffer(m_RawBuffer, m_RawBuffer + BufferSize)
+            : m_OutStream(stream),
+              m_StreamBuffer(m_RawBuffer, m_RawBuffer + BufferSize)
         {
         }
 
@@ -56,6 +53,6 @@ namespace Kitsune
         IWriteStream<char>& m_OutStream;
 
         char m_RawBuffer[BufferSize];
-        StreamBuffer<char> m_Buffer;
+        StreamBuffer<char> m_StreamBuffer;
     };
 }

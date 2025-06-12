@@ -3,12 +3,15 @@
 #include "Foundation/Maths/Vector2.h"
 #include "Foundation/String/String.h"
 
+#include "Foundation/Algorithms/Find.h"
+#include "Foundation/Memory/SharedPtr.h"
+
+#include "Foundation/Utilities/Process.h"
 #include "Foundation/Diagnostics/Assert.h"
 
 #include "ApplicationCore/IWindow.h"
 #include "ApplicationCore/IMonitor.h"
 
-#include "ApplicationCore/CoreApplication.h"
 #include "ApplicationCore/CommandLineArguments.h"
 
 KITSUNE_PUSH_COMPILER_WARNINGS()
@@ -42,7 +45,7 @@ namespace Kitsune
         String VersionString;
     };
 
-    class Application : public CoreApplication
+    class Application
     {
     public:
         KITSUNE_API_ Application(const ApplicationSpecs& specs);
@@ -100,22 +103,27 @@ namespace Kitsune
         inline SharedPtr<IWindow> GetWindow() const { return m_PrimaryWindow; }
 
     public:
-        [[nodiscard]] static inline Application& GetInstance()
-        {
-            KITSUNE_ASSERT(s_Instance != nullptr,
-                "No instance of the application has been created.");
+        inline void Quit(int exitCode) { Process::Exit(exitCode); }
 
-            return *s_Instance;
+        inline bool IsExitRequested() const
+        {
+            return Process::IsExitRequested();
+        }
+
+        inline int GetExitCode() const
+        {
+            return Process::GetExitCode();
         }
 
     private:
         KITSUNE_API_ void PlatformUpdate();
-        KITSUNE_API_ Array<SharedPtr<IMonitor>> RetrieveAllMonitors();
+        KITSUNE_API_ SharedPtr<IWindow> MakePlatformWindow(const WindowProperties& props);
 
-        KITSUNE_API_ static void VerifyApplicationSpecs(const ApplicationSpecs& specs);
+        KITSUNE_API_ Array<SharedPtr<IMonitor>> RetrieveMonitors();
 
     private:
-        KITSUNE_API_ static Application* s_Instance;
+        KITSUNE_API_ static void VerifyApplicationSpecs(const ApplicationSpecs& specs);
+        KITSUNE_API_ static void VerifyWindowProperties(const WindowProperties& windowProps);
 
     private:
         ApplicationSpecs m_ApplicationSpecs;

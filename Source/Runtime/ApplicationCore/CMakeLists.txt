@@ -10,8 +10,6 @@ kitsune_add_library(
     "IMonitor.h"
     "IWindow.h"
     "MonitorException.h"
-    "CoreApplication.cpp"
-    "CoreApplication.h"
     "VideoMode.h"
     "WindowException.h"
 
@@ -22,11 +20,9 @@ kitsune_add_library(
 kitsune_add_platform_sources(
     TARGET KitsuneApplicationCore
     WINDOWS
-    "Windows/WindowsCoreApplication.cpp"
     "Windows/WindowsEnvironment.cpp"
     "Windows/WindowsMonitor.cpp"
     "Windows/WindowsMonitor.h"
     "Windows/WindowsWindow.cpp"
     "Windows/WindowsWindow.h"
 )
-

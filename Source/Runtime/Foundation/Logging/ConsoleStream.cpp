@@ -6,11 +6,11 @@ namespace Kitsune
     {
         for (; count > 0; --count, ++ptr)
         {
-            *m_Buffer.GetCurrent() = *ptr;
-            m_Buffer.BumpPointer(1);
+            *m_StreamBuffer.GetCurrent() = *ptr;
+            m_StreamBuffer.BumpPointer(1);
 
             if ((*ptr == '\n') || (*ptr == '\0') ||
-                (m_Buffer.GetRemainingCapacity() == 0))
+                (m_StreamBuffer.GetRemainingCapacity() == 0))
             {
                 Overflow();
             }
@@ -23,8 +23,8 @@ namespace Kitsune
         {
             Underflow();
 
-            Usize min = KITSUNE_MIN(count, Usize(m_Buffer.GetWrittenCount()));
-            m_OutStream.Write(m_Buffer.GetBegin(), min);
+            Usize min = KITSUNE_MIN(count, Usize(m_StreamBuffer.GetWrittenCount()));
+            m_OutStream.Write(m_StreamBuffer.GetBegin(), min);
 
             count -= min;
         }
@@ -35,8 +35,8 @@ namespace Kitsune
         do
         {
             Underflow();
-            m_OutStream.Write(m_Buffer.GetBegin(), m_Buffer.GetWrittenCount());
+            m_OutStream.Write(m_StreamBuffer.GetBegin(), m_StreamBuffer.GetWrittenCount());
         }
-        while (m_Buffer.Back() != '\n');
+        while (m_StreamBuffer.Back() != '\n');
     }
 }

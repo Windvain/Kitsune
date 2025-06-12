@@ -20,7 +20,7 @@
     #define KITSUNE_DYNAMIC_EXPORT
 #endif
 
-#if defined(KITSUNE_IS_SHARED)
+#if !defined(KITSUNE_IS_MONOLITHIC)
     #if defined(KITSUNE_EXPORTS)
         #define KITSUNE_API_ KITSUNE_DYNAMIC_EXPORT
     #else

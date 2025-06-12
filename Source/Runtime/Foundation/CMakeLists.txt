@@ -107,6 +107,8 @@ kitsune_add_library(
     "Utilities/Function.h"
     "Utilities/MemberFunction.h"
     "Utilities/NonCopyable.h"
+    "Utilities/Process.cpp"
+    "Utilities/Process.h"
 )
 
 kitsune_add_platform_sources(
@@ -129,6 +131,8 @@ kitsune_add_platform_sources(
     "Logging/WindowsConsoleStream.cpp"
 
     "Threading/WindowsMutex.cpp"
+
+    "Utilities/WindowsProcess.cpp"
 )
 
 kitsune_add_platform_dependencies(

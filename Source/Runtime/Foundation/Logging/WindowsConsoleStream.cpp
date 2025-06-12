@@ -17,14 +17,13 @@ namespace Kitsune
     {
         constexpr Ptrdiff WideBufSize = 128;
 
-        // STD_OUTPUT_HANDLE (-11) --> STD_ERROR_HANDLE (-12)
-        HANDLE handle = ::GetStdHandle(STD_OUTPUT_HANDLE - DWORD(m_ErrorStream));
+        HANDLE handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
         wchar_t convBuffer[WideBufSize];
 
-        char* begin = m_Buffer.GetBegin();
-        while (begin != m_Buffer.GetCurrent())
+        char* begin = m_StreamBuffer.GetBegin();
+        while (begin != m_StreamBuffer.GetCurrent())
         {
-            Ptrdiff min = KITSUNE_MIN(WideBufSize, m_Buffer.GetCurrent() - begin);
+            Ptrdiff min = KITSUNE_MIN(WideBufSize, m_StreamBuffer.GetCurrent() - begin);
             StringView str = GetValidUtf8Segment(begin, begin + min);
 
             int wideLength = ::MultiByteToWideChar(CP_UTF8, 0, begin, static_cast<int>(str.Size()),
@@ -37,7 +36,7 @@ namespace Kitsune
             ::WriteConsoleW(handle, convBuffer, DWORD(wideLength), nullptr, 0);
         }
 
-        m_Buffer.SetPointer(m_Buffer.GetBegin());
+        m_StreamBuffer.SetPointer(m_StreamBuffer.GetBegin());
     }
 
     void ConsoleInputStream::Underflow()
@@ -45,7 +44,9 @@ namespace Kitsune
         HANDLE handle = ::GetStdHandle(STD_INPUT_HANDLE);
         DWORD countRead;
 
-        ::ReadFile(handle, m_Buffer.GetBegin(), static_cast<DWORD>(m_Buffer.GetSize()), &countRead, nullptr);
-        m_Buffer.SetPointer(m_Buffer.GetBegin() + countRead);
+        ::ReadFile(handle, m_StreamBuffer.GetBegin(), static_cast<DWORD>(m_StreamBuffer.GetSize()),
+                   &countRead, nullptr);
+
+        m_StreamBuffer.SetPointer(m_StreamBuffer.GetBegin() + countRead);
     }
 }

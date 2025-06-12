@@ -6,7 +6,7 @@
 #include "ApplicationCore/IWindow.h"
 #include "ApplicationCore/WindowException.h"
 
-#include "ApplicationCore/CoreApplication.h"
+#include "Foundation/Utilities/Process.h"
 
 // Copied from Windows.h, just made it work with signed integers instead.
 #define KITSUNE_SIGNED_LOWORD_(lparam) static_cast<INT16>(static_cast<LONG_PTR>(lparam) & 0xFFFF)
@@ -200,7 +200,6 @@ namespace Kitsune
     LRESULT WindowsWindow::KitsuneWindowProc(HWND windowHandle, UINT message,
                                              WPARAM wparam, LPARAM lparam)
     {
-        auto& app = CoreApplication::GetInstance();
         auto* window = reinterpret_cast<WindowsWindow*>(::GetWindowLongPtrW(windowHandle, GWLP_USERDATA));
 
         if (window == nullptr)      // ::CreateWindowExW() calls the window procedure with WM_CREATE.
@@ -210,7 +209,7 @@ namespace Kitsune
         {
         case WM_CLOSE:
         {
-            app.Exit(app.GetExitCode());
+            Process::Exit(Process::GetExitCode());
             return 0;
         }
 

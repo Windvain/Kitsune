@@ -1,6 +1,7 @@
 #include "Foundation/Logging/AnsiColorSink.h"
 
 #include "Foundation/String/Format.h"
+#include "Foundation/Diagnostics/Assert.h"
 #include "Foundation/Logging/WriteStreamIterator.h"
 
 namespace Kitsune
@@ -8,9 +9,7 @@ namespace Kitsune
     void AnsiColorSink::Log(const LogMessage& message)
     {
         LockGuard guard(m_SinkLock);
-        ConsoleOutputStream& stream =
-            (message.Severity < LogSeverity::Error) ? m_StdoutStream :
-                                                      m_StderrStream;
+        KITSUNE_ASSERT(m_Stream != nullptr, "Tried to log to a nullptr sink.");
 
         String header;
         String locInfo;
@@ -28,7 +27,7 @@ namespace Kitsune
         }
 
         StringView fmt = "{0}{1}{2}{3}\x1B[0m\n";
-        FormatTo(WriteStreamIterator<char>(stream), DefaultFormatScanner(fmt), fmt,
+        FormatTo(WriteStreamIterator<char>(*m_Stream), DefaultFormatScanner(fmt), fmt,
                  PickAnsiColor(message.Severity), header, message.Message,
                  locInfo);
     }
@@ -36,8 +35,6 @@ namespace Kitsune
     void AnsiColorSink::Flush()
     {
         LockGuard guard(m_SinkLock);
-
-        m_StdoutStream.Flush();
-        m_StderrStream.Flush();
+        m_Stream->Flush();
     }
 }

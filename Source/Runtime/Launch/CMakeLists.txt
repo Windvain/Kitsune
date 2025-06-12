@@ -3,6 +3,8 @@ kitsune_add_library(
     FORCE_STATIC
 
     SOURCES
+    "EngineLoop.cpp"
+    "EngineLoop.h"
     "EngineMain.cpp"
 
     DEPENDENCIES

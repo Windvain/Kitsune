@@ -18,13 +18,13 @@ function(kitsune_add_library)
 
     if (LIBRARY_ARGS_FORCE_STATIC OR KITSUNE_BUILD_STATIC)
         add_library(${LIBRARY_ARGS_TARGET} STATIC ${LIBRARY_ARGS_SOURCES})
-        target_compile_definitions(${LIBRARY_ARGS_TARGET} PUBLIC "KITSUNE_IS_MONOLITHIC=1")
+
+        if (KITSUNE_BUILD_STATIC)
+            target_compile_definitions(${LIBRARY_ARGS_TARGET} PUBLIC "KITSUNE_IS_MONOLITHIC=1")
+        endif()
     else()
         add_library(${LIBRARY_ARGS_TARGET} SHARED ${LIBRARY_ARGS_SOURCES})
-        target_compile_definitions(${LIBRARY_ARGS_TARGET}
-            PRIVATE "KITSUNE_EXPORTS=1"
-            PUBLIC "KITSUNE_IS_SHARED=1"
-        )
+        target_compile_definitions(${LIBRARY_ARGS_TARGET} PRIVATE "KITSUNE_EXPORTS=1")
     endif()
 
     target_include_directories(${LIBRARY_ARGS_TARGET} PRIVATE "${KITSUNE_ROOT_DIR}/Source/Runtime")

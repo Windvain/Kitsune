@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Foundation/Memory/SharedPtr.h"
+
 #include "Foundation/Logging/ILogSink.h"
 #include "Foundation/Logging/ConsoleStream.h"
 
@@ -11,9 +13,8 @@ namespace Kitsune
     class AnsiColorSink : public ILogSink
     {
     public:
-        inline AnsiColorSink(ConsoleOutputStream& outStream,
-                             ConsoleOutputStream& errStream)
-            : m_StdoutStream(outStream), m_StderrStream(errStream)
+        inline AnsiColorSink(const SharedPtr<IWriteStream<char>>& outStream)
+            : m_Stream(outStream)
         {
         }
 
@@ -39,9 +40,7 @@ namespace Kitsune
         };
 
     private:
-        ConsoleOutputStream& m_StdoutStream;
-        ConsoleOutputStream& m_StderrStream;
-
+        SharedPtr<IWriteStream<char>> m_Stream;
         Mutex m_SinkLock;
     };
 }
