@@ -1,6 +1,9 @@
 #include "Foundation/Utilities/Process.h"
 #include <Windows.h>
 
+KITSUNE_PUSH_COMPILER_WARNINGS()
+KITSUNE_IGNORE_CLANG_WARNING(-Winvalid-noreturn)
+
 namespace Kitsune
 {
     void Process::Exit(int exitCode)
@@ -17,3 +20,5 @@ namespace Kitsune
         ::TerminateProcess(::GetCurrentProcess(), static_cast<UINT>(exitCode));
     }
 }
+
+KITSUNE_POP_COMPILER_WARNINGS()

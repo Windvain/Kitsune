@@ -60,7 +60,7 @@ namespace Kitsune
 
     public:
         SYMBOL_INFO SymbolInfo;
-        TCHAR Buffer[MaxNameLength];
+        CHAR Buffer[MaxNameLength];
     };
 
     class ScopedSymInit

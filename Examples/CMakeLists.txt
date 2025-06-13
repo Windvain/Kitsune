@@ -7,4 +7,5 @@ endif()
 target_sources(Sandbox PRIVATE "Sandbox/Sandbox.cpp")
 
 target_include_directories(Sandbox PRIVATE "${KITSUNE_ROOT_DIR}/Source/Runtime")
+target_compile_options(Sandbox PRIVATE "${KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS}")
 target_link_libraries(Sandbox PRIVATE KitsuneLaunch)

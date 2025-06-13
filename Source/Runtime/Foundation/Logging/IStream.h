@@ -8,6 +8,8 @@ namespace Kitsune
     class IWriteStream
     {
     public:
+        virtual ~IWriteStream() { /* ... */ }
+
         virtual void Write(const T* ptr, Usize count) = 0;
         virtual void Flush() { /* ... */ }
     };
@@ -16,6 +18,8 @@ namespace Kitsune
     class IReadStream
     {
     public:
+        virtual ~IReadStream() { /* ... */ }
+
         virtual void Read(Usize count) = 0;
         virtual void Read() = 0;
     };

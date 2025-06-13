@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "configurePresets": [
+    {
+      "name": "Base Preset",
+      "hidden": true,
+
+      "binaryDir": "${sourceDir}/build",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "Visual Studio 2022",
+      "generator": "Visual Studio 17 2022",
+
+      "cacheVariables": {
+        "CMAKE_SHARED_LINKER_FLAGS_RELWITHDBGINFO": "",
+        "CMAKE_EXE_LINKER_FLAGS_RELWITHDBGINFO": ""
+      },
+
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "Visual Studio"
+        }
+      },
+
+      "inherits": [ "Base Preset" ]
+    },
+    {
+      "name": "Clang MinGW",
+      "generator": "Ninja Multi-Config",
+
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang.exe",
+        "CMAKE_CXX_COMPILER": "clang++.exe"
+      },
+
+      "vendor": {
+        "jetbrains.com/clion": {
+          "toolchain": "MinGW Clang"
+        }
+      },
+
+      "inherits": [ "Base Preset" ]
+    }
+  ],
+
+  "buildPresets": [
+    { "name": "Visual Studio 2022 -- Debug", "configurePreset": "Visual Studio 2022", "configuration": "Debug" },
+    { "name": "Visual Studio 2022 -- RelWithDbgInfo", "configurePreset": "Visual Studio 2022", "configuration": "RelWithDbgInfo" },
+    { "name": "Visual Studio 2022 -- Release", "configurePreset": "Visual Studio 2022", "configuration": "Release" },
+
+    { "name": "Clang MinGW -- Debug", "configurePreset": "Clang MinGW", "configuration": "Debug" },
+    { "name": "Clang MinGW -- RelWithDbgInfo", "configurePreset": "Clang MinGW", "configuration": "RelWithDbgInfo" },
+    { "name": "Clang MinGW -- Release", "configurePreset": "Clang MinGW", "configuration": "Release" }
+  ]
+}

@@ -53,9 +53,12 @@ namespace Kitsune
         Uint32 index = 0;
         for (auto& frame : *stackTrace)
         {
-             std::printf("#%" PRIu32 ": (0x%p) %s\n\tfrom %s:%" PRIu32 "\n",
-                         index, frame.GetFunctionAddress(), frame.GetFunctionName().Raw(),
-                         frame.GetFileName().Raw(), frame.GetLineNumber());
+            String funcName = frame.GetFunctionName();
+            String fileName = frame.GetFileName();
+
+            std::printf("#%" PRIu32 ": (0x%p) %s\n\tfrom %s:%" PRIu32 "\n",
+                         index, frame.GetFunctionAddress(), funcName.Raw(),
+                         fileName.Raw(), frame.GetLineNumber());
 
             ++index;
         }

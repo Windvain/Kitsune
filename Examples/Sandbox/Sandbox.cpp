@@ -4,7 +4,23 @@
 #include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Utilities/Function.h"
 
+#include <thread>
+#include "Foundation/Diagnostics/StackTrace.h"
+
 using namespace Kitsune;
+
+void MyFunction()
+{
+    StackTrace stackTrace = MakeStackTrace();
+    for (auto& frame : stackTrace)
+    {
+        String filename = frame.GetFileName();
+        String funcname = frame.GetFunctionName();
+        Uint64 line = frame.GetLineNumber();
+
+        std::printf("[x]: %s [%s:%llu]\n", funcname.Raw(), filename.Raw(), line);
+    }
+}
 
 class Sandbox : public Application
 {
@@ -12,8 +28,8 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        Function<int(float)> func = [&](float) -> int { return 2; };
-        KITSUNE_TRACE_FORMAT("{0}", func(3.0f));
+        std::thread thread(MyFunction);
+        thread.join();
     }
 
     ~Sandbox()
