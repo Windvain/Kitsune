@@ -1,74 +1,87 @@
 #include "Foundation/Filesystem/WindowsPath.h"
+#include "Foundation/Algorithms/Find.h"
 
-// Can be included in other implementations to store paths
-// meant for only Windows.
 #if defined(KITSUNE_OS_WINDOWS)
-    #include <Windows.h>
+    #define KITSUNE_UTF16_PATH_(str) L ## str
 #else
-    // Emulate definitions from <Windows.h> header.
-    #define DWORD Uint16
-    #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
-    #define FILE_ATTRIBUTES_DIRECTORY ((DWORD)0x00000010)
+    #define KITSUNE_UTF16_PATH_(str) u ## str
 #endif
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
-    KITSUNE_FORCEINLINE bool IsSeperator(wchar_t ch)
+    KITSUNE_FORCEINLINE bool IsWindowsSeperator(wchar_t ch)
     {
-        return ((ch == '\\') || (ch == '/'));
+        return ((ch == KITSUNE_UTF16_PATH_('\\')) || (ch == KITSUNE_UTF16_PATH_('/')));
     }
 
-    KITSUNE_FORCEINLINE DWORD PortableGetFileAttributes(const wchar_t* filepath)
+    WindowsPath WindowsPath::GetDrivePath() const
     {
-    #if defined(KITSUNE_OS_WINDOWS)
-        DWORD attributes = ::GetFileAttributesW(filepath);
-        return attributes;
-    #else
-        return INVALID_FILE_ATTRIBUTES;
-    #endif
+        return GetDriveSubstring();
     }
 
-    bool WindowsPath::Exists() const
+    WindowsPath WindowsPath::GetRootPath() const
     {
-        DWORD attributes = PortableGetFileAttributes(m_String.Raw());
-        return (attributes != INVALID_FILE_ATTRIBUTES);
+        return GetRootSubstring();
     }
 
-    bool WindowsPath::IsFile() const
+    WindowsPath WindowsPath::GetRelativePath() const
     {
-        DWORD attributes = PortableGetFileAttributes(m_String.Raw());
-        return ((attributes != INVALID_FILE_ATTRIBUTES) &&
-               !(attributes &  FILE_ATTRIBUTE_DIRECTORY));
+        return GetRelativeSubstring();
     }
 
-    bool WindowsPath::IsDirectory() const
+    WindowsPath WindowsPath::GetParentPath() const
     {
-        DWORD attributes = PortableGetFileAttributes(m_String.Raw());
-        return ((attributes != INVALID_FILE_ATTRIBUTES) &&
-                (attributes &  FILE_ATTRIBUTE_DIRECTORY));
-    }
+        ViewType relPath = GetRelativeSubstring();
+        if (relPath.IsEmpty()) return *this;
 
-    bool WindowsPath::IsAbsolute() const
-    {
-        if (m_String.IsEmpty()) return false;
-
-        WideString maybeRoot = m_String.Substring(0,
-            KITSUNE_MIN(m_String.Size(), 4));
-
-        if (m_String[1] == L':')
+        auto it = relPath.GetEnd() - 1;
+        for (; it != relPath.GetBegin(); --it)
         {
-            return (m_String.Size() > 2) ? IsSeperator(m_String[2]) : true;
+            if (IsWindowsSeperator(*it) && !IsWindowsSeperator(*(it - 1)))
+                break;
         }
 
-        if ((m_String[0] == Seperator) && (m_String[1] == Seperator))
-            return true;
+        relPath.RemoveSuffix(relPath.GetEnd() - it);
+        return GetAnchorPath() + relPath;
+    }
 
-        if (m_String.Size() >= 4)
+    WindowsPath::ViewType WindowsPath::GetDriveSubstring() const
+    {
+        // Source: https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats
+
+        if (m_String.IsEmpty()) return ViewType(m_String.Raw());
+        WideString maybeRoot = m_String.Substring(0, KITSUNE_MIN(m_String.Size(), 3));
+
+        // Regular roots on Windows are composed of the volume name (C) and the suffix (:).
+        if (maybeRoot.Size() < 2)
+            return ViewType(m_String.Raw(), 0);
+
+        if (maybeRoot[1] == KITSUNE_UTF16_PATH_(':'))
+            return ViewType(m_String.Raw(), 2);
+
+        // Then check for UNC and DOS paths.
+        if (IsWindowsSeperator(maybeRoot[0]) && IsWindowsSeperator(maybeRoot[1]))
         {
-            if ((maybeRoot == L"\\\\?\\") || (maybeRoot == L"\\\\.\\"))
-                return true;
+            auto it = Algorithms::FindIf(m_String.GetBegin() + 2, m_String.GetEnd(), IsWindowsSeperator);
+            return ViewType(m_String.Raw(), it - m_String.GetBegin());
         }
 
-        return false;
+        return ViewType(m_String.Raw(), 0);
+    }
+
+    WindowsPath::ViewType WindowsPath::GetRootSubstring() const
+    {
+        ViewType drivePath = GetDriveSubstring();
+        if (drivePath.Size() == m_String.Size())
+            return ViewType(drivePath.GetEnd(), 0);
+
+        CharType rootPath = m_String[drivePath.Size()];
+        return IsWindowsSeperator(rootPath) ? ViewType(m_String.GetBegin() + drivePath.Size(), 1) :
+                                              ViewType(drivePath.GetEnd(), 0);    }
+
+    WindowsPath::ViewType WindowsPath::GetRelativeSubstring() const
+    {
+        ViewType root = GetRootSubstring();
+        return ViewType(root.GetEnd(), m_String.GetEnd());
     }
 }

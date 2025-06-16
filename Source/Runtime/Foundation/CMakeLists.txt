@@ -38,8 +38,10 @@ kitsune_add_library(
     "Diagnostics/StackTraceException.h"
 
     "Filesystem/Path.h"
+    "Filesystem/PathChecks.h"
     "Filesystem/WindowsPath.cpp"
     "Filesystem/WindowsPath.h"
+    "Filesystem/WindowsPathChecks.cpp"
 
     "Iterators/BackInsertIterator.h"
     "Iterators/Iterator.h"

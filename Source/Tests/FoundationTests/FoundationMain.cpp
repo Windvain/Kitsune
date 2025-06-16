@@ -12,7 +12,7 @@ public:
         : Application(specs)
     {
         testing::InitGoogleTest();
-        Exit(RUN_ALL_TESTS());
+        Quit(RUN_ALL_TESTS());
     }
 
     ~FoundationTests()

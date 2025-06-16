@@ -641,6 +641,8 @@ namespace Kitsune
     using String = BasicString<char>;
     using WideString = BasicString<wchar_t>;
 
+    using NativeString = BasicString<NativeChar>;
+
     using U8String = BasicString<char8_t>;
     using U16String = BasicString<char16_t>;
     using U32String = BasicString<char32_t>;

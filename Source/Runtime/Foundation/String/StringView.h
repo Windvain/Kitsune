@@ -150,6 +150,8 @@ namespace Kitsune
     using StringView = BasicStringView<char>;
     using WideStringView = BasicStringView<wchar_t>;
 
+    using NativeStringView = BasicStringView<NativeChar>;
+
     using U8StringView = BasicStringView<char8_t>;
     using U16StringView = BasicStringView<char16_t>;
     using U32StringView = BasicStringView<char32_t>;

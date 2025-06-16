@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Foundation/Common/Predefined.h"
+#include "Foundation/Filesystem/WindowsPath.h"
 
+namespace Kitsune::Filesystem
+{
 #if defined(KITSUNE_OS_WINDOWS)
-    #include "Foundation/Filesystem/WindowsPath.h"
-    namespace Kitsune { using Path = WindowsPath; }
-#else
-    #error No implementation was found.
+    using Path = Filesystem::WindowsPath;
 #endif
+}

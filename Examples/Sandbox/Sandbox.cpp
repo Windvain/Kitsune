@@ -2,25 +2,12 @@
 #include "Foundation/Memory/Memory.h"
 
 #include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Utilities/Function.h"
+#include "Foundation/Filesystem/Path.h"
 
-#include <thread>
-#include "Foundation/Diagnostics/StackTrace.h"
+#include "Foundation/String/UnicodeConversion.h"
+#include "Foundation/Iterators/BackInsertIterator.h"
 
 using namespace Kitsune;
-
-void MyFunction()
-{
-    StackTrace stackTrace = MakeStackTrace();
-    for (auto& frame : stackTrace)
-    {
-        String filename = frame.GetFileName();
-        String funcname = frame.GetFunctionName();
-        Uint64 line = frame.GetLineNumber();
-
-        std::printf("[x]: %s [%s:%llu]\n", funcname.Raw(), filename.Raw(), line);
-    }
-}
 
 class Sandbox : public Application
 {
@@ -28,8 +15,13 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        std::thread thread(MyFunction);
-        thread.join();
+        Filesystem::Path path(L"\\\\.\\Volume{b75e2c83-0000-0000-0000-602f00000000}");
+        path = path.GetAnchorPath();
+
+        String str;
+        Unicode::Convert(path.Native().GetBegin(), path.Native().GetEnd(), BackInsertIterator(str));
+
+        KITSUNE_LOG(str);
     }
 
     ~Sandbox()

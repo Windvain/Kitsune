@@ -16,10 +16,10 @@ namespace Kitsune
     public:
         KITSUNE_API_ static CommandLineArguments GetCommandLineArguments();
 
-        KITSUNE_API_ static Path GetCurrentWorkingDirectory();
-        KITSUNE_API_ static void SetCurrentWorkingDirectory(const Path& path);
+        KITSUNE_API_ static Filesystem::Path GetCurrentWorkingDirectory();
+        KITSUNE_API_ static void SetCurrentWorkingDirectory(const Filesystem::Path& path);
 
     public:
-        KITSUNE_API_ static Path GetExecutablePath();
+        KITSUNE_API_ static Filesystem::Path GetExecutablePath();
     };
 }

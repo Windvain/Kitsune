@@ -59,7 +59,7 @@ namespace Kitsune
     #error Failed to determine a type for Intptr and Uintptr.
 #endif
 
-#if defined(KITSUNE_OS_WINDOWS) && (defined(_UNICODE) || defined(UNICODE))
+#if defined(KITSUNE_OS_WINDOWS)
     using NativeChar = wchar_t;
 #else
     using NativeChar = char;

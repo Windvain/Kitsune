@@ -1,64 +1,113 @@
 #pragma once
 
+#include "Foundation/Common/Macros.h"
 #include "Foundation/String/String.h"
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
     class WindowsPath
     {
     public:
+        // On Windows, we favour the use of wchar_t as it is easier to interop with
+        // Win32 API code, while on other platforms, we just require that the character type
+        // has a size of 16 bits.
+#if defined(KITSUNE_OS_WINDOWS)
         using CharType = wchar_t;
 
         using StringType = WideString;
         using ViewType = WideStringView;
+#else
+        using CharType = char16_t;
 
-        using Iterator = StringType::Iterator;
-        using ConstIterator = StringType::ConstIterator;
-
-        using ReverseIterator = StringType::ReverseIterator;
-        using ReverseConstIterator = StringType::ReverseConstIterator;
-
-        static constexpr wchar_t Seperator = L'\\';
+        using StringType = U16String;
+        using ViewType = U16StringView;
+#endif
 
     public:
-        inline WindowsPath() : m_String() { /* ... */ }
+#if defined(KITSUNE_OS_WINDOWS)
+        static constexpr wchar_t PreferredSeperator = L'\\';
+#else
+        static constexpr char16_t PreferredSeperator = u'\\';
+#endif
 
-        inline WindowsPath(const wchar_t* path) : m_String(path) { /* ... */ }
-        inline WindowsPath(const ViewType path) : m_String(path) { /* ... */ }
+    public:
+        inline WindowsPath() = default;
 
-        inline WindowsPath(StringType&& path)   : m_String(path) { /* ... */ }
-
-        inline WindowsPath(const WindowsPath&) = default;
+        inline WindowsPath(const WindowsPath& path) = default;
         inline WindowsPath(WindowsPath&& path) = default;
+
+        inline WindowsPath(StringType&& source)    : m_String(Move(source)) { /* ... */ }
+        inline WindowsPath(const CharType* source) : m_String(source)       { /* ... */ }
+        inline WindowsPath(const ViewType source)  : m_String(source)       { /* ... */ }
+
+        template<ForwardIterator It>
+        inline WindowsPath(It begin, It end)
+            : m_String(begin, end)
+        {
+        }
 
         inline ~WindowsPath() = default;
 
     public:
-        inline WindowsPath& operator=(const WindowsPath&) = default;
-        inline WindowsPath& operator=(WindowsPath&&) = default;
+        inline WindowsPath& operator=(const WindowsPath& path) = default;
+        inline WindowsPath& operator=(WindowsPath&& path) = default;
+
+        inline WindowsPath& operator=(StringType&& source)    { m_String = Move(source); return *this; }
+        inline WindowsPath& operator=(const ViewType source)  { m_String = source; return *this; }
+        inline WindowsPath& operator=(const CharType* source) { m_String = source; return *this; }
 
     public:
-        [[nodiscard]] inline StringType& Native()             { return m_String; }
-        [[nodiscard]] inline const StringType& Native() const { return m_String; }
+        inline WindowsPath& operator+=(const WindowsPath& path) { m_String += path; return *this; }
+        inline WindowsPath& operator+=(const ViewType path)     { m_String += path; return *this; }
+        inline WindowsPath& operator+=(const CharType* path)    { m_String += path; return *this; }
+        inline WindowsPath& operator+=(CharType ch)             { m_String += ch;   return *this; }
+
+        inline WindowsPath operator+(const WindowsPath& path) { auto copy = *this; return (copy += path); }
+        inline WindowsPath operator+(const ViewType path)     { auto copy = *this; return (copy += path); }
+        inline WindowsPath operator+(const CharType* path)    { auto copy = *this; return (copy += path); }
+        inline WindowsPath operator+(CharType ch)             { auto copy = *this; return (copy += ch);   }
 
     public:
-        inline void Clear() { m_String.Clear(); }
+        KITSUNE_API_ WindowsPath GetDrivePath() const;
+        KITSUNE_API_ WindowsPath GetRootPath() const;
+
+        KITSUNE_API_ WindowsPath GetRelativePath() const;
+        KITSUNE_API_ WindowsPath GetParentPath() const;
+
+        inline WindowsPath GetAnchorPath() const
+        {
+            return GetDrivePath() + GetRootPath();
+        }
 
     public:
-        [[nodiscard]] KITSUNE_API_ bool Exists() const;
+        inline bool IsEmpty() const { return m_String.IsEmpty(); }
 
-        [[nodiscard]] KITSUNE_API_ bool IsFile() const;
-        [[nodiscard]] KITSUNE_API_ bool IsDirectory() const;
+        inline bool IsAbsolute() const { return (HasDrivePath() || HasRootPath()); }
+        inline bool IsRelative() const { return !IsAbsolute(); }
 
-        [[nodiscard]] KITSUNE_API_ bool IsAbsolute() const;
-        [[nodiscard]] inline bool IsRelative() const { return !IsAbsolute(); }
+        inline bool HasDrivePath()    const { return !GetDrivePath().IsEmpty(); }
+        inline bool HasRootPath()     const { return !GetRootPath().IsEmpty(); }
+
+        inline bool HasRelativePath() const { return !GetRelativePath().IsEmpty(); }
+        inline bool HasParentPath()   const { return !GetParentPath().IsEmpty(); }
+
+        inline bool HasAnchorPath()   const { return !GetAnchorPath().IsEmpty(); }
+
+    public:
+        inline const NativeChar* Raw() const { return m_String.Raw(); }
+        inline const StringType& Native() const { return m_String; }
+
+        operator StringType() const { return m_String; }
+
+    public:
+        inline void Clear() { return m_String.Clear(); }
 
     private:
-        WideString m_String;
-    };
+        KITSUNE_API_ WindowsPath::ViewType GetDriveSubstring() const;
+        KITSUNE_API_ WindowsPath::ViewType GetRootSubstring() const;
+        KITSUNE_API_ WindowsPath::ViewType GetRelativeSubstring() const;
 
-    inline bool operator==(const WindowsPath& path1, const WindowsPath& path2)
-    {
-        return (path1.Native() == path2.Native());
-    }
+    private:
+        StringType m_String;
+    };
 }

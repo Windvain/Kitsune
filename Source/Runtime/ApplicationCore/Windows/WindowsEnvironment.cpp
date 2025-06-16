@@ -42,25 +42,25 @@ namespace Kitsune
         return CommandLineArguments(argv);
     }
 
-    Path Environment::GetCurrentWorkingDirectory()
+    Filesystem::Path Environment::GetCurrentWorkingDirectory()
     {
         DWORD len = ::GetCurrentDirectoryW(0, nullptr);
-        if (len == 0) return Path();
+        if (len == 0) return Filesystem::Path();
 
         WideString str(len - 1, L'\0');
         ::GetCurrentDirectoryW(len, str.Data());
 
         str.Remove(str.GetBegin() + len, str.GetEnd());
-        return Path(Move(str));
+        return Filesystem::Path(Move(str));
     }
 
-    void Environment::SetCurrentWorkingDirectory(const Path& path)
+    void Environment::SetCurrentWorkingDirectory(const Filesystem::Path& path)
     {
         // Failed? Dont't care.
         KITSUNE_UNUSED(::SetCurrentDirectoryW(path.Native().Raw()));
     }
 
-    Path Environment::GetExecutablePath()
+    Filesystem::Path Environment::GetExecutablePath()
     {
         constexpr Usize PathStartingSize = 128;
 
@@ -71,7 +71,7 @@ namespace Kitsune
         {
             pathLen = ::GetModuleFileNameW(nullptr, exePath.Data(), DWORD(exePath.Size() + 1));
             if (pathLen == 0)
-                return Path(L"");
+                return Filesystem::Path(L"");
 
             // Yes, we are using global errors to control the flow of
             // the program. Who the f*ck thought that this would be a
