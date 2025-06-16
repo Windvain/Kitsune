@@ -37,7 +37,8 @@ namespace Kitsune
     public:
         void operator()(ValueType* ptr)
         {
-            Memory::Delete(ptr);
+            if constexpr (!std::is_void_v<ValueType>)
+                Memory::Delete(ptr);
         }
     };
 }

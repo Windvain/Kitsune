@@ -4,6 +4,7 @@
 
 # IDE and editor configuration directories.
 .vscode/
+.vs/
 
 .cache/
 .ccls-cache/

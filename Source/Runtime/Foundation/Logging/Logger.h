@@ -79,7 +79,7 @@ namespace Kitsune
         template<typename... Args>
         KITSUNE_FORCEINLINE void LogFormat(LogSeverity severity, const StringView fmt, Args&&... args)
         {
-            LogFormat(severity, fmt, Forward<Args>(args)...);
+            LogFormat(severity, SourceLocation(), fmt, Forward<Args>(args)...);
         }
 
         template<typename... Args>

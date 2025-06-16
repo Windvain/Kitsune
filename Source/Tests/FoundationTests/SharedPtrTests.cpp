@@ -144,7 +144,7 @@ namespace SharedPtrTesting
 
     bool operator==(const A& /* a1 */, const A& /* a2 */) { return true; }
 
-    class B { /* ... */ };
+    class B { public: virtual ~B() { /* ... */ } };
     class C : public B
     {
     };
@@ -359,6 +359,25 @@ TEST(SharedPtrTests, CopyCtor)
     EXPECT_EQ(copyPtr.GetCount(), 2);
 }
 
+TEST(SharedPtrTests, AssignCopyCtor)
+{
+    int* deletedPtr;
+    int* expectedPtr = Memory::New<int>(45);
+
+    {
+        auto ptr = SharedPtr<int>(expectedPtr, E<int>(&deletedPtr));
+
+        auto rawPointer = (int*)0xDEAD;
+        auto assigned = SharedPtr<int>(ptr, rawPointer);
+
+        EXPECT_EQ(assigned.Get(), rawPointer);
+        EXPECT_EQ(ptr.GetCount(), 2);
+        EXPECT_EQ(assigned.GetCount(), 2);
+    }
+
+    EXPECT_EQ(deletedPtr, expectedPtr);      // Deleter gets called on 'firstPtr', not 0xDEAD.
+}
+
 TEST(SharedPtrTests, TemplatedCopyCtor)
 {
     auto null = SharedPtr<C>();
@@ -410,8 +429,29 @@ TEST(SharedPtrTests, TemplatedMoveCtor)
     EXPECT_EQ(movePtr.GetCount(), 1);
 }
 
+TEST(SharedPtrTests, AssignMoveCtor)
+{
+    int* deletedPtr;
+    int* expectedPtr = Memory::New<int>(45);
+
+    {
+        auto ptr = SharedPtr<int>(expectedPtr, E<int>(&deletedPtr));
+
+        auto rawPointer = (int*)0xDEAD;
+        auto assigned = SharedPtr<int>(Move(ptr), rawPointer);
+
+        EXPECT_EQ(assigned.Get(), rawPointer);
+        EXPECT_EQ(assigned.GetCount(), 1);
+
+        EXPECT_EQ(ptr.GetCount(), 0);
+    }
+
+    EXPECT_EQ(deletedPtr, expectedPtr);      // Deleter gets called on 'firstPtr', not 0xDEAD.
+}
+
 TEST(SharedPtrTests, WeakPtrCtor)
 {
+
     SharedPtr<int> ptr = MakeShared<int>(1);
     SharedPtr<int> copy;
 
@@ -922,4 +962,101 @@ TEST(WeakPtrTests, SwapAlgorithm)
 
     EXPECT_EQ(weakPtr.Lock().Get(), rawPtr2);
     EXPECT_EQ(weakPtr2.Lock().Get(), rawPtr);
+}
+
+TEST(SharedPtrTests, StaticPointerCast)
+{
+    void* rawPointer = Memory::Allocate(16);
+
+    SharedPtr<void> voidPointer = SharedPtr<void>(rawPointer);
+    ASSERT_EQ(voidPointer.Get(), rawPointer);
+
+    SharedPtr<int> intPointer = StaticPointerCast<int>(voidPointer);
+    EXPECT_EQ((void*)intPointer.Get(), voidPointer.Get());
+
+    EXPECT_EQ(intPointer.GetCount(), 2);
+    EXPECT_EQ(voidPointer.GetCount(), 2);
+}
+
+TEST(SharedPtrTests, MoveStaticPointerCast)
+{
+    void* rawPointer = Memory::Allocate(16);
+
+    SharedPtr<void> voidPointer = SharedPtr<void>(rawPointer);
+    ASSERT_EQ(voidPointer.Get(), rawPointer);
+
+    SharedPtr<int> intPointer = StaticPointerCast<int>(Move(voidPointer));
+    EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+
+    EXPECT_EQ(intPointer.GetCount(), 1);
+    EXPECT_EQ(voidPointer.GetCount(), 0);
+}
+
+TEST(SharedPtrTests, DynamicPointerCast)
+{
+    SharedPtr<B> ptr = MakeShared<C>();
+    SharedPtr<C> intPointer = DynamicPointerCast<C>(ptr);
+
+    EXPECT_EQ((void*)intPointer.Get(), ptr.Get());
+
+    EXPECT_EQ(intPointer.GetCount(), 2);
+    EXPECT_EQ(ptr.GetCount(), 2);
+}
+
+TEST(SharedPtrTests, MoveDynamicPointerCast)
+{
+    SharedPtr<B> ptr = MakeShared<C>();
+    B* rawPointer = ptr.Get();
+
+    SharedPtr<C> intPointer = DynamicPointerCast<C>(Move(ptr));
+    EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+
+    EXPECT_EQ(intPointer.GetCount(), 1);
+    EXPECT_EQ(ptr.GetCount(), 0);
+}
+
+TEST(SharedPtrTests, ConstPointerCast)
+{
+    SharedPtr<const int> ptr = MakeShared<int>();
+    SharedPtr<int> intPointer = ConstPointerCast<int>(ptr);
+
+    EXPECT_EQ((void*)intPointer.Get(), ptr.Get());
+
+    EXPECT_EQ(intPointer.GetCount(), 2);
+    EXPECT_EQ(ptr.GetCount(), 2);
+}
+
+TEST(SharedPtrTests, MoveConstPointerCast)
+{
+    SharedPtr<const int> ptr = MakeShared<int>();
+    const int* rawPointer = ptr.Get();
+
+    SharedPtr<int> intPointer = ConstPointerCast<int>(Move(ptr));
+    EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+
+    EXPECT_EQ(intPointer.GetCount(), 1);
+    EXPECT_EQ(ptr.GetCount(), 0);
+}
+
+TEST(SharedPtrTests, ReinterpretPointerCast)
+{
+    SharedPtr<int> ptr = MakeShared<int>();
+    SharedPtr<float> intPointer = ReinterpretPointerCast<float>(ptr);
+
+    EXPECT_EQ((void*)intPointer.Get(), ptr.Get());
+
+    EXPECT_EQ(intPointer.GetCount(), 2);
+    EXPECT_EQ(ptr.GetCount(), 2);
+}
+
+TEST(SharedPtrTests, MoveReinterpretPointerCast)
+{
+    SharedPtr<int> ptr = MakeShared<int>();
+    int* rawPointer = ptr.Get();
+
+    SharedPtr<float> intPointer = ReinterpretPointerCast<float>(Move(ptr));
+    EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+
+    EXPECT_EQ(intPointer.GetCount(), 1);
+    EXPECT_EQ(ptr.GetCount(), 0);
 }

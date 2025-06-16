@@ -10,8 +10,9 @@
 
 #include "Foundation/Memory/BadAllocException.h"
 
-// Undocumented exception code.
+// Undocumented exception codes.
 #define KITSUNE_EXCEPTION_CPP_EXCEPTION 0xE06D7363
+#define KITSUNE_EXCEPTION_DXGI_EXCEPTION 0x87A
 
 namespace Kitsune
 {
@@ -45,6 +46,7 @@ const char* FormatExceptionCode(DWORD code)
 
     case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occured";
     case KITSUNE_EXCEPTION_CPP_EXCEPTION:    return "C++ Exception";
+    case KITSUNE_EXCEPTION_DXGI_EXCEPTION:   return "DXGI Error Occured";
     default:                                 return "Unknown";
     }
 }

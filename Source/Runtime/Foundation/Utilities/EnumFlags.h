@@ -7,7 +7,7 @@
                   !std::is_convertible_v<Flags, std::underlying_type_t<Flags>>,  \
                   "Flags should be an enum class.");                             \
                                                                                  \
-    inline Flags& operator|=(Flags& lhs, Flags rhs)                              \
+    constexpr Flags& operator|=(Flags& lhs, Flags rhs)                           \
     {                                                                            \
         using UnderlyingType = std::underlying_type_t<Flags>;                    \
                                                                                  \
@@ -15,7 +15,7 @@
         return lhs;                                                              \
     }                                                                            \
                                                                                  \
-    inline Flags& operator&=(Flags& lhs, Flags rhs)                              \
+    constexpr Flags& operator&=(Flags& lhs, Flags rhs)                           \
     {                                                                            \
         using UnderlyingType = std::underlying_type_t<Flags>;                    \
                                                                                  \
@@ -24,5 +24,5 @@
     }                                                                            \
                                                                                  \
                                                                                  \
-    inline Flags operator|(Flags lhs, Flags rhs) { return (lhs |= rhs); }        \
-    inline Flags operator&(Flags lhs, Flags rhs) { return (lhs &= rhs); }        \
+    constexpr Flags operator|(Flags lhs, Flags rhs) { return (lhs |= rhs); }     \
+    constexpr Flags operator&(Flags lhs, Flags rhs) { return (lhs &= rhs); }     \

@@ -323,8 +323,8 @@ namespace Kitsune
     public:
         inline void Clear()
         {
-            if (IsLocal()) return;
-            FreeAllocation(m_Data.Pointer);
+            if (!IsLocal())
+                FreeAllocation(m_Data.Pointer);
 
             m_Data.InitializeSSO();
         }
