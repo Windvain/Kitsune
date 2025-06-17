@@ -66,6 +66,15 @@ function(kitsune_add_test)
         "${KITSUNE_ROOT_DIR}/Source/External/googletest/googlemock/include"
     )
 
+    # MSVC corrupts UTF-8 strings if /utf-8 is not specified.
+    # It first encodes the string as UTF-8, then encodes it again in Windows-1252.
+    #
+    # Thanks, Microsoft.
+    # https://stackoverflow.com/questions/59046071/c-u8-literal-unexpected-encoding-on-windows
+    if (MSVC)
+        target_compile_options(${TEST_EXE_ARGS_TARGET} PRIVATE "/utf-8")
+    endif()
+
     target_link_libraries(${TEST_EXE_ARGS_TARGET} PRIVATE
         GTest::gtest
         GTest::gmock
