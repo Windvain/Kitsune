@@ -1,5 +1,4 @@
 #include "Application/Application.h"
-
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Logging/GlobalLog.h"
 
