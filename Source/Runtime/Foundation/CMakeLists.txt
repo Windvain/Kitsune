@@ -61,13 +61,14 @@ kitsune_add_library(
     "Logging/StreamBuffer.h"
     "Logging/WriteStreamIterator.h"
 
-    "Maths/Vector2.h"
     "Maths/VectorBase.h"
+    "Maths/Vector2.h"
 
     "Memory/AddressOf.h"
     "Memory/Allocator.h"
     "Memory/BadAllocException.h"
     "Memory/BadWeakPtrException.h"
+    "Memory/CMallocApi.cpp"
     "Memory/CMallocApi.h"
     "Memory/Deleter.h"
     "Memory/GlobalAllocator.h"
@@ -124,7 +125,9 @@ kitsune_add_platform_sources(
     MSVC
     "Diagnostics/MSVCStackTrace.cpp"
     "Threading/MSVCInterlocked.inl"
+
     "KitsuneFoundation.manifest"
+    "KitsuneFoundation.natvis"
 
     WINDOWS
     "Diagnostics/WindowsDebuggerAttached.cpp"

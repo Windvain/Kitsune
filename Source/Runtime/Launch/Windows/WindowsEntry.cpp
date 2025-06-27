@@ -1,6 +1,11 @@
+#if (defined(_MSC_VER) && !defined(KITSUNE_BUILD_RELEASE))
+    #define _CRTDBG_MAP_ALLOC
+    #include <cstdlib>
+    #include <crtdbg.h>
+#endif
+
 #include <cstdio>
 #include <cwchar>
-#include <cstdlib>
 
 #include <Windows.h>
 
@@ -10,9 +15,8 @@
 
 #include "Foundation/Memory/BadAllocException.h"
 
-// Undocumented exception codes.
+// Why did Microsoft decide to use this as an exception code? Who knows.
 #define KITSUNE_EXCEPTION_CPP_EXCEPTION 0xE06D7363
-#define KITSUNE_EXCEPTION_DXGI_EXCEPTION 0x87A
 
 namespace Kitsune
 {
@@ -26,7 +30,7 @@ const char* FormatExceptionCode(DWORD code)
     switch (code)
     {
     case EXCEPTION_BREAKPOINT:               return "Breakpoint Triggered";
-    case EXCEPTION_DATATYPE_MISALIGNMENT:    return "Misaligned Datatype";
+    case EXCEPTION_DATATYPE_MISALIGNMENT:    return "Misaligned Data Type";
     case EXCEPTION_ILLEGAL_INSTRUCTION:      return "Illegal Instruction";
 
     case EXCEPTION_FLT_DENORMAL_OPERAND:     return "Floating-point Operation on Denormal Number";
@@ -44,9 +48,8 @@ const char* FormatExceptionCode(DWORD code)
     case EXCEPTION_INT_DIVIDE_BY_ZERO:       return "Integer Division by 0";
     case EXCEPTION_INT_OVERFLOW:             return "Integer Overflow";
 
-    case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occured";
+    case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occurred";
     case KITSUNE_EXCEPTION_CPP_EXCEPTION:    return "C++ Exception";
-    case KITSUNE_EXCEPTION_DXGI_EXCEPTION:   return "DXGI Error Occured";
     default:                                 return "Unknown";
     }
 }
@@ -71,26 +74,31 @@ inline bool AllocateConsoleInDev()
     if (consoleAllocSuccess == 0)
         return false;
 
-    std::freopen("CONOUT$", "w", stdout);
-    std::freopen("CONOUT$", "w", stderr);
-    std::freopen("CONIN$", "r", stdin);
+    // Redirect stdout, stderr, and stdin to CONIN$ and CONOUT$, because GetStdHandle() is not set
+    // in applications not compiling with /SUBSYSTEM:CONSOLE.
+    KITSUNE_UNUSED(std::freopen("CONOUT$", "w", stdout));
+    KITSUNE_UNUSED(std::freopen("CONOUT$", "w", stderr));
+    KITSUNE_UNUSED(std::freopen("CONIN$", "r", stdin));
+
+    HANDLE conout = ::CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE,
+                                  nullptr, OPEN_EXISTING, 0, nullptr);
+
+    HANDLE conin = ::CreateFileW(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
+                                 nullptr, OPEN_EXISTING, 0, nullptr);
+
+    ::SetStdHandle(STD_OUTPUT_HANDLE, conout);
+    ::SetStdHandle(STD_INPUT_HANDLE, conin);
+    ::SetStdHandle(STD_ERROR_HANDLE, conout);
 
     // Enable VT100 terminal sequence parsing.
-    HANDLE stdOutput = ::GetStdHandle(STD_OUTPUT_HANDLE);
-    HANDLE stdInput = ::GetStdHandle(STD_INPUT_HANDLE);
-    HANDLE stdError = ::GetStdHandle(STD_ERROR_HANDLE);
-
     DWORD outputConsoleMode;
     DWORD inputConsoleMode;
-    DWORD errorConsoleMode;
 
-    ::GetConsoleMode(stdOutput, &outputConsoleMode);
-    ::GetConsoleMode(stdOutput, &inputConsoleMode);
-    ::GetConsoleMode(stdOutput, &errorConsoleMode);
+    ::GetConsoleMode(conout, &outputConsoleMode);
+    ::GetConsoleMode(conin, &inputConsoleMode);
 
-    ::SetConsoleMode(stdOutput, outputConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    ::SetConsoleMode(stdInput,  inputConsoleMode  | ENABLE_VIRTUAL_TERMINAL_INPUT);
-    ::SetConsoleMode(stdError,  errorConsoleMode  | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    ::SetConsoleMode(conout, outputConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    ::SetConsoleMode(conin, inputConsoleMode | ENABLE_VIRTUAL_TERMINAL_INPUT);
 
     return true;
 #endif
@@ -147,6 +155,10 @@ DWORD ProcessSehException(LPEXCEPTION_POINTERS exceptionInfo)
 int StartWindowsEntry()
 {
     int returnValue = 0;
+
+#if !defined(KITSUNE_BUILD_RELEASE)
+    ::_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 
     if ((!SetDpiAwareness()) || (!AllocateConsoleInDev()))
         return 1;
