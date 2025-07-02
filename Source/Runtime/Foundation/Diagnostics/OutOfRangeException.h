@@ -8,13 +8,9 @@ namespace Kitsune
     class OutOfRangeException : public IException
     {
     public:
-        OutOfRangeException() = default;
-
-    public:
-        const char* GetName() const noexcept override { return "OutOfRangeException"; }
-        const char* GetDescription() const noexcept override
+        inline OutOfRangeException()
+            : IException("OutOfRangeException", "Requested an out of range index")
         {
-            return "Requested an out of range index";
         }
     };
 }

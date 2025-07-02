@@ -56,8 +56,15 @@ namespace Kitsune
         KITSUNE_ASSERT(m_IsFullyInitialized, "PreShutdown() should not be called when the engine has"
                                              "not been fully initialized.");
 
-        int exitCode = m_Application->GetExitCode();
-        Memory::Delete(m_Application);
+        int exitCode = 1;
+
+        // If an exception is thrown during the construction of the application, m_Application
+        // will be nullptr.
+        if (m_Application != nullptr)
+        {
+            exitCode = m_Application->GetExitCode();
+            Memory::Delete(m_Application);
+        }
 
         Environment::Shutdown();
         m_IsFullyInitialized = false;

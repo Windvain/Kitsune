@@ -7,13 +7,11 @@ namespace Kitsune
     class BadCallException : public IException
     {
     public:
-        BadCallException() = default;
-
-    public:
-        const char* GetName() const noexcept override { return "BadCallException"; }
-        const char* GetDescription() const noexcept override
+        inline BadCallException()
+            : IException(
+                "BadCallException",
+                "Tried to call Function<T>::operator(Args...) without a target.")
         {
-            return "Tried to call Function<T>::operator(Args...) without a target.";
         }
     };
 }

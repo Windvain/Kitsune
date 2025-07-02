@@ -7,13 +7,9 @@ namespace Kitsune
     class BadAllocException : public IException
     {
     public:
-        BadAllocException() = default;
-
-    public:
-        const char* GetName() const noexcept override { return "BadAllocException"; }
-        const char* GetDescription() const noexcept override
+        inline BadAllocException()
+            : IException("BadAllocException", "An allocation request failed")
         {
-            return "An allocation request failed";
         }
     };
 }

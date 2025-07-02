@@ -67,6 +67,11 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Linker flags -----------------------------------------------------------------
     list(APPEND KITSUNE_GLOBAL_DEBUG_LINKER_FLAGS "/DEBUG")
     list(APPEND KITSUNE_GLOBAL_RELWITHDBGINFO_LINKER_FLAGS "/DEBUG")
+
+    list(APPEND KITSUNE_GLOBAL_RELEASE_LINKER_FLAGS
+        "/INCREMENTAL:NO"       # Disable incremental linking.
+        "/OPT:REF"              # Remove data which are never referenced.
+    )
 else()
     message(FATAL_ERROR "Compiler unsupported on the current platform.")
 endif()

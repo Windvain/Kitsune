@@ -35,7 +35,7 @@ namespace Kitsune
         bool m_IsPreInitialized = false;
         bool m_IsFullyInitialized = false;
 
-        SharedPtr<Logger> m_GlobalLogger;
-        Application* m_Application;
+        SharedPtr<Logger> m_GlobalLogger = nullptr;
+        Application* m_Application = nullptr;
     };
 }

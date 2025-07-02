@@ -4,13 +4,15 @@
 #include "Launch/EngineLoop.h"
 
 #include "Foundation/Common/Macros.h"
-#include "Foundation/Diagnostics/IException.h"
-
 #include "Foundation/Memory/Memory.h"
-#include "Foundation/Threading/ThisThread.h"
+
+#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/StackTrace.h"
 
 namespace Kitsune
 {
+    thread_local StackTrace* g_ExceptionStackTrace = nullptr;
+
     class MemorySubsystemGuard
     {
     public:
@@ -40,18 +42,17 @@ namespace Kitsune
 
     void PrintStackTrace()
     {
-        StackTrace* stackTrace = ThisThread::GetExceptionStackTrace();
-        if (stackTrace == nullptr)
+        if (g_ExceptionStackTrace == nullptr)
         {
             std::printf("No stack traces were created.\n");
             return;
         }
 
         std::printf("Stack trace: \nThread Name: %s\n",
-                    stackTrace->GetCallingThreadName().Raw());
+                    g_ExceptionStackTrace->GetCallingThreadName().Raw());
 
         Uint32 index = 0;
-        for (auto& frame : *stackTrace)
+        for (auto& frame : *g_ExceptionStackTrace)
         {
             String funcName = frame.GetFunctionName();
             String fileName = frame.GetFileName();
@@ -62,6 +63,8 @@ namespace Kitsune
 
             ++index;
         }
+
+        std::fflush(stdout);
     }
 
     int EngineMain(int argc, char** argv)
@@ -80,8 +83,7 @@ namespace Kitsune
             // to the console instead.
             std::printf(
                 "An IException has been thrown. (Name: %s)\nDescription: %s\n",
-                exception.GetName(), exception.GetDescription()
-            );
+                exception.GetName(), exception.GetDescription());
 
             PrintStackTrace();
             return 1;

@@ -102,8 +102,6 @@ kitsune_add_library(
     "Threading/Interlocked.h"
     "Threading/LockGuard.h"
     "Threading/Mutex.h"
-    "Threading/ThisThread.cpp"
-    "Threading/ThisThread.h"
     "Threading/ThreadSafety.h"
 
     "Utilities/EnumFlags.h"
