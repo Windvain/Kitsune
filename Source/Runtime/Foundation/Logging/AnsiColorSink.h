@@ -2,8 +2,8 @@
 
 #include "Foundation/Memory/SharedPtr.h"
 
+#include "Foundation/Logging/IStream.h"
 #include "Foundation/Logging/ILogSink.h"
-#include "Foundation/Logging/ConsoleStream.h"
 
 #include "Foundation/Threading/Mutex.h"
 #include "Foundation/Threading/LockGuard.h"
@@ -23,21 +23,16 @@ namespace Kitsune
         KITSUNE_API_ void Flush() override;
 
     private:
-        KITSUNE_FORCEINLINE
-        static const char* PickAnsiColor(LogSeverity severity)
-        {
-            return s_AnsiColorCode[static_cast<Index>(severity)];
-        }
+        KITSUNE_API_ static const char* ConvertToAnsiColor(LogSeverity severity);
 
-    private:
+    public:
+        static constexpr const char* TraceColor = "\x1B[0m";
+        static constexpr const char* InfoColor = "\x1B[36m";
+        static constexpr const char* WarningColor = "\x1B[33m";
+
         // The bold colours appear *lighter* than their non-bolded counterparts (?)
-        static constexpr const char* s_AnsiColorCode[] = {
-            "\x1B[0m",      // Trace
-            "\x1B[36m",     // Info
-            "\x1B[33m",     // Warning
-            "\x1B[31;1m",   // Error
-            "\x1B[31m",     // Fatal
-        };
+        static constexpr const char* ErrorColor = "\x1B[31;1m";
+        static constexpr const char* FatalColor = "\x1B[31m";
 
     private:
         SharedPtr<IWriteStream<char>> m_Stream;

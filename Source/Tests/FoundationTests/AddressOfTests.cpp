@@ -1,28 +1,42 @@
 #include <gtest/gtest.h>
-
-#include "Foundation/Common/Types.h"
 #include "Foundation/Memory/AddressOf.h"
 
-namespace AddressOfTesting
+namespace
 {
     class A
     {
     public:
-        A* operator&() { return reinterpret_cast<A*>((Kitsune::Uintptr)0xDEADC0DE); }
+        inline A* operator&() const
+        {
+            return (A*)(std::uintptr_t)0xDEADC0DE;
+        }
+    };
+
+    class B
+    {
+    public:
+        int X;
+        int Y;
+        float Z;
+        double W;
     };
 }
 
 using namespace Kitsune;
-using namespace AddressOfTesting;
 
-TEST(AddressOfTests, Overloaded)
+TEST(AddressOfTests, OperatorOverloadedClasses)
 {
-    A object;
-    EXPECT_EQ(AddressOf(object), (A*)&(char&)(object));
+    A* object = new A();
+    EXPECT_EQ(AddressOf(*object), object);
+
+    delete object;
 }
 
-TEST(AddressOfTests, NotOverloaded)
+TEST(AddressOfTests, ClassesWrittenByPeopleWithCommonSense)
 {
-    int x;
-    EXPECT_EQ(AddressOf(x), &x);
+    B* object = new B();
+    EXPECT_EQ(AddressOf(*object), object);
+
+    delete object;
 }
+

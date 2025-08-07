@@ -116,15 +116,23 @@ namespace Kitsune
         {
         }
 
-        inline ~Array() { Clear(); }
+        inline ~Array()
+        {
+            if (m_Begin == nullptr)
+                return;
+
+            Algorithms::Destroy(m_Begin, m_End);
+            FreeAllocation(m_Begin);
+        }
 
     public:
         inline Array& operator=(const Array& array)
         {
-            if (this == &array) return *this;       // Ignore self-assigns.
+            if (this == &array)
+                return *this;
 
             if (m_Allocator != array.GetAllocator())
-                Clear();
+                Array().Swap(*this);
 
             m_Allocator = array.GetAllocator();
             RangeAssign(array.GetBegin(), array.GetEnd());
@@ -134,9 +142,10 @@ namespace Kitsune
 
         inline Array& operator=(Array&& array)
         {
-            if (this == &array) return *this;       // Ignore self-assigns.
-            Array(Move(array)).Swap(*this);
+            if (this == &array)
+                return *this;
 
+            Array(Move(array)).Swap(*this);
             return *this;
         }
 
@@ -167,7 +176,7 @@ namespace Kitsune
         [[nodiscard]]
         inline T& Front()
         {
-            if (m_Begin == nullptr)
+            if (IsEmpty())
                 throw OutOfRangeException();
 
             return *m_Begin;
@@ -176,7 +185,7 @@ namespace Kitsune
         [[nodiscard]]
         inline const T& Front() const
         {
-            if (m_Begin == nullptr)
+            if (IsEmpty())
                 throw OutOfRangeException();
 
             return *m_Begin;
@@ -184,7 +193,7 @@ namespace Kitsune
 
         [[nodiscard]] inline T& Back()
         {
-            if (m_Begin == nullptr)
+            if (IsEmpty())
                 throw OutOfRangeException();
 
             return *(m_End - 1);
@@ -192,7 +201,7 @@ namespace Kitsune
 
         [[nodiscard]] inline const T& Back() const
         {
-            if (m_Begin == nullptr)
+            if (IsEmpty())
                 throw OutOfRangeException();
 
             return *(m_End - 1);
@@ -253,13 +262,8 @@ namespace Kitsune
     public:
         inline void Clear()
         {
-            if (m_Begin != nullptr)
-            {
-                Algorithms::Destroy(m_Begin, m_End);
-                FreeAllocation(m_Begin);
-            }
-
-            m_Begin = m_End = m_StorageEnd = nullptr;
+            Algorithms::Destroy(m_Begin, m_End);
+            m_End = m_Begin;
         }
 
         inline Iterator Insert(Iterator pos, const T& val) { return Emplace(pos, val); }
@@ -267,7 +271,7 @@ namespace Kitsune
 
         inline Iterator Insert(Iterator pos, Usize count, const T& value)
         {
-            Iterator adjustedPos = ShiftEnd(pos, count);
+            Iterator adjustedPos = ShiftRight(pos, count);
             Algorithms::UninitializedFillN(adjustedPos, count, value);
 
             return adjustedPos;
@@ -276,7 +280,7 @@ namespace Kitsune
         template<ForwardIterator It>
         inline Iterator Insert(Iterator pos, It begin, It end)
         {
-            Iterator adjustedPos = ShiftEnd(pos, Algorithms::Distance(begin, end));
+            Iterator adjustedPos = ShiftRight(pos, Algorithms::Distance(begin, end));
             Algorithms::UninitializedCopy(begin, end, adjustedPos);
 
             return adjustedPos;
@@ -290,7 +294,7 @@ namespace Kitsune
         template<typename... Args>
         inline Iterator Emplace(Iterator pos, Args&&... args)
         {
-            Iterator adjustedPos = ShiftEnd(pos, 1);
+            Iterator adjustedPos = ShiftRight(pos, 1);
             Memory::ConstructAt(adjustedPos, Forward<Args>(args)...);
 
             return adjustedPos;
@@ -301,6 +305,9 @@ namespace Kitsune
         {
             if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) || (end > GetEnd()))
                 throw OutOfRangeException();
+
+            if (begin == end)
+                return;
 
             Usize removedSize = static_cast<Usize>(Algorithms::Distance(begin, end));
             Algorithms::Destroy(begin, end);
@@ -330,7 +337,9 @@ namespace Kitsune
 
         inline void PopBack()
         {
-            if (IsEmpty()) throw OutOfRangeException();
+            if (IsEmpty())
+                throw OutOfRangeException();
+
             Memory::DestroyAt(--m_End);
         }
 
@@ -395,10 +404,15 @@ namespace Kitsune
             m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
         }
 
-        Iterator ShiftEnd(Iterator from, Usize offset)
+        // Shifts the range [`from`, GetEnd()] to the right by the specified offset.
+        // Returns the beginning of the uninitialized range in the array.
+        Iterator ShiftRight(Iterator from, Usize offset)
         {
             if ((from < GetBegin()) || (from > GetEnd()))
                 throw OutOfRangeException();
+
+            if (offset == 0)
+                return from;
 
             Index index = from - GetBegin();
             Index reverseIndex = (Size() - index - 1);
