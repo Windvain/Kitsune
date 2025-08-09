@@ -6,6 +6,8 @@
 #include "Foundation/Memory/GlobalAllocator.h"
 
 #include "Foundation/Templates/Exchange.h"
+#include "Foundation/Concepts/Comparable.h"
+
 #include "Foundation/Iterators/Iterator.h"
 #include "Foundation/Iterators/ReverseIterator.h"
 #include "Foundation/Diagnostics/OutOfRangeException.h"
@@ -50,21 +52,21 @@ namespace Kitsune
         inline Array(Usize cap, const Alloc& alloc)
             : m_Allocator(alloc)
         {
-            Usize adjusted = GetAdjustedCapacity(cap);
+            if (cap == 0) return;
 
-            m_Begin = MakeAllocation(adjusted);
+            m_Begin = static_cast<T*>(m_Allocator.Allocate(cap * sizeof(T), alignof(T)));
             m_End = m_Begin;
-            m_StorageEnd = m_Begin + adjusted;
+            m_StorageEnd = m_Begin + cap;
         }
 
         inline explicit Array(Usize cap, Alloc&& alloc = Alloc())
             : m_Allocator(Move(alloc))
         {
-            Usize adjusted = GetAdjustedCapacity(cap);
+            if (cap == 0) return;
 
-            m_Begin = MakeAllocation(adjusted);
+            m_Begin = static_cast<T*>(m_Allocator.Allocate(cap * sizeof(T), alignof(T)));
             m_End = m_Begin;
-            m_StorageEnd = m_Begin + adjusted;
+            m_StorageEnd = m_Begin + cap;
         }
 
         inline Array(Usize count, const T& value, const Alloc& alloc)
@@ -122,7 +124,7 @@ namespace Kitsune
                 return;
 
             Algorithms::Destroy(m_Begin, m_End);
-            FreeAllocation(m_Begin);
+            m_Allocator.Free(m_Begin);
         }
 
     public:
@@ -244,13 +246,13 @@ namespace Kitsune
         inline void Reserve(Usize newCapacity)
         {
             if (newCapacity <= Capacity()) return;
-            ReallocateGrowExact(newCapacity);
+            ReallocateExact(newCapacity);
         }
 
-        inline void ShrinkToFit() { ReallocateGrowExact(Size()); }
+        inline void ShrinkToFit() { ReallocateExact(Size()); }
 
     public:
-        void Swap(Array& array)
+        inline void Swap(Array& array)
         {
             Algorithms::Swap(m_Begin, array.m_Begin);
             Algorithms::Swap(m_End, array.m_End);
@@ -271,19 +273,20 @@ namespace Kitsune
 
         inline Iterator Insert(Iterator pos, Usize count, const T& value)
         {
-            Iterator adjustedPos = ShiftRight(pos, count);
-            Algorithms::UninitializedFillN(adjustedPos, count, value);
+            for (Usize i = 0; i != count; ++i, ++pos)
+                pos = Insert(pos, value);
 
-            return adjustedPos;
+            return pos - count;
         }
 
         template<ForwardIterator It>
         inline Iterator Insert(Iterator pos, It begin, It end)
         {
-            Iterator adjustedPos = ShiftRight(pos, Algorithms::Distance(begin, end));
-            Algorithms::UninitializedCopy(begin, end, adjustedPos);
+            typename IteratorTraits<It>::DifferenceType rangeLen = 0;
+            for (; begin != end; ++begin, ++pos, ++rangeLen)
+                pos = Insert(pos, *begin);
 
-            return adjustedPos;
+            return pos - rangeLen;
         }
 
         inline Iterator Insert(Iterator pos, std::initializer_list<T> ilist)
@@ -294,20 +297,41 @@ namespace Kitsune
         template<typename... Args>
         inline Iterator Emplace(Iterator pos, Args&&... args)
         {
-            Iterator adjustedPos = ShiftRight(pos, 1);
-            Memory::ConstructAt(adjustedPos, Forward<Args>(args)...);
+            if ((pos < GetBegin()) || (pos > GetEnd()))
+                throw OutOfRangeException();
 
-            return adjustedPos;
+            Usize newSize = Size() + 1;
+            if (Capacity() < newSize)
+            {
+                Index index = pos - GetBegin();
+                Reallocate(newSize);
+
+                pos = GetBegin() + index;
+            }
+
+            // Shift the elements of the range [pos, GetEnd()] starting from the end.
+            auto sourceShift = GetReverseBegin();
+            auto destShift = ReverseIterator(m_Begin + newSize);
+
+            for (; sourceShift != ReverseIterator(pos); ++sourceShift, ++destShift)
+            {
+                Memory::ConstructAt(AddressOf(*destShift), Move(*sourceShift));
+                Memory::DestroyAt(AddressOf(*sourceShift));
+            }
+
+            Memory::ConstructAt(AddressOf(*pos), Forward<Args>(args)...);
+
+            ++m_End;
+            return pos;
         }
 
         inline void Remove(Iterator pos) { return Remove(pos, pos + 1); }
         inline void Remove(Iterator begin, Iterator end)
         {
+            if (begin == end) return;
+
             if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) || (end > GetEnd()))
                 throw OutOfRangeException();
-
-            if (begin == end)
-                return;
 
             Usize removedSize = static_cast<Usize>(Algorithms::Distance(begin, end));
             Algorithms::Destroy(begin, end);
@@ -329,7 +353,7 @@ namespace Kitsune
         {
             Usize newSize = Size() + 1;
             if (newSize > Capacity())
-                ReallocateGrow(newSize);
+                Reallocate(newSize);
 
             Memory::ConstructAt(m_End, Forward<Args>(args)...);
             return *(m_End++);
@@ -353,46 +377,30 @@ namespace Kitsune
         inline ConstIterator end() const { return GetEnd(); }
 
     private:
-        KITSUNE_FORCEINLINE Usize GetAdjustedCapacity(Usize cap)
-        {
-            // Too long, moved into seperate function.
-            return static_cast<Usize>(static_cast<float>(cap) * s_AllocationFactor);
-        }
-
-        inline T* MakeAllocation(Usize count)
-        {
-            if (count == 0)
-                return nullptr;
-
-            return static_cast<T*>(m_Allocator.Allocate(count * sizeof(T), alignof(T)));
-        }
-
-        KITSUNE_FORCEINLINE void FreeAllocation(T* ptr)
-        {
-            m_Allocator.Free(ptr);
-        }
-
-        inline void ReallocateGrow(Usize newCapacity)
-        {
-            ReallocateGrowExact(GetAdjustedCapacity(newCapacity));
-        }
-
-        inline void ReallocateGrowExact(Usize newCapacity)
+        inline void ReallocateExact(Usize newCapacity)
         {
             T* ptr = static_cast<T*>(m_Allocator.Allocate(newCapacity * sizeof(T), alignof(T)));
-            T* end = Algorithms::UninitializedMove(m_Begin, m_End, ptr);
+            Usize moveCount = KITSUNE_MIN(newCapacity, Size());
 
+            Algorithms::UninitializedMoveN(m_Begin, moveCount, ptr);
             Algorithms::Destroy(m_Begin, m_End);
-            FreeAllocation(m_Begin);
+
+            m_Allocator.Free(m_Begin);
 
             m_Begin = ptr;
-            m_End = end;
-            m_StorageEnd = ptr + newCapacity;
+            m_End = m_Begin + moveCount;
+            m_StorageEnd = m_Begin + newCapacity;
+        }
+
+        inline void Reallocate(Usize newCapacity)
+        {
+            Usize adjustedCapacity(static_cast<float>(newCapacity) * s_AllocationFactor);
+            ReallocateExact(adjustedCapacity);
         }
 
     private:
         template<ForwardIterator It>
-        void RangeAssign(It begin, It end)
+        inline void RangeAssign(It begin, It end)
         {
             Usize size = static_cast<Usize>(Algorithms::Distance(begin, end));
 
@@ -404,33 +412,6 @@ namespace Kitsune
             m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
         }
 
-        // Shifts the range [`from`, GetEnd()] to the right by the specified offset.
-        // Returns the beginning of the uninitialized range in the array.
-        Iterator ShiftRight(Iterator from, Usize offset)
-        {
-            if ((from < GetBegin()) || (from > GetEnd()))
-                throw OutOfRangeException();
-
-            if (offset == 0)
-                return from;
-
-            Index index = from - GetBegin();
-            Index reverseIndex = (Size() - index - 1);
-
-            Usize newSize = Size() + offset;
-            if (Capacity() < newSize)
-                ReallocateGrow(newSize);
-
-            for (auto it = GetReverseBegin(); it <= GetReverseBegin() + reverseIndex; ++it)
-            {
-                Memory::ConstructAt(AddressOf(*(it - offset)), Move(*it));
-                Memory::DestroyAt(AddressOf(*it));
-            }
-
-            m_End += offset;
-            return GetBegin() + index;
-        }
-
     private:
         static constexpr float s_AllocationFactor = 1.5f;
 
@@ -440,8 +421,8 @@ namespace Kitsune
     };
 
     template<typename T, Allocator TAlloc, typename U, Allocator UAlloc>
-    bool operator==(const Array<T, TAlloc>& arr1, const Array<U, UAlloc>& arr2)
-        requires requires (T val1, U val2) { val1 == val2; }
+        requires Equatable<T, U>
+    inline bool operator==(const Array<T, TAlloc>& arr1, const Array<U, UAlloc>& arr2)
     {
         return Algorithms::Equal(arr1.GetBegin(), arr1.GetEnd(), arr2.GetBegin(), arr2.GetEnd());
     }
@@ -449,7 +430,7 @@ namespace Kitsune
     namespace Algorithms
     {
         template<typename T, Allocator Alloc>
-        void Swap(Array<T, Alloc>& arr1, Array<T, Alloc>& arr2)
+        inline void Swap(Array<T, Alloc>& arr1, Array<T, Alloc>& arr2)
         {
             arr1.Swap(arr2);
         }

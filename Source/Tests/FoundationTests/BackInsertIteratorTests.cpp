@@ -20,13 +20,13 @@ namespace
     };
 }
 
-TEST(BackInsertIteratorTests, DefaultCtor)
+TEST(BackInsertIteratorTests, DefaultConstructor)
 {
     BackInsertIterator<MyContainer> it{};
     EXPECT_EQ(it.GetContainer(), nullptr);
 }
 
-TEST(BackInsertIteratorTests, ContainerCtor)
+TEST(BackInsertIteratorTests, ContainerConstructor)
 {
     MyContainer cont;
     BackInsertIterator<MyContainer> it(cont);

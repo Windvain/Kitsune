@@ -28,6 +28,13 @@ namespace Testing
         Iter GetBegin() { return Iter(m_Array); }
         Iter GetEnd() { return Iter(m_Array + S); }
 
+    public:
+        ValueType& operator[](std::size_t index) { return m_Array[index]; }
+        const ValueType& operator[](std::size_t index) const
+        {
+            return m_Array[index];
+        }
+
     private:
         ValueType m_Array[S];
     };

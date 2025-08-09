@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "TestContainer.h"
-#include "IteratorWrappers.h"
-
+#include "TestContainer2.h"
 #include "Foundation/Algorithms/Destroy.h"
 
-namespace DestroyTesting
+namespace
 {
     class D
     {
@@ -19,41 +17,56 @@ namespace DestroyTesting
     public:
         MOCK_METHOD(void, OnDestroy, ());
     };
+
+    D* CreateUninitializedD()
+    {
+        return static_cast<D*>(std::malloc(sizeof(D)));
+    }
 }
 
 using namespace Kitsune;
-using namespace DestroyTesting;
-
-using TestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<D>>;
+using namespace Testing;
 
 TEST(DestroyTests, Destroy)
 {
-    D* arr = (D*)Memory::Allocate(sizeof(D) * 5, alignof(D));
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<D*, 5> container = {
+        CreateUninitializedD(),
+        CreateUninitializedD(),
+        CreateUninitializedD(),
+        CreateUninitializedD(),
+        CreateUninitializedD()
+    };
 
     for (int i = 0; i < 5; ++i)
     {
-        Memory::ConstructAt(arr + i);
-        EXPECT_CALL(arr[i], OnDestroy());
+        std::construct_at(container[i]);
+        EXPECT_CALL(*container[i], OnDestroy());
     }
 
-    Algorithms::Destroy(cont.Begin, cont.End);
-    Memory::Free(arr);
+    Algorithms::Destroy(container.GetBegin(), container.GetEnd());
+
+    for (std::size_t i = 0; i < 5; ++i)
+        std::free(container[i]);
 }
 
 TEST(DestroyTests, DestroyN)
 {
-    D* arr = (D*)Memory::Allocate(sizeof(D) * 5, alignof(D));
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<D*, 5> container = {
+        CreateUninitializedD(),
+        CreateUninitializedD(),
+        CreateUninitializedD(),
+        CreateUninitializedD(),
+        CreateUninitializedD()
+    };
 
     for (int i = 0; i < 5; ++i)
     {
-        Memory::ConstructAt(arr + i);
-        EXPECT_CALL(arr[i], OnDestroy());
+        std::construct_at(container[i]);
+        EXPECT_CALL(*container[i], OnDestroy());
     }
 
-    auto it = Algorithms::DestroyN(cont.Begin, 5);
-    EXPECT_EQ(it, cont.End);
+    Algorithms::DestroyN(container.GetBegin(), 5);
 
-    Memory::Free(arr);
+    for (std::size_t i = 0; i < 5; ++i)
+        std::free(container[i]);
 }

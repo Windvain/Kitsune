@@ -694,8 +694,8 @@ TEST(ArrayTests, RemoveRange)
     array.Remove(array.GetBegin(), array.GetEnd());
     EXPECT_EQ(array.Size(), 0);
 
-    ASSERT_EQ(array.GetBegin(), array.GetEnd());
-    EXPECT_THROW(array.Remove(array.GetBegin(), array.GetEnd()), OutOfRangeException);
+    Array<int> array2 = { 54, 92, 172, 5 };
+    EXPECT_THROW(array2.Remove(array2.GetBegin(), array2.GetEnd() + 1), OutOfRangeException);
 }
 
 TEST(ArrayTests, PushBackCopy)

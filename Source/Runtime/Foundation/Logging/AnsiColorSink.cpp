@@ -47,6 +47,8 @@ namespace Kitsune
         case LogSeverity::Warning: return WarningColor;
         case LogSeverity::Error:   return ErrorColor;
         case LogSeverity::Fatal:   return FatalColor;
+        default:
+            KITSUNE_UNREACHABLE();
         };
     }
 }
