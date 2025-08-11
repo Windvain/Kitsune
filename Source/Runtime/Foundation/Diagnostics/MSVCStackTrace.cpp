@@ -17,50 +17,61 @@ namespace Kitsune
         WindowsSymbol(HANDLE process, const STACKFRAME64& stackFrame)
             : m_Process(process), m_PCOffset(stackFrame.AddrPC.Offset)
         {
-            ZeroMemory(&SymbolInfo, sizeof(SYMBOL_INFO) + sizeof(Buffer));
-            SymbolInfo.SizeOfStruct = sizeof(SYMBOL_INFO);
-            SymbolInfo.MaxNameLen = WindowsSymbol::MaxNameLength;
+            m_SymbolInfo = static_cast<SYMBOL_INFO*>(
+                Memory::Allocate(sizeof(SYMBOL_INFO) + MaxNameLength - 1));
 
-            ::SymFromAddr(m_Process, m_PCOffset, nullptr, &SymbolInfo);
+            ZeroMemory(m_SymbolInfo, sizeof(SYMBOL_INFO) + MaxNameLength - 1);
+            m_SymbolInfo->SizeOfStruct = sizeof(SYMBOL_INFO);
+            m_SymbolInfo->MaxNameLen = WindowsSymbol::MaxNameLength;
 
-            constexpr char UnknownString[] = "<unknown>";
-            static_assert(WindowsSymbol::MaxNameLength >= KITSUNE_ARRAY_SIZE(UnknownString), "Oh no.");
+            ::SymFromAddr(m_Process, m_PCOffset, nullptr, m_SymbolInfo);
 
-            if (std::strlen(SymbolInfo.Name) == 0)
-                std::memcpy(SymbolInfo.Name, UnknownString, KITSUNE_ARRAY_SIZE(UnknownString));
-        }
+            if (std::strlen(m_SymbolInfo->Name) == 0)
+                std::memcpy(m_SymbolInfo->Name, UnknownString, std::strlen(UnknownString));
 
-    public:
-        void GetSourceInfo(String* filename, DWORD* lineNumber, void** address)
-        {
             IMAGEHLP_LINE64 line;
             line.SizeOfStruct = sizeof(line);
 
             DWORD offset;
             if (::SymGetLineFromAddr64(m_Process, m_PCOffset, &offset, &line))
             {
-                *filename = line.FileName;
-                *lineNumber = line.LineNumber;
-                *address = reinterpret_cast<void*>(line.Address);
+                m_FileName = line.FileName;
+                m_LineNum = line.LineNumber;
+                m_Address = reinterpret_cast<void*>(line.Address);
             }
             else
             {
-                *filename = "<unknown>";
-                *lineNumber = 0;
-                *address = nullptr;
+                m_FileName = UnknownString;
+                m_LineNum = 0;
+                m_Address = nullptr;
             }
         }
 
+        ~WindowsSymbol()
+        {
+            Memory::Free(m_SymbolInfo);
+        }
+
+    public:
+        String GetFileName() const { return m_FileName; }
+        String GetName()     const { return m_SymbolInfo->Name; }
+
+        DWORD GetLine()      const { return m_LineNum; }
+        void* GetAddress()   const { return m_Address; }
+
     public:
         static constexpr ULONG MaxNameLength = 1024;
+        static constexpr char UnknownString[] = "<unknown>";
 
     private:
         HANDLE m_Process;
         DWORD64 m_PCOffset;
 
-    public:
-        SYMBOL_INFO SymbolInfo;
-        CHAR Buffer[MaxNameLength];
+        String m_FileName;
+        DWORD m_LineNum;
+        void* m_Address;
+
+        SYMBOL_INFO* m_SymbolInfo;
     };
 
     class ScopedSymInit
@@ -176,14 +187,9 @@ namespace Kitsune
         {
             if ((currDepth >= skipCount) && (stackFrame.AddrPC.Offset != 0))
             {
-                String filename;
-                void* address;
-                DWORD lineNumber;
-
                 WindowsSymbol symbol(process, stackFrame);
-                symbol.GetSourceInfo(&filename, &lineNumber, &address);
-
-                stackframes.EmplaceBack(filename, symbol.SymbolInfo.Name, address, lineNumber);
+                stackframes.EmplaceBack(symbol.GetFileName(), symbol.GetName(), symbol.GetAddress(),
+                                        symbol.GetLine());
             }
 
             if (::StackWalk64(machineType, process, thread, &stackFrame, &context, nullptr,

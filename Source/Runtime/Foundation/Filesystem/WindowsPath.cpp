@@ -77,7 +77,8 @@ namespace Kitsune::Filesystem
 
         CharType rootPath = m_String[drivePath.Size()];
         return IsWindowsSeperator(rootPath) ? ViewType(m_String.GetBegin() + drivePath.Size(), 1) :
-                                              ViewType(drivePath.GetEnd(), 0);    }
+                                              ViewType(drivePath.GetEnd(), 0);
+    }
 
     WindowsPath::ViewType WindowsPath::GetRelativeSubstring() const
     {

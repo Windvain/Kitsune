@@ -35,12 +35,17 @@ namespace Kitsune
         Usize MaxDepth;
 
         Array<StackFrame> StackFrames;
+        String ErrorMessage;
     };
 
-    inline void BacktraceErrorCallback(void* /* data */, const char* message,
+    inline void BacktraceErrorCallback(void* data, const char* message,
                                        int /* error */)
     {
-        throw StackTraceException(message);
+        BacktraceData* backtraceData = static_cast<BacktraceData*>(data);
+        if (backtraceData->ErrorMessage.IsEmpty())
+            return;
+
+        backtraceData->ErrorMessage = message;
     }
 
     inline const char* GetDemangleStatus(int status)
@@ -100,15 +105,24 @@ namespace Kitsune
     {
 #if defined(KITSUNE_OS_WINDOWS)
         return Format("{0}", ::GetCurrentThreadId());
+#else
+    #error Clang is not supported on this platform, please switch to another compiler.
 #endif
     }
 
     StackTrace MakeStackTrace(Usize skipCount, Usize maxDepth)
     {
         backtrace_state* state = CreateBacktraceState();
-        BacktraceData backtraceData = { .CurrentDepth = 0, .MaxDepth = maxDepth, .StackFrames{} };
+        BacktraceData backtraceData = {
+            .CurrentDepth = 0,
+            .MaxDepth = maxDepth,
+            .StackFrames{},
+            .ErrorMessage = ""
+        };
 
         ::backtrace_full(state, skipCount + 1, BacktraceFullCallback, BacktraceErrorCallback, &backtraceData);
+        if (!backtraceData.ErrorMessage.IsEmpty())
+            throw StackTraceException(backtraceData.ErrorMessage.Raw());
 
         return StackTrace(Move(backtraceData.StackFrames), GetCallingThreadName());
     }

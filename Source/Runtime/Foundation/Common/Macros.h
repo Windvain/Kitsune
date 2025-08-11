@@ -79,11 +79,11 @@
 #elif KITSUNE_HAS_BUILTIN(__builtin_trap)
     #define KITSUNE_DEBUGBREAK() __builtin_trap()
 #else
-    #include <signal.h>
+    #include <csignal>
     #if defined(SIGTRAP)
-        #define KITSUNE_DEBUGBREAK() ::signal(SIGTRAP)
+        #define KITSUNE_DEBUGBREAK() ::std::raise(SIGTRAP)
     #else
-        #define KITSUNE_DEBUGBREAK() ::signal(SIGABRT)
+        #define KITSUNE_DEBUGBREAK() ::std::raise(SIGABRT)
     #endif
 #endif
 
@@ -126,7 +126,7 @@
 #define KITSUNE_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define KITSUNE_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-#define KITSUNE_SIGN(x) ((x) < 0) ? (-1) : ((x > 0))
+#define KITSUNE_SIGN(x) (((x) == 0) ? 0 : (((x) > 0) ? 1 : -1))
 
 // Miscellaneous macros.
 #if defined(KITSUNE_COMPILER_GCC) || defined(KITSUNE_COMPILER_CLANG)

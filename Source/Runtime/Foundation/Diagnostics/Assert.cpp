@@ -50,6 +50,9 @@ namespace Kitsune::Details
     bool HandleAssertionFailure(const char* expression, const char* message,
                                 SourceLocation loc)
     {
+        if (expression == nullptr) expression = "";
+        if (message == nullptr)    message = "";
+
         Logger* logger = GetGlobalLogger();
         if (logger == nullptr)
             FallbackLogAssertionMessage(expression, message, loc);
