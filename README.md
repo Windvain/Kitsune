@@ -26,7 +26,7 @@ Start by cloning the repository with `git clone https://github.com/Windvain/Kits
 If the repository was not cloned recursively, run `git submodule update --init` to clone all the required submodules.
 
 **4. Build the Engine** \
-Run the following command with this repository as your current working directory. The engine can be built with three different build types, **Debug**, **RelWithDbgInfo**, and **Release**. Replace `<your build type>` with the desired build type.
+Run the following command with this repository as your current working directory. The engine can be built with three different build types, **Debug**, **Optimized**, and **Production**. Replace `<your build type>` with the desired build type.
 \
 \
 For Visual Studio 2022:
