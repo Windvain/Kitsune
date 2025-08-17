@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(KITSUNE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(KITSUNE_DEFAULT_BUILD_TYPE "Release")
-set(KITSUNE_CONFIG_TYPES "Debug" "RelWithDbgInfo" "Release")
+set(KITSUNE_DEFAULT_BUILD_TYPE "Production")
+set(KITSUNE_CONFIG_TYPES "Debug" "Optimized" "Production")
 
 option(KITSUNE_BUILD_STATIC "Build all Kitsune libraries as static libs." OFF)
 option(KITSUNE_BUILD_EXAMPLES "Build Kitsune's example executables." ON)
@@ -47,8 +47,8 @@ else()
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${KITSUNE_CONFIG_TYPES})
 endif()
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneGlobals.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneFunctions.cmake")
+include("${KITSUNE_ROOT_DIR}/CMake/KitsuneGlobals.cmake")
+include("${KITSUNE_ROOT_DIR}/CMake/KitsuneFunctions.cmake")
 
 add_subdirectory("Source/External")
 add_subdirectory("Source/Runtime")

@@ -40,19 +40,19 @@ namespace Kitsune
         return app->GetExitCode();
     }
 
-    void PrintStackTrace()
+    void PrintStackTrace(StackTrace* stackTrace)
     {
-        if (g_ExceptionStackTrace == nullptr)
+        if (stackTrace == nullptr)
         {
             std::printf("No stack traces were created.\n");
             return;
         }
 
         std::printf("Stack trace: \nThread Name: %s\n",
-                    g_ExceptionStackTrace->GetCallingThreadName().Raw());
+                    stackTrace->GetCallingThreadName().Raw());
 
         Uint32 index = 0;
-        for (auto& frame : *g_ExceptionStackTrace)
+        for (auto& frame : *stackTrace)
         {
             String funcName = frame.GetFunctionName();
             String fileName = frame.GetFileName();
@@ -70,13 +70,13 @@ namespace Kitsune
     int EngineMain(int argc, char** argv)
     {
         // The try/catch makes it harder to debug, just add it in when compiling release builds.
-#if defined(KITSUNE_BUILD_RELEASE)
+#if defined(KITSUNE_BUILD_PRODUCTION)
         try
 #endif
         {
             return UnguardedEngineMain(argc, argv);
         }
-#if defined(KITSUNE_BUILD_RELEASE)
+#if defined(KITSUNE_BUILD_PRODUCTION)
         catch (const IException& exception)
         {
             // Can't use Logger API here.. Just output whatever we can
@@ -85,7 +85,7 @@ namespace Kitsune
                 "An IException has been thrown. (Name: %s)\nDescription: %s\n",
                 exception.GetName(), exception.GetDescription());
 
-            PrintStackTrace();
+            PrintStackTrace(g_ExceptionStackTrace);
             return 1;
         }
 #endif

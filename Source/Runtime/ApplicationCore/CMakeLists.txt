@@ -1,5 +1,5 @@
 kitsune_add_library(
-    TARGET KitsuneApplicationCore
+    NAME KitsuneApplicationCore
     SOURCES
     "Null/NullMonitor.h"
     "Null/NullWindow.cpp"
@@ -13,12 +13,12 @@ kitsune_add_library(
     "VideoMode.h"
     "WindowException.h"
 
-    DEPENDENCIES
+    LINKS
     KitsuneFoundation
 )
 
 kitsune_add_platform_sources(
-    TARGET KitsuneApplicationCore
+    NAME KitsuneApplicationCore
     WINDOWS
     "Windows/WindowsEnvironment.cpp"
     "Windows/WindowsMonitor.cpp"

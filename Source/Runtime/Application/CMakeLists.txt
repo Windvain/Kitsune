@@ -1,15 +1,15 @@
 kitsune_add_library(
-    TARGET KitsuneApplication
+    NAME KitsuneApplication
     SOURCES
     "Application.cpp"
     "Application.h"
 
-    DEPENDENCIES
+    LINKS
     KitsuneApplicationCore
     KitsuneFoundation
 )
 
 kitsune_add_platform_sources(
-    TARGET KitsuneApplication
+    NAME KitsuneApplication
     WINDOWS "Windows/WindowsApplication.cpp"
 )

@@ -18,7 +18,7 @@ namespace Kitsune::Details
         }                                                                           \
     } while (false)
 
-#if !defined(KITSUNE_BUILD_RELEASE)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
     #define KITSUNE_ASSERT KITSUNE_ALWAYS_ASSERT
     #define KITSUNE_VERIFY KITSUNE_ALWAYS_ASSERT
 #else

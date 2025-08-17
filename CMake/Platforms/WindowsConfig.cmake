@@ -1,4 +1,4 @@
-list(APPEND KITSUNE_GLOBAL_COMMON_DEFINITIONS
+set(KITSUNE_GLOBAL_COMPILER_DEFINITIONS
     # Enable the usage of UTF-16 in the Win32 API.
     UNICODE
     _UNICODE
@@ -11,7 +11,7 @@ list(APPEND KITSUNE_GLOBAL_COMMON_DEFINITIONS
 )
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    list(APPEND KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS
+    set(KITSUNE_GLOBAL_COMPILER_FLAGS
         "-Wall"                         # Enable all warnings about construction.
         "-Wextra"                       # Enable warnings that aren't enabled by -Wall.
         "-Werror"                       # Turn all warnings into errors.
@@ -20,22 +20,22 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         "-Wshadow"                      # Warn when a local declaration shadows another.
     )
 
-    list(APPEND KITSUNE_GLOBAL_DEBUG_COMPILE_FLAGS
+    set(KITSUNE_DEBUG_COMPILER_FLAGS
         "-g"              # Generate debug info.
         "-O0"             # Disable optimizations.
     )
 
-    list(APPEND KITSUNE_GLOBAL_RELWITHDBGINFO_COMPILE_FLAGS
+    set(KITSUNE_OPTIMIZED_COMPILER_FLAGS
         "-g"              # Generate debug info.
         "-O2"             # Enable level 2 optimizations.
     )
 
-    list(APPEND KITSUNE_GLOBAL_RELEASE_COMPILE_FLAGS
+    set(KITSUNE_PRODUCTION_COMPILER_FLAGS
         "-O3"             # Enable level 3 optimizations.
     )
 
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    list(APPEND KITSUNE_GLOBAL_COMMON_COMPILE_FLAGS
+    set(KITSUNE_GLOBAL_COMPILER_FLAGS
         "/Zc:wchar_t"                 # Treat wchar_t as a native type.
         "/utf-8"                      # Specifies the source and execution charset as UTF-8.
         "/MP"                         # Compile the engine source with multiple processes.
@@ -47,31 +47,33 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "/wd4244"                     # Disable "conversion from 'type1' to 'type2', possible loss of data".
     )
 
-    list(APPEND KITSUNE_GLOBAL_DEBUG_COMPILE_FLAGS
+    set(KITSUNE_DEBUG_COMPILER_FLAGS
         "/Zi"             # Create a seperate PDB file with symbols.
         "/MDd"            # Link to the multithreaded debug runtime library.
         "/Od"             # Disable optimizations.
     )
 
-    list(APPEND KITSUNE_GLOBAL_RELWITHDBGINFO_COMPILE_FLAGS
+    set(KITSUNE_OPTIMIZED_COMPILER_FLAGS
         "/Zi"             # Create a seperate PDB file with symbols.
-        "/MDd"            # Link to the multithreaded debug runtime library.
+        "/MD"             # Link to the multithreaded release runtime library.
         "/O2"             # Enable level 2 optimizations.
     )
 
-    list(APPEND KITSUNE_GLOBAL_RELEASE_COMPILE_FLAGS
+    set(KITSUNE_PRODUCTION_COMPILER_FLAGS
         "/MD"             # Link to the multithreaded release runtime library.
         "/Ox"             # Optimize for speed.
     )
 
-    # Linker flags -----------------------------------------------------------------
-    list(APPEND KITSUNE_GLOBAL_DEBUG_LINKER_FLAGS "/DEBUG")
-    list(APPEND KITSUNE_GLOBAL_RELWITHDBGINFO_LINKER_FLAGS "/DEBUG")
+    set(KITSUNE_DEBUG_LINKER_FLAGS "/DEBUG")
+    set(KITSUNE_OPTIMIZED_LINKER_FLAGS "/DEBUG")
 
-    list(APPEND KITSUNE_GLOBAL_RELEASE_LINKER_FLAGS
+    set(KITSUNE_PRODUCTION_LINKER_FLAGS
         "/INCREMENTAL:NO"       # Disable incremental linking.
         "/OPT:REF"              # Remove data which are never referenced.
     )
 else()
-    message(FATAL_ERROR "Compiler unsupported on the current platform.")
+    message(
+        FATAL_ERROR
+        "The compiler currently used is unsupported on Windows. Please switch compilers to continue the build process."
+    )
 endif()

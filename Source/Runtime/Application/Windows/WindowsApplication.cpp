@@ -50,7 +50,7 @@ namespace Kitsune
                 DISPLAY_DEVICEW monitorDevice;
                 monitorDevice.cb = sizeof(monitorDevice);
 
-                if (::EnumDisplayDevices(adapterDevice.DeviceName, monitorIndex, &monitorDevice, 0) == 0)
+                if (::EnumDisplayDevicesW(adapterDevice.DeviceName, monitorIndex, &monitorDevice, 0) == 0)
                     break;
 
                 if (!(monitorDevice.StateFlags & DISPLAY_DEVICE_ACTIVE))

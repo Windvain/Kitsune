@@ -1,4 +1,5 @@
-#if defined(_MSC_VER) && !defined(KITSUNE_BUILD_RELEASE)
+// The crtdbg.h header only works when compiling with /MDd and /MTd
+#if defined(_MSC_VER) && defined(KITSUNE_BUILD_DEBUG)
     #define _CRTDBG_MAP_ALLOC
     #include <cstdlib>
     #include <crtdbg.h>
@@ -65,7 +66,7 @@ KITSUNE_FORCEINLINE bool SetDpiAwareness()
 
 inline bool AllocateConsoleInDev()
 {
-#if defined(KITSUNE_BUILD_RELEASE)
+#if defined(KITSUNE_BUILD_PRODUCTION)
     return true;
 #else
     // Allocating a console in developer builds for logging, since WinMain() doesn't
@@ -158,8 +159,8 @@ int StartWindowsEntry()
 
     // MinGW doesn't seem to define the _CRTDBG_LEAK_CHECK_DF macro.
     // In addition to that, most of the <crtdbg.h> functions are just macros to (void)0.
-#if defined(KITSUNE_COMPILER_MSVC) && !defined(KITSUNE_BUILD_RELEASE)
-    ::_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#if defined(KITSUNE_COMPILER_MSVC) && defined(KITSUNE_BUILD_DEBUG)
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
     if ((!SetDpiAwareness()) || (!AllocateConsoleInDev()))
@@ -197,7 +198,7 @@ int StartWindowsEntry()
 
 void ShutdownWindowsEntry()
 {
-#if !defined(KITSUNE_BUILD_RELEASE)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
     ::FreeConsole();
 #endif
 }

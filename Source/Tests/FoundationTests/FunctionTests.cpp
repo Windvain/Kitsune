@@ -12,7 +12,7 @@ namespace
         }
     };
 
-    long TestFunction(int x)
+    long TestFunction(int)
     {
         return 3;
     }
@@ -85,7 +85,7 @@ TEST(FunctionTests, MoveAssign)
 TEST(FunctionTests, FunctionAssign)
 {
     Function<long(int)> func = Functor();
-    func = [](int x) -> long { return 3; };
+    func = [](int) -> long { return 3; };
 
     EXPECT_NE(func.Target(), nullptr);
     EXPECT_EQ(func(123), 3l);
@@ -94,7 +94,7 @@ TEST(FunctionTests, FunctionAssign)
 TEST(FunctionTests, Boolean)
 {
     Function<long(int)> func;
-    Function<long(int)> f2 = [&](int x) -> long { return 2; };
+    Function<long(int)> f2 = [&](int) -> long { return 2; };
 
     EXPECT_FALSE((bool)func);
     EXPECT_TRUE((bool)f2);
@@ -121,7 +121,7 @@ TEST(FunctionTests, Target)
 TEST(FunctionTests, SwapMemberFunction)
 {
     Function<long(int)> func = &TestFunction;
-    Function<long(int)> func2 = [](int x) -> long { return 2; };
+    Function<long(int)> func2 = [](int) -> long { return 2; };
 
     void* ptr = func2.Target();
     void* ptr2 = func.Target();
@@ -135,7 +135,7 @@ TEST(FunctionTests, SwapMemberFunction)
 TEST(FunctionTests, SwapAlgorithm)
 {
     Function<long(int)> func = &TestFunction;
-    Function<long(int)> func2 = [](int x) -> long { return 2; };
+    Function<long(int)> func2 = [](int) -> long { return 2; };
 
     void* ptr = func2.Target();
     void* ptr2 = func.Target();

@@ -19,7 +19,7 @@ namespace Kitsune
 
     IException::IException() noexcept
     {
-#if defined(KITSUNE_BUILD_RELEASE)
+#if defined(KITSUNE_BUILD_PRODUCTION)
         if (g_WritingToExceptionStackTrace)
             return;
 
@@ -70,7 +70,7 @@ namespace Kitsune
 
     IException::~IException() noexcept
     {
-#if defined(KITSUNE_BUILD_RELEASE)
+#if defined(KITSUNE_BUILD_PRODUCTION)
         if (g_ExceptionStackTrace != nullptr)
         {
             Memory::Delete(g_ExceptionStackTrace);

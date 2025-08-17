@@ -1,5 +1,5 @@
 kitsune_add_library(
-    TARGET KitsuneFoundation
+    NAME KitsuneFoundation
     SOURCES
     "Algorithms/Copy.h"
     "Algorithms/Count.h"
@@ -113,7 +113,7 @@ kitsune_add_library(
 )
 
 kitsune_add_platform_sources(
-    TARGET KitsuneFoundation
+    NAME KitsuneFoundation
     CLANG
     "Diagnostics/ClangStackTrace.cpp"
     "Threading/ClangInterlocked.inl"
@@ -138,8 +138,8 @@ kitsune_add_platform_sources(
     "Utilities/WindowsProcess.cpp"
 )
 
-kitsune_add_platform_dependencies(
-    TARGET KitsuneFoundation
+kitsune_add_platform_links(
+    NAME KitsuneFoundation
     WINDOWS "comctl32.lib"
 
     MSVC  "DbgHelp.lib"

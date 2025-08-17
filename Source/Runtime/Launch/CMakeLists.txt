@@ -1,5 +1,5 @@
 kitsune_add_library(
-    TARGET KitsuneLaunch
+    NAME KitsuneLaunch
     FORCE_STATIC
 
     SOURCES
@@ -7,14 +7,14 @@ kitsune_add_library(
     "EngineLoop.h"
     "EngineMain.cpp"
 
-    DEPENDENCIES
+    LINKS
     KitsuneApplication
     KitsuneApplicationCore
     KitsuneFoundation
 )
 
 kitsune_add_platform_sources(
-    TARGET KitsuneLaunch
+    NAME KitsuneLaunch
     WINDOWS
     "Windows/WindowsEntry.cpp"
 )

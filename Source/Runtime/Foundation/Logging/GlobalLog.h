@@ -8,7 +8,7 @@ namespace Kitsune
     KITSUNE_API_ Logger* GetGlobalLogger();
 }
 
-#if !defined(KITSUNE_BUILD_RELEASE)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
     #define KITSUNE_LOG_LEVEL_(severity, message, source) \
         ::Kitsune::GetGlobalLogger()->Log(severity, source, message)
 

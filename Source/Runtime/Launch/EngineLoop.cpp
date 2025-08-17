@@ -28,7 +28,7 @@ namespace Kitsune
         m_GlobalLogger = MakeScoped<Logger>("GLOBAL");
         SetGlobalLogger(m_GlobalLogger.Get());
 
-#if !defined(KITSUNE_BUILD_RELEASE)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
             m_GlobalLogger->GetSinks().PushBack(
                 MakeShared<AnsiColorSink>(MakeShared<ConsoleOutputStream>()));
 #endif

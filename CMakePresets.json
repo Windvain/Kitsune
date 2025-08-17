@@ -20,8 +20,10 @@
       "generator": "Visual Studio 17 2022",
 
       "cacheVariables": {
-        "CMAKE_SHARED_LINKER_FLAGS_RELWITHDBGINFO": "",
-        "CMAKE_EXE_LINKER_FLAGS_RELWITHDBGINFO": ""
+        "CMAKE_SHARED_LINKER_FLAGS_OPTIMIZED": "",
+        "CMAKE_EXE_LINKER_FLAGS_OPTIMIZED": "",
+        "CMAKE_SHARED_LINKER_FLAGS_PRODUCTION": "",
+        "CMAKE_EXE_LINKER_FLAGS_PRODUCTION": ""
       },
 
       "vendor": {
@@ -33,8 +35,8 @@
       "inherits": [ "Base Preset" ]
     },
     {
-      "name": "Clang MinGW",
-      "generator": "Ninja Multi-Config",
+      "name": "MinGW Clang",
+      "generator": "Ninja",
 
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang.exe",
@@ -52,12 +54,36 @@
   ],
 
   "buildPresets": [
-    { "name": "Visual Studio 2022 -- Debug", "configurePreset": "Visual Studio 2022", "configuration": "Debug" },
-    { "name": "Visual Studio 2022 -- RelWithDbgInfo", "configurePreset": "Visual Studio 2022", "configuration": "RelWithDbgInfo" },
-    { "name": "Visual Studio 2022 -- Release", "configurePreset": "Visual Studio 2022", "configuration": "Release" },
+    {
+      "name": "Visual Studio 2022 -- Debug",
+      "configurePreset": "Visual Studio 2022",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Visual Studio 2022 -- Optimized",
+      "configurePreset": "Visual Studio 2022",
+      "configuration": "Optimized"
+    },
+    {
+      "name": "Visual Studio 2022 -- Production",
+      "configurePreset": "Visual Studio 2022",
+      "configuration": "Production"
+    },
 
-    { "name": "Clang MinGW -- Debug", "configurePreset": "Clang MinGW", "configuration": "Debug" },
-    { "name": "Clang MinGW -- RelWithDbgInfo", "configurePreset": "Clang MinGW", "configuration": "RelWithDbgInfo" },
-    { "name": "Clang MinGW -- Release", "configurePreset": "Clang MinGW", "configuration": "Release" }
+    {
+      "name": "MinGW Clang -- Debug",
+      "configurePreset": "MinGW Clang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "MinGW Clang -- Optimized",
+      "configurePreset": "MinGW Clang",
+      "configuration": "Optimized"
+    },
+    {
+      "name": "MinGW Clang -- Production",
+      "configurePreset": "MinGW Clang",
+      "configuration": "Production"
+    }
   ]
 }

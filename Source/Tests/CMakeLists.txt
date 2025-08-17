@@ -1,5 +1,5 @@
 kitsune_add_test(
-    TARGET FoundationTests
+    NAME FoundationTests
     SOURCES
     "FoundationTests/AddressOfTests.cpp"
     "FoundationTests/AnsiColorSinkTests.cpp"
@@ -39,6 +39,6 @@ kitsune_add_test(
     "FoundationTests/WindowsPathTests.cpp"
     "FoundationTests/WriteStreamIteratorTests.cpp"
 
-    DEPENDENCIES
+    LINKS
     KitsuneFoundation
 )

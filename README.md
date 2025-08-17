@@ -26,7 +26,10 @@ Start by cloning the repository with `git clone https://github.com/Windvain/Kits
 If the repository was not cloned recursively, run `git submodule update --init` to clone all the required submodules.
 
 **4. Build the Engine** \
-Run the following command with this repository as your current working directory for Visual Studio 2022:
+Run the following command with this repository as your current working directory. The engine can be built with three different build types, **Debug**, **RelWithDbgInfo**, and **Release**. Replace `<your build type>` with the desired build type.
+\
+\
+For Visual Studio 2022:
 ```bash
 $ cmake --preset "Visual Studio 2022"
 ...
@@ -37,13 +40,13 @@ $ cmake --preset "Visual Studio 2022"
 
 Or alternatively for MinGW-w64 with Clang:
 ```bash
-$ cmake --preset "Clang MinGW"
+$ cmake --preset "Clang MinGW" -DCMAKE_BUILD_TYPE="<your build type>"
 ...
 -- Configuring done (2.7s)
 -- Generating done (0.2s)
 -- Build files have been written to: <path to Kitsune>/build
 ```
-After the previous command has finished, the engine can be built with the following command. The engine can be built with three different build types, **Debug**, **RelWithDbgInfo**, and **Release**. Replace `<your build type>` with the desired build type.
+After configuring the project using CMake, we can go on to the last step, which is building the engine.
 \
 \
 Visual Studio 2022 users can use this command:
@@ -52,5 +55,5 @@ $ cmake --build build/ --preset "Visual Studio 2022 -- <your build type>"
 ```
 Or with MinGW-Clang:
 ```bash
-$ cmake --build build/ --preset "Clang MinGW -- <your build type>"
+$ cmake --build build/
 ```
