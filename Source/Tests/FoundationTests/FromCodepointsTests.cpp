@@ -1,46 +1,76 @@
+#include <gtest/gtest.h>
+
 #include "CompareStrings.h"
-#include "Foundation/String/FromCodepoints.h"
+#include "TestContainer2.h"
 
 #include "Foundation/String/String.h"
-#include "Foundation/Containers/Array.h"
+#include "Foundation/String/FromCodepoints.h"
+
 #include "Foundation/Iterators/BackInsertIterator.h"
 
 using namespace Kitsune;
 
+namespace
+{
+    template<typename T>
+    class PushBackableContainer
+    {
+    public:
+        using ValueType = T;
+
+    public:
+        PushBackableContainer() = default;
+
+        inline void PushBack(const T& element)
+        {
+            m_Data.push_back(element);
+        }
+
+        inline T* Data() { return m_Data.data(); }
+        inline const T* Data() const { return m_Data.data(); }
+
+    private:
+        std::vector<T> m_Data;
+    };
+}
+
+template<std::size_t N>
+using CodepointTestContainer = Testing::ForwardTestContainer<Unicode::Codepoint, N>;
+
 TEST(FromCodepointsTests, CodepointsToUtf8)
 {
-    String str;
-    Array<Unicode::Codepoint> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6 };
+    PushBackableContainer<char> str;
+    CodepointTestContainer<10> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6, 0x0 };
 
-    Unicode::CodepointsToUtf8(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), "»_üÿ↔╣🤣💕🎶");
+    Unicode::CodepointsToUtf8(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<decltype(str)>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), "»_üÿ↔╣🤣💕🎶");
 }
 
 TEST(FromCodepointsTests, CodepointsToUtf8Char8_t)
 {
-    U8String str;
-    Array<Unicode::Codepoint> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6 };
+    PushBackableContainer<char8_t> str;
+    CodepointTestContainer<10> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6, 0x0 };
 
-    Unicode::CodepointsToUtf8(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<U8String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), u8"»_üÿ↔╣🤣💕🎶");
+    Unicode::CodepointsToUtf8(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<char8_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), u8"»_üÿ↔╣🤣💕🎶");
 }
 
 TEST(FromCodepointsTests, CodepointsToUtf16)
 {
-    U16String str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<char16_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::CodepointsToUtf16(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<U16String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), u"┬ÿ¼↔┘");
+    Unicode::CodepointsToUtf16(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<char16_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), u"┬ÿ¼↔┘");
 }
 
 TEST(FromCodepointsTests, CodepointsToUtf32)
 {
-    U32String str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<char32_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::CodepointsToUtf32(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<U32String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), U"┬ÿ¼↔┘");
+    Unicode::CodepointsToUtf32(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<char32_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), U"┬ÿ¼↔┘");
 }
 
 #if defined(_WIN32)
@@ -48,59 +78,59 @@ TEST(FromCodepointsTests, CodepointsToUtf16Wchar_t)
 {
     static_assert(sizeof(wchar_t) == 2, "sizeof(wchar_t) should be equal to 2.");
 
-    WideString str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<wchar_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::CodepointsToUtf16(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<WideString>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), L"┬ÿ¼↔┘");
+    Unicode::CodepointsToUtf16(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<wchar_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), L"┬ÿ¼↔┘");
 }
 #else
 TEST(FromCodepointsTests, CodepointsToUtf32Wchar_t)
 {
     static_assert(sizeof(wchar_t) == 4, "sizeof(wchar_t) should be equal to 4.");
 
-    WideString str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<wchar_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::CodepointsToUtf32(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<WideString>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), L"┬ÿ¼↔┘");
+    Unicode::CodepointsToUtf32(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<wchar_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), L"┬ÿ¼↔┘");
 }
 #endif
 
 TEST(FromCodepointsTests, FromCodepointsUtf8)
 {
     String str;
-    Array<Unicode::Codepoint> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6 };
+    CodepointTestContainer<10> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6, 0x0 };
 
     Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), "»_üÿ↔╣🤣💕🎶");
+    EXPECT_GENERAL_STREQ(str.Data(), "»_üÿ↔╣🤣💕🎶");
 }
 
 TEST(FromCodepointsTests, FromCodepointsUtf8Char8_t)
 {
-    U8String str;
-    Array<Unicode::Codepoint> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6 };
+    PushBackableContainer<char8_t> str;
+    CodepointTestContainer<10> codepoints = { 0x00BB, 0x005F, 0x00FC, 0x00FF, 0x2194, 0x2563, 0x1F923, 0x1F495, 0x1F3B6, 0x0 };
 
-    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<U8String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), u8"»_üÿ↔╣🤣💕🎶");
+    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<char8_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), u8"»_üÿ↔╣🤣💕🎶");
 }
 
 TEST(FromCodepointsTests, FromCodepointsUtf16)
 {
-    U16String str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<char16_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<U16String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), u"┬ÿ¼↔┘");
+    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<char16_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), u"┬ÿ¼↔┘");
 }
 
 TEST(FromCodepointsTests, FromCodepointsUtf32)
 {
-    U32String str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<char32_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<U32String>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), U"┬ÿ¼↔┘");
+    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<char32_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), U"┬ÿ¼↔┘");
 }
 
 #if defined(_WIN32)
@@ -108,21 +138,21 @@ TEST(FromCodepointsTests, FromCodepointsUtf16Wchar_t)
 {
     static_assert(sizeof(wchar_t) == 2, "sizeof(wchar_t) should be equal to 2.");
 
-    WideString str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<wchar_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<WideString>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), L"┬ÿ¼↔┘");
+    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<wchar_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), L"┬ÿ¼↔┘");
 }
 #else
 TEST(FromCodepointsTests, FromCodepointsUtf32Wchar_t)
 {
     static_assert(sizeof(wchar_t) == 4, "sizeof(wchar_t) should be equal to 4.");
 
-    WideString str;
-    Array<Unicode::Codepoint> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518 };
+    PushBackableContainer<wchar_t> str;
+    CodepointTestContainer<6> codepoints = { 0x252C, 0x00FF, 0x00BC, 0x2194, 0x2518, 0x0 };
 
-    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<WideString>(str));
-    EXPECT_GENERAL_STREQ(str.Raw(), L"┬ÿ¼↔┘");
+    Unicode::FromCodepoints(codepoints.GetBegin(), codepoints.GetEnd(), BackInsertIterator<PushBackableContainer<wchar_t>>(str));
+    EXPECT_GENERAL_STREQ(str.Data(), L"┬ÿ¼↔┘");
 }
 #endif

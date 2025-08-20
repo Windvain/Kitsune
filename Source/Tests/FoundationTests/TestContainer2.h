@@ -36,7 +36,7 @@ namespace Testing
         }
 
     private:
-        ValueType m_Array[S];
+        ValueType m_Array[S] = { /* ... */ };
     };
 
     template<typename T, std::size_t S>

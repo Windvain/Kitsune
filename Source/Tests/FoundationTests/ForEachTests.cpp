@@ -1,56 +1,58 @@
 #include <gtest/gtest.h>
-
-#include "TestContainer.h"
-#include "IteratorWrappers.h"
+#include "TestContainer2.h"
 
 #include "Foundation/Algorithms/ForEach.h"
 
 using namespace Kitsune;
-using TestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<int>>;
+using namespace Testing;
 
 TEST(ForEachTests, ForEach)
 {
-    int arr[5] = { 1, 2, 3, 4, 5 };
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<int, 7> container({ 1, 65, 3, 87, 878, 1, 33 });
+    std::vector<int> vec = { 1, 65, 3, 87, 878, 1, 33 };
 
-    int n = 0;
-    Algorithms::ForEach(cont.Begin, cont.End, [&](int x)
-    {
-        EXPECT_EQ(n + 1, x);
-        ++n;
-    });
+    int iterations = 0;
+    Algorithms::ForEach(container.GetBegin(), container.GetEnd(),
+                        [&](int element)
+                        {
+                            EXPECT_EQ(element, vec[iterations]);
+                            ++iterations;
+                        });
 
-    EXPECT_EQ(n, 5);
+    EXPECT_EQ(iterations, 7);
 }
 
 TEST(ForEachTests, ForEachN)
 {
-    int arr[5] = { 1, 2, 3, 4, 5 };
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<int, 7> container({ 1, 65, 3, 87, 878, 1, 33 });
+    std::vector<int> vec = { 1, 65, 3, 87, 878, 1, 33 };
 
-    int n = 0;
-    int k = 0;
-    Algorithms::ForEachN(cont.Begin, 5, [&](int x)
-    {
-        EXPECT_EQ(k + 1, x);
-        n += x;
-        ++k;
-    });
+    int iterations = 0;
+    Algorithms::ForEachN(container.GetBegin(), 5,
+                         [&](int element)
+                         {
+                             EXPECT_EQ(element, vec[iterations]);
+                             ++iterations;
+                         });
 
-    EXPECT_EQ(n, 15);
+    EXPECT_EQ(iterations, 5);
 }
-
 
 TEST(ForEachTests, ForEachIf)
 {
-    int arr[5] = { 1, 2, 75, 2, 2 };
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<int, 7> container({ 1, 65, 3, 87, 878, 1, 33 });
+    std::vector<int> vec = { 878 };
 
-    int n = 0;
-    auto pred = [](int x) -> bool { return x == 2; };
+    auto predicate = [](int element) -> bool { return (element % 2) == 0; };
 
-    Algorithms::ForEachIf(cont.Begin, cont.End, pred,
-        [&](int x) { EXPECT_EQ(x, 2); ++n; });
+    int iterations = 0;
+    Algorithms::ForEachIf(container.GetBegin(), container.GetEnd(),
+                          predicate,
+                          [&](int element)
+                          {
+                              EXPECT_EQ(element, vec[iterations]);
+                              ++iterations;
+                          });
 
-    EXPECT_EQ(n, 3);
+    EXPECT_EQ(iterations, 1);
 }
