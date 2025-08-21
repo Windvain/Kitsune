@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
-
 #include "IteratorWrappers.h"
+
 #include "Foundation/Iterators/ReverseIterator.h"
 
 using namespace Kitsune;
-using Testing::BidirIteratorWrapper;
+using namespace Testing;
 
-namespace ReverseIteratorTesting
+namespace
 {
     class B { /* ... */ };
     class C : public B
@@ -14,9 +14,7 @@ namespace ReverseIteratorTesting
     };
 }
 
-using namespace ReverseIteratorTesting;
-
-TEST(ReverseIteratorTests, DefaultCtor)
+TEST(ReverseIteratorTests, DefaultConstructor)
 {
     int x;
     BidirIteratorWrapper<int> it(&x);
@@ -25,7 +23,7 @@ TEST(ReverseIteratorTests, DefaultCtor)
     EXPECT_EQ(&*rev.GetBase(), &x);
 }
 
-TEST(ReverseIteratorTests, IteratorCtor)
+TEST(ReverseIteratorTests, IteratorConstructor)
 {
     int x;
     auto it = BidirIteratorWrapper<int>(&x);
@@ -34,7 +32,7 @@ TEST(ReverseIteratorTests, IteratorCtor)
     EXPECT_EQ(rev.GetBase(), it);
 }
 
-TEST(ReverseIteratorTests, TemplatedCopyCtor)
+TEST(ReverseIteratorTests, TemplatedCopyConstructor)
 {
     C x;
     auto rev = ReverseIterator<C*>(&x);

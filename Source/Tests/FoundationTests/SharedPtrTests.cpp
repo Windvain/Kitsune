@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
-
 #include <algorithm>
+
 #include "Foundation/Memory/SharedPtr.h"
 
-namespace SharedPtrTesting
+using namespace Kitsune;
+
+namespace
 {
     template<typename T>
     class E
@@ -33,7 +35,6 @@ namespace SharedPtrTesting
             deleter.m_DeletedPtr = nullptr;
             deleter.ID = 0;
         }
-
         ~E() = default;
 
     public:
@@ -150,10 +151,7 @@ namespace SharedPtrTesting
     };
 }
 
-using namespace Kitsune;
-using namespace SharedPtrTesting;
-
-TEST(SharedPtrTests, DefaultNullptrCtor)
+TEST(SharedPtrTests, DefaultNullptrConstructor)
 {
     SharedPtr<int> ptr;
     SharedPtr<int> null = nullptr;
@@ -162,15 +160,15 @@ TEST(SharedPtrTests, DefaultNullptrCtor)
     EXPECT_EQ(null.Get(), nullptr);
 }
 
-TEST(SharedPtrTests, PointerCtor)
+TEST(SharedPtrTests, PointerConstructor)
 {
-    int* raw = Memory::New<int>(10);
+    int* raw = Memory::New<int>();
     auto ptr = SharedPtr<int>(raw);
 
     EXPECT_EQ(ptr.Get(), raw);
 }
 
-TEST(SharedPtrTests, DeleterCtor)
+TEST(SharedPtrTests, DeleterConstructor)
 {
     int *raw1, *raw2;
     int *deleted1 = nullptr, *deleted2 = nullptr;
@@ -193,7 +191,7 @@ TEST(SharedPtrTests, DeleterCtor)
     EXPECT_EQ(raw2, deleted2);
 }
 
-TEST(SharedPtrTests, NullptrDeleterCtor)
+TEST(SharedPtrTests, NullptrDeleterConstructor)
 {
     int *deleted1 = nullptr, *deleted2 = nullptr;
 
@@ -212,7 +210,7 @@ TEST(SharedPtrTests, NullptrDeleterCtor)
     EXPECT_EQ(deleted2, nullptr);
 }
 
-TEST(SharedPtrTests, SameOpDeleterAllocCtor)
+TEST(SharedPtrTests, SameOpDeleterAllocConstructor)
 {
     int *raw1, *raw2;
     int *deleted1 = nullptr, *deleted2 = nullptr;
@@ -247,7 +245,7 @@ TEST(SharedPtrTests, SameOpDeleterAllocCtor)
     EXPECT_EQ(raw2, deleted2);
 }
 
-TEST(SharedPtrTests, DiffOpDeleterAllocCtor)
+TEST(SharedPtrTests, DiffOpDeleterAllocConstructor)
 {
     int *raw1, *raw2;
     int *deleted1 = nullptr, *deleted2 = nullptr;
@@ -282,7 +280,7 @@ TEST(SharedPtrTests, DiffOpDeleterAllocCtor)
     EXPECT_EQ(raw2, deleted2);
 }
 
-TEST(SharedPtrTests, NullptrSameOpDeleterAllocCtor)
+TEST(SharedPtrTests, NullptrSameOpDeleterAllocConstructor)
 {
     int *deleted1 = (int*)0xDEAD, *deleted2 = (int*)0xDEAD;
 
@@ -313,7 +311,7 @@ TEST(SharedPtrTests, NullptrSameOpDeleterAllocCtor)
     EXPECT_EQ((int*)0xDEAD, deleted2);      // Deleter doesn't get called.
 }
 
-TEST(SharedPtrTests, NullptrDiffOpDeleterAllocCtor)
+TEST(SharedPtrTests, NullptrDiffOpDeleterAllocConstructor)
 {
     int *deleted1 = (int*)0xDEAD, *deleted2 = (int*)0xDEAD;
 
@@ -344,7 +342,7 @@ TEST(SharedPtrTests, NullptrDiffOpDeleterAllocCtor)
     EXPECT_EQ((int*)0xDEAD, deleted2);      // Deleter doesn't get called.
 }
 
-TEST(SharedPtrTests, CopyCtor)
+TEST(SharedPtrTests, CopyConstructor)
 {
     auto null = SharedPtr<int>();
     auto ptr = MakeShared<int>(5);
@@ -359,7 +357,7 @@ TEST(SharedPtrTests, CopyCtor)
     EXPECT_EQ(copyPtr.GetCount(), 2);
 }
 
-TEST(SharedPtrTests, AssignCopyCtor)
+TEST(SharedPtrTests, AssignCopyConstructor)
 {
     int* deletedPtr;
     int* expectedPtr = Memory::New<int>(45);
@@ -378,7 +376,7 @@ TEST(SharedPtrTests, AssignCopyCtor)
     EXPECT_EQ(deletedPtr, expectedPtr);      // Deleter gets called on 'firstPtr', not 0xDEAD.
 }
 
-TEST(SharedPtrTests, TemplatedCopyCtor)
+TEST(SharedPtrTests, TemplatedCopyConstructor)
 {
     auto null = SharedPtr<C>();
     auto ptr = MakeShared<C>();
@@ -393,7 +391,7 @@ TEST(SharedPtrTests, TemplatedCopyCtor)
     EXPECT_EQ(copyPtr.GetCount(), 2);
 }
 
-TEST(SharedPtrTests, MoveCtor)
+TEST(SharedPtrTests, MoveConstructor)
 {
     int* raw = Memory::New<int>(5);
 
@@ -410,7 +408,7 @@ TEST(SharedPtrTests, MoveCtor)
     EXPECT_EQ(movePtr.GetCount(), 1);
 }
 
-TEST(SharedPtrTests, TemplatedMoveCtor)
+TEST(SharedPtrTests, TemplatedMoveConstructor)
 {
     C* raw = Memory::New<C>();
 
@@ -429,7 +427,7 @@ TEST(SharedPtrTests, TemplatedMoveCtor)
     EXPECT_EQ(movePtr.GetCount(), 1);
 }
 
-TEST(SharedPtrTests, AssignMoveCtor)
+TEST(SharedPtrTests, AssignMoveConstructor)
 {
     int* deletedPtr;
     int* expectedPtr = Memory::New<int>(45);
@@ -449,7 +447,7 @@ TEST(SharedPtrTests, AssignMoveCtor)
     EXPECT_EQ(deletedPtr, expectedPtr);      // Deleter gets called on 'firstPtr', not 0xDEAD.
 }
 
-TEST(SharedPtrTests, WeakPtrCtor)
+TEST(SharedPtrTests, WeakPtrConstructor)
 {
 
     SharedPtr<int> ptr = MakeShared<int>(1);
@@ -467,7 +465,7 @@ TEST(SharedPtrTests, WeakPtrCtor)
     EXPECT_EQ(ptr.GetCount(), 2);
 }
 
-TEST(SharedPtrTests, ScopedPtrCtor)
+TEST(SharedPtrTests, ScopedPtrConstructor)
 {
     C* raw = Memory::New<C>();
     C* deleted = nullptr;
@@ -741,13 +739,13 @@ TEST(SharedPtrTests, Comparison)
     EXPECT_FALSE(larger != larger);
 }
 
-TEST(WeakPtrTests, DefaultCtor)
+TEST(WeakPtrTests, DefaultConstructor)
 {
     WeakPtr<int> ptr;
     EXPECT_EQ(ptr.GetCount(), 0);
 }
 
-TEST(WeakPtrTests, SharedPtrCtor)
+TEST(WeakPtrTests, SharedPtrConstructor)
 {
     SharedPtr<int> null;
     SharedPtr<int> ptr = MakeShared<int>(5);
@@ -760,7 +758,7 @@ TEST(WeakPtrTests, SharedPtrCtor)
     EXPECT_EQ(weak.Lock(), ptr);
 }
 
-TEST(WeakPtrTests, CopyCtor)
+TEST(WeakPtrTests, CopyConstructor)
 {
     SharedPtr<int> ptr = MakeShared<int>(5);
 
@@ -774,7 +772,7 @@ TEST(WeakPtrTests, CopyCtor)
     EXPECT_EQ(copy.Lock(), ptr);
 }
 
-TEST(WeakPtrTests, TemplatedCopyCtor)
+TEST(WeakPtrTests, TemplatedCopyConstructor)
 {
     SharedPtr<C> ptr = MakeShared<C>();
 
@@ -788,7 +786,7 @@ TEST(WeakPtrTests, TemplatedCopyCtor)
     EXPECT_EQ(copy.Lock(), ptr);
 }
 
-TEST(WeakPtrTests, MoveCtor)
+TEST(WeakPtrTests, MoveConstructor)
 {
     SharedPtr<int> ptr = MakeShared<int>();
 
@@ -802,7 +800,7 @@ TEST(WeakPtrTests, MoveCtor)
     EXPECT_EQ(weak.Lock(), nullptr);
 }
 
-TEST(WeakPtrTests, TemplatedMoveCtor)
+TEST(WeakPtrTests, TemplatedMoveConstructor)
 {
     SharedPtr<C> ptr = MakeShared<C>();
 

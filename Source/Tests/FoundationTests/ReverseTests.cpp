@@ -1,41 +1,29 @@
 #include <gtest/gtest.h>
-
-#include "TestContainer.h"
-#include "IteratorWrappers.h"
+#include "TestContainer2.h"
 
 #include "Foundation/Algorithms/Reverse.h"
 
 using namespace Kitsune;
-
-using BidirTestCont = Testing::TestContainer<Testing::BidirIteratorWrapper<int>>;
-using RATestCont = Testing::TestContainer<Testing::RandomAccessIteratorWrapper<int>>;
+using namespace Testing;
 
 TEST(ReverseTests, BidirIterator)
 {
-    int arr[6] = { 3, 4, 2, 65, 1, 22 };
-    BidirTestCont cont(arr, arr + 6);
+    BidirTestContainer<int, 6> container = { 3, 4, 2, 65, 1, 22 };
+    std::vector<int> expected = { 22, 1, 65, 2, 4, 3 };
 
-    Algorithms::Reverse(cont.Begin, cont.End);
+    Algorithms::Reverse(container.GetBegin(), container.GetEnd());
 
-    EXPECT_EQ(arr[0], 22);
-    EXPECT_EQ(arr[1], 1);
-    EXPECT_EQ(arr[2], 65);
-    EXPECT_EQ(arr[3], 2);
-    EXPECT_EQ(arr[4], 4);
-    EXPECT_EQ(arr[5], 3);
+    for (std::size_t i = 0; i < 6; ++i)
+        EXPECT_EQ(container[i], expected[i]);
 }
 
-TEST(ReverseTests, RAIterator)
+TEST(ReverseTests, RandomAccessIterator)
 {
-    int arr[6] = { 3, 4, 2, 65, 1, 22 };
-    RATestCont cont(arr, arr + 6);
+    RandomAccessTestContainer<int, 6> container = { 3, 4, 2, 65, 1, 22 };
+    std::vector<int> expected = { 22, 1, 65, 2, 4, 3 };
 
-    Algorithms::Reverse(cont.Begin, cont.End);
+    Algorithms::Reverse(container.GetBegin(), container.GetEnd());
 
-    EXPECT_EQ(arr[0], 22);
-    EXPECT_EQ(arr[1], 1);
-    EXPECT_EQ(arr[2], 65);
-    EXPECT_EQ(arr[3], 2);
-    EXPECT_EQ(arr[4], 4);
-    EXPECT_EQ(arr[5], 3);
+    for (std::size_t i = 0; i < 6; ++i)
+        EXPECT_EQ(container[i], expected[i]);
 }

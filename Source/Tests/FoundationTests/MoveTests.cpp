@@ -1,13 +1,9 @@
 #include <gtest/gtest.h>
-
-#include "TestContainer.h"
-#include "IteratorWrappers.h"
+#include "TestContainer2.h"
 
 #include "Foundation/Algorithms/Move.h"
 
-using namespace Kitsune;
-
-namespace MoveTesting
+namespace
 {
     class A
     {
@@ -30,78 +26,57 @@ namespace MoveTesting
     };
 }
 
-using namespace MoveTesting;
-using TestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<A>>;
-using BTestContainer = Testing::TestContainer<Testing::BidirIteratorWrapper<A>>;
+using namespace Kitsune;
+using namespace Testing;
 
 TEST(MoveTests, Move)
 {
-    A arr[5] = { 2, 3, 1, 4, 6 };
-    A destArr[5] = { 54, 1, 2, 6, 3 };
+    ForwardTestContainer<A, 5> container = { 2, 3, 1, 4, 6 };
+    ForwardTestContainer<A, 5> destContainer = { 54, 1, 2, 6, 3 };
 
-    TestContainer cont(arr, arr + 5);
-    TestContainer dest(destArr, destArr + 5);
+    std::vector<A> expected = { 2, 3, 1, 4, 6 };
 
-    auto it = Algorithms::Move(cont.Begin, cont.End, dest.Begin);
-    EXPECT_EQ(it, dest.End);
+    auto it = Algorithms::Move(container.GetBegin(), container.GetEnd(), destContainer.GetBegin());
+    EXPECT_EQ(it, destContainer.GetEnd());
 
-    EXPECT_EQ(arr[0].Value, 0);
-    EXPECT_EQ(arr[1].Value, 0);
-    EXPECT_EQ(arr[2].Value, 0);
-    EXPECT_EQ(arr[3].Value, 0);
-    EXPECT_EQ(arr[4].Value, 0);
+    for (std::size_t i = 0; i < 5; ++i)
+        EXPECT_EQ(container[i].Value, 0);
 
-    EXPECT_EQ(destArr[0].Value, 2);
-    EXPECT_EQ(destArr[1].Value, 3);
-    EXPECT_EQ(destArr[2].Value, 1);
-    EXPECT_EQ(destArr[3].Value, 4);
-    EXPECT_EQ(destArr[4].Value, 6);
+    for (std::size_t i = 0; i < 5; ++i)
+        EXPECT_EQ(destContainer[i].Value, expected[i].Value);
 }
 
 TEST(MoveTests, MoveN)
 {
-    A arr[5] = { 2, 3, 1, 4, 6 };
-    A destArr[5] = { 54, 1, 2, 6, 3 };
+    ForwardTestContainer<A, 5> container = { 2, 3, 1, 4, 6 };
+    ForwardTestContainer<A, 5> destContainer = { 54, 1, 2, 6, 3 };
 
-    TestContainer cont(arr, arr + 5);
-    TestContainer dest(destArr, destArr + 5);
+    std::vector<A> expected = { 2, 3, 1, 4, 6 };
 
-    auto it = Algorithms::MoveN(cont.Begin, 5, dest.Begin);
-    EXPECT_EQ(it, dest.End);
+    auto it = Algorithms::MoveN(container.GetBegin(), 5, destContainer.GetBegin());
+    EXPECT_EQ(it, destContainer.GetEnd());
 
-    EXPECT_EQ(arr[0].Value, 0);
-    EXPECT_EQ(arr[1].Value, 0);
-    EXPECT_EQ(arr[2].Value, 0);
-    EXPECT_EQ(arr[3].Value, 0);
-    EXPECT_EQ(arr[4].Value, 0);
+    for (std::size_t i = 0; i < 5; ++i)
+        EXPECT_EQ(container[i].Value, 0);
 
-    EXPECT_EQ(destArr[0].Value, 2);
-    EXPECT_EQ(destArr[1].Value, 3);
-    EXPECT_EQ(destArr[2].Value, 1);
-    EXPECT_EQ(destArr[3].Value, 4);
-    EXPECT_EQ(destArr[4].Value, 6);
+    for (std::size_t i = 0; i < 5; ++i)
+        EXPECT_EQ(destContainer[i].Value, expected[i].Value);
 }
 
 TEST(MoveTests, MoveBackwards)
 {
-    A arr[5] = { 2, 3, 1, 4, 6 };
-    A destArr[5] = { 54, 1, 2, 6, 3 };
+    BidirTestContainer<A, 8> container = { 2, 3, 1, 4, 6, 8, 16, 44 };
+    std::vector<A> expected = { 0, 0, 0, 2, 3, 1, 4, 6 };
 
-    BTestContainer cont(arr, arr + 5);
-    BTestContainer dest(destArr, destArr + 5);
+    auto rangeEnd = container.GetBegin();
+    ++rangeEnd; ++rangeEnd; ++rangeEnd; ++rangeEnd; ++rangeEnd;
 
-    auto it = Algorithms::MoveBackwards(cont.Begin, cont.End, dest.End);
-    EXPECT_EQ(it, dest.Begin);
+    auto destRangeBegin = container.GetEnd();
+    --destRangeBegin; --destRangeBegin; --destRangeBegin; --destRangeBegin; --destRangeBegin;
 
-    EXPECT_EQ(arr[0].Value, 0);
-    EXPECT_EQ(arr[1].Value, 0);
-    EXPECT_EQ(arr[2].Value, 0);
-    EXPECT_EQ(arr[3].Value, 0);
-    EXPECT_EQ(arr[4].Value, 0);
+    auto it = Algorithms::MoveBackwards(container.GetBegin(), rangeEnd, container.GetEnd());
+    EXPECT_EQ(it, destRangeBegin);
 
-    EXPECT_EQ(destArr[0].Value, 2);
-    EXPECT_EQ(destArr[1].Value, 3);
-    EXPECT_EQ(destArr[2].Value, 1);
-    EXPECT_EQ(destArr[3].Value, 4);
-    EXPECT_EQ(destArr[4].Value, 6);
+    for (std::size_t i = 0; i < 8; ++i)
+        EXPECT_EQ(container[i].Value, expected[i].Value);
 }

@@ -3,7 +3,9 @@
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Memory/ScopedPtr.h"
 
-namespace ScopedPtrTesting
+using namespace Kitsune;
+
+namespace
 {
     template<typename T>
     class D
@@ -12,17 +14,25 @@ namespace ScopedPtrTesting
         using ValueType = T;
 
         D() = default;
-        D(int value) : Value(value) { /* ... */ }
+        D(int value)
+            : Value(value)
+        {
+        }
 
-        D(const D&) = default;
         D(D&& deleter)
         {
             Value = deleter.Value;
             deleter.Value = 0;
         }
 
+        D(const D&) = default;
+        D& operator=(const D&) = default;
+
         template<typename U>
-        D(const D<U>&) requires (std::is_convertible_v<U*, T*>) { /* ... */ }
+        D(const D<U>&)
+            requires (std::is_convertible_v<U*, T*>)
+        {
+        }
 
         template<typename U>
         D(D<U>&& deleter)
@@ -32,12 +42,10 @@ namespace ScopedPtrTesting
             deleter.Value = 0;
         }
 
-        D& operator=(const D&) = default;
-
     public:
         void operator()(ValueType* ptr)
         {
-            Kitsune::Memory::Delete(ptr);
+            Memory::Delete(ptr);
         }
 
     public:
@@ -52,7 +60,7 @@ namespace ScopedPtrTesting
 
         E() = default;
         E(T** deletedPtr, int id = 0)
-            : ID(id), m_DeletedPtr(deletedPtr)
+            : Id(id), m_DeletedPtr(deletedPtr)
         {
         }
 
@@ -60,10 +68,10 @@ namespace ScopedPtrTesting
         E(E&& deleter)
         {
             m_DeletedPtr = deleter.m_DeletedPtr;
-            ID = deleter.ID;
+            Id = deleter.Id;
 
             deleter.m_DeletedPtr = nullptr;
-            deleter.ID = 0;
+            deleter.Id = 0;
         }
 
         ~E() = default;
@@ -72,7 +80,7 @@ namespace ScopedPtrTesting
         E& operator=(const E& deleter)
         {
             m_DeletedPtr = deleter.m_DeletedPtr;
-            ID = deleter.ID;
+            Id = deleter.Id;
 
             return *this;
         }
@@ -81,7 +89,7 @@ namespace ScopedPtrTesting
         E& operator=(const E<U>& deleter)
         {
             m_DeletedPtr = deleter.m_DeletedPtr;
-            ID = deleter.ID;
+            Id = deleter.Id;
 
             return *this;
         }
@@ -89,10 +97,10 @@ namespace ScopedPtrTesting
         E& operator=(E&& deleter)
         {
             m_DeletedPtr = deleter.m_DeletedPtr;
-            ID = deleter.ID;
+            Id = deleter.Id;
 
             deleter.m_DeletedPtr = nullptr;
-            deleter.ID = 0;
+            deleter.Id = 0;
 
             return *this;
         }
@@ -101,10 +109,10 @@ namespace ScopedPtrTesting
         E& operator=(E<U>&& deleter)
         {
             m_DeletedPtr = (T**)deleter.m_DeletedPtr;
-            ID = deleter.ID;
+            Id = deleter.Id;
 
             deleter.m_DeletedPtr = nullptr;
-            deleter.ID = 0;
+            deleter.Id = 0;
 
             return *this;
         }
@@ -114,11 +122,11 @@ namespace ScopedPtrTesting
             if (m_DeletedPtr)
                 *m_DeletedPtr = ptr;
 
-            Kitsune::Memory::Delete(ptr);
+            Memory::Delete(ptr);
         }
 
     public:
-        int ID = 0;
+        int Id = 0;
 
     private:
         template<typename U>
@@ -133,10 +141,7 @@ namespace ScopedPtrTesting
     };
 }
 
-using namespace Kitsune;
-using namespace ScopedPtrTesting;
-
-TEST(ScopedPtrTests, DefaultNullptrCtor)
+TEST(ScopedPtrTests, DefaultNullptrConstructor)
 {
     ScopedPtr<int> ptr;
     ScopedPtr<int> null = nullptr;
@@ -145,7 +150,7 @@ TEST(ScopedPtrTests, DefaultNullptrCtor)
     EXPECT_EQ(null.Get(), nullptr);
 }
 
-TEST(ScopedPtrTests, PointerCtor)
+TEST(ScopedPtrTests, PointerConstructor)
 {
     int* raw = Memory::New<int>(10);
     auto ptr = ScopedPtr<int>(raw);
@@ -153,61 +158,69 @@ TEST(ScopedPtrTests, PointerCtor)
     EXPECT_EQ(ptr.Get(), raw);
 }
 
-TEST(ScopedPtrTests, DeleterCtor)
+TEST(ScopedPtrTests, DeleterCopyConstructor)
 {
-    int *raw1, *raw2;
-    raw1 = Memory::New<int>();
-    raw2 = Memory::New<int>();
+    int* rawPointer = Memory::New<int>();
 
-    D<int> deleter = D<int>(2);
-    auto copied = ScopedPtr<int, D<int>>(raw1, deleter);
-    EXPECT_EQ(copied.GetDeleter().Value, deleter.Value);
-    EXPECT_EQ(copied.Get(), raw1);
+    D<int> deleter(24);
+    ScopedPtr<int, D<int>> ptr(rawPointer, deleter);
 
-    auto moved = ScopedPtr<int, D<int>>(raw2, std::move(deleter));
-    EXPECT_EQ(moved.GetDeleter().Value, 2);
-    EXPECT_EQ(moved.Get(), raw2);
+    EXPECT_EQ(ptr.Get(), rawPointer);
+    EXPECT_EQ(ptr.GetDeleter().Value, 24);
+}
+
+TEST(ScopedPtrTests, DeleterMoveConstructor)
+{
+    int* rawPointer = Memory::New<int>();
+
+    D<int> deleter(24);
+    ScopedPtr<int, D<int>> ptr(rawPointer, std::move(deleter));
+
+    EXPECT_EQ(ptr.Get(), rawPointer);
+
+    EXPECT_EQ(ptr.GetDeleter().Value, 24);
     EXPECT_EQ(deleter.Value, 0);
 }
 
-TEST(ScopedPtrTests, MoveCtor)
+TEST(ScopedPtrTests, MoveConstructor)
 {
     int* raw = Memory::New<int>();
 
-    auto ptr = ScopedPtr<int, D<int>>(raw, D<int>(100));
+    ScopedPtr<int, D<int>> ptr(raw, D<int>(100));
     auto move = std::move(ptr);
 
     EXPECT_EQ(move.GetDeleter().Value, 100);
-    EXPECT_EQ(ptr.GetDeleter().Value, 0);
-
     EXPECT_EQ(move.Get(), raw);
+
+    EXPECT_EQ(ptr.GetDeleter().Value, 0);
     EXPECT_EQ(ptr.Get(), nullptr);
 }
 
-TEST(ScopedPtrTests, TemplatedMoveCtor)
+TEST(ScopedPtrTests, TemplatedMoveConstructor)
 {
     C* raw = Memory::New<C>();
 
-    auto ptr = ScopedPtr<C, D<C>>(raw, D<C>(100));
+    ScopedPtr<C, D<C>> ptr(raw, D<C>(100));
     ScopedPtr<B, D<B>> move = std::move(ptr);
 
     EXPECT_EQ(move.GetDeleter().Value, 100);
-    EXPECT_EQ(ptr.GetDeleter().Value, 0);
-
     EXPECT_EQ(move.Get(), raw);
+
+    EXPECT_EQ(ptr.GetDeleter().Value, 0);
     EXPECT_EQ(ptr.Get(), nullptr);
 }
 
 TEST(ScopedPtrTests, Destructor)
 {
-    int* deletedPtr = nullptr;
     int* raw = Memory::New<int>();
 
-    E<int> deleter = E<int>(&deletedPtr);
+    int* deletedPtr = nullptr;
+    E<int> deleter(&deletedPtr);
 
     {
-        auto ptr = ScopedPtr<int, E<int>>(raw, deleter);
-        KITSUNE_UNUSED(ptr);
+        ScopedPtr<int, E<int>> ptr(raw, deleter);
+        ASSERT_EQ(ptr.Get(), raw);
+        ASSERT_EQ(ptr.GetDeleter().Id, deleter.Id);
     }
 
     EXPECT_EQ(deletedPtr, raw);
@@ -215,23 +228,20 @@ TEST(ScopedPtrTests, Destructor)
 
 TEST(ScopedPtrTests, MoveAssign)
 {
-    int* raw = Memory::New<int>();
-    int* raw2 = Memory::New<int>();
+    int* rawPointer = Memory::New<int>();
+    int* deletedRawPointer = Memory::New<int>();
 
-    int* moveDeleted = nullptr;
+    int* deletedPointer = nullptr;
 
-    auto ptr = ScopedPtr<int, E<int>>(raw, E<int>(nullptr, 27));
-    auto move = ScopedPtr<int, E<int>>(raw2, E<int>(&moveDeleted));
+    ScopedPtr<int, E<int>> ptr(deletedRawPointer, E<int>(&deletedPointer));
+    ScopedPtr<int, E<int>> movedPointer(rawPointer, E<int>(nullptr, 27));
 
-    move = std::move(ptr);
+    ptr = std::move(movedPointer);
 
-    EXPECT_EQ(moveDeleted, raw2);       // Pointer deleted before being replaced.
+    EXPECT_EQ(deletedPointer, deletedRawPointer);
 
-    EXPECT_EQ(move.GetDeleter().ID, 27);
-    EXPECT_EQ(ptr.GetDeleter().ID, 0);
-
-    EXPECT_EQ(move.Get(), raw);
-    EXPECT_EQ(ptr.Get(), nullptr);
+    EXPECT_EQ(ptr.Get(), rawPointer);
+    EXPECT_EQ(ptr.GetDeleter().Id, 27);
 }
 
 TEST(ScopedPtrTests, NullptrAssign)
@@ -243,36 +253,34 @@ TEST(ScopedPtrTests, NullptrAssign)
 
     move = nullptr;
 
-    EXPECT_EQ(moveDeleted, raw);       // Pointer deleted before being replaced.
+    EXPECT_EQ(moveDeleted, raw);
+
     EXPECT_EQ(move.Get(), nullptr);
-    EXPECT_EQ(move.GetDeleter().ID, 27);
+    EXPECT_EQ(move.GetDeleter().Id, 27);
 }
 
 TEST(ScopedPtrTests, TemplatedMoveAssign)
 {
-    C* raw = Memory::New<C>();
-    B* raw2 = Memory::New<B>();
+    C* rawPointer = Memory::New<C>();
+    B* deletedRawPointer = Memory::New<B>();
 
-    B* moveDeleted = nullptr;
+    B* deletedPointer = nullptr;
 
-    auto ptr = ScopedPtr<C, E<C>>(raw, E<C>(nullptr, 27));
-    auto move = ScopedPtr<B, E<B>>(raw2, E<B>(&moveDeleted));
+    ScopedPtr<B, E<B>> ptr(deletedRawPointer, E<B>(&deletedPointer));
+    ScopedPtr<C, E<C>> movedPointer(rawPointer, E<C>(nullptr, 27));
 
-    move = std::move(ptr);
+    ptr = std::move(movedPointer);
 
-    EXPECT_EQ(moveDeleted, raw2);       // Pointer deleted before being replaced.
+    EXPECT_EQ(deletedPointer, deletedRawPointer);
 
-    EXPECT_EQ(move.GetDeleter().ID, 27);
-    EXPECT_EQ(ptr.GetDeleter().ID, 0);
-
-    EXPECT_EQ(move.Get(), raw);
-    EXPECT_EQ(ptr.Get(), nullptr);
+    EXPECT_EQ(ptr.Get(), rawPointer);
+    EXPECT_EQ(ptr.GetDeleter().Id, 27);
 }
 
 TEST(ScopedPtrTests, Boolean)
 {
-    auto ptr = MakeScoped<int>(5);
-    auto empty = ScopedPtr<int>();
+    ScopedPtr<int> ptr(Memory::New<int>());
+    ScopedPtr<int> empty{ /* ... */ };
 
     EXPECT_TRUE((bool)ptr);
     EXPECT_FALSE((bool)empty);
@@ -280,13 +288,13 @@ TEST(ScopedPtrTests, Boolean)
 
 TEST(ScopedPtrTests, Release)
 {
-    int* x = Memory::New<int>(5);
-    auto ptr = ScopedPtr<int>(x);
+    int* rawPointer = Memory::New<int>(5);
+    ScopedPtr<int> ptr(rawPointer);
 
-    EXPECT_EQ(ptr.Release(), x);
+    EXPECT_EQ(ptr.Release(), rawPointer);
     EXPECT_EQ(ptr.Get(), nullptr);
 
-    Memory::Delete<int>(x);
+    Memory::Delete<int>(rawPointer);
 }
 
 TEST(ScopedPtrTests, Reset)
@@ -296,14 +304,14 @@ TEST(ScopedPtrTests, Reset)
 
     int* deleted = nullptr;
 
-    auto ptr = ScopedPtr<int, E<int>>(y, E<int>(&deleted));
+    ScopedPtr<int, E<int>> ptr(y, E<int>(&deleted));
     ptr.Reset(x);
 
     EXPECT_EQ(deleted, y);
     EXPECT_EQ(ptr.Get(), x);
 }
 
-TEST(ScopedPtrTests, SwapMemberFn)
+TEST(ScopedPtrTests, SwapMemberFunction)
 {
     ScopedPtr<int> ptr = MakeScoped<int>(5);
     ScopedPtr<int> ptr2 = MakeScoped<int>(10);
