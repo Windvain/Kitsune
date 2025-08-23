@@ -89,7 +89,7 @@ TEST(CharTraitsTests, Compare)
     EXPECT_SGN_EQ(CharTraits<char8_t>::Compare(u8literal, u8diffLiteral, KITSUNE_ARRAY_SIZE(u8literal)), std::char_traits<char8_t>::compare(u8literal, u8diffLiteral, 15));
 }
 
-TEST(CharTraitsTests, FindChr)
+TEST(CharTraitsTests, FindCharacter)
 {
     char haystack[] = "Hello, World!";
     char needle = 'l';

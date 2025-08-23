@@ -20,20 +20,20 @@ namespace
 
 using namespace Kitsune;
 
-TEST(FunctionTests, DefaultCtor)
+TEST(FunctionTests, DefaultConstructor)
 {
     Function<int(float)> func;
     EXPECT_EQ(func.Target(), nullptr);
 }
 
-TEST(FunctionTests, FunctorCtor)
+TEST(FunctionTests, FunctorConstructor)
 {
     Function<long(int)> func = Functor();
     EXPECT_NE(func.Target(), nullptr);
     EXPECT_EQ(func(3), 6l);
 }
 
-TEST(FunctionTests, CopyCtor)
+TEST(FunctionTests, CopyConstructor)
 {
     Function<long(int)> func = Functor();
     Function<long(int)> f2 = func;
@@ -43,7 +43,7 @@ TEST(FunctionTests, CopyCtor)
     EXPECT_EQ(func(3), 6);
 }
 
-TEST(FunctionTests, MoveCtor)
+TEST(FunctionTests, MoveConstructor)
 {
     Function<long(int)> func = Functor();
     Function<long(int)> moved = std::move(func);
@@ -55,6 +55,7 @@ TEST(FunctionTests, MoveCtor)
 
 TEST(FunctionTests, Destructor)
 {
+    // TODO: Find a way to test this..
     EXPECT_TRUE(true);
 }
 

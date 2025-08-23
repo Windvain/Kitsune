@@ -1,69 +1,92 @@
 #include <gtest/gtest.h>
-
-#include "TestContainer.h"
-#include "IteratorWrappers.h"
+#include "TestContainer2.h"
 
 #include "Foundation/Algorithms/Find.h"
 
 using namespace Kitsune;
-using TestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<int>>;
+using namespace Testing;
 
 TEST(FindTests, FindByEquality)
 {
-    int arr[5] = { 1, 2, 54, 2, 1 };
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<int, 5> container({ 1, 2, 54, 2, 1 });
+    auto it = container.GetBegin();
 
-    auto firstOccurrence = Testing::ForwardIteratorWrapper<int>(arr + 1);
+    ++it;
 
-    EXPECT_EQ(Algorithms::Find(cont.Begin, cont.End, 2), firstOccurrence);
-    EXPECT_EQ(Algorithms::Find(cont.Begin, cont.End, -1), cont.End);
+    EXPECT_EQ(Algorithms::Find(container.GetBegin(), container.GetEnd(), 2), it);
+    EXPECT_EQ(Algorithms::Find(container.GetBegin(), container.GetEnd(), -1), container.GetEnd());
 }
 
 TEST(FindTests, FindRangeByEquality)
 {
-    int arr[5] = { 1, 2, 54, 2, 1 };
-    int findDefiniteArr[2] = { 54, 2 };
-    int findImpossibleArr[3] = { 2, 3, 4 };
+    ForwardTestContainer<int, 5> container({ 1, 2, 54, 2, 1 });
+    ForwardTestContainer<int, 2> rangeFound({ 54, 2 });
+    ForwardTestContainer<int, 3> rangeNotFound({ 2, 3, 4 });
 
-    TestContainer cont(arr, arr + 5);
-    TestContainer willFind(findDefiniteArr, findDefiniteArr + 2);
-    TestContainer wontFind(findImpossibleArr, findImpossibleArr + 3);
+    auto it = container.GetBegin();
+    ++it; ++it;
 
-    auto firstOcc = Testing::ForwardIteratorWrapper<int>(arr + 2);
+    EXPECT_EQ(Algorithms::Find(container.GetBegin(), container.GetEnd(),
+                               rangeFound.GetBegin(), rangeFound.GetEnd()), it);
 
-    EXPECT_EQ(Algorithms::Find(cont.Begin, cont.End, willFind.Begin, willFind.End), firstOcc);
-    EXPECT_EQ(Algorithms::Find(cont.Begin, cont.End, wontFind.Begin, wontFind.End), cont.End);
+    EXPECT_EQ(Algorithms::Find(container.GetBegin(), container.GetEnd(),
+                               rangeNotFound.GetBegin(), rangeNotFound.GetEnd()), container.GetEnd());
 }
 
 TEST(FindTests, FindIf)
 {
-    int arr[5] = { 1, 2, 54, 2, 1 };
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<int, 5> container({ 1, 2, 54, 2, 1 });
+    auto predicate = [](int element) -> bool
+    {
+        return (element == 54);
+    };
 
-    auto firstOccurrence = Testing::ForwardIteratorWrapper<int>(arr + 1);
+    auto failingPredicate = [](int element) -> bool
+    {
+        return (element > 57);
+    };
 
-    EXPECT_EQ(Algorithms::FindIf(cont.Begin, cont.End, [](int x) -> bool { return x == 2; }), firstOccurrence);
-    EXPECT_EQ(Algorithms::FindIf(cont.Begin, cont.End, [](int x) -> bool { return x == -1; }), cont.End);
-}
+    auto it = container.GetBegin();
+    ++it; ++it;
 
-TEST(FindTests, FindLastIf)
-{
-    int arr[5] = { 1, 2, 54, 2, 1 };
-    TestContainer cont(arr, arr + 5);
-
-    auto last = Testing::ForwardIteratorWrapper<int>(arr + 4);
-    auto pred = [](int x) -> bool { return (x % 2) != 0; };
-
-    EXPECT_EQ(Algorithms::FindLastIf(cont.Begin, cont.End, pred), last);
+    EXPECT_EQ(Algorithms::FindIf(container.GetBegin(), container.GetEnd(), predicate), it);
+    EXPECT_EQ(Algorithms::FindIf(container.GetBegin(), container.GetEnd(), failingPredicate),
+              container.GetEnd());
 }
 
 TEST(FindTests, FindLast)
 {
-    int arr[5] = { 1, 2, 54, 2, 1 };
-    TestContainer cont(arr, arr + 5);
+    ForwardTestContainer<int, 5> container({ 1, 2, 54, 2, 1 });
+    auto it = container.GetBegin();
 
-    auto last = Testing::ForwardIteratorWrapper<int>(arr + 3);
+    ++it; ++it; ++it;
 
-    EXPECT_EQ(Algorithms::FindLast(cont.Begin, cont.End, 2), last);
-    EXPECT_EQ(Algorithms::FindLast(cont.Begin, cont.End, -1), cont.End);
+    EXPECT_EQ(Algorithms::FindLast(container.GetBegin(), container.GetEnd(), 2),
+              it);
+
+    EXPECT_EQ(Algorithms::FindLast(container.GetBegin(), container.GetEnd(), -2),
+              container.GetEnd());
+}
+
+TEST(FindTests, FindLastIf)
+{
+    ForwardTestContainer<int, 5> container({ 1, 2, 54, 2, 1 });
+    auto predicate = [](int element) -> bool
+    {
+        return (element % 2) == 0;
+    };
+
+    auto failingPredicate = [](int element) -> bool
+    {
+        return (element == -1);
+    };
+
+    auto it = container.GetBegin();
+    ++it; ++it; ++it;
+
+    EXPECT_EQ(Algorithms::FindLastIf(container.GetBegin(), container.GetEnd(), predicate),
+              it);
+
+    EXPECT_EQ(Algorithms::FindLastIf(container.GetBegin(), container.GetEnd(), failingPredicate),
+              container.GetEnd());
 }

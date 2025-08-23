@@ -28,13 +28,27 @@ namespace Kitsune
 
         StringView fmt = "{0}{1}{2}{3}\x1B[0m\n";
         FormatTo(WriteStreamIterator<char>(*m_Stream), DefaultFormatScanner(fmt), fmt,
-                 PickAnsiColor(message.Severity), header, message.Message,
-                 locInfo);
+                 ConvertToAnsiColor(message.Severity), header,
+                 message.Message, locInfo);
     }
 
     void AnsiColorSink::Flush()
     {
         LockGuard guard(m_SinkLock);
         m_Stream->Flush();
+    }
+
+    const char* AnsiColorSink::ConvertToAnsiColor(LogSeverity severity)
+    {
+        switch (severity)
+        {
+        case LogSeverity::Trace:   return TraceColor;
+        case LogSeverity::Info:    return InfoColor;
+        case LogSeverity::Warning: return WarningColor;
+        case LogSeverity::Error:   return ErrorColor;
+        case LogSeverity::Fatal:   return FatalColor;
+        default:
+            KITSUNE_UNREACHABLE();
+        };
     }
 }

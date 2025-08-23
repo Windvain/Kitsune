@@ -1,32 +1,20 @@
 #include <gtest/gtest.h>
+#include "TestContainer2.h"
 
-#include "TestContainer.h"
-#include "IteratorWrappers.h"
 #include "Foundation/Algorithms/Fill.h"
 
 using namespace Kitsune;
-using TestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<int>>;
+using namespace Testing;
 
-TEST(FillTests, Fill)
+TEST(FillTests, FillRange)
 {
-    int arr[3] = { 32, 54, 76 };
-    TestContainer cont(arr, arr + 3);
+    ForwardTestContainer<int, 6> container({ 32, 6, 22, 6, 12, 222 });
+    std::vector<int> expected = { 655, 655, 655, 655, 12, 222 };
 
-    Algorithms::Fill(cont.Begin, cont.End, -12);
+    auto rangeEnd = container.GetBegin();
+    ++rangeEnd; ++rangeEnd; ++rangeEnd; ++rangeEnd;
 
-    EXPECT_EQ(arr[0], -12);
-    EXPECT_EQ(arr[1], -12);
-    EXPECT_EQ(arr[2], -12);
-}
-
-TEST(FillTests, FillN)
-{
-    int arr[3] = { 32, 54, 76 };
-    TestContainer cont(arr, arr + 3);
-
-    Algorithms::FillN(cont.Begin, 2, -12);
-
-    EXPECT_EQ(arr[0], -12);
-    EXPECT_EQ(arr[1], -12);
-    EXPECT_EQ(arr[2], 76);
+    Algorithms::Fill(container.GetBegin(), rangeEnd, 655);
+    for (std::size_t i = 0; i < 6; ++i)
+        EXPECT_EQ(container[i], expected[i]);
 }

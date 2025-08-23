@@ -25,13 +25,13 @@ namespace
     };
 }
 
-TEST(LoggerTests, NameCtor)
+TEST(LoggerTests, NameConstructor)
 {
     Logger logger = Logger("MyLogger");
     EXPECT_GENERAL_STREQ(logger.GetName().Data(), "MyLogger");
 }
 
-TEST(LoggerTests, NameAndSinkCtor)
+TEST(LoggerTests, NameAndSinkConstructor)
 {
     auto sink = MakeShared<DummySink>();
     Logger logger = Logger("Hello!", sink);
@@ -40,7 +40,7 @@ TEST(LoggerTests, NameAndSinkCtor)
     EXPECT_EQ(logger.GetSinks()[0], sink);
 }
 
-TEST(LoggerTests, NameAndRangeCtor)
+TEST(LoggerTests, NameAndRangeConstructor)
 {
     SharedPtr<ILogSink> sinks[3] = { MakeShared<DummySink>(), MakeShared<DummySink>(), MakeShared<DummySink>() };
     Logger logger = Logger("Hello!", sinks, sinks + 3);
@@ -51,7 +51,7 @@ TEST(LoggerTests, NameAndRangeCtor)
     EXPECT_EQ(logger.GetSinks()[2], sinks[2]);
 }
 
-TEST(LoggerTests, InitListCtor)
+TEST(LoggerTests, InitListConstructor)
 {
     SharedPtr<ILogSink> sinks[3] = { MakeShared<DummySink>(), MakeShared<DummySink>(), MakeShared<DummySink>() };
     Logger logger = Logger("Hello!", { sinks[0], sinks[1], sinks[2] });

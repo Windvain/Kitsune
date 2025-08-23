@@ -1,97 +1,86 @@
 #include <gtest/gtest.h>
-
-#include "TestContainer.h"
-#include "IteratorWrappers.h"
+#include "TestContainer2.h"
 
 #include "Foundation/Algorithms/Equal.h"
 
-namespace EqualTesting
+namespace
 {
-    class B
+    class A
     {
     public:
-        B(int x) : x(x) {  }
+        A() : Value(0) { /* ... */ }
+        A(int x) : Value(x) { /* ... */ }
 
     public:
-        int x;
+        int Value;
     };
 }
 
+using namespace Testing;
 using namespace Kitsune;
-using namespace EqualTesting;
 
-using TestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<int>>;
-using BTestContainer = Testing::TestContainer<Testing::ForwardIteratorWrapper<B>>;
-
-TEST(EqualTests, OneRangeNoPred)
+TEST(EqualTests, WithoutSizeCheckAndPredicate)
 {
-    int arr[5] = { 1, 2, 34, 45, 32 };
-    int arrEq[6] = { 1, 2, 34, 45, 32, 7 };
-    int arrNe[6] = { 423, 31, 342, 453, 1, 15 };
+    ForwardTestContainer<int, 5> container({ 1, 2, 34, 45, 32 });
 
-    TestContainer cont(arr, arr + 5);
-    TestContainer contEqual(arrEq, arrEq + 6);
-    TestContainer contNotEqual(arrNe, arrNe + 6);
+    ForwardTestContainer<int, 7> equalRange({ 1, 2, 34, 45, 32, 7, 9 });
+    ForwardTestContainer<int, 7> inequalRange({ 1, 2, 5, 45, 32, 7, 9 });
 
-    EXPECT_FALSE(Algorithms::Equal(cont.Begin, cont.End, contNotEqual.Begin));
-    EXPECT_TRUE(Algorithms::Equal(cont.Begin, cont.End, contEqual.Begin));
+    EXPECT_TRUE(Algorithms::Equal(container.GetBegin(), container.GetEnd(), equalRange.GetBegin()));
+    EXPECT_FALSE(Algorithms::Equal(container.GetBegin(), container.GetEnd(), inequalRange.GetBegin()));
 }
 
-TEST(EqualTests, OneRangeWithPred)
+TEST(EqualTests, PredicateWithoutSizeCheck)
 {
-    B arr[5] = { 1, 2, 34, 45, 32 };
-    B arrEq[6] = { 1, 2, 34, 45, 32, 7 };
-    B arrNe[6] = { 423, 31, 342, 453, 1, 15 };
+    ForwardTestContainer<A, 5> container({ 1, 2, 34, 45, 32 });
 
-    BTestContainer cont(arr, arr + 5);
-    BTestContainer contEqual(arrEq, arrEq + 6);
-    BTestContainer contNotEqual(arrNe, arrNe + 6);
+    ForwardTestContainer<A, 7> equalRange({ 1, 2, 34, 45, 32, 7, 9 });
+    ForwardTestContainer<A, 7> inequalRange({ 1, 2, 5, 45, 32, 7, 9 });
 
-    auto pred = [](B val1, B val2) { return (val1.x == val2.x); };
-
-    EXPECT_TRUE(Algorithms::Equal(cont.Begin, cont.End, contEqual.Begin, pred));
-    EXPECT_FALSE(Algorithms::Equal(cont.Begin, cont.End, contNotEqual.Begin, pred));
-}
-
-TEST(EqualTests, TwoRangesNoPred)
-{
-    int arr[5] = { 1, 2, 34, 45, 32 };
-    int arrEq[5] = { 1, 2, 34, 45, 32 };
-
-    int arrNeSize[6] = { 1, 2, 34, 45, 32, 53 };
-    int arrNeContents[5] = { 423, 31, 342, 453, 1 };
-
-    TestContainer cont(arr, arr + 5);
-    TestContainer contEqual(arrEq, arrEq + 5);
-    TestContainer contSizeNotEqual(arrNeSize, arrNeSize + 6);
-    TestContainer contContentsNotEqual(arrNeContents, arrNeContents + 5);
-
-    EXPECT_FALSE(Algorithms::Equal(cont.Begin, cont.End, contSizeNotEqual.Begin, contSizeNotEqual.End));
-    EXPECT_FALSE(Algorithms::Equal(cont.Begin, cont.End, contContentsNotEqual.Begin, contContentsNotEqual.End));
-
-    EXPECT_TRUE(Algorithms::Equal(cont.Begin, cont.End, contEqual.Begin, contEqual.End));
-}
-
-TEST(EqualTests, TwoRangesWithPred)
-{
-    B arr[5] = { 1, 2, 34, 45, 32 };
-    B arrEq[5] = { 1, 2, 34, 45, 32 };
-
-    B arrNeSize[6] = { 1, 2, 34, 45, 32, 53 };
-    B arrNeContents[5] = { 423, 31, 342, 453, 1 };
-
-    BTestContainer cont(arr, arr + 5);
-    BTestContainer contEqual(arrEq, arrEq + 5);
-    BTestContainer contSizeNotEqual(arrNeSize, arrNeSize + 6);
-    BTestContainer contContentsNotEqual(arrNeContents, arrNeContents + 5);
-
-    auto pred = [](B val1, B val2)
+    auto predicate = [](const A& lhs, const A& rhs) -> bool
     {
-        return (val1.x == val2.x);
+        return (lhs.Value == rhs.Value);
     };
 
-    EXPECT_FALSE(Algorithms::Equal(cont.Begin, cont.End, contSizeNotEqual.Begin, contSizeNotEqual.End, pred));
-    EXPECT_FALSE(Algorithms::Equal(cont.Begin, cont.End, contContentsNotEqual.Begin, contContentsNotEqual.End, pred));
+    EXPECT_TRUE(Algorithms::Equal(container.GetBegin(), container.GetEnd(), equalRange.GetBegin(), predicate));
+    EXPECT_FALSE(Algorithms::Equal(container.GetBegin(), container.GetEnd(), inequalRange.GetBegin(), predicate));
+}
 
-    EXPECT_TRUE(Algorithms::Equal(cont.Begin, cont.End, contEqual.Begin, contEqual.End, pred));
+TEST(EqualTests, SizeCheckWithoutPredicate)
+{
+    ForwardTestContainer<int, 5> container({ 1, 2, 34, 45, 32 });
+    ForwardTestContainer<int, 5> rangeEqual({ 1, 2, 34, 45, 32 });
+    ForwardTestContainer<int, 6> rangeSizeInequal({ 1, 2, 34, 45, 32, 53 });
+    ForwardTestContainer<int, 5> rangeContentsInequal({ 423, 31, 342, 453, 1 });
+
+    EXPECT_FALSE(Algorithms::Equal(container.GetBegin(), container.GetEnd(),
+                                   rangeSizeInequal.GetBegin(), rangeSizeInequal.GetEnd()));
+
+    EXPECT_FALSE(Algorithms::Equal(container.GetBegin(), container.GetEnd(),
+                                   rangeContentsInequal.GetBegin(), rangeContentsInequal.GetEnd()));
+
+    EXPECT_TRUE(Algorithms::Equal(container.GetBegin(), container.GetEnd(),
+                                  rangeEqual.GetBegin(), rangeEqual.GetEnd()));
+}
+
+TEST(EqualTests, SizeCheckWithPredicate)
+{
+    ForwardTestContainer<A, 5> container({ 1, 2, 34, 45, 32 });
+    ForwardTestContainer<A, 5> rangeEqual({ 1, 2, 34, 45, 32 });
+    ForwardTestContainer<A, 6> rangeSizeInequal({ 1, 2, 34, 45, 32, 53 });
+    ForwardTestContainer<A, 5> rangeContentsInequal({ 423, 31, 342, 453, 1 });
+
+    auto predicate = [](const A& lhs, const A& rhs) -> bool
+    {
+        return (lhs.Value == rhs.Value);
+    };
+
+    EXPECT_FALSE(Algorithms::Equal(container.GetBegin(), container.GetEnd(),
+                                   rangeSizeInequal.GetBegin(), rangeSizeInequal.GetEnd(), predicate));
+
+    EXPECT_FALSE(Algorithms::Equal(container.GetBegin(), container.GetEnd(),
+                                   rangeContentsInequal.GetBegin(), rangeContentsInequal.GetEnd(), predicate));
+
+    EXPECT_TRUE(Algorithms::Equal(container.GetBegin(), container.GetEnd(),
+                                  rangeEqual.GetBegin(), rangeEqual.GetEnd(), predicate));
 }

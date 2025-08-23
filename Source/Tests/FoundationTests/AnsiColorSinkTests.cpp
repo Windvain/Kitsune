@@ -8,10 +8,10 @@ using namespace Kitsune;
 
 namespace
 {
-    class FakeStream : public ConsoleOutputStream
+    class FakeStream : public IWriteStream<char>
     {
     public:
-        FakeStream() : ConsoleOutputStream() { /* ... */ }
+        FakeStream()  { /* ... */ }
         ~FakeStream() { /* ... */ }
 
     public:
@@ -20,12 +20,59 @@ namespace
             Output += std::string_view(ptr, count);
         }
 
-        void Flush() override { Flushed = true; }
+        void Flush() override
+        {
+            Output.clear();
+        }
 
     public:
         std::string Output;
-        bool Flushed;
     };
+
+    template<typename... Args>
+    std::string RuntimeFormat(std::string_view str, Args&&... args)
+    {
+        return std::vformat(str, std::make_format_args(args...));
+    }
+}
+
+TEST(AnsiColorSinkTests, LogSeverity)
+{
+    auto stream = MakeShared<FakeStream>();
+    AnsiColorSink sink(stream);
+
+    LogMessage message("", "", SourceLocation(), LogSeverity::Trace);
+
+    sink.Log(message);
+    EXPECT_EQ(std::memcmp(stream->Output.c_str(), AnsiColorSink::TraceColor, std::strlen(AnsiColorSink::TraceColor)), 0);
+
+    stream->Flush();
+
+    message.Severity = LogSeverity::Info;
+    sink.Log(message);
+
+    EXPECT_EQ(std::memcmp(stream->Output.c_str(), AnsiColorSink::InfoColor, std::strlen(AnsiColorSink::InfoColor)), 0);
+
+    stream->Flush();
+
+    message.Severity = LogSeverity::Warning;
+    sink.Log(message);
+
+    EXPECT_EQ(std::memcmp(stream->Output.c_str(), AnsiColorSink::WarningColor, std::strlen(AnsiColorSink::WarningColor)), 0);
+
+    stream->Flush();
+
+    message.Severity = LogSeverity::Error;
+    sink.Log(message);
+
+    EXPECT_EQ(std::memcmp(stream->Output.c_str(), AnsiColorSink::ErrorColor, std::strlen(AnsiColorSink::ErrorColor)), 0);
+
+    stream->Flush();
+
+    message.Severity = LogSeverity::Fatal;
+    sink.Log(message);
+
+    EXPECT_EQ(std::memcmp(stream->Output.c_str(), AnsiColorSink::FatalColor, std::strlen(AnsiColorSink::FatalColor)), 0);
 }
 
 TEST(AnsiColorSinkTests, LogFullData)
@@ -36,8 +83,8 @@ TEST(AnsiColorSinkTests, LogFullData)
     SourceLocation loc = SourceLocation::Current();
     LogMessage message("Hello!", "LOGGER", Move(loc), LogSeverity::Error);
 
-    constexpr std::string_view fmt = "\x1B[31;1m[LOGGER]: Hello! [In function {0}, {1}:{2}]\x1B[0m\n";
-    std::string expected = std::format(fmt, loc.FunctionName(), loc.FileName(), loc.Line());
+    std::string fmt = std::string(AnsiColorSink::ErrorColor) + "[LOGGER]: Hello! [In function {0}, {1}:{2}]\x1B[0m\n";
+    std::string expected = RuntimeFormat(fmt, loc.FunctionName(), loc.FileName(), loc.Line());
 
     sink.Log(message);
     EXPECT_STREQ(stream->Output.c_str(), expected.c_str());
@@ -48,9 +95,9 @@ TEST(AnsiColorSinkTests, LogWithoutLocation)
     auto stream = MakeShared<FakeStream>();
     AnsiColorSink sink(stream);
 
-    LogMessage message("Hello!", "MY_LOGGER", SourceLocation(), LogSeverity::Error);
+    LogMessage message("Hello!", "MY_LOGGER", SourceLocation(), LogSeverity::Info);
 
-    constexpr std::string_view expected = "\x1B[31;1m[MY_LOGGER]: Hello!\x1B[0m\n";
+    std::string expected = std::string(AnsiColorSink::InfoColor) + "[MY_LOGGER]: Hello!\x1B[0m\n";
 
     sink.Log(message);
     EXPECT_STREQ(stream->Output.c_str(), expected.data());
@@ -61,13 +108,12 @@ TEST(AnsiColorSinkTests, LogWithoutName)
     auto stream = MakeShared<FakeStream>();
     AnsiColorSink sink(stream);
 
-    LogMessage message("Hello!", "", SourceLocation(), LogSeverity::Error);
+    LogMessage message("Hello!", "", SourceLocation(), LogSeverity::Warning);
 
-    constexpr std::string_view expected = "\x1B[31;1mHello!\x1B[0m\n";
+    std::string expected = std::string(AnsiColorSink::WarningColor) + "Hello!\x1B[0m\n";
 
     sink.Log(message);
     EXPECT_STREQ(stream->Output.c_str(), expected.data());
-
 }
 
 TEST(AnsiColorSinkTests, Flush)
@@ -75,6 +121,9 @@ TEST(AnsiColorSinkTests, Flush)
     auto stream = MakeShared<FakeStream>();
     AnsiColorSink sink(stream);
 
+    sink.Log(LogMessage("Hello!", "", SourceLocation(), LogSeverity::Error));
+    ASSERT_STRNE(stream->Output.c_str(), "");
+
     sink.Flush();
-    EXPECT_TRUE(stream->Flushed);
+    EXPECT_EQ(stream->Output.size(), 0);
 }

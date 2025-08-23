@@ -1,25 +1,19 @@
 #include <gtest/gtest.h>
+#include "TestContainer2.h"
 
-#include "IteratorWrappers.h"
 #include "Foundation/Algorithms/Distance.h"
 
 using namespace Kitsune;
-using Testing::ForwardIteratorWrapper;
+using namespace Testing;
 
 TEST(DistanceTests, NotRandomAccess)
 {
-    int arr[10] = { 1, 2, 3, 4, 5, 6, 1, 3, 5, 2 };
-    ForwardIteratorWrapper<int> it1(arr);
-    ForwardIteratorWrapper<int> it2(arr + 10);
-
-    EXPECT_EQ(Algorithms::Distance(it1, it2), 10);
+    ForwardTestContainer<int, 6> container = { 2, 4, 1, 65, 7, 1 };
+    EXPECT_EQ(Algorithms::Distance(container.GetBegin(), container.GetEnd()), 6);
 }
 
 TEST(DistanceTests, RandomAccess)
 {
-    int arr[8] = { 43, 6, 12, 5, 2, 65, 1, 65 };
-    int* it1 = arr;
-    int* it2 = arr + 8;
-
-    EXPECT_EQ(Algorithms::Distance(it1, it2), 8);
+    RandomAccessTestContainer<int, 4> container = { 4, 93, 61, 3 };
+    EXPECT_EQ(Algorithms::Distance(container.GetBegin(), container.GetEnd()), 4);
 }
