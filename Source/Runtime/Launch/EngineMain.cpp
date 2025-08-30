@@ -11,7 +11,7 @@
 
 namespace Kitsune
 {
-    thread_local StackTrace* g_ExceptionStackTrace = nullptr;
+    // thread_local StackTrace* g_ExceptionStackTrace = nullptr;
 
     class MemorySubsystemGuard
     {
@@ -40,6 +40,7 @@ namespace Kitsune
         return app->GetExitCode();
     }
 
+    /*
     void PrintStackTrace(StackTrace* stackTrace)
     {
         if (stackTrace == nullptr)
@@ -66,6 +67,7 @@ namespace Kitsune
 
         std::fflush(stdout);
     }
+    */
 
     int EngineMain(int argc, char** argv)
     {
@@ -85,7 +87,7 @@ namespace Kitsune
                 "An IException has been thrown. (Name: %s)\nDescription: %s\n",
                 exception.GetName(), exception.GetDescription());
 
-            PrintStackTrace(g_ExceptionStackTrace);
+            // PrintStackTrace(g_ExceptionStackTrace);
             return 1;
         }
 #endif

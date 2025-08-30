@@ -8,17 +8,18 @@
 
 namespace Kitsune
 {
-    thread_local bool g_WritingToExceptionStackTrace = false;
+    // thread_local bool g_WritingToExceptionStackTrace = false;
 
     thread_local Uint8 g_ExceptionData[1024];
     thread_local Uint8* g_ExceptionDataPointer = g_ExceptionData;
 
     // HACK: This is defined in KitsuneLaunch, because Windows DLLs cannot
     //       export thread_local variables.
-    extern thread_local StackTrace* g_ExceptionStackTrace;
+    // extern thread_local StackTrace* g_ExceptionStackTrace;
 
     IException::IException() noexcept
     {
+        /*
 #if defined(KITSUNE_BUILD_PRODUCTION)
         if (g_WritingToExceptionStackTrace)
             return;
@@ -37,8 +38,12 @@ namespace Kitsune
             Memory::ConstructAt(g_ExceptionStackTrace, MakeStackTrace(1));
             g_WritingToExceptionStackTrace = false;
         }
-        catch (...) { /* Just ignore the exception. */ }
+        catch (...)
+        {
+            // Just ignore the exception.
+        }
 #endif
+        */
     }
 
     IException::IException(const char* name, const char* desc) noexcept
@@ -53,7 +58,7 @@ namespace Kitsune
         // | (char*) | Name | Description |
         // |_________|______|_____________|
 
-        static_assert(KITSUNE_ARRAY_SIZE(g_ExceptionData) >= (sizeof(char*) + /* Null terms */ 2),
+        static_assert(KITSUNE_ARRAY_SIZE(g_ExceptionData) >= (sizeof(char*) + 2),
                       "Exception data isn't large enough to fit internal data.");
 
         Usize nameSize = std::strlen(name) + 1;
@@ -70,6 +75,7 @@ namespace Kitsune
 
     IException::~IException() noexcept
     {
+        /*
 #if defined(KITSUNE_BUILD_PRODUCTION)
         if (g_ExceptionStackTrace != nullptr)
         {
@@ -77,6 +83,7 @@ namespace Kitsune
             g_ExceptionStackTrace = nullptr;
         }
 #endif
+        */
     }
 
     const char* IException::GetName() const noexcept
