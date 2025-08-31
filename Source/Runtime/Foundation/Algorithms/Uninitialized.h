@@ -1,18 +1,16 @@
 #pragma once
 
-#include "Foundation/Common/Types.h"
-#include "Foundation/Templates/Move.h"
-
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Memory/AddressOf.h"
 
+#include "Foundation/Templates/Move.h"
 #include "Foundation/Iterators/Iterator.h"
 #include "Foundation/Algorithms/Destroy.h"
 
 namespace Kitsune::Algorithms
 {
     template<ForwardIterator InputIt, ForwardIterator OutputIt>
-    OutputIt UninitializedCopy(InputIt begin, InputIt end, OutputIt outBegin)
+    inline OutputIt UninitializedCopy(InputIt begin, InputIt end, OutputIt outBegin)
     {
         InputIt it = begin;
         try
@@ -29,8 +27,8 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator InputIt, ForwardIterator OutputIt>
-    OutputIt UninitializedCopyN(InputIt begin, Usize n, OutputIt outBegin)
+    template<ForwardIterator InputIt, typename Sz, ForwardIterator OutputIt>
+    inline OutputIt UninitializedCopyN(InputIt begin, Sz n, OutputIt outBegin)
     {
         InputIt it = begin;
         try
@@ -48,7 +46,7 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator InputIt, ForwardIterator OutputIt>
-    OutputIt UninitializedMove(InputIt begin, InputIt end, OutputIt outBegin)
+    inline OutputIt UninitializedMove(InputIt begin, InputIt end, OutputIt outBegin)
     {
         InputIt it = begin;
         try
@@ -65,8 +63,8 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator InputIt, ForwardIterator OutputIt>
-    OutputIt UninitializedMoveN(InputIt begin, Usize n, OutputIt outBegin)
+    template<ForwardIterator InputIt, typename Sz, ForwardIterator OutputIt>
+    inline OutputIt UninitializedMoveN(InputIt begin, Sz n, OutputIt outBegin)
     {
         InputIt it = begin;
         try
@@ -84,7 +82,7 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It, typename T>
-    void UninitializedFill(It begin, It end, const T& value)
+    inline void UninitializedFill(It begin, It end, const T& value)
     {
         It it = begin;
         try
@@ -99,8 +97,8 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator It, typename T>
-    It UninitializedFillN(It begin, Usize n, const T& value)
+    template<ForwardIterator It, typename Sz, typename T>
+    inline It UninitializedFillN(It begin, Sz n, const T& value)
     {
         It it = begin;
         try

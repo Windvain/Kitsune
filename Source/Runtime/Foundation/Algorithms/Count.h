@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Foundation/Concepts/Invokable.h"
 #include "Foundation/Iterators/Iterator.h"
 
 namespace Kitsune::Algorithms
 {
     template<ForwardIterator It, typename T>
     [[nodiscard]]
-    typename IteratorTraits<It>::DifferenceType Count(It begin, It end, const T& val)
+    inline typename IteratorTraits<It>::DifferenceType Count(It begin, It end, const T& val)
     {
         using ValueType = IteratorTraits<It>::ValueType;
         return CountIf(begin, end, [&val](const ValueType& elem) -> bool
@@ -15,9 +16,9 @@ namespace Kitsune::Algorithms
         });
     }
 
-    template<ForwardIterator It, typename Pred>
+    template<ForwardIterator It, Invokable<typename IteratorTraits<It>::ValueType> Pred>
     [[nodiscard]]
-    typename IteratorTraits<It>::DifferenceType CountIf(It begin, It end, Pred pred)
+    inline typename IteratorTraits<It>::DifferenceType CountIf(It begin, It end, Pred pred)
     {
         using Diff = IteratorTraits<It>::DifferenceType;
         Diff count = Diff();

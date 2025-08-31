@@ -1,14 +1,12 @@
 #pragma once
 
-#include "Foundation/Iterators/IteratorTraits.h"
+#include "Foundation/Concepts/Invokable.h"
 #include "Foundation/Iterators/Iterator.h"
-
-#include "Foundation/Algorithms/Equal.h"
 
 namespace Kitsune::Algorithms
 {
     template<ForwardIterator It, typename T>
-    [[nodiscard]] It Find(It begin, It end, const T& val)
+    [[nodiscard]] inline It Find(It begin, It end, const T& val)
     {
         using ValueType = IteratorTraits<It>::ValueType;
         return FindIf(begin, end, [&val](const ValueType& elem)
@@ -18,7 +16,7 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It1, ForwardIterator It2>
-    [[nodiscard]] It1 Find(It1 begin, It1 end, It2 findBegin, It2 findEnd)
+    [[nodiscard]] inline It1 Find(It1 begin, It1 end, It2 findBegin, It2 findEnd)
     {
         // Thanks MSVC.
         while (true)
@@ -37,8 +35,9 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator It, typename Pred>
-    [[nodiscard]] It FindIf(It begin, It end, Pred pred)
+    template<ForwardIterator It,
+             Invokable<typename IteratorTraits<It>::ValueType> Pred>
+    [[nodiscard]] inline It FindIf(It begin, It end, Pred pred)
     {
         for (; begin != end; ++begin)
             if (pred(*begin)) { return begin; }
@@ -48,7 +47,7 @@ namespace Kitsune::Algorithms
 
 
     template<ForwardIterator It, typename T>
-    [[nodiscard]] It FindLast(It begin, It end, const T& val)
+    [[nodiscard]] inline It FindLast(It begin, It end, const T& val)
     {
         using ValueType = IteratorTraits<It>::ValueType;
         return FindLastIf(begin, end, [&val](const ValueType& elem) -> bool
@@ -57,8 +56,9 @@ namespace Kitsune::Algorithms
         });
     }
 
-    template<ForwardIterator It, typename Pred>
-    [[nodiscard]] It FindLastIf(It begin, It end, Pred pred)
+    template<ForwardIterator It,
+             Invokable<typename IteratorTraits<It>::ValueType> Pred>
+    [[nodiscard]] inline It FindLastIf(It begin, It end, Pred pred)
     {
         It last = end;
         for (; begin != end; ++begin)

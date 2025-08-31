@@ -1,13 +1,13 @@
 #pragma once
 
+#include "Foundation/Concepts/Invokable.h"
 #include "Foundation/Iterators/Iterator.h"
-#include "Foundation/Iterators/IteratorTraits.h"
 
 namespace Kitsune::Algorithms
 {
     template<ForwardIterator It,
              WritableIterator<typename IteratorTraits<It>::ValueType> OutIt>
-    OutIt Copy(It begin, It end, OutIt outBegin)
+    inline OutIt Copy(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
             *outBegin = *begin;
@@ -17,7 +17,7 @@ namespace Kitsune::Algorithms
 
     template<ForwardIterator It, typename Sz,
              WritableIterator<typename IteratorTraits<It>::ValueType> OutIt>
-    OutIt CopyN(It begin, Sz n, OutIt outBegin)
+    inline OutIt CopyN(It begin, Sz n, OutIt outBegin)
     {
         for (; n > 0; ++begin, ++outBegin, --n)
             *outBegin = *begin;
@@ -26,8 +26,9 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It,
-             WritableIterator<typename IteratorTraits<It>::ValueType> OutIt, typename Pred>
-    OutIt CopyIf(It begin, It end, OutIt outBegin, Pred pred)
+             WritableIterator<typename IteratorTraits<It>::ValueType> OutIt,
+             Invokable<typename IteratorTraits<It>::ValueType> Pred>
+    inline OutIt CopyIf(It begin, It end, OutIt outBegin, Pred pred)
     {
         for (; begin != end; ++begin)
         {
@@ -42,7 +43,7 @@ namespace Kitsune::Algorithms
     }
 
     template<BidirectionalIterator It, BidirectionalIterator OutIt>
-    OutIt CopyBackwards(It begin, It end, OutIt outEnd)
+    inline OutIt CopyBackwards(It begin, It end, OutIt outEnd)
     {
         while (begin != end)
         {
