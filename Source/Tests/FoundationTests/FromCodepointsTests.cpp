@@ -18,6 +18,9 @@ namespace
     public:
         using ValueType = T;
 
+        using Iterator = T*;
+        using ConstIterator = const T*;
+
     public:
         PushBackableContainer() = default;
 
@@ -28,6 +31,16 @@ namespace
 
         inline T* Data() { return m_Data.data(); }
         inline const T* Data() const { return m_Data.data(); }
+
+    public:
+        // Spoof unused functions to satisfy Container concept.
+        T* GetBegin() { return nullptr; }
+        const T* GetBegin() const { return nullptr; }
+
+        T* GetEnd() { return nullptr; }
+        const T* GetEnd() const { return nullptr; }
+
+        bool operator==(const PushBackableContainer<T>&) const { return true; }
 
     private:
         std::vector<T> m_Data;

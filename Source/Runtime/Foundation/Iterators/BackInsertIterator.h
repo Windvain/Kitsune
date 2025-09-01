@@ -1,16 +1,19 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
+#include "Foundation/Concepts/Container.h"
 
 namespace Kitsune
 {
     namespace Details
     {
         template<typename T>
-        concept BackInsertable = requires (T container)
-        {
-            container.PushBack(typename T::ValueType());
-        };
+        concept BackInsertable =
+            Container<T> &&
+            requires (T container)
+            {
+                container.PushBack(typename T::ValueType());
+            };
     }
 
     template<Details::BackInsertable Container>

@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
-
 #include "TestContainer2.h"
-#include "IteratorWrappers.h"
 
 #include "Foundation/Containers/Array.h"
+#include "Foundation/Concepts/Container.h"
 
 namespace
 {
@@ -125,6 +124,8 @@ namespace
 
 using namespace Kitsune;
 using namespace Testing;
+
+static_assert(Container<Array<int>>, "Array does not satisfy the Container concept.");
 
 TEST(ArrayTests, DefaultConstructor)
 {

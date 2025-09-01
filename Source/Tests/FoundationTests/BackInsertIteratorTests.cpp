@@ -9,11 +9,22 @@ namespace
     {
     public:
         using ValueType = int;
+        using Iterator = int*;
+        using ConstIterator = const int*;
 
         void PushBack(int x)
         {
             Container.push_back(x);
         }
+
+    public:
+        int* GetBegin() { return nullptr; }
+        const int* GetBegin() const { return nullptr; }
+
+        int* GetEnd() { return nullptr; }
+        const int* GetEnd() const { return nullptr; }
+
+        bool operator==(const MyContainer&) const { return true; }
 
     public:
         std::vector<int> Container;

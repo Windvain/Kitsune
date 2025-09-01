@@ -4,6 +4,8 @@
 #include <type_traits>
 
 #include "Foundation/Templates/Forward.h"
+
+#include "Foundation/Concepts/Comparable.h"
 #include "Foundation/Iterators/IteratorTraits.h"
 
 namespace Kitsune
@@ -52,16 +54,8 @@ namespace Kitsune
         };
 
     template<typename It>
-    concept ForwardIterator =
-        ReadableIterator<It> &&
-        requires (It iter1, It iter2)
-        {
-            { iter1 == iter2 } -> std::convertible_to<bool>;
-            { iter2 == iter1 } -> std::convertible_to<bool>;
-
-            { iter1 != iter2 } -> std::convertible_to<bool>;
-            { iter2 != iter1 } -> std::convertible_to<bool>;
-        };
+    concept ForwardIterator = ReadableIterator<It> &&
+                              Equatable<const It, const It>;
 
     template<typename It>
     concept BidirectionalIterator =
@@ -75,6 +69,7 @@ namespace Kitsune
     template<typename It>
     concept RandomAccessIterator =
         BidirectionalIterator<It> &&
+        Comparable<const It, const It> &&
         requires (It iter, const It const_iter, typename IteratorTraits<It>::DifferenceType n)
         {
             { iter += n      } -> std::same_as<It&>;
@@ -83,17 +78,5 @@ namespace Kitsune
             { iter -= n      } -> std::same_as<It&>;
             { const_iter - n } -> std::same_as<It>;
             { const_iter[n]  } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
-        } &&
-        requires (const It iter1, const It iter2)
-        {
-            { iter1 >  iter2 } -> std::convertible_to<bool>;
-            { iter1 <  iter2 } -> std::convertible_to<bool>;
-            { iter1 >= iter2 } -> std::convertible_to<bool>;
-            { iter1 >= iter2 } -> std::convertible_to<bool>;
-
-            { iter2 >  iter1 } -> std::convertible_to<bool>;
-            { iter2 <  iter1 } -> std::convertible_to<bool>;
-            { iter2 >= iter1 } -> std::convertible_to<bool>;
-            { iter2 >= iter1 } -> std::convertible_to<bool>;
         };
 }
