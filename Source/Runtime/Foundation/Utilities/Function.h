@@ -156,14 +156,4 @@ namespace Kitsune
         InvokeFunction m_InvokeFunction = nullptr;
         DestroyFunction m_DestroyFunction = nullptr;
     };
-
-    namespace Algorithms
-    {
-        template<typename Return, typename... Args>
-        inline void Swap(const Function<Return(Args...)>& func1,
-                         const Function<Return(Args...)>& func2)
-        {
-            func1.Swap(func2);
-        }
-    }
 }

@@ -426,13 +426,4 @@ namespace Kitsune
     {
         return Algorithms::Equal(arr1.GetBegin(), arr1.GetEnd(), arr2.GetBegin(), arr2.GetEnd());
     }
-
-    namespace Algorithms
-    {
-        template<typename T, Allocator Alloc>
-        inline void Swap(Array<T, Alloc>& arr1, Array<T, Alloc>& arr2)
-        {
-            arr1.Swap(arr2);
-        }
-    }
 }

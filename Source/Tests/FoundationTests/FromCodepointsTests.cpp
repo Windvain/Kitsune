@@ -40,6 +40,11 @@ namespace
         T* GetEnd() { return nullptr; }
         const T* GetEnd() const { return nullptr; }
 
+        void Swap(PushBackableContainer<T>& cont)
+        {
+            m_Data.swap(cont.m_Data);
+        }
+
         bool operator==(const PushBackableContainer<T>&) const { return true; }
 
     private:

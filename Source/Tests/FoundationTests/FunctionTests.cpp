@@ -119,7 +119,7 @@ TEST(FunctionTests, Target)
     EXPECT_NE(func.Target(), nullptr);
 }
 
-TEST(FunctionTests, SwapMemberFunction)
+TEST(FunctionTests, Swap)
 {
     Function<long(int)> func = &TestFunction;
     Function<long(int)> func2 = [](int) -> long { return 2; };
@@ -128,20 +128,6 @@ TEST(FunctionTests, SwapMemberFunction)
     void* ptr2 = func.Target();
 
     func.Swap(func2);
-
-    EXPECT_EQ(func.Target(), ptr);
-    EXPECT_EQ(func2.Target(), ptr2);
-}
-
-TEST(FunctionTests, SwapAlgorithm)
-{
-    Function<long(int)> func = &TestFunction;
-    Function<long(int)> func2 = [](int) -> long { return 2; };
-
-    void* ptr = func2.Target();
-    void* ptr2 = func.Target();
-
-    Algorithms::Swap(func, func2);
 
     EXPECT_EQ(func.Target(), ptr);
     EXPECT_EQ(func2.Target(), ptr2);

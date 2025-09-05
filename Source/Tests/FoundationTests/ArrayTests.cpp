@@ -799,34 +799,12 @@ TEST(ArrayTests, Equal)
     EXPECT_TRUE(array != diffContents);
 }
 
-TEST(ArrayTests, SwapMemberFunction)
+TEST(ArrayTests, Swap)
 {
     Array<O> array1 = { 14, 23, 4343, 121 };
     Array<O> array2 = { 32, 54, 11, 43, 11 };
 
     array1.Swap(array2);
-
-    EXPECT_EQ(array1.Size(), 5);
-    EXPECT_EQ(array2.Size(), 4);
-
-    EXPECT_EQ(array1[0].Id, 32);
-    EXPECT_EQ(array1[1].Id, 54);
-    EXPECT_EQ(array1[2].Id, 11);
-    EXPECT_EQ(array1[3].Id, 43);
-    EXPECT_EQ(array1[4].Id, 11);
-
-    EXPECT_EQ(array2[0].Id, 14);
-    EXPECT_EQ(array2[1].Id, 23);
-    EXPECT_EQ(array2[2].Id, 4343);
-    EXPECT_EQ(array2[3].Id, 121);
-}
-
-TEST(ArrayTests, SwapAlgorithm)
-{
-    Array<O> array1 = { 14, 23, 4343, 121 };
-    Array<O> array2 = { 32, 54, 11, 43, 11 };
-
-    Algorithms::Swap(array1, array2);
 
     EXPECT_EQ(array1.Size(), 5);
     EXPECT_EQ(array2.Size(), 4);

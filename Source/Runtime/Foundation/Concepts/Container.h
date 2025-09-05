@@ -3,6 +3,7 @@
 #include <concepts>
 #include <type_traits>
 
+#include "Foundation/Concepts/Swappable.h"
 #include "Foundation/Concepts/Comparable.h"
 
 namespace Kitsune
@@ -14,6 +15,7 @@ namespace Kitsune
         std::is_copy_assignable_v<T> &&
 
         Equatable<const T, const T> &&
+        Swappable<T> &&
         requires (T container, const T constCont)
         {
             typename T::ValueType;

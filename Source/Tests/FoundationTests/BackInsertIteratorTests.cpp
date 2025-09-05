@@ -24,6 +24,7 @@ namespace
         int* GetEnd() { return nullptr; }
         const int* GetEnd() const { return nullptr; }
 
+        void Swap(MyContainer& cont) { Container.swap(cont.Container); }
         bool operator==(const MyContainer&) const { return true; }
 
     public:

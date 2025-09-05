@@ -3,14 +3,24 @@
 #include "Foundation/Templates/Move.h"
 #include "Foundation/Iterators/Iterator.h"
 
+#include "Foundation/Concepts/Swappable.h"
+
 namespace Kitsune::Algorithms
 {
     template<typename T>
+        requires (!Swappable<T>)
     inline void Swap(T& lhs, T& rhs)
     {
         T tmp = Move(lhs);
         lhs = Move(rhs);
         rhs = Move(tmp);
+    }
+
+    template<typename T>
+        requires Swappable<T>
+    inline void Swap(T& lhs, T& rhs)
+    {
+        lhs.Swap(rhs);
     }
 
     template<ForwardIterator It1, ForwardIterator It2>

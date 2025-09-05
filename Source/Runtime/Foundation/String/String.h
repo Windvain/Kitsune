@@ -607,17 +607,8 @@ namespace Kitsune
         };
 
         StringData m_Data;
-        Alloc m_Allocator;
+        KITSUNE_MAYBE_OVERLAPPING Alloc m_Allocator;
     };
-
-    namespace Algorithms
-    {
-        template<Character T, Allocator Alloc>
-        inline void Swap(BasicString<T, Alloc>& str1, BasicString<T, Alloc>& str2)
-        {
-            str1.Swap(str2);
-        }
-    }
 
     template<Character T, Allocator Alloc1, Allocator Alloc2>
     inline bool operator==(const BasicString<T, Alloc1>& str1, const BasicString<T, Alloc2>& str2)
