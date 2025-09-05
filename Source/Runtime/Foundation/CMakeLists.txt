@@ -116,12 +116,16 @@ kitsune_add_platform_sources(
     NAME KitsuneFoundation
     CLANG
     "Diagnostics/ClangStackTrace.cpp"
+    "Diagnostics/GeneralStackFrame.h"
+
     "Threading/ClangInterlocked.inl"
 
     "KitsuneFoundation.rc"
 
     MSVC
-    "Diagnostics/MSVCStackTrace.cpp"
+    "Diagnostics/MsvcStackFrame.h"
+    "Diagnostics/MsvcStackTrace.cpp"
+
     "Threading/MSVCInterlocked.inl"
 
     "KitsuneFoundation.manifest"

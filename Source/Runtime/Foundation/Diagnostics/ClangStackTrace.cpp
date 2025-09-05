@@ -2,9 +2,9 @@
 #include "Foundation/Common/Macros.h"
 
 #include <cxxabi.h>         // Required header to use __cxa_demangle(), clang specific.
-#include "Foundation/Memory/ScopedPtr.h"
-
 #include "Foundation/Diagnostics/Assert.h"
+
+#include "Foundation/Diagnostics/GeneralStackFrame.h"
 #include "Foundation/Diagnostics/StackTraceException.h"
 
 // Clang runs on basically all of the modern operating systems. We have to
@@ -12,7 +12,6 @@
 // Is it messy? Kinda. Does it work? Yes.
 #if defined(KITSUNE_OS_WINDOWS)
     #include <Windows.h>
-    #include "Foundation/String/Format.h"   // To convert ::GetCallingThreadId() to String.
 #endif
 
 #if KITSUNE_HAS_INCLUDE(<backtrace.h>)
@@ -27,14 +26,16 @@
 #define KITSUNE_DEMANGLE_INVALID_MANGLED_NAME -2
 #define KITSUNE_DEMANGLE_INVALID_ARGUMENT -3
 
-namespace Kitsune
+namespace Kitsune::Details
 {
     struct BacktraceData
     {
         Usize CurrentDepth;
         Usize MaxDepth;
 
-        Array<StackFrame> StackFrames;
+        StackTraceFillCallback Callback;
+        void* Data;
+
         String ErrorMessage;
     };
 
@@ -42,7 +43,7 @@ namespace Kitsune
                                        int /* error */)
     {
         BacktraceData* backtraceData = static_cast<BacktraceData*>(data);
-        if (backtraceData->ErrorMessage.IsEmpty())
+        if (!backtraceData->ErrorMessage.IsEmpty())
             return;
 
         backtraceData->ErrorMessage = message;
@@ -87,9 +88,10 @@ namespace Kitsune
         if ((function == nullptr) && (status != KITSUNE_DEMANGLE_INVALID_MANGLED_NAME))
             throw StackTraceException(GetDemangleStatus(status));
 
-        typedData->StackFrames.EmplaceBack(filename, function, reinterpret_cast<void*>(pc), line);
-        ++typedData->CurrentDepth;
+        SharedPtr<GeneralStackFrame> frame = MakeShared<GeneralStackFrame>(filename, function, reinterpret_cast<void*>(pc), line);
+        typedData->Callback(frame, typedData->Data);
 
+        ++typedData->CurrentDepth;
         return 0;
     }
 
@@ -101,29 +103,20 @@ namespace Kitsune
         return state;
     }
 
-    inline String GetCallingThreadName()
-    {
-#if defined(KITSUNE_OS_WINDOWS)
-        return Format("{0}", ::GetCurrentThreadId());
-#else
-    #error Clang is not supported on this platform, please switch to another compiler.
-#endif
-    }
-
-    StackTrace MakeStackTrace(Usize skipCount, Usize maxDepth)
+    void DoBackTrace(Usize skipCount, Usize maxDepth,
+                     StackTraceFillCallback callback, void* data)
     {
         backtrace_state* state = CreateBacktraceState();
         BacktraceData backtraceData = {
             .CurrentDepth = 0,
             .MaxDepth = maxDepth,
-            .StackFrames{},
+            .Callback = callback,
+            .Data = data,
             .ErrorMessage = ""
         };
 
         ::backtrace_full(state, skipCount + 1, BacktraceFullCallback, BacktraceErrorCallback, &backtraceData);
         if (!backtraceData.ErrorMessage.IsEmpty())
             throw StackTraceException(backtraceData.ErrorMessage.Raw());
-
-        return StackTrace(Move(backtraceData.StackFrames), GetCallingThreadName());
     }
 }

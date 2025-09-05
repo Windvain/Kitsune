@@ -72,11 +72,12 @@ namespace Kitsune
         Comparable<const It, const It> &&
         requires (It iter, const It const_iter, typename IteratorTraits<It>::DifferenceType n)
         {
-            { iter += n      } -> std::same_as<It&>;
-            { const_iter + n } -> std::same_as<It>;
-            { n + const_iter } -> std::same_as<It>;
-            { iter -= n      } -> std::same_as<It&>;
-            { const_iter - n } -> std::same_as<It>;
-            { const_iter[n]  } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
+            { iter += n               } -> std::same_as<It&>;
+            { const_iter + n          } -> std::same_as<It>;
+            { n + const_iter          } -> std::same_as<It>;
+            { iter -= n               } -> std::same_as<It&>;
+            { const_iter - n          } -> std::same_as<It>;
+            { const_iter - const_iter } -> std::same_as<decltype(n)>;
+            { const_iter[n]           } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
         };
 }

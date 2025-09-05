@@ -1,6 +1,10 @@
 #include "Application/Application.h"
 #include "Foundation/Memory/Memory.h"
+
 #include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Diagnostics/StackTrace.h"
+
+#include <iostream>
 
 using namespace Kitsune;
 
@@ -10,7 +14,11 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        KITSUNE_LOG_FORMAT("Hello, {0}!", "World");
+        StackTrace stackTrace = StackTrace::Current();
+        for (const StackFrame& frame : stackTrace)
+        {
+            KITSUNE_UNUSED(frame);
+        }
     }
 
     ~Sandbox()
