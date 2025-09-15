@@ -27,7 +27,7 @@ namespace Kitsune
         }
 
         StringView fmt = "{0}{1}{2}{3}\x1B[0m\n";
-        FormatTo(WriteStreamIterator<char>(*m_Stream), DefaultFormatScanner(fmt), fmt,
+        FormatTo(WriteStreamIterator<char>(*m_Stream), fmt,
                  ConvertToAnsiColor(message.Severity), header,
                  message.Message, locInfo);
     }

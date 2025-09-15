@@ -17,6 +17,7 @@ kitsune_add_test(
     "FoundationTests/FindTests.cpp"
     "FoundationTests/ForEachTests.cpp"
     "FoundationTests/FormatTests.cpp"
+    "FoundationTests/FormatterTests.cpp"
     "FoundationTests/FoundationMain.cpp"
     "FoundationTests/FromCodepointsTests.cpp"
     "FoundationTests/FunctionTests.cpp"

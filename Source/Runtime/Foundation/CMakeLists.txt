@@ -80,10 +80,7 @@ kitsune_add_library(
 
     "String/CharTraits.h"
     "String/Format.h"
-    "String/FormatArguments.h"
     "String/FormatException.h"
-    "String/FormatScanner.cpp"
-    "String/FormatScanner.h"
     "String/Formatter.h"
     "String/FromCodepoints.h"
     "String/String.h"

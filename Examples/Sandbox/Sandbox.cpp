@@ -14,11 +14,7 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        StackTrace stackTrace = StackTrace::Current();
-        for (const StackFrame& frame : stackTrace)
-        {
-            KITSUNE_UNUSED(frame);
-        }
+        KITSUNE_TRACE_FORMAT("Hello, {0:#0}", (short)3);
     }
 
     ~Sandbox()
