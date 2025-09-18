@@ -1,7 +1,7 @@
 #include "Launch/EngineLoop.h"
 
-#include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Logging/AnsiColorSink.h"
+// #include "Foundation/Logging/GlobalLog.h"
+// #include "Foundation/Logging/AnsiColorSink.h"
 
 #include "Application/Application.h"
 #include "ApplicationCore/Environment.h"
@@ -25,12 +25,12 @@ namespace Kitsune
 
     void EngineLoop::PreInitialize()
     {
-        m_GlobalLogger = MakeScoped<Logger>("GLOBAL");
-        SetGlobalLogger(m_GlobalLogger.Get());
+        // m_GlobalLogger = MakeScoped<Logger>("GLOBAL");
+        // SetGlobalLogger(m_GlobalLogger.Get());
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)
-            m_GlobalLogger->GetSinks().PushBack(
-                MakeShared<AnsiColorSink>(MakeShared<ConsoleOutputStream>()));
+            // m_GlobalLogger->GetSinks().PushBack(
+                // MakeShared<AnsiColorSink>(MakeShared<ConsoleOutputStream>()));
 #endif
 
         m_IsPreInitialized = true;
@@ -77,8 +77,8 @@ namespace Kitsune
         KITSUNE_ASSERT(m_IsPreInitialized, "Shutdown() should not be called when the engine has"
                                            "not been pre-initialized.");
 
-        if (GetGlobalLogger() == m_GlobalLogger.Get())
-            SetGlobalLogger(nullptr);
+//         if (GetGlobalLogger() == m_GlobalLogger.Get())
+//             SetGlobalLogger(nullptr);
 
         m_IsPreInitialized = false;
     }

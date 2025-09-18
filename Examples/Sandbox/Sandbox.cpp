@@ -1,10 +1,7 @@
 #include "Application/Application.h"
 #include "Foundation/Memory/Memory.h"
 
-#include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Diagnostics/StackTrace.h"
-
-#include <iostream>
+#include "Foundation/Logging/ConsoleLogger.h"
 
 using namespace Kitsune;
 
@@ -14,7 +11,14 @@ public:
     Sandbox(const ApplicationSpecs& specs)
         : Application(specs)
     {
-        KITSUNE_TRACE_FORMAT("Hello, {0:#0}", (short)3);
+        LogPayload payload;
+        payload.Location = SourceLocation::Current();
+        payload.Severity = LogSeverity::Info;
+        payload.LoggerName = "GLOBAL";
+        payload.Message = "Hello, World!";
+
+        ConsoleLogger logger;
+        logger.Log(payload);
     }
 
     ~Sandbox()

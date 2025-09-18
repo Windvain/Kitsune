@@ -48,17 +48,14 @@ kitsune_add_library(
     "Iterators/IteratorTraits.h"
     "Iterators/ReverseIterator.h"
 
-    "Logging/AnsiColorSink.cpp"
-    "Logging/AnsiColorSink.h"
-    "Logging/ConsoleStream.cpp"
-    "Logging/ConsoleStream.h"
-    "Logging/GlobalLog.cpp"
-    "Logging/GlobalLog.h"
-    "Logging/ILogSink.h"
+    "Logging/ConsoleInputStream.cpp"
+    "Logging/ConsoleInputStream.h"
+    "Logging/ConsoleLogger.cpp"
+    "Logging/ConsoleLogger.h"
+    "Logging/ConsoleOutputStream.cpp"
+    "Logging/ConsoleOutputStream.h"
+    "Logging/ILogger.h"
     "Logging/IStream.h"
-    "Logging/LogMessage.h"
-    "Logging/Logger.h"
-    "Logging/StreamBuffer.h"
     "Logging/WriteStreamIterator.h"
 
     "Maths/VectorBase.h"
@@ -132,7 +129,8 @@ kitsune_add_platform_sources(
     "Diagnostics/WindowsDebuggerAttached.cpp"
     "Diagnostics/WindowsMessageBox.cpp"
 
-    "Logging/WindowsConsoleStream.cpp"
+    "Logging/WindowsConsoleInputStream.cpp"
+    "Logging/WindowsConsoleOutputStream.cpp"
 
     "Threading/WindowsMutex.cpp"
 

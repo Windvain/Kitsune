@@ -53,16 +53,16 @@ namespace Kitsune::Details
         if (expression == nullptr) expression = "";
         if (message == nullptr)    message = "";
 
-        Logger* logger = GetGlobalLogger();
-        if (logger == nullptr)
+        /* Logger* logger = GetGlobalLogger();
+        if (logger == nullptr) */
             FallbackLogAssertionMessage(expression, message, loc);
-        else
+        /* else
         {
             logger->LogFormat(LogSeverity::Fatal, Move(loc),
                               "Assertion `{0}` has failed.\n"
                               "`{1}`",
                               expression, message);
-        }
+        }*/
 
         return (ShowAssertMessageBox(expression, message, loc) == MessageBoxAbortId);
     }

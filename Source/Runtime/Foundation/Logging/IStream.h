@@ -20,12 +20,12 @@ namespace Kitsune
     public:
         virtual ~IReadStream() { /* ... */ }
 
-        virtual void Read(Usize count) = 0;
-        virtual void Read() = 0;
+        virtual void Read(IWriteStream<T>& stream) = 0;
+        virtual void Read(IWriteStream<T>& stream, char delimiter) = 0;
     };
 
     template<typename T>
-    class IStream : public IWriteStream<T>, public IReadStream<T>
+    class IReadWriteStream : public IWriteStream<T>, public IReadStream<T>
     {
     };
 }

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Foundation/Logging/Logger.h"
+#include "Foundation/Logging/ILogger.h"
 
+/*
 namespace Kitsune
 {
     KITSUNE_API_ Logger* SetGlobalLogger(Logger* logger);
@@ -22,7 +23,7 @@ namespace Kitsune
     #define KITSUNE_LOG_SOURCED(message) ::Kitsune::GetGlobalLogger()->Log(SourceLocation::Current(), message)
     #define KITSUNE_LOG_FORMAT_SOURCED(message, ...) \
         ::Kitsune::GetGlobalLogger()->LogFormat(SourceLocation::Current(), message, __VA_ARGS__)
-#else
+#else*/
     #define KITSUNE_LOG_LEVEL_(severity, message, source)
     #define KITSUNE_LOG_FORMAT_LEVEL_(severity, message, source, ...)
 
@@ -31,7 +32,7 @@ namespace Kitsune
 
     #define KITSUNE_LOG_SOURCED(message)
     #define KITSUNE_LOG_FORMAT_SOURCED(message, ...)
-#endif
+// #endif
 
 #define KITSUNE_TRACE(message)       KITSUNE_LOG_LEVEL_(::Kitsune::LogSeverity::Trace, message, SourceLocation());
 #define KITSUNE_INFO(message)        KITSUNE_LOG_LEVEL_(::Kitsune::LogSeverity::Info, message, SourceLocation());

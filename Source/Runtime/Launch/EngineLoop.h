@@ -5,8 +5,8 @@
 #include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Memory/SharedPtr.h"
 
-#include "Foundation/Logging/Logger.h"
-#include "Foundation/Logging/ConsoleStream.h"
+// #include "Foundation/Logging/Logger.h"
+// #include "Foundation/Logging/ConsoleStream.h"
 
 namespace Kitsune
 {
@@ -35,7 +35,7 @@ namespace Kitsune
         bool m_IsPreInitialized = false;
         bool m_IsFullyInitialized = false;
 
-        SharedPtr<Logger> m_GlobalLogger = nullptr;
+        // SharedPtr<Logger> m_GlobalLogger = nullptr;
         Application* m_Application = nullptr;
     };
 }

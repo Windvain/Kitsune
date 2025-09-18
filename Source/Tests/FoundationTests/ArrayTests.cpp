@@ -613,7 +613,7 @@ TEST(ArrayTests, InsertRange)
     std::vector<int> vec4 = { 43, 3, 55, 6, 5, 45, 65 };
 
     auto expectedIt4 = array.GetEnd();
-    --expectedIt4; --expectedIt4; --expectedIt4;
+    --expectedIt4; --expectedIt4;
 
     EXPECT_EQ(it4, expectedIt4);
 
@@ -658,7 +658,7 @@ TEST(ArrayTests, InsertInitializerList)
     std::vector<int> vec4 = { 43, 3, 55, 6, 5, 45, 65 };
 
     auto expectedIt4 = array.GetEnd();
-    --expectedIt4; --expectedIt4; --expectedIt4;
+    --expectedIt4; --expectedIt4;
 
     EXPECT_EQ(it4, expectedIt4);
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/String/StringView.h"
+#include "Foundation/String/String.h"
 #include "Foundation/Diagnostics/SourceLocation.h"
 
 namespace Kitsune
@@ -11,11 +11,11 @@ namespace Kitsune
         Warning, Error, Fatal
     };
 
-    class LogMessage
+    class LogPayload
     {
     public:
-        LogMessage() = default;
-        LogMessage(const StringView message, const StringView loggerName,
+        LogPayload() = default;
+        LogPayload(const StringView message, const StringView loggerName,
                    SourceLocation loc, LogSeverity severity)
             : Message(message), LoggerName(loggerName),
               Location(Move(loc)), Severity(severity)
@@ -23,8 +23,8 @@ namespace Kitsune
         }
 
     public:
-        StringView Message;
-        StringView LoggerName;
+        String Message;
+        String LoggerName;
 
         SourceLocation Location;
         LogSeverity Severity;
