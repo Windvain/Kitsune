@@ -48,11 +48,11 @@ namespace Kitsune
     class Application
     {
     public:
-        KITSUNE_API_ Application(const ApplicationSpecs& specs);
-        KITSUNE_API_ virtual ~Application();
+        Application(const ApplicationSpecs& specs);
+        virtual ~Application();
 
     public:
-        KITSUNE_API_ void Update();
+        void Update();
 
     public:
         virtual void OnUpdate() { /* ... */ }
@@ -116,14 +116,14 @@ namespace Kitsune
         }
 
     private:
-        KITSUNE_API_ void PlatformUpdate();
-        KITSUNE_API_ SharedPtr<IWindow> MakePlatformWindow(const WindowProperties& props);
+        void PlatformUpdate();
+        SharedPtr<IWindow> MakePlatformWindow(const WindowProperties& props);
 
-        KITSUNE_API_ Array<SharedPtr<IMonitor>> RetrieveMonitors();
+        Array<SharedPtr<IMonitor>> RetrieveMonitors();
 
     private:
-        KITSUNE_API_ static void VerifyApplicationSpecs(const ApplicationSpecs& specs);
-        KITSUNE_API_ static void VerifyWindowProperties(const WindowProperties& windowProps);
+        static void VerifyApplicationSpecs(const ApplicationSpecs& specs);
+        static void VerifyWindowProperties(const WindowProperties& windowProps);
 
     private:
         ApplicationSpecs m_ApplicationSpecs;

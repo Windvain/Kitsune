@@ -2,7 +2,6 @@ kitsune_add_test(
     NAME FoundationTests
     SOURCES
     "FoundationTests/AddressOfTests.cpp"
-    "FoundationTests/AnsiColorSinkTests.cpp"
     "FoundationTests/ArrayTests.cpp"
     "FoundationTests/BackInsertIteratorTests.cpp"
     "FoundationTests/BasicStringTests.cpp"
@@ -30,7 +29,6 @@ kitsune_add_test(
     "FoundationTests/ReverseTests.cpp"
     "FoundationTests/ScopedPtrTests.cpp"
     "FoundationTests/SharedPtrTests.cpp"
-    "FoundationTests/StreamBufferTests.cpp"
     "FoundationTests/StringViewTests.cpp"
     "FoundationTests/SwapTests.cpp"
     "FoundationTests/TestContainer.h"
@@ -39,7 +37,4 @@ kitsune_add_test(
     "FoundationTests/Vector2Tests.cpp"
     "FoundationTests/WindowsPathTests.cpp"
     "FoundationTests/WriteStreamIteratorTests.cpp"
-
-    LINKS
-    KitsuneFoundation
 )

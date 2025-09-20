@@ -10,7 +10,7 @@ namespace Kitsune
     class NullWindow : public IWindow
     {
     public:
-        KITSUNE_API_ NullWindow(const WindowProperties& props);
+        NullWindow(const WindowProperties& props);
 
     public:
         [[nodiscard]] inline Vector2<Uint32> GetSize()    const override { return m_Size; }
@@ -24,7 +24,7 @@ namespace Kitsune
         [[nodiscard]] inline String GetTitle() const override { return m_Title; }
 
     public:
-        KITSUNE_API_ void SetState(WindowState state) override;
+        void SetState(WindowState state) override;
         [[nodiscard]] inline WindowState GetState() const override { return m_State; }
 
         inline void Minimize() override   { return SetState(WindowState::Minimized); }

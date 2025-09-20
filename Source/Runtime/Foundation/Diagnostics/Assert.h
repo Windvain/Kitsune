@@ -5,7 +5,7 @@
 
 namespace Kitsune::Details
 {
-    KITSUNE_API_ bool HandleAssertionFailure(const char* expression, const char* message,
+    bool HandleAssertionFailure(const char* expression, const char* message,
                                              SourceLocation loc = SourceLocation::Current());
 }
 

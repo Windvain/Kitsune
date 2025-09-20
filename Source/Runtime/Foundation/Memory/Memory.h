@@ -14,17 +14,17 @@ namespace Kitsune
     class Memory
     {
     public:
-        KITSUNE_API_ static void InitializeExplicit();
-        KITSUNE_API_ static void Shutdown();
+        static void InitializeExplicit();
+        static void Shutdown();
 
     public:
-        [[nodiscard]] KITSUNE_API_ static void* TryAllocate(Usize bytes);
-        [[nodiscard]] KITSUNE_API_ static void* TryAllocate(Usize bytes, Usize alignment);
+        [[nodiscard]] static void* TryAllocate(Usize bytes);
+        [[nodiscard]] static void* TryAllocate(Usize bytes, Usize alignment);
 
-        [[nodiscard]] KITSUNE_API_ static void* Allocate(Usize bytes);
-        [[nodiscard]] KITSUNE_API_ static void* Allocate(Usize bytes, Usize alignment);
+        [[nodiscard]] static void* Allocate(Usize bytes);
+        [[nodiscard]] static void* Allocate(Usize bytes, Usize alignment);
 
-        KITSUNE_API_ static void Free(void* ptr);
+        static void Free(void* ptr);
 
     public:
         [[nodiscard]]
@@ -65,6 +65,6 @@ namespace Kitsune
 
     private:
         static bool s_Initialized;
-        KITSUNE_API_ static IMemoryApi* s_MemoryApi;
+        static IMemoryApi* s_MemoryApi;
     };
 }

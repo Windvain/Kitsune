@@ -8,7 +8,7 @@ namespace Kitsune
     class ConsoleLogger : public ILogger
     {
     public:
-        KITSUNE_API_ void Log(const LogPayload& payload) override;
+        void Log(const LogPayload& payload) override;
 
     public:
         static constexpr const char* TraceColor = "\x1B[0m";

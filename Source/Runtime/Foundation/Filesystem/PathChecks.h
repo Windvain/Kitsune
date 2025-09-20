@@ -5,8 +5,8 @@
 
 namespace Kitsune::Filesystem
 {
-    [[nodiscard]] KITSUNE_API_ bool PathExists(const Path& str);
+    [[nodiscard]] bool PathExists(const Path& str);
 
-    [[nodiscard]] KITSUNE_API_ bool IsFile(const Path& str);
-    [[nodiscard]] KITSUNE_API_ bool IsDirectory(const Path& str);
+    [[nodiscard]] bool IsFile(const Path& str);
+    [[nodiscard]] bool IsDirectory(const Path& str);
 }

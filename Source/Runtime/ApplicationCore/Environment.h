@@ -10,16 +10,16 @@ namespace Kitsune
     class Environment
     {
     public:
-        KITSUNE_API_ static void Initialize(int argc, char** argv);
-        KITSUNE_API_ static void Shutdown();
+        static void Initialize(int argc, char** argv);
+        static void Shutdown();
 
     public:
-        KITSUNE_API_ static CommandLineArguments GetCommandLineArguments();
+        static CommandLineArguments GetCommandLineArguments();
 
-        KITSUNE_API_ static Filesystem::Path GetCurrentWorkingDirectory();
-        KITSUNE_API_ static void SetCurrentWorkingDirectory(const Filesystem::Path& path);
+        static Filesystem::Path GetCurrentWorkingDirectory();
+        static void SetCurrentWorkingDirectory(const Filesystem::Path& path);
 
     public:
-        KITSUNE_API_ static Filesystem::Path GetExecutablePath();
+        static Filesystem::Path GetExecutablePath();
     };
 }

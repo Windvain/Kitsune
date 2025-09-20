@@ -10,20 +10,20 @@ namespace Kitsune
     class WindowsWindow : public IWindow
     {
     public:
-        KITSUNE_API_ WindowsWindow(int width, int height, int x, int y,
+        WindowsWindow(int width, int height, int x, int y,
                                    const wchar_t* title, WindowState state, WindowFlag flags);
 
-        KITSUNE_API_ ~WindowsWindow();
+        ~WindowsWindow();
 
     public:
-        [[nodiscard]] KITSUNE_API_ Vector2<Uint32> GetSize() const override;
-        [[nodiscard]] KITSUNE_API_ Vector2<Int32> GetPosition() const override;
+        [[nodiscard]] Vector2<Uint32> GetSize() const override;
+        [[nodiscard]] Vector2<Int32> GetPosition() const override;
 
-        KITSUNE_API_ void SetSize(const Vector2<Uint32>& size) override;
-        KITSUNE_API_ void SetPosition(const Vector2<Int32>& pos) override;
+        void SetSize(const Vector2<Uint32>& size) override;
+        void SetPosition(const Vector2<Int32>& pos) override;
 
     public:
-        KITSUNE_API_ void SetTitle(const StringView title) override;
+        void SetTitle(const StringView title) override;
 
         [[nodiscard]]
         inline String GetTitle() const override
@@ -32,13 +32,13 @@ namespace Kitsune
         }
 
     public:
-        KITSUNE_API_ void SetState(WindowState state) override;
+        void SetState(WindowState state) override;
 
         [[nodiscard]]
-        KITSUNE_API_ WindowState GetState() const override;
+        WindowState GetState() const override;
 
     public:
-        KITSUNE_API_ void Fullscreen() override;
+        void Fullscreen() override;
 
         [[nodiscard]]
         inline bool IsFullscreen() const override
@@ -78,23 +78,23 @@ namespace Kitsune
         }
 
     public:
-        KITSUNE_API_ void Show() override;
-        KITSUNE_API_ void Hide() override;
+        void Show() override;
+        void Hide() override;
 
-        KITSUNE_API_ bool IsShown() const override;
+        bool IsShown() const override;
 
     public:
         inline HWND GetWindowsHandle() const { return m_NativeHandle; }
 
     private:
-        KITSUNE_API_ static WNDCLASSEXW GetWindowClass();
-        KITSUNE_API_ static LRESULT KitsuneWindowProc(HWND windowHandle, UINT message,
+        static WNDCLASSEXW GetWindowClass();
+        static LRESULT KitsuneWindowProc(HWND windowHandle, UINT message,
                                                       WPARAM wparam, LPARAM lparam);
 
-        KITSUNE_API_ DWORD GetWindowStyles() const;
-        KITSUNE_API_ DWORD GetExtendedWindowStyles() const;
+        DWORD GetWindowStyles() const;
+        DWORD GetExtendedWindowStyles() const;
 
-        KITSUNE_API_ void UndoFullscreen();
+        void UndoFullscreen();
 
     private:
         static constexpr const wchar_t* s_WindowClassName = L"Kitsune_WindowClass";

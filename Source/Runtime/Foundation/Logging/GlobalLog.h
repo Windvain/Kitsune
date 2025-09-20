@@ -5,8 +5,8 @@
 /*
 namespace Kitsune
 {
-    KITSUNE_API_ Logger* SetGlobalLogger(Logger* logger);
-    KITSUNE_API_ Logger* GetGlobalLogger();
+    Logger* SetGlobalLogger(Logger* logger);
+    Logger* GetGlobalLogger();
 }
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)

@@ -10,8 +10,8 @@ namespace Kitsune
     class CMallocApi : public IMemoryApi
     {
     public:
-        KITSUNE_API_ void* TryAllocate(Usize bytes, Usize alignment) override;
-        KITSUNE_API_ void Free(void* ptr) override;
+        void* TryAllocate(Usize bytes, Usize alignment) override;
+        void Free(void* ptr) override;
 
         inline Usize GetDefaultAlignment() const override { return s_DefaultAlignment; }
 

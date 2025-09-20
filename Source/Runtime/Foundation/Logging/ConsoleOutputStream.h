@@ -10,16 +10,16 @@ namespace Kitsune
     class ConsoleOutputStream : public IWriteStream<char>
     {
     public:
-        KITSUNE_API_ ~ConsoleOutputStream();
+        ~ConsoleOutputStream();
 
-        KITSUNE_API_ void Write(const char* data, Usize count) override;
-        KITSUNE_API_ void Flush() override;
+        void Write(const char* data, Usize count) override;
+        void Flush() override;
 
     private:
-        KITSUNE_API_ void WriteToConsole(const NativeChar* begin,
+        void WriteToConsole(const NativeChar* begin,
                                          const NativeChar* end);
 
-        KITSUNE_API_ void ThreadUnsafeFlush();
+        void ThreadUnsafeFlush();
 
     private:
         static constexpr Usize s_BufferSize = 128;

@@ -13,10 +13,10 @@ namespace Kitsune
             Read(stream, '\n');
         }
 
-        KITSUNE_API_ void Read(IWriteStream<char>& stream, char delim) override;
+        void Read(IWriteStream<char>& stream, char delim) override;
 
     private:
-        KITSUNE_API_ void ReadFromConsole();
+        void ReadFromConsole();
 
     private:
         static constexpr Usize s_BufferSize = 128;

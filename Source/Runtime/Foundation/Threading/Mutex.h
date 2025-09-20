@@ -23,7 +23,7 @@ namespace Kitsune
     class Mutex
     {
     public:
-        KITSUNE_API_ Mutex();
+        Mutex();
         ~Mutex() = default;
 
     public:

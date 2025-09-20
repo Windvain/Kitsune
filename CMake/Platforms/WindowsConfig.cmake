@@ -35,6 +35,11 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     )
 
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    # MSVC corrupts UTF-8 strings if /utf-8 is not specified.
+    # It first encodes the string as UTF-8, then encodes it again in Windows-1252.
+    #
+    # Thanks, Microsoft.
+    # https://stackoverflow.com/questions/59046071/c-u8-literal-unexpected-encoding-on-windows
     set(KITSUNE_GLOBAL_COMPILER_FLAGS
         "/Zc:wchar_t"                 # Treat wchar_t as a native type.
         "/utf-8"                      # Specifies the source and execution charset as UTF-8.

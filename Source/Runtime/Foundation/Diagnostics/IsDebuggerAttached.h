@@ -5,5 +5,5 @@
 namespace Kitsune
 {
     [[nodiscard]]
-    KITSUNE_API_ bool IsDebuggerAttached();
+    bool IsDebuggerAttached();
 }

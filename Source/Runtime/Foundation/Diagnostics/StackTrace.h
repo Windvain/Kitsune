@@ -10,7 +10,7 @@ namespace Kitsune
     namespace Details
     {
         using StackTraceFillCallback = void(*)(SharedPtr<StackFrame>, void*);
-        KITSUNE_API_ void DoBackTrace(Usize skipCount, Usize maxDepth,
+        void DoBackTrace(Usize skipCount, Usize maxDepth,
                                       StackTraceFillCallback callback, void* data);
 
         template<Allocator Alloc>

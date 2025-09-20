@@ -33,6 +33,6 @@ namespace Kitsune
         Array<MessageBoxButton> Buttons;
     };
 
-    KITSUNE_API_ bool ShowMessageBox(const MessageBoxSpecs& specs,
+    bool ShowMessageBox(const MessageBoxSpecs& specs,
                                      MessageBoxButtonId* pressed = nullptr);
 }

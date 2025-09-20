@@ -9,7 +9,6 @@ set(KITSUNE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(KITSUNE_DEFAULT_BUILD_TYPE "Production")
 set(KITSUNE_CONFIG_TYPES "Debug" "Optimized" "Production")
 
-option(KITSUNE_BUILD_STATIC "Build all Kitsune libraries as static libs." OFF)
 option(KITSUNE_BUILD_EXAMPLES "Build Kitsune's example executables." ON)
 option(KITSUNE_BUILD_TESTS "Build Kitsune's test executables." ON)
 

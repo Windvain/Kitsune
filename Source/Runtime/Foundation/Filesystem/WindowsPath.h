@@ -68,11 +68,11 @@ namespace Kitsune::Filesystem
         inline WindowsPath operator+(CharType ch)             { auto copy = *this; return (copy += ch);   }
 
     public:
-        KITSUNE_API_ WindowsPath GetDrivePath() const;
-        KITSUNE_API_ WindowsPath GetRootPath() const;
+        WindowsPath GetDrivePath() const;
+        WindowsPath GetRootPath() const;
 
-        KITSUNE_API_ WindowsPath GetRelativePath() const;
-        KITSUNE_API_ WindowsPath GetParentPath() const;
+        WindowsPath GetRelativePath() const;
+        WindowsPath GetParentPath() const;
 
         inline WindowsPath GetAnchorPath() const
         {
@@ -103,9 +103,9 @@ namespace Kitsune::Filesystem
         inline void Clear() { return m_String.Clear(); }
 
     private:
-        KITSUNE_API_ WindowsPath::ViewType GetDriveSubstring() const;
-        KITSUNE_API_ WindowsPath::ViewType GetRootSubstring() const;
-        KITSUNE_API_ WindowsPath::ViewType GetRelativeSubstring() const;
+        WindowsPath::ViewType GetDriveSubstring() const;
+        WindowsPath::ViewType GetRootSubstring() const;
+        WindowsPath::ViewType GetRelativeSubstring() const;
 
     private:
         StringType m_String;

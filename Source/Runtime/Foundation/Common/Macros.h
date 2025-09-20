@@ -9,27 +9,6 @@
 #define KITSUNE_CONCAT_HELPER_(x, y) x##y
 #define KITSUNE_CONCAT(x, y)         KITSUNE_CONCAT_HELPER_(x, y)
 
-// Shared library symbol importing/exporting.
-// On other platforms except for Windows, functions and variables are exported
-// by default.
-#if defined(KITSUNE_OS_WINDOWS)
-    #define KITSUNE_DYNAMIC_IMPORT __declspec(dllimport)
-    #define KITSUNE_DYNAMIC_EXPORT __declspec(dllexport)
-#else
-    #define KITSUNE_DYNAMIC_IMPORT
-    #define KITSUNE_DYNAMIC_EXPORT
-#endif
-
-#if !defined(KITSUNE_IS_MONOLITHIC)
-    #if defined(KITSUNE_EXPORTS)
-        #define KITSUNE_API_ KITSUNE_DYNAMIC_EXPORT
-    #else
-        #define KITSUNE_API_ KITSUNE_DYNAMIC_IMPORT
-    #endif
-#else
-    #define KITSUNE_API_
-#endif
-
 // Compile time checks.
 #if defined(__has_builtin)
     #define KITSUNE_HAS_BUILTIN(builtin) __has_builtin(builtin)
