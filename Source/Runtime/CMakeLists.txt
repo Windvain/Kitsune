@@ -3,20 +3,9 @@ add_library(
     KitsuneEngine
     STATIC
 
-    "Application/Application.cpp"
-    "Application/Application.h"
-
-    "ApplicationCore/Null/NullMonitor.h"
-    "ApplicationCore/Null/NullWindow.cpp"
-    "ApplicationCore/Null/NullWindow.h"
-
-    "ApplicationCore/CommandLineArguments.h"
-    "ApplicationCore/Environment.h"
-    "ApplicationCore/IMonitor.h"
-    "ApplicationCore/IWindow.h"
-    "ApplicationCore/MonitorException.h"
-    "ApplicationCore/VideoMode.h"
-    "ApplicationCore/WindowException.h"
+    "Application/CommandLineArguments.h"
+    "Application/IApplication.cpp"
+    "Application/IApplication.h"
 
     "Foundation/Algorithms/Copy.h"
     "Foundation/Algorithms/Count.h"
@@ -71,6 +60,8 @@ add_library(
     "Foundation/Logging/ConsoleLogger.h"
     "Foundation/Logging/ConsoleOutputStream.cpp"
     "Foundation/Logging/ConsoleOutputStream.h"
+    "Foundation/Logging/GlobalLog.cpp"
+    "Foundation/Logging/GlobalLog.h"
     "Foundation/Logging/ILogger.h"
     "Foundation/Logging/IStream.h"
     "Foundation/Logging/WriteStreamIterator.h"
@@ -119,24 +110,15 @@ add_library(
     "Foundation/Utilities/Function.h"
     "Foundation/Utilities/MemberFunction.h"
     "Foundation/Utilities/NonCopyable.h"
-    "Foundation/Utilities/Process.cpp"
-    "Foundation/Utilities/Process.h"
 
-    "Launch/EngineLoop.cpp"
-    "Launch/EngineLoop.h"
+    "Launch/DefaultEngineLoop.cpp"
+    "Launch/DefaultEngineLoop.h"
     "Launch/EngineMain.cpp"
+    "Launch/IEngineLoop.h"
 )
 
 if (WIN32)
     target_sources(KitsuneEngine PRIVATE
-        "Application/Windows/WindowsApplication.cpp"
-
-        "ApplicationCore/Windows/WindowsEnvironment.cpp"
-        "ApplicationCore/Windows/WindowsMonitor.cpp"
-        "ApplicationCore/Windows/WindowsMonitor.h"
-        "ApplicationCore/Windows/WindowsWindow.cpp"
-        "ApplicationCore/Windows/WindowsWindow.h"
-
         "Foundation/Diagnostics/WindowsDebuggerAttached.cpp"
         "Foundation/Diagnostics/WindowsMessageBox.cpp"
 
@@ -145,13 +127,8 @@ if (WIN32)
 
         "Foundation/Threading/WindowsMutex.cpp"
 
-        "Foundation/Utilities/WindowsProcess.cpp"
-
+        "Launch/Windows/WindowsDefaultEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
-    )
-
-    target_link_libraries(KitsuneEngine PRIVATE
-        "comctl32.lib"
     )
 endif()
 
@@ -163,11 +140,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         "Foundation/Threading/ClangInterlocked.inl"
     )
 
-    # Resources cannot be stored in a static library, and therefore
-    # have to be compiled into the executable, not the library.
-    #
-    # Might be removed in the future, forcing .rc files on our clients is just stupid.
-    target_sources(KitsuneEngine PUBLIC "KitsuneEngine.rc")
+    target_sources(KitsuneEngine PUBLIC
+        "KitsuneEngine.rc"
+    )
 
     target_link_libraries(KitsuneEngine PRIVATE
         "libbacktrace"
@@ -182,9 +157,9 @@ elseif (MSVC)
         "KitsuneEngine.natvis"
     )
 
-    # Resources cannot be stored in a static library, and therefore
-    # have to be compiled into the executable, not the library.
-    target_sources(KitsuneEngine PUBLIC "KitsuneEngine.manifest")
+    target_sources(KitsuneEngine PUBLIC
+        "KitsuneEngine.manifest"
+    )
 
     target_link_libraries(KitsuneEngine PRIVATE
         "DbgHelp.lib"

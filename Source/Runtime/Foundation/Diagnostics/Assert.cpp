@@ -31,7 +31,7 @@ namespace Kitsune::Details
             "Expression: {3}\nMessage: {4}",
             loc.FileName(), loc.Line(), loc.FunctionName(), expression, message);
 
-        MessageBoxSpecs msgBoxSpecs;
+        MessageBoxSpecifications msgBoxSpecs;
         msgBoxSpecs.Title = "Kitsune Engine";
         msgBoxSpecs.Description = description;
         msgBoxSpecs.Icon = MessageBoxIcon::Error;

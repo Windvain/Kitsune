@@ -1,38 +1,30 @@
 #pragma once
 
-#include "Foundation/Logging/ILogger.h"
+#include "Foundation/String/Format.h"
+#include "Foundation/Logging/LogPayload.h"
 
-/*
-namespace Kitsune
+namespace Kitsune::Details
 {
-    Logger* SetGlobalLogger(Logger* logger);
-    Logger* GetGlobalLogger();
+    void LogGlobal(LogSeverity severity, SourceLocation loc, const StringView str);
+
+    template<typename... Args>
+    inline void LogGlobalFormat(LogSeverity severity, SourceLocation loc, const StringView fmt, Args&&... args)
+    {
+        String formatted =  Format(fmt, Forward<Args>(args)...);
+        LogGlobal(severity, loc, formatted);
+    }
 }
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)
     #define KITSUNE_LOG_LEVEL_(severity, message, source) \
-        ::Kitsune::GetGlobalLogger()->Log(severity, source, message)
+        ::Kitsune::Details::LogGlobal(severity, source, message)
 
     #define KITSUNE_LOG_FORMAT_LEVEL_(severity, message, source, ...) \
-        ::Kitsune::GetGlobalLogger()->LogFormat(severity, source, message, __VA_ARGS__)
-
-    #define KITSUNE_LOG(message) ::Kitsune::GetGlobalLogger()->Log(SourceLocation(), message)
-    #define KITSUNE_LOG_FORMAT(message, ...) \
-        ::Kitsune::GetGlobalLogger()->LogFormat(SourceLocation(), message, __VA_ARGS__)
-
-    #define KITSUNE_LOG_SOURCED(message) ::Kitsune::GetGlobalLogger()->Log(SourceLocation::Current(), message)
-    #define KITSUNE_LOG_FORMAT_SOURCED(message, ...) \
-        ::Kitsune::GetGlobalLogger()->LogFormat(SourceLocation::Current(), message, __VA_ARGS__)
-#else*/
+        ::Kitsune::Details::LogGlobalFormat(severity, source, message, __VA_ARGS__)
+#else
     #define KITSUNE_LOG_LEVEL_(severity, message, source)
     #define KITSUNE_LOG_FORMAT_LEVEL_(severity, message, source, ...)
-
-    #define KITSUNE_LOG(message)
-    #define KITSUNE_LOG_FORMAT(message, ...)
-
-    #define KITSUNE_LOG_SOURCED(message)
-    #define KITSUNE_LOG_FORMAT_SOURCED(message, ...)
-// #endif
+#endif
 
 #define KITSUNE_TRACE(message)       KITSUNE_LOG_LEVEL_(::Kitsune::LogSeverity::Trace, message, SourceLocation());
 #define KITSUNE_INFO(message)        KITSUNE_LOG_LEVEL_(::Kitsune::LogSeverity::Info, message, SourceLocation());

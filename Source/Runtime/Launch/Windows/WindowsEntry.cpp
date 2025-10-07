@@ -14,10 +14,11 @@
 #include "Foundation/Common/Features.h"
 #include "Foundation/Common/Predefined.h"
 
-#include "Foundation/Memory/BadAllocException.h"
+#include "Foundation/Diagnostics/IException.h"
 
-// Why did Microsoft decide to use this as an exception code? Who knows.
-#define KITSUNE_EXCEPTION_CPP_EXCEPTION 0xE06D7363
+// Exception codes with no macro definitions in the <Windows.h> header.
+// Usually undocumented, so don't ask why Microsoft chose that as an error code.
+#define KITSUNE_CXX_EXCEPTION_CODE 0xE06D7363
 
 namespace Kitsune
 {
@@ -50,7 +51,7 @@ const char* FormatExceptionCode(DWORD code)
     case EXCEPTION_INT_OVERFLOW:             return "Integer Overflow";
 
     case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occurred";
-    case KITSUNE_EXCEPTION_CPP_EXCEPTION:    return "C++ Exception";
+    case KITSUNE_CXX_EXCEPTION_CODE:         return "C++ Exception";
     default:                                 return "Unknown";
     }
 }
@@ -123,7 +124,9 @@ DWORD ProcessSehException(LPEXCEPTION_POINTERS exceptionInfo)
         std::printf("Parameter[%lx]: 0x%p\n", i, ptr);
     }
 
-    if (exceptionCode == KITSUNE_EXCEPTION_CPP_EXCEPTION)
+    // Certain exceptions have additional information regarding why it was thrown.
+    // https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-exception_record#members/
+    if (exceptionCode == KITSUNE_CXX_EXCEPTION_CODE)
     {
         // https://devblogs.microsoft.com/oldnewthing/20100730-00/?p=13273
         IException& cppException = *reinterpret_cast<IException*>(exceptionRecord->ExceptionInformation[1]);

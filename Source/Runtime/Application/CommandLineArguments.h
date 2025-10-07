@@ -3,18 +3,17 @@
 #include "Foundation/Common/Types.h"
 #include "Foundation/Diagnostics/Assert.h"
 
-#include "Foundation/String/String.h"
 #include "Foundation/Containers/Array.h"
+#include "Foundation/String/StringView.h"
 
 #include "Foundation/Diagnostics/OutOfRangeException.h"
-#include "Foundation/Diagnostics/InvalidArgumentException.h"
 
 namespace Kitsune
 {
     class CommandLineArguments
     {
     public:
-        using Iterator = Array<String>::ConstIterator;
+        using Iterator = Array<StringView>::ConstIterator;
 
     public:
         CommandLineArguments() = default;
@@ -31,25 +30,27 @@ namespace Kitsune
                 m_Arguments.PushBack(argv[i]);
         }
 
-        inline CommandLineArguments(const Array<String>& args)
+        inline explicit CommandLineArguments(const Array<StringView>& args)
             : m_Arguments(args)
         {
         }
 
-        inline CommandLineArguments(Array<String>&& args)
+        inline explicit CommandLineArguments(Array<StringView>&& args)
             : m_Arguments(Move(args))
         {
         }
 
     public:
-        inline const String& operator[](Index index) const
+        inline const StringView& operator[](Index index) const
         {
-            if (index >= Count()) throw OutOfRangeException();
+            if (index >= GetCount())
+                throw OutOfRangeException();
+
             return m_Arguments[index];
         }
 
     public:
-        inline Usize Count() const { return m_Arguments.Size(); }
+        inline Usize GetCount() const { return m_Arguments.Size(); }
 
     public:
         inline Iterator GetBegin() const { return m_Arguments.GetBegin(); }
@@ -60,6 +61,6 @@ namespace Kitsune
         inline Iterator end()   const { return GetEnd(); }
 
     private:
-        Array<String> m_Arguments;
+        Array<StringView> m_Arguments;
     };
 }

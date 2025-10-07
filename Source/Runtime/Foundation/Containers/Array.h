@@ -50,7 +50,7 @@ namespace Kitsune
         }
 
         inline Array(Usize cap, const Alloc& alloc)
-            : m_Allocator(alloc)
+            : Array(alloc)
         {
             if (cap == 0) return;
 
@@ -60,7 +60,7 @@ namespace Kitsune
         }
 
         inline explicit Array(Usize cap, Alloc&& alloc = Alloc())
-            : m_Allocator(Move(alloc))
+            : Array(Move(alloc))
         {
             if (cap == 0) return;
 

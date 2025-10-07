@@ -8,19 +8,20 @@
 
 namespace Kitsune
 {
-    // thread_local bool g_WritingToExceptionStackTrace = false;
+    // Defined in Launch/EngineMain.cpp.
+    extern thread_local StackTrace* g_ExceptionStackTrace;
 
-    thread_local Uint8 g_ExceptionData[1024];
-    thread_local Uint8* g_ExceptionDataPointer = g_ExceptionData;
-
-    // HACK: This is defined in KitsuneLaunch, because Windows DLLs cannot
-    //       export thread_local variables.
-    // extern thread_local StackTrace* g_ExceptionStackTrace;
+    namespace
+    {
+        thread_local bool g_WritingToExceptionStackTrace = false;
+        thread_local Uint8 g_ExceptionData[1024];
+    }
 
     IException::IException() noexcept
     {
-        /*
-#if defined(KITSUNE_BUILD_PRODUCTION)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
+        KITSUNE_UNUSED(g_WritingToExceptionStackTrace);
+#else
         if (g_WritingToExceptionStackTrace)
             return;
 
@@ -35,7 +36,7 @@ namespace Kitsune
             g_WritingToExceptionStackTrace = true;
             g_ExceptionStackTrace = stackTrace;
 
-            Memory::ConstructAt(g_ExceptionStackTrace, MakeStackTrace(1));
+            Memory::ConstructAt(g_ExceptionStackTrace, StackTrace::Current());
             g_WritingToExceptionStackTrace = false;
         }
         catch (...)
@@ -43,39 +44,25 @@ namespace Kitsune
             // Just ignore the exception.
         }
 #endif
-        */
     }
 
     IException::IException(const char* name, const char* desc) noexcept
         : IException()
     {
-        // I apologize profusely to the people who might read this code
-        // in the future.
-        //
-        // The exception data is stored in the following format:
-        // ________________________________
-        // |         |      |             |
-        // | (char*) | Name | Description |
-        // |_________|______|_____________|
+        Uint8* pointer = g_ExceptionData;
+        Uint64 nameLength = std::strlen(name);
 
-        static_assert(KITSUNE_ARRAY_SIZE(g_ExceptionData) >= (sizeof(char*) + 2),
-                      "Exception data isn't large enough to fit internal data.");
+        std::memcpy(pointer, &nameLength, sizeof(Uint64));
+        pointer += sizeof(Uint64);
 
-        Usize nameSize = std::strlen(name) + 1;
-        Uint8* descPtr = g_ExceptionDataPointer + sizeof(char*) + nameSize;
+        std::memcpy(pointer, name, sizeof(char) * (nameLength + 1));
+        pointer += (nameLength + 1);
 
-        WriteExceptionData(&descPtr, sizeof(char*));
-
-        WriteExceptionData(name, nameSize);
-        g_ExceptionDataPointer[-1] = '\0';
-
-        WriteExceptionData(desc, std::strlen(name) + 1);
-        g_ExceptionDataPointer[-1] = '\0';
+        std::memcpy(pointer, desc, sizeof(char) * (std::strlen(desc) + 1));
     }
 
     IException::~IException() noexcept
     {
-        /*
 #if defined(KITSUNE_BUILD_PRODUCTION)
         if (g_ExceptionStackTrace != nullptr)
         {
@@ -83,27 +70,16 @@ namespace Kitsune
             g_ExceptionStackTrace = nullptr;
         }
 #endif
-        */
     }
 
     const char* IException::GetName() const noexcept
     {
-        return reinterpret_cast<const char*>(g_ExceptionData + sizeof(char*));
+        return reinterpret_cast<const char*>(g_ExceptionData + sizeof(Uint64));
     }
 
     const char* IException::GetDescription() const noexcept
     {
-        return *reinterpret_cast<const char**>(g_ExceptionData);
-    }
-
-    void IException::WriteExceptionData(const void* ptr, Usize bytes)
-    {
-        Usize remainder = g_ExceptionData + KITSUNE_ARRAY_SIZE(g_ExceptionData)
-                        - g_ExceptionDataPointer;
-
-        Usize min = KITSUNE_MIN(remainder, bytes);
-        std::memcpy(g_ExceptionDataPointer, ptr, min);
-
-        g_ExceptionDataPointer += min;
+        Uint64 nameLength = *reinterpret_cast<Uint64*>(g_ExceptionData);
+        return reinterpret_cast<const char*>(g_ExceptionData + sizeof(Uint64) + nameLength + 1);
     }
 }

@@ -1,18 +1,21 @@
-#include "Application/Application.h"
-#include "Foundation/Memory/Memory.h"
+#include "Application/IApplication.h"
+#include "Launch/DefaultEngineLoop.h"
 
 #include <gtest/gtest.h>
+#include "Foundation/Memory/Memory.h"
 
 using namespace Kitsune;
 
-class FoundationTests : public Application
+class FoundationTests : public IApplication
 {
 public:
-    FoundationTests(const ApplicationSpecs& specs)
-        : Application(specs)
+    FoundationTests(const ApplicationSpecifications& specs)
+        : IApplication(specs)
     {
         testing::InitGoogleTest();
-        Quit(RUN_ALL_TESTS());
+
+        DefaultEngineLoop* engineLoop = DefaultEngineLoop::GetInstance();
+        engineLoop->Exit(RUN_ALL_TESTS());
     }
 
     ~FoundationTests()
@@ -21,10 +24,8 @@ public:
     }
 };
 
-Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
+IApplication* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
 {
-    ApplicationSpecs specs;
-    specs.Headless = true;
-
+    ApplicationSpecifications specs;
     return Memory::New<FoundationTests>(specs);
 }

@@ -142,12 +142,14 @@ TEST(ArrayTests, AllocatorConstructor)
     auto copied = Array<int, TestAllocator>(alloc);
 
     EXPECT_EQ(alloc.Id, 23);
+    EXPECT_EQ(copied.Data(), nullptr);
     EXPECT_EQ(copied.GetAllocator().Id, 23);
     EXPECT_GE(copied.Capacity(), 0);
     EXPECT_EQ(copied.Size(), 0);
 
     auto moved = Array<int, TestAllocator>(std::move(alloc));
     EXPECT_EQ(alloc.Id, 0);
+    EXPECT_EQ(moved.Data(), nullptr);
     EXPECT_EQ(moved.GetAllocator().Id, 23);
     EXPECT_GE(moved.Capacity(), 0);
     EXPECT_EQ(moved.Size(), 0);
@@ -168,6 +170,12 @@ TEST(ArrayTests, CapacityConstructor)
     EXPECT_EQ(moved.GetAllocator().Id, 23);
     EXPECT_GE(moved.Capacity(), 120);
     EXPECT_EQ(moved.Size(), 0);
+
+    auto empty = Array<int, TestAllocator>(0, TestAllocator(12));
+    EXPECT_EQ(empty.GetAllocator().Id, 12);
+    EXPECT_EQ(empty.Capacity(), 0);
+    EXPECT_EQ(empty.Size(), 0);
+    EXPECT_EQ(empty.Data(), nullptr);
 }
 
 TEST(ArrayTests, FillConstructor)

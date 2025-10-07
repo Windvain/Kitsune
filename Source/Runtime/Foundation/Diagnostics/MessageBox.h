@@ -8,7 +8,7 @@
 
 namespace Kitsune
 {
-    using MessageBoxButtonId = Int32;
+    using MessageBoxButtonId = Uint16;
 
     enum class MessageBoxIcon
     {
@@ -24,7 +24,7 @@ namespace Kitsune
         String Text;
     };
 
-    struct MessageBoxSpecs
+    struct MessageBoxSpecifications
     {
         String Title;
         String Description;
@@ -33,6 +33,6 @@ namespace Kitsune
         Array<MessageBoxButton> Buttons;
     };
 
-    bool ShowMessageBox(const MessageBoxSpecs& specs,
-                                     MessageBoxButtonId* pressed = nullptr);
+    bool ShowMessageBox(const MessageBoxSpecifications& specs,
+                        MessageBoxButtonId* pressed = nullptr);
 }

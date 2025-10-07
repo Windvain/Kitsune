@@ -1,17 +1,13 @@
 #include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Templates/Exchange.h"
+// #include "Launch/GameEngine.h"
 
-namespace Kitsune
+namespace Kitsune::Details
 {
-    namespace { Logger* g_GlobalLogger = nullptr; }
-
-    Logger* SetGlobalLogger(Logger* logger)
+    void LogGlobal(LogSeverity severity, SourceLocation loc, const StringView str)
     {
-        return Exchange(g_GlobalLogger, logger);
-    }
-
-    Logger* GetGlobalLogger()
-    {
-        return g_GlobalLogger;
+        KITSUNE_UNUSED(severity); KITSUNE_UNUSED(loc); KITSUNE_UNUSED(str);
+        /* GameEngine* engine = GameEngine::GetInstance();
+        for (auto& logger : engine->GetLoggers())
+            logger->Log(LogPayload(str, "GLOBAL", Move(loc), severity)); */
     }
 }

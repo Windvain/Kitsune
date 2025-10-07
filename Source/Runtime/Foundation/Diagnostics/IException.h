@@ -1,9 +1,7 @@
 #pragma once
 
 #include <exception>
-
 #include "Foundation/Common/Types.h"
-#include "Foundation/Common/Macros.h"
 
 namespace Kitsune
 {
@@ -18,9 +16,6 @@ namespace Kitsune
     public:
         const char* GetName() const noexcept;
         const char* GetDescription() const noexcept;
-
-    private:
-        void WriteExceptionData(const void* ptr, Usize bytes);
 
     public:
         // Make it easier to debug..

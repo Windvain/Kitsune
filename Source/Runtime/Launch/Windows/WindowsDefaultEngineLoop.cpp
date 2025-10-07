@@ -1,0 +1,38 @@
+#include "Launch/DefaultEngineLoop.h"
+#include <Windows.h>
+
+// Clang doesn't recognize that ::TerminateProcess() will just quit the program
+// and marks ForceExit()'s [[noreturn]] as invalid.
+KITSUNE_PUSH_COMPILER_WARNINGS()
+KITSUNE_IGNORE_CLANG_WARNING(-Winvalid-noreturn)
+
+namespace Kitsune
+{
+    void DefaultEngineLoop::Exit(int exitCode)
+    {
+        m_ExitCode = exitCode;
+        m_ExitRequested = true;
+
+        ::PostQuitMessage(exitCode);
+    }
+
+    void DefaultEngineLoop::ForceExit(int exitCode)
+    {
+        Exit(exitCode);
+        ::TerminateProcess(::GetCurrentProcess(), exitCode);
+    }
+
+    void DefaultEngineLoop::PlatformUpdate()
+    {
+        // Might move this to Application/ directory. Kind of equivalent to
+        // Xlib's XNextEvent().
+        MSG message;
+        if (::PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE) != 0)
+        {
+            ::TranslateMessage(&message);
+            ::DispatchMessageW(&message);
+        }
+    }
+}
+
+KITSUNE_POP_COMPILER_WARNINGS()

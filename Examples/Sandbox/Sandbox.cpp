@@ -1,24 +1,14 @@
-#include "Application/Application.h"
+#include "Application/IApplication.h"
 #include "Foundation/Memory/Memory.h"
-
-#include "Foundation/Logging/ConsoleLogger.h"
 
 using namespace Kitsune;
 
-class Sandbox : public Application
+class Sandbox : public IApplication
 {
 public:
-    Sandbox(const ApplicationSpecs& specs)
-        : Application(specs)
+    Sandbox(const ApplicationSpecifications& specs)
+        : IApplication(specs)
     {
-        LogPayload payload;
-        payload.Location = SourceLocation::Current();
-        payload.Severity = LogSeverity::Info;
-        payload.LoggerName = "GLOBAL";
-        payload.Message = "Hello, World!";
-
-        ConsoleLogger logger;
-        logger.Log(payload);
     }
 
     ~Sandbox()
@@ -26,12 +16,10 @@ public:
     }
 };
 
-Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
+IApplication* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
 {
-    ApplicationSpecs specs;
+    ApplicationSpecifications specs;
     specs.Name = "Sandbox";
-    specs.ViewportSize = { 640, 480 };
-    specs.WindowPositionHint = WindowPositionHint::ScreenCenter;
 
     return Memory::New<Sandbox>(specs);
 }
