@@ -14,7 +14,7 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It, typename Size,
-             Invokable<IteratorTraits<It>::ValueType&> Fn>
+             Invokable<typename IteratorTraits<It>::ValueType&> Fn>
     inline void ForEachN(It begin, Size n, Fn fn)
     {
         for (; n > 0; ++begin, --n)

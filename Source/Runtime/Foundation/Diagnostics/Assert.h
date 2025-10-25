@@ -17,7 +17,6 @@ namespace Kitsune::Details
             KITSUNE_DEBUGBREAK();                                                   \
         }                                                                           \
                                                                                     \
-        KITSUNE_ASSUME(expr);                                                       \
     } while (false)
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)
@@ -27,4 +26,3 @@ namespace Kitsune::Details
     #define KITSUNE_ASSERT(expr, message) ((void)0)
     #define KITSUNE_VERIFY(expr, message) if (expr) {}
 #endif
-

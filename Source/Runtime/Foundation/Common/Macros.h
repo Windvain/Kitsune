@@ -52,16 +52,6 @@
     #define KITSUNE_MAYBE_OVERLAPPING [[no_unique_address]]
 #endif
 
-#if __cplusplus >= 202302L
-    #define KITSUNE_ASSUME(expression) [[assume(expression)]]
-#elif defined(KITSUNE_COMPILER_MSVC)
-    #define KITSUNE_ASSUME(expression) __assume(expression)
-#elif defined(KITSUNE_COMPILER_CLANG)
-    #define KITSUNE_ASSUME(expression) __builtin_assume(expression)
-#else
-    #define KITSUNE_ASSUME(expression)
-#endif
-
 // Compiler-specific debugging utilities.
 #if defined(KITSUNE_COMPILER_MSVC)
     #define KITSUNE_DEBUGBREAK() __debugbreak()

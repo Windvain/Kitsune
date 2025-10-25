@@ -13,7 +13,7 @@ namespace Kitsune
         // The memory subsystem is lazily initialized, so there might be
         // multiple calls to InitializeExplicit().
         if (s_Initialized)
-            return;
+            return true;
 
         s_MemoryApi = new (std::nothrow) CMallocApi();
         if (s_MemoryApi != nullptr)
@@ -30,22 +30,16 @@ namespace Kitsune
 
     void* Memory::TryAllocate(Usize bytes)
     {
-        if (bytes == 0)
+        if ((bytes == 0) || !Memory::InitializeExplicit())
             return nullptr;
-
-        if (!s_Initialized)
-            Memory::InitializeExplicit();
 
         return s_MemoryApi->TryAllocate(bytes, s_MemoryApi->GetDefaultAlignment());
     }
 
     void* Memory::TryAllocate(Usize bytes, Usize alignment)
     {
-        if (bytes == 0)
+        if ((bytes == 0) || !Memory::InitializeExplicit())
             return nullptr;
-
-        if (!s_Initialized)
-            Memory::InitializeExplicit();
 
         return s_MemoryApi->TryAllocate(bytes, alignment);
     }

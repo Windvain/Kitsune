@@ -54,11 +54,12 @@ namespace Kitsune::Algorithms
             });
     }
 
-    template<RandomAccessIterator It1, RandomAccessIterator It2,
+    template<ForwardIterator It1, ForwardIterator It2,
              Invokable<typename IteratorTraits<It1>::ValueType&,
                        typename IteratorTraits<It2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(It1 begin1, It1 end1, It2 begin2, It2 end2, Pred pred)
+        requires RandomAccessIterator<It1> && RandomAccessIterator<It2>
     {
         if (end1 - begin1 != end2 - begin2)
             return false;
@@ -73,8 +74,8 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It1, ForwardIterator It2,
-             Invokable<typename IteratorTraits<It1>::ValueType,
-                       typename IteratorTraits<It2>::ValueType> Pred>
+             Invokable<typename IteratorTraits<It1>::ValueType&,
+                       typename IteratorTraits<It2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(It1 begin1, It1 end1, It2 begin2, It2 end2, Pred pred)
     {
