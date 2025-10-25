@@ -5,16 +5,17 @@
 
 #include "Foundation/Common/Types.h"
 #include "Foundation/Common/Macros.h"
-#include "Foundation/Templates/Forward.h"
 
+#include "Foundation/Templates/Forward.h"
 #include "Foundation/Memory/IMemoryApi.h"
+#include "Foundation/Memory/MemoryProtection.h"
 
 namespace Kitsune
 {
     class Memory
     {
     public:
-        static void InitializeExplicit();
+        static bool InitializeExplicit();
         static void Shutdown();
 
     public:
@@ -25,6 +26,10 @@ namespace Kitsune
         [[nodiscard]] static void* Allocate(Usize bytes, Usize alignment);
 
         static void Free(void* ptr);
+
+    public:
+        [[nodiscard]] static void* VirtualAllocate(Usize bytes, MemoryProtection protection);
+        static void VirtualFree(void* ptr, Usize bytes);
 
     public:
         [[nodiscard]]

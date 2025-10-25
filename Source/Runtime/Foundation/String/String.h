@@ -5,6 +5,7 @@
 #include <initializer_list>
 
 #include "Foundation/Templates/Move.h"
+#include "Foundation/Templates/Swap.h"
 
 #include "Foundation/String/StringView.h"
 #include "Foundation/Concepts/Character.h"
@@ -12,7 +13,6 @@
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
-#include "Foundation/Algorithms/Swap.h"
 #include "Foundation/Algorithms/Equal.h"
 #include "Foundation/Algorithms/Distance.h"
 #include "Foundation/Algorithms/Uninitialized.h"
@@ -316,7 +316,7 @@ namespace Kitsune
     public:
         inline void Swap(BasicString& str)
         {
-            Algorithms::Swap(m_Allocator, str.GetAllocator());
+            Kitsune::Swap(m_Allocator, str.GetAllocator());
             m_Data.Swap(str.m_Data);
         }
 
@@ -585,11 +585,12 @@ namespace Kitsune
             inline void Swap(StringData& data)
             {
                 T* dataPointer = data.Pointer;
+
                 data.Pointer = IsLocal() ? data.Shared.Buffer : Pointer;
                 Pointer = (dataPointer == data.Shared.Buffer) ? Shared.Buffer : dataPointer;
 
-                Algorithms::Swap(Size, data.Size);
-                Algorithms::Swap(Shared, data.Shared);
+                Kitsune::Swap(Size, data.Size);
+                Kitsune::Swap(Shared, data.Shared);
             }
 
         public:

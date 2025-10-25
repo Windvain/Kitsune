@@ -3,11 +3,12 @@
 #include <cstring>
 #include <type_traits>
 
-#include "Foundation/Algorithms/Swap.h"
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
 
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
+
 #include "Foundation/Utilities/BadCallException.h"
 
 namespace Kitsune
@@ -114,6 +115,7 @@ namespace Kitsune
         }
 
     public:
+        [[nodiscard]]
         inline void* Target() const
         {
             return m_Pointer;
@@ -121,12 +123,12 @@ namespace Kitsune
 
         inline void Swap(Function& func)
         {
-            Algorithms::Swap(m_Pointer, func.m_Pointer);
-            Algorithms::Swap(m_Size, func.m_Size);
+            Kitsune::Swap(m_Pointer, func.m_Pointer);
+            Kitsune::Swap(m_Size, func.m_Size);
 
-            Algorithms::Swap(m_CreateFunction, func.m_CreateFunction);
-            Algorithms::Swap(m_InvokeFunction, func.m_InvokeFunction);
-            Algorithms::Swap(m_DestroyFunction, func.m_DestroyFunction);
+            Kitsune::Swap(m_CreateFunction, func.m_CreateFunction);
+            Kitsune::Swap(m_InvokeFunction, func.m_InvokeFunction);
+            Kitsune::Swap(m_DestroyFunction, func.m_DestroyFunction);
         }
 
     private:

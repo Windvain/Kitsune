@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Application/CommandLineArguments.h"
+#include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
@@ -10,7 +10,9 @@ namespace Kitsune
         OutOfMemory
     };
 
-    class IEngineLoop
+    // Made abstract so that editor code won't have to be mixed in with
+    // engine initialization code.
+    class IEngineLoop : public NonCopyable
     {
     public:
         virtual ~IEngineLoop() { /* ... */ }

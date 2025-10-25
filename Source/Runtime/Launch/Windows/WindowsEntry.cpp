@@ -178,22 +178,31 @@ int StartWindowsEntry()
 
     if (::IsDebuggerPresent())
     {
-        return EngineMain(argc, argv);
-    }
-
-    // MinGW doesn't support SEH (Structured Exception Handling).
-    // Only Microsoft VC++ and Borland *really* support SEH.
-#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
-    __try
-#endif
-    {
         returnValue = EngineMain(argc, argv);
     }
-#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
-    __except (ProcessSehException(GetExceptionInformation()))
+    else
     {
-        KITSUNE_UNREACHABLE();
+        // MinGW doesn't support SEH (Structured Exception Handling).
+        // Only Microsoft VC++ and Borland *really* support SEH.
+#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
+        __try
+#endif
+        {
+            returnValue = EngineMain(argc, argv);
+        }
+#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
+        __except (ProcessSehException(GetExceptionInformation()))
+        {
+            KITSUNE_UNREACHABLE();
+        }
+#endif
     }
+
+    // Makes debugging much, much easier. Gives you a chance to look at the stacktrace
+    // that the program produces.
+#if !defined(KITSUNE_BUILD_PRODUCTION)
+    if (returnValue != 0)
+        ::Sleep(INFINITE);
 #endif
 
     return returnValue;

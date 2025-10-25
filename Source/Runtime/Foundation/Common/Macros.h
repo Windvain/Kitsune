@@ -52,6 +52,16 @@
     #define KITSUNE_MAYBE_OVERLAPPING [[no_unique_address]]
 #endif
 
+#if __cplusplus >= 202302L
+    #define KITSUNE_ASSUME(expression) [[assume(expression)]]
+#elif defined(KITSUNE_COMPILER_MSVC)
+    #define KITSUNE_ASSUME(expression) __assume(expression)
+#elif defined(KITSUNE_COMPILER_CLANG)
+    #define KITSUNE_ASSUME(expression) __builtin_assume(expression)
+#else
+    #define KITSUNE_ASSUME(expression)
+#endif
+
 // Compiler-specific debugging utilities.
 #if defined(KITSUNE_COMPILER_MSVC)
     #define KITSUNE_DEBUGBREAK() __debugbreak()
@@ -116,9 +126,5 @@
     #define KITSUNE_CURRENT_FUNCTION __func__
 #endif
 
-#define KITSUNE_CURRENT_FILE __FILE__
-#define KITSUNE_CURRENT_LINE __LINE__
-
 #define KITSUNE_UNUSED(x) ((void)x)
-
 #define KITSUNE_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

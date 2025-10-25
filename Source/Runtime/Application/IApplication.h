@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Foundation/String/String.h"
+#include "Foundation/Utilities/NonCopyable.h"
+
 #include "Application/CommandLineArguments.h"
 
 namespace Kitsune
@@ -13,7 +15,7 @@ namespace Kitsune
         String Version;
     };
 
-    class IApplication
+    class IApplication : public NonCopyable
     {
     public:
         IApplication(const ApplicationSpecifications& specs);

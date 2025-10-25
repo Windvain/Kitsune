@@ -18,7 +18,6 @@ namespace Kitsune
         const char* GetDescription() const noexcept;
 
     public:
-        // Make it easier to debug..
         const char* what() const noexcept override
         {
             return GetName();

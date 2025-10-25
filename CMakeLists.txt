@@ -17,6 +17,10 @@ if (KITSUNE_BUILD_TESTS)
     enable_testing()
 endif()
 
+if (MSVC)
+    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+endif()
+
 if (CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Detected multi-configuration CMake generator.")
     set(CMAKE_CONFIGURATION_TYPES ${KITSUNE_CONFIG_TYPES} CACHE STRING "" FORCE)

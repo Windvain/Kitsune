@@ -3,19 +3,24 @@
 // Detect target operating system.
 #if defined(_WIN32) || defined(_WIN64)
     #define KITSUNE_OS_WINDOWS 1
+    #define KITSUNE_OS_NT_KERNEL 1
 
-    #if defined(_WIN64)
-        #define KITSUNE_OS_WINDOWS_64BIT 1
+    #if defined(_WIN32)
+        #define KITSUNE_OS_WINDOWS_32_BIT 1
     #else
-        #define KITSUNE_OS_WINDOWS_32BIT 1
-    #endif
-
-    #if defined(__MINGW32__) || defined(__MINGW64__)
-        #define KITSUNE_OS_WINDOWS_MINGW 1
+        #define KITSUNE_OS_WINDOWS_64_BIT 1
     #endif
 
 #elif defined(__linux__)
-    #define KITSUNE_OS_LINUX 1
+    // There are so many operating systems that use Linux as
+    // their kernel, but this is close enough.
+    #if defined(__ANDROID__)
+        #define KITSUNE_OS_ANDROID 1
+    #else
+        #define KITSUNE_OS_LINUX 1
+    #endif
+
+    #define KITSUNE_OS_LINUX_KERNEL 1
 #else
     #error Failed to determine operating system.
 #endif
@@ -64,6 +69,10 @@
     #error Failed to determine compiler.
 #endif
 
+#if defined(__MINGW32__) || defined(__MINGW64__)
+    #define KITSUNE_COMPILER_MINGW_TOOLCHAIN 1
+#endif
+
 // Detect target architecture.
 #if defined(__arm__) || defined(_M_ARM)
     #define KITSUNE_ARCH_ARM     1
@@ -81,6 +90,12 @@
     #define KITSUNE_ARCH_X86_64 1
 #else
     #error Failed to determine target architecture.
+#endif
+
+#if defined(KITSUNE_ARCH_X86_64) || defined(KITSUNE_ARCH_AARCH64)
+    #define KITSUNE_ARCH_64_BIT 1
+#else
+    #define KITSUNE_ARCH_32_BIT 1
 #endif
 
 // Determine pointer size.

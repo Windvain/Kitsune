@@ -7,6 +7,7 @@
 #include "Foundation/Logging/GlobalLog.h"
 
 #include "Foundation/Diagnostics/MessageBox.h"
+#include "Launch/DefaultEngineLoop.h"
 
 namespace Kitsune::Details
 {
@@ -42,9 +43,9 @@ namespace Kitsune::Details
         };
 
         MessageBoxButtonId buttonPressed;
-        ShowMessageBox(msgBoxSpecs, &buttonPressed);
+        bool success = ShowMessageBox(msgBoxSpecs, &buttonPressed);
 
-        return buttonPressed;
+        return success ? buttonPressed : MessageBoxAbortId;
     }
 
     bool HandleAssertionFailure(const char* expression, const char* message,
@@ -53,16 +54,17 @@ namespace Kitsune::Details
         if (expression == nullptr) expression = "";
         if (message == nullptr)    message = "";
 
-        /* Logger* logger = GetGlobalLogger();
-        if (logger == nullptr) */
+        auto* engineLoop = DefaultEngineLoop::GetInstance();
+        if (!engineLoop || (engineLoop->GetLoggers().Size() == 0))
             FallbackLogAssertionMessage(expression, message, loc);
-        /* else
+        else
         {
-            logger->LogFormat(LogSeverity::Fatal, Move(loc),
-                              "Assertion `{0}` has failed.\n"
-                              "`{1}`",
-                              expression, message);
-        }*/
+            KITSUNE_LOG_FORMAT_LEVEL_("ENGINE", LogSeverity::Fatal,
+                                      "Assertion `{0}` has failed.\n"
+                                      "`{1}`",
+                                      Move(loc),
+                                      expression, message);
+        }
 
         return (ShowAssertMessageBox(expression, message, loc) == MessageBoxAbortId);
     }

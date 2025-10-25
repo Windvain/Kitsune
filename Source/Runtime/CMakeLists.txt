@@ -27,6 +27,10 @@ add_library(
     "Foundation/Common/Types.h"
 
     "Foundation/Concepts/Character.h"
+    "Foundation/Concepts/Comparable.h"
+    "Foundation/Concepts/Container.h"
+    "Foundation/Concepts/Invokable.h"
+    "Foundation/Concepts/Swappable.h"
 
     "Foundation/Containers/Array.h"
 
@@ -42,12 +46,12 @@ add_library(
     "Foundation/Diagnostics/StackFrame.h"
     "Foundation/Diagnostics/StackTrace.h"
     "Foundation/Diagnostics/StackTraceException.h"
+    "Foundation/Diagnostics/SystemException.h"
 
     "Foundation/Filesystem/Path.h"
     "Foundation/Filesystem/PathChecks.h"
     "Foundation/Filesystem/WindowsPath.cpp"
     "Foundation/Filesystem/WindowsPath.h"
-    "Foundation/Filesystem/WindowsPathChecks.cpp"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
@@ -64,13 +68,16 @@ add_library(
     "Foundation/Logging/GlobalLog.h"
     "Foundation/Logging/ILogger.h"
     "Foundation/Logging/IStream.h"
+    "Foundation/Logging/LogPayload.h"
     "Foundation/Logging/WriteStreamIterator.h"
 
-    "Foundation/Maths/VectorBase.h"
     "Foundation/Maths/Vector2.h"
+    "Foundation/Maths/VectorBase.h"
 
     "Foundation/Memory/AddressOf.h"
     "Foundation/Memory/Allocator.h"
+    "Foundation/Memory/BackupMemoryAllocator.cpp"
+    "Foundation/Memory/BackupMemoryAllocator.h"
     "Foundation/Memory/BadAllocException.h"
     "Foundation/Memory/BadWeakPtrException.h"
     "Foundation/Memory/CMallocApi.cpp"
@@ -80,6 +87,7 @@ add_library(
     "Foundation/Memory/IMemoryApi.h"
     "Foundation/Memory/Memory.cpp"
     "Foundation/Memory/Memory.h"
+    "Foundation/Memory/MemoryProtection.h"
     "Foundation/Memory/ScopedPtr.h"
     "Foundation/Memory/SharedPtr.h"
 
@@ -100,12 +108,14 @@ add_library(
     "Foundation/Templates/Forward.h"
     "Foundation/Templates/IsAnyOf.h"
     "Foundation/Templates/Move.h"
+    "Foundation/Templates/Swap.h"
 
     "Foundation/Threading/Interlocked.h"
     "Foundation/Threading/LockGuard.h"
     "Foundation/Threading/Mutex.h"
     "Foundation/Threading/ThreadSafety.h"
 
+    "Foundation/Utilities/BadCallException.h"
     "Foundation/Utilities/EnumFlags.h"
     "Foundation/Utilities/Function.h"
     "Foundation/Utilities/MemberFunction.h"
@@ -122,8 +132,12 @@ if (WIN32)
         "Foundation/Diagnostics/WindowsDebuggerAttached.cpp"
         "Foundation/Diagnostics/WindowsMessageBox.cpp"
 
+        "Foundation/Filesystem/WindowsPathChecks.cpp"
+
         "Foundation/Logging/WindowsConsoleInputStream.cpp"
         "Foundation/Logging/WindowsConsoleOutputStream.cpp"
+
+        "Foundation/Memory/WindowsMemory.cpp"
 
         "Foundation/Threading/WindowsMutex.cpp"
 
@@ -165,6 +179,13 @@ elseif (MSVC)
         "DbgHelp.lib"
     )
 endif()
+
+set_target_properties(KitsuneEngine PROPERTIES FOLDER "Engine")
+
+# Temporary.
+target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_VERSION_MAJOR=0")
+target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_VERSION_MINOR=0")
+target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_VERSION_PATCH=1")
 
 target_compile_options(KitsuneEngine PRIVATE ${KITSUNE_GLOBAL_COMPILER_FLAGS})
 target_compile_definitions(KitsuneEngine PRIVATE ${KITSUNE_GLOBAL_COMPILER_DEFINITIONS})

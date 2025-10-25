@@ -8,7 +8,7 @@
 #include "Foundation/Templates/Move.h"
 #include "Foundation/Templates/Forward.h"
 
-#include "Foundation/Algorithms/Swap.h"
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
 
 namespace Kitsune
@@ -105,8 +105,8 @@ namespace Kitsune
 
         inline void Swap(ScopedPtr& other)
         {
-            Algorithms::Swap(m_Pointer, other.m_Pointer);
-            Algorithms::Swap(m_Deleter, other.m_Deleter);
+            Kitsune::Swap(m_Pointer, other.m_Pointer);
+            Kitsune::Swap(m_Deleter, other.m_Deleter);
         }
 
     public:
@@ -120,15 +120,6 @@ namespace Kitsune
         T* m_Pointer;
         KITSUNE_MAYBE_OVERLAPPING Del m_Deleter;
     };
-
-    namespace Algorithms
-    {
-        template<typename T, Deleter Del>
-        inline void Swap(ScopedPtr<T, Del>& lhs, ScopedPtr<T, Del>& rhs)
-        {
-            lhs.Swap(rhs);
-        }
-    }
 
     template<typename T, typename... Args>
     [[nodiscard]] inline ScopedPtr<T> MakeScoped(Args&&... args)

@@ -333,7 +333,7 @@ TEST(ScopedPtrTests, SwapAlgorithm)
     int* rawPtr = ptr.Get();
     int* rawPtr2 = ptr2.Get();
 
-    Algorithms::Swap(ptr, ptr2);
+    Swap(ptr, ptr2);
 
     EXPECT_EQ(ptr.Get(), rawPtr2);
     EXPECT_EQ(ptr2.Get(), rawPtr);

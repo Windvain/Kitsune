@@ -5,6 +5,8 @@ namespace Kitsune
 {
     void* CMallocApi::TryAllocate(Usize bytes, Usize alignment)
     {
+        alignment = KITSUNE_MAX(alignment, s_DefaultAlignment);
+
         // MSVC doesn't support the aligned_alloc function.
         // https://learn.microsoft.com/en-us/cpp/standard-library/cstdlib?view=msvc-170#remarks-6
 #if defined(KITSUNE_OS_WINDOWS)

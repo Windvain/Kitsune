@@ -16,9 +16,7 @@ namespace Kitsune
         void Flush() override;
 
     private:
-        void WriteToConsole(const NativeChar* begin,
-                                         const NativeChar* end);
-
+        void WriteToConsole(const NativeChar* begin, const NativeChar* end);
         void ThreadUnsafeFlush();
 
     private:

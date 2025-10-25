@@ -12,10 +12,12 @@ namespace Kitsune::Details
 #define KITSUNE_ALWAYS_ASSERT(expr, message)                                        \
     do                                                                              \
     {                                                                               \
-        if (!(expr) && ::Kitsune::Details::HandleAssertionFailure(#expr, message)) \
+        if (!(expr) && ::Kitsune::Details::HandleAssertionFailure(#expr, message))  \
         {                                                                           \
             KITSUNE_DEBUGBREAK();                                                   \
         }                                                                           \
+                                                                                    \
+        KITSUNE_ASSUME(expr);                                                       \
     } while (false)
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)

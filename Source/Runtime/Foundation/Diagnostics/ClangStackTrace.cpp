@@ -77,22 +77,31 @@ namespace Kitsune::Details
             KITSUNE_FORCEINLINE void operator()(char* ptr) { std::free(ptr); }
         };
 
-        int status;
-        ScopedPtr<char, DemangleDeleter> scopedFree(abi::__cxa_demangle(
-            mangledFunction, nullptr, nullptr, &status));
+        // This runs in C land, so no exceptions are allowed past this function!
+        try
+        {
+            int status;
+            ScopedPtr<char, DemangleDeleter> scopedFree(abi::__cxa_demangle(
+                mangledFunction, nullptr, nullptr, &status));
 
-        const char* function = (status != KITSUNE_DEMANGLE_INVALID_MANGLED_NAME) ?
-            scopedFree.Get() : mangledFunction;
+            const char* function = (status != KITSUNE_DEMANGLE_INVALID_MANGLED_NAME) ?
+                scopedFree.Get() : mangledFunction;
 
-        // Some names are mangled, some are not (like main()).
-        if ((function == nullptr) && (status != KITSUNE_DEMANGLE_INVALID_MANGLED_NAME))
-            throw StackTraceException(GetDemangleStatus(status));
+            // Some names are mangled, some are not (like main()).
+            if ((function == nullptr) && (status != KITSUNE_DEMANGLE_INVALID_MANGLED_NAME))
+                throw StackTraceException(GetDemangleStatus(status));
 
-        SharedPtr<GeneralStackFrame> frame = MakeShared<GeneralStackFrame>(filename, function, reinterpret_cast<void*>(pc), line);
-        typedData->Callback(frame, typedData->Data);
+            SharedPtr<GeneralStackFrame> frame = MakeShared<GeneralStackFrame>(filename, function, reinterpret_cast<void*>(pc), line);
+            typedData->Callback(frame, typedData->Data);
 
-        ++typedData->CurrentDepth;
-        return 0;
+            ++typedData->CurrentDepth;
+            return 0;
+        }
+        catch (...)
+        {
+            BacktraceErrorCallback(data, "An exception has been thrown in internal code.", /* unused */ 0);
+            return 1;
+        }
     }
 
     inline backtrace_state* CreateBacktraceState()

@@ -10,3 +10,7 @@
 .ccls-cache/
 
 .idea/
+
+# Some LSPs require compile_commands.json to be generated in order to
+# do syntax highlighting.
+compile_commands.json

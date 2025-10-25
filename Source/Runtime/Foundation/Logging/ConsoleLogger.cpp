@@ -10,7 +10,7 @@ namespace Kitsune
         String header;
         String locationInfo;
 
-        const SourceLocation & location = payload.Location;
+        const SourceLocation& location = payload.Location;
 
         if (!payload.LoggerName.IsEmpty())
             header = Format("[{0}]: ", payload.LoggerName);

@@ -213,6 +213,7 @@ namespace Kitsune
         }
 
     public:
+        [[nodiscard]]
         inline static BasicStackTrace<Alloc> Current(Usize skipCount = 1,
                                                      Usize maxDepth = Usize(-1))
         {

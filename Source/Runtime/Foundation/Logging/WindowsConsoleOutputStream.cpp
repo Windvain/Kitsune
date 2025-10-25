@@ -6,7 +6,11 @@ namespace Kitsune
     void ConsoleOutputStream::WriteToConsole(const NativeChar* begin,
                                              const NativeChar* end)
     {
-        ::WriteConsoleW(::GetStdHandle(STD_OUTPUT_HANDLE),
+        HANDLE outputHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+        if ((outputHandle == nullptr) || (outputHandle == INVALID_HANDLE_VALUE))
+            return;
+
+        ::WriteConsoleW(outputHandle,
                         begin, DWORD(end - begin),
                         nullptr, nullptr);
 

@@ -3,11 +3,15 @@
 #include "Foundation/Concepts/Invokable.h"
 #include "Foundation/Iterators/Iterator.h"
 
+#include "Foundation/Concepts/Comparable.h"
+
 namespace Kitsune::Algorithms
 {
     template<ForwardIterator It1, ForwardIterator It2>
     [[nodiscard]]
     inline bool Equal(It1 begin1, It1 end1, It2 begin2)
+        requires Equatable<typename IteratorTraits<It1>::ValueType,
+                           typename IteratorTraits<It2>::ValueType>
     {
         using ValueType1 = IteratorTraits<It1>::ValueType;
         using ValueType2 = IteratorTraits<It2>::ValueType;
@@ -20,8 +24,8 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It1, ForwardIterator It2,
-             Invokable<typename IteratorTraits<It1>::ValueType,
-                       typename IteratorTraits<It2>::ValueType> Pred>
+             Invokable<typename IteratorTraits<It1>::ValueType&,
+                       typename IteratorTraits<It2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(It1 begin1, It1 end1, It2 begin2, Pred pred)
     {
@@ -37,6 +41,8 @@ namespace Kitsune::Algorithms
     template<ForwardIterator It1, ForwardIterator It2>
     [[nodiscard]]
     inline bool Equal(It1 begin1, It1 end1, It2 begin2, It2 end2)
+        requires Equatable<typename IteratorTraits<It1>::ValueType,
+                           typename IteratorTraits<It2>::ValueType>
     {
         using ValueType1 = IteratorTraits<It1>::ValueType;
         using ValueType2 = IteratorTraits<It2>::ValueType;
@@ -49,8 +55,8 @@ namespace Kitsune::Algorithms
     }
 
     template<RandomAccessIterator It1, RandomAccessIterator It2,
-             Invokable<typename IteratorTraits<It1>::ValueType,
-                       typename IteratorTraits<It2>::ValueType> Pred>
+             Invokable<typename IteratorTraits<It1>::ValueType&,
+                       typename IteratorTraits<It2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(It1 begin1, It1 end1, It2 begin2, It2 end2, Pred pred)
     {

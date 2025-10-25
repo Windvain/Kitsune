@@ -665,7 +665,7 @@ TEST(SharedPtrTests, SwapAlgorithm)
     Usize cnt = ptr.GetCount();
     Usize cnt2 = ptr2.GetCount();
 
-    Algorithms::Swap(ptr, ptr2);
+    Swap(ptr, ptr2);
 
     EXPECT_EQ(ptr.Get(), rawPtr2);
     EXPECT_EQ(ptr2.Get(), rawPtr);
@@ -957,7 +957,7 @@ TEST(WeakPtrTests, SwapAlgorithm)
     int* rawPtr = ptr.Get();
     int* rawPtr2 = ptr2.Get();
 
-    Algorithms::Swap(weakPtr, weakPtr2);
+    Swap(weakPtr, weakPtr2);
 
     EXPECT_EQ(weakPtr.Lock().Get(), rawPtr2);
     EXPECT_EQ(weakPtr2.Lock().Get(), rawPtr);

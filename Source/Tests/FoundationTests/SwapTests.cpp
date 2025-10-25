@@ -3,6 +3,7 @@
 #include "TestContainer.h"
 #include "IteratorWrappers.h"
 
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Algorithms/Swap.h"
 
 using namespace Kitsune;
@@ -13,7 +14,7 @@ TEST(SwapTests, Swap)
     int x = 3;
     int y = 5;
 
-    Algorithms::Swap(x, y);
+    Swap(x, y);
 
     EXPECT_EQ(x, 5);
     EXPECT_EQ(y, 3);
@@ -45,7 +46,7 @@ TEST(SwapTests, IteratorSwap)
     TestContainer cont(arr, arr + 3);
 
     auto with = cont.Begin;
-    Algorithms::IteratorSwap(cont.Begin, ++with);
+    IteratorSwap(cont.Begin, ++with);
 
     EXPECT_EQ(arr[0], 1);
     EXPECT_EQ(arr[1], 0);

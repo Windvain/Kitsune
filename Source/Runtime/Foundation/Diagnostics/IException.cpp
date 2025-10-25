@@ -1,85 +1,105 @@
 #include "Foundation/Diagnostics/IException.h"
 
 #include <cstring>
+#include "Launch/DefaultEngineLoop.h"
+
 #include "Foundation/Memory/Memory.h"
+#include "Foundation/Memory/BackupMemoryAllocator.h"
+
+#include "Foundation/Threading/Mutex.h"
 
 #include "Foundation/Diagnostics/Assert.h"
 #include "Foundation/Diagnostics/StackTrace.h"
 
 namespace Kitsune
 {
-    // Defined in Launch/EngineMain.cpp.
-    extern thread_local StackTrace* g_ExceptionStackTrace;
-
-    namespace
+    struct ExceptionData
     {
-        thread_local bool g_WritingToExceptionStackTrace = false;
-        thread_local Uint8 g_ExceptionData[1024];
-    }
+        BasicString<char, BackupMemoryAllocator> Name;
+        BasicString<char, BackupMemoryAllocator> Description;
+
+        BasicStackTrace<BackupMemoryAllocator> StackTrace;
+    };
+
+    static ExceptionData* g_ExceptionData;
+    static bool g_WritingToExceptionData = false;
+
+    extern ScopedPtr<Mutex>* g_ExceptionMutex;
+    extern BasicStackTrace<BackupMemoryAllocator>* g_ExceptionStackTrace;
 
     IException::IException() noexcept
+        : IException("<unknown>", "")
     {
-#if !defined(KITSUNE_BUILD_PRODUCTION)
-        KITSUNE_UNUSED(g_WritingToExceptionStackTrace);
-#else
-        if (g_WritingToExceptionStackTrace)
-            return;
-
-        auto* stackTrace = static_cast<StackTrace*>(Memory::TryAllocate(sizeof(StackTrace)));
-        if (stackTrace == nullptr)
-            return;
-
-        try
-        {
-            // Makes sure that if anything throws in the exception constructor,
-            // that it doesn't keep calling itself, causing a stack overflow.
-            g_WritingToExceptionStackTrace = true;
-            g_ExceptionStackTrace = stackTrace;
-
-            Memory::ConstructAt(g_ExceptionStackTrace, StackTrace::Current());
-            g_WritingToExceptionStackTrace = false;
-        }
-        catch (...)
-        {
-            // Just ignore the exception.
-        }
-#endif
     }
 
     IException::IException(const char* name, const char* desc) noexcept
-        : IException()
     {
-        Uint8* pointer = g_ExceptionData;
-        Uint64 nameLength = std::strlen(name);
+        if ((DefaultEngineLoop::GetInstance() == nullptr) || (g_ExceptionMutex == nullptr))
+            return;
 
-        std::memcpy(pointer, &nameLength, sizeof(Uint64));
-        pointer += sizeof(Uint64);
+        if (g_WritingToExceptionData || ((*g_ExceptionMutex)->TryAcquire() == 0))
+            return;
 
-        std::memcpy(pointer, name, sizeof(char) * (nameLength + 1));
-        pointer += (nameLength + 1);
+        auto& memoryPool = DefaultEngineLoop::GetInstance()->GetBackupMemoryPool();
+        ExceptionData* data = static_cast<ExceptionData*>(memoryPool.TryAllocate(sizeof(ExceptionData)));
 
-        std::memcpy(pointer, desc, sizeof(char) * (std::strlen(desc) + 1));
+        if (data == nullptr)
+            return;
+
+        // Avoid throws inside the try/catch block causing an infinite loop.
+        g_WritingToExceptionData = true;
+
+        try
+        {
+            Memory::ConstructAt(&data->Name, name);
+            Memory::ConstructAt(&data->Description, desc);
+
+            Memory::ConstructAt(&data->StackTrace, BasicStackTrace<BackupMemoryAllocator>::Current());
+        }
+        catch (...)
+        {
+            memoryPool.Free(data);
+            data = nullptr;
+        }
+
+        g_WritingToExceptionData = false;
+        g_ExceptionData = data;
+
+        if (data != nullptr)
+            g_ExceptionStackTrace = &data->StackTrace;
     }
 
     IException::~IException() noexcept
     {
-#if defined(KITSUNE_BUILD_PRODUCTION)
-        if (g_ExceptionStackTrace != nullptr)
+        if ((DefaultEngineLoop::GetInstance() == nullptr) || g_WritingToExceptionData)
+            return;
+
+        auto& memoryPool = DefaultEngineLoop::GetInstance()->GetBackupMemoryPool();
+        if (g_ExceptionData != nullptr)
         {
-            Memory::Delete(g_ExceptionStackTrace);
+            Memory::DestroyAt(g_ExceptionData);
+            memoryPool.Free(g_ExceptionData);
+
+            g_ExceptionData = nullptr;
             g_ExceptionStackTrace = nullptr;
         }
-#endif
+
+        (*g_ExceptionMutex)->Release();
     }
 
     const char* IException::GetName() const noexcept
     {
-        return reinterpret_cast<const char*>(g_ExceptionData + sizeof(Uint64));
+        if (g_ExceptionData == nullptr)
+            return "<unknown>";
+
+        return g_ExceptionData->Name.Raw();
     }
 
     const char* IException::GetDescription() const noexcept
     {
-        Uint64 nameLength = *reinterpret_cast<Uint64*>(g_ExceptionData);
-        return reinterpret_cast<const char*>(g_ExceptionData + sizeof(Uint64) + nameLength + 1);
+        if (g_ExceptionData == nullptr)
+            return "None";
+
+        return g_ExceptionData->Description.Raw();
     }
 }

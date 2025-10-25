@@ -1,11 +1,14 @@
 #pragma once
 
 #include "Foundation/Algorithms/Swap.h"
+#include "Foundation/Concepts/Swappable.h"
+
 #include "Foundation/Iterators/Iterator.h"
 
 namespace Kitsune::Algorithms
 {
     template<RandomAccessIterator It>
+        requires Swappable<typename IteratorTraits<It>::ValueType>
     inline void Reverse(It begin, It end)
     {
         for (--end; end > begin; ++begin, --end)
@@ -13,6 +16,7 @@ namespace Kitsune::Algorithms
     }
 
     template<BidirectionalIterator It>
+        requires Swappable<typename IteratorTraits<It>::ValueType>
     inline void Reverse(It begin, It end)
     {
         for (; (begin != end) && (begin != --end); ++begin)

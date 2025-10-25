@@ -16,6 +16,6 @@ namespace Kitsune
         inline Usize GetDefaultAlignment() const override { return s_DefaultAlignment; }
 
     private:
-        static constexpr Usize s_DefaultAlignment = alignof(std::max_align_t);
+        static constexpr Usize s_DefaultAlignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
     };
 }

@@ -40,6 +40,8 @@ function(kitsune_add_test)
     add_executable(${TEST_ARGS_NAME} ${TEST_TYPE} ${TEST_ARGS_SOURCES})
     add_test(NAME ${TEST_ARGS_NAME} COMMAND ${TEST_ARGS_NAME})
 
+    set_target_properties(${TEST_ARGS_NAME} PROPERTIES FOLDER "Tests")
+
     # Set include directories, compiler flags, and link libraries.
     target_include_directories(${TEST_ARGS_NAME} PRIVATE
         ${KITSUNE_GLOBAL_INCLUDE_DIRECTORIES}

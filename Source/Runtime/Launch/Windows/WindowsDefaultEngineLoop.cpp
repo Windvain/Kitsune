@@ -1,5 +1,7 @@
 #include "Launch/DefaultEngineLoop.h"
+
 #include <Windows.h>
+#include "Foundation/Logging/GlobalLog.h"
 
 // Clang doesn't recognize that ::TerminateProcess() will just quit the program
 // and marks ForceExit()'s [[noreturn]] as invalid.
@@ -18,6 +20,8 @@ namespace Kitsune
 
     void DefaultEngineLoop::ForceExit(int exitCode)
     {
+        KITSUNE_ENGINE_WARN_("ForceExit() was called, forcing the engine to terminate.");
+
         Exit(exitCode);
         ::TerminateProcess(::GetCurrentProcess(), exitCode);
     }

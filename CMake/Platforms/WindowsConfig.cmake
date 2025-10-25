@@ -42,6 +42,8 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # https://stackoverflow.com/questions/59046071/c-u8-literal-unexpected-encoding-on-windows
     set(KITSUNE_GLOBAL_COMPILER_FLAGS
         "/Zc:wchar_t"                 # Treat wchar_t as a native type.
+        "/Zc:preprocessor"            # Use a C++ standard conforming preprocessor.
+
         "/utf-8"                      # Specifies the source and execution charset as UTF-8.
         "/MP"                         # Compile the engine source with multiple processes.
 

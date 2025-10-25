@@ -27,7 +27,7 @@ namespace Kitsune::Algorithms
 
     template<ForwardIterator It,
              WritableIterator<typename IteratorTraits<It>::ValueType> OutIt,
-             Invokable<typename IteratorTraits<It>::ValueType> Pred>
+             Invokable<typename IteratorTraits<It>::ValueType&> Pred>
     inline OutIt CopyIf(It begin, It end, OutIt outBegin, Pred pred)
     {
         for (; begin != end; ++begin)

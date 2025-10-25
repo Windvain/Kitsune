@@ -17,15 +17,5 @@ namespace Kitsune
 
     public:
         virtual Usize GetDefaultAlignment() const = 0;
-
-    public:
-        [[noreturn]]
-        virtual void OutOfMemory(Usize bytes, Usize alignment)
-        {
-            KITSUNE_UNUSED(bytes);
-            KITSUNE_UNUSED(alignment);
-
-            throw BadAllocException();
-        }
     };
 }

@@ -6,6 +6,7 @@
 namespace Kitsune::Algorithms
 {
     template<ForwardIterator It, typename T>
+        requires Equatable<typename IteratorTraits<It>::ValueType, T>
     inline void Replace(It begin, It end, const T& comp, const T& newValue)
     {
         const auto pred = [&comp](const IteratorTraits<It>::ValueType& elem) -> bool
@@ -17,6 +18,7 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It, typename Size, typename T>
+        requires Equatable<typename IteratorTraits<It>::ValueType, T>
     inline void ReplaceN(It begin, Size n, const T& comp, const T& newValue)
     {
         for (; n > 0; ++begin, --n)
@@ -27,7 +29,7 @@ namespace Kitsune::Algorithms
     }
 
     template<ForwardIterator It,
-             Invokable<typename IteratorTraits<It>::ValueType> Pred,
+             Invokable<typename IteratorTraits<It>::ValueType&> Pred,
              typename T>
     inline void ReplaceIf(It begin, It end, Pred pred, const T& newValue)
     {

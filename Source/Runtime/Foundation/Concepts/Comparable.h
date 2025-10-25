@@ -8,7 +8,7 @@ namespace Kitsune
     concept Equatable = requires (const T& lhs, const U& rhs)
     {
         { lhs == rhs } -> std::convertible_to<bool>;
-        { lhs != rhs } -> std::convertible_to<bool>;
+        { rhs == lhs } -> std::convertible_to<bool>;
     };
 
     template<typename T, typename U>
@@ -18,6 +18,11 @@ namespace Kitsune
         { lhs <  rhs } -> std::convertible_to<bool>;
         { lhs >= rhs } -> std::convertible_to<bool>;
         { lhs >= rhs } -> std::convertible_to<bool>;
+
+        { rhs >  lhs } -> std::convertible_to<bool>;
+        { rhs <  lhs } -> std::convertible_to<bool>;
+        { rhs >= lhs } -> std::convertible_to<bool>;
+        { rhs >= lhs } -> std::convertible_to<bool>;
     };
 }
 

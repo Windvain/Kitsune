@@ -5,10 +5,11 @@
 
 #include "Foundation/Memory/Deleter.h"
 #include "Foundation/Memory/Allocator.h"
+
 #include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
-#include "Foundation/Algorithms/Swap.h"
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
 
 #include "Foundation/Threading/Interlocked.h"
@@ -317,8 +318,8 @@ namespace Kitsune
     public:
         inline void Swap(SharedPtr<T, Mode>& ptr)
         {
-            Algorithms::Swap(m_Pointer, ptr.m_Pointer);
-            Algorithms::Swap(m_Data, ptr.m_Data);
+            Kitsune::Swap(m_Pointer, ptr.m_Pointer);
+            Kitsune::Swap(m_Data, ptr.m_Data);
         }
 
     private:
@@ -559,8 +560,8 @@ namespace Kitsune
 
         inline void Swap(WeakPtr<T, Mode>& ptr)
         {
-            Algorithms::Swap(m_Pointer, ptr.m_Pointer);
-            Algorithms::Swap(m_Data, ptr.m_Data);
+            Kitsune::Swap(m_Pointer, ptr.m_Pointer);
+            Kitsune::Swap(m_Data, ptr.m_Data);
         }
 
     public:
@@ -659,20 +660,5 @@ namespace Kitsune
     {
         auto* castPointer = reinterpret_cast<T*>(ptr.Get());
         return SharedPtr<T, Mode>(Move(ptr), castPointer);
-    }
-
-    namespace Algorithms
-    {
-        template<typename T, ThreadSafety Mode>
-        inline void Swap(SharedPtr<T, Mode>& ptr1, SharedPtr<T, Mode>& ptr2)
-        {
-            return ptr1.Swap(ptr2);
-        }
-
-        template<typename T, ThreadSafety Mode>
-        inline void Swap(WeakPtr<T, Mode>& ptr1, WeakPtr<T, Mode>& ptr2)
-        {
-            return ptr1.Swap(ptr2);
-        }
     }
 }

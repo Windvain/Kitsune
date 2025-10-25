@@ -1,21 +1,20 @@
 #pragma once
 
 #include <initializer_list>
+#include "Foundation/Concepts/Comparable.h"
 
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
-#include "Foundation/Concepts/Comparable.h"
 
 #include "Foundation/Iterators/Iterator.h"
 #include "Foundation/Iterators/ReverseIterator.h"
 #include "Foundation/Diagnostics/OutOfRangeException.h"
 
-#include "Foundation/Algorithms/Swap.h"
 #include "Foundation/Algorithms/Equal.h"
 #include "Foundation/Algorithms/Destroy.h"
-
 #include "Foundation/Algorithms/Distance.h"
 #include "Foundation/Algorithms/Uninitialized.h"
 
@@ -254,11 +253,11 @@ namespace Kitsune
     public:
         inline void Swap(Array& array)
         {
-            Algorithms::Swap(m_Begin, array.m_Begin);
-            Algorithms::Swap(m_End, array.m_End);
-            Algorithms::Swap(m_StorageEnd, array.m_StorageEnd);
+            Kitsune::Swap(m_Begin, array.m_Begin);
+            Kitsune::Swap(m_End, array.m_End);
+            Kitsune::Swap(m_StorageEnd, array.m_StorageEnd);
 
-            Algorithms::Swap(m_Allocator, array.m_Allocator);
+            Kitsune::Swap(m_Allocator, array.m_Allocator);
         }
 
     public:

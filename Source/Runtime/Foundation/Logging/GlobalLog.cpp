@@ -1,13 +1,14 @@
 #include "Foundation/Logging/GlobalLog.h"
-// #include "Launch/GameEngine.h"
+#include "Launch/DefaultEngineLoop.h"
 
 namespace Kitsune::Details
 {
-    void LogGlobal(LogSeverity severity, SourceLocation loc, const StringView str)
+    void LogGlobal(const StringView loggerName, LogSeverity severity, SourceLocation loc, const StringView str)
     {
-        KITSUNE_UNUSED(severity); KITSUNE_UNUSED(loc); KITSUNE_UNUSED(str);
-        /* GameEngine* engine = GameEngine::GetInstance();
-        for (auto& logger : engine->GetLoggers())
-            logger->Log(LogPayload(str, "GLOBAL", Move(loc), severity)); */
+        auto* engineLoop = DefaultEngineLoop::GetInstance();
+        for (SharedPtr<ILogger>& logger : engineLoop->GetLoggers())
+        {
+            logger->Log(LogPayload(str, loggerName, loc, severity));
+        }
     }
 }

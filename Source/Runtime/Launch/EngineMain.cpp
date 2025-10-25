@@ -8,16 +8,21 @@
 
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Memory/ScopedPtr.h"
+
 #include "Foundation/Memory/BadAllocException.h"
+#include "Foundation/Memory/BackupMemoryAllocator.h"
+
+#include "Foundation/Threading/Mutex.h"
 
 #include "Foundation/Diagnostics/IException.h"
 #include "Foundation/Diagnostics/StackTrace.h"
 
 namespace Kitsune
 {
-    // This was made into a global variable in order to make it harder
+    // These was made into a global variable in order to make it harder
     // for the user to access this information.
-    thread_local StackTrace* g_ExceptionStackTrace = nullptr;
+    ScopedPtr<Mutex>* g_ExceptionMutex = nullptr;
+    BasicStackTrace<BackupMemoryAllocator>* g_ExceptionStackTrace = nullptr;
 
     // This is important. UnguardedEngineMain() uses ScopedPtr<T> and SharedPtr<T>.
     // If Memory::Shutdown() were to be called manually, ScopedPtr<T>'s delete call
@@ -25,15 +30,20 @@ namespace Kitsune
     class MemorySubsystemGuard
     {
     public:
-        MemorySubsystemGuard()
+        inline MemorySubsystemGuard()
+            : m_InitSuccess(Memory::InitializeExplicit())
         {
-            Memory::InitializeExplicit();
         }
 
-        ~MemorySubsystemGuard()
+        inline ~MemorySubsystemGuard()
         {
             Memory::Shutdown();
         }
+
+        inline bool Success() const { return m_InitSuccess; }
+
+    private:
+        bool m_InitSuccess = false;
     };
 
     // Keep this as an enum, don't turn it into an enum class.
@@ -46,50 +56,20 @@ namespace Kitsune
         // From this point on, all exit codes will have the first 8 bits be set to 0b00000001.
         // This is to make sure people don't mix up our engine's exit codes with the typical
         // signal() call exit code.
+        // https://tldp.org/LDP/abs/html/exitcodes.html#EXITCODESREF
         FailedEngineLoopInit = 0x101,
-        ExceptionThrown = 0x201
+        ExceptionThrown = 0x201,
+        FailedMemorySubsystemInit = 0x301
     };
 
     inline EngineLoopNotification TranslateToEngineNotification(const IException& exception)
     {
-        // There are no direct ways of checking for an exception's type.
+        // There are no direct ways of checking for an exception's type, unless you want
+        // to dynamic_cast<> and check..
         if (std::strcmp(exception.GetName(), "BadAllocException"))
             return EngineLoopNotification::OutOfMemory;
 
         return EngineLoopNotification::Crash;
-    }
-
-    int UnguardedEngineMain(int argc, char** argv)
-    {
-        MemorySubsystemGuard memoryGuard{};
-
-        int exitCode = ExitCode::Success;
-        ScopedPtr<IEngineLoop> engineLoop = MakeScoped<DefaultEngineLoop>();
-
-        // There are two try/catch blocks, the one here and the one
-        // in EngineMain(). This one is for catching exceptions in application code,
-        // which are still somewhat saveable.
-#if defined(KITSUNE_BUILD_PRODUCTION)
-        try
-#endif
-        {
-            if (!engineLoop->Initialize(argc, argv))
-                return ExitCode::FailedEngineLoopInit;
-
-            exitCode = engineLoop->Run();
-            engineLoop->Shutdown();         // Shutdown() shouldn't throw...
-        }
-#if defined(KITSUNE_BUILD_PRODUCTION)
-        catch (const IException& exception)
-        {
-            engineLoop->Notify(TranslateToEngineNotification(exception));
-            engineLoop->Shutdown();
-
-            throw;
-        }
-#endif
-
-        return exitCode;
     }
 
     void PrintStackTrace()
@@ -125,19 +105,33 @@ namespace Kitsune
         std::fflush(stdout);
     }
 
-    int EngineMain(int argc, char** argv)
+    int UnguardedEngineMain(int argc, char** argv)
     {
-        // Try/catch block for the entire engine, mainly used for exceptions thrown in
-        // the engine subsystem initializations.
-#if defined(KITSUNE_BUILD_PRODUCTION)
+        MemorySubsystemGuard memoryGuard{};
+        if (!memoryGuard.Success())
+            return ExitCode::FailedMemorySubsystemInit;
+
+        // The mutex that makes sure only one exception's data gets recorded.
+        ScopedPtr<Mutex> exceptionMutex = MakeScoped<Mutex>();
+        g_ExceptionMutex = &exceptionMutex;
+
+        int exitCode = ExitCode::Success;
+        ScopedPtr<IEngineLoop> engineLoop = MakeScoped<DefaultEngineLoop>();
+        
+        // There are two try/catch blocks, the one here and the one
+        // in EngineMain(). This one is for catching exceptions in application code,
+        // which are still somewhat saveable.
         try
-#endif
         {
-            return UnguardedEngineMain(argc, argv);
+            if (!engineLoop->Initialize(argc, argv))
+                return ExitCode::FailedEngineLoopInit;
+
+            exitCode = engineLoop->Run();
+            engineLoop->Shutdown();         // Shutdown() shouldn't throw...
         }
-#if defined(KITSUNE_BUILD_PRODUCTION)
         catch (const std::exception& stdException)
         {
+            // Print diagnostic information.
             const IException* exception = dynamic_cast<const IException*>(&stdException);
             if (exception != nullptr)
             {
@@ -146,16 +140,34 @@ namespace Kitsune
             }
             else
             {
-                std::printf("Engine crashed due to a std::exception being thrown.\nDescription: %s\n",
+                std::printf("Engine crashed due to a std::exception being thrown.\n"
+                            "Description: %s\n",
                             stdException.what());
             }
 
             PrintStackTrace();
+
+            // Shutdown!!
+            engineLoop->Notify(TranslateToEngineNotification(*exception));
+            engineLoop->Shutdown();
+
             return ExitCode::ExceptionThrown;
         }
-#endif
 
-        // Tell the compiler to shush.
-        KITSUNE_UNREACHABLE();
+        return exitCode;
+    }
+
+    int EngineMain(int argc, char** argv)
+    {
+        // If anything outside of the inner try/catch fails, just
+        // return to the platform-specific entry code.
+        try
+        {
+            return UnguardedEngineMain(argc, argv);
+        }
+        catch (const std::exception&)
+        {
+            return ExitCode::ExceptionThrown;
+        }
     }
 }
