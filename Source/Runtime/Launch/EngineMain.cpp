@@ -8,12 +8,9 @@
 
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Memory/ScopedPtr.h"
-
-#include "Foundation/Memory/BadAllocException.h"
 #include "Foundation/Memory/BackupMemoryAllocator.h"
 
 #include "Foundation/Threading/Mutex.h"
-
 #include "Foundation/Diagnostics/IException.h"
 #include "Foundation/Diagnostics/StackTrace.h"
 
@@ -117,7 +114,7 @@ namespace Kitsune
 
         int exitCode = ExitCode::Success;
         ScopedPtr<IEngineLoop> engineLoop = MakeScoped<DefaultEngineLoop>();
-        
+
         // There are two try/catch blocks, the one here and the one
         // in EngineMain(). This one is for catching exceptions in application code,
         // which are still somewhat saveable.

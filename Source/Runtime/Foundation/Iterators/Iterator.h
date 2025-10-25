@@ -1,8 +1,6 @@
 #pragma once
 
 #include <concepts>
-#include <type_traits>
-
 #include "Foundation/Templates/Forward.h"
 
 #include "Foundation/Concepts/Comparable.h"

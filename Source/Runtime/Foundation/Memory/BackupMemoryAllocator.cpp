@@ -1,6 +1,7 @@
 #include "Foundation/Memory/BackupMemoryAllocator.h"
-
 #include "Launch/DefaultEngineLoop.h"
+
+#include "Foundation/Memory/BadAllocException.h"
 #include "Foundation/Diagnostics/InvalidArgumentException.h"
 
 namespace Kitsune
@@ -24,7 +25,7 @@ namespace Kitsune
 
         void** returnedPtr = reinterpret_cast<void**>(
             (reinterpret_cast<Uintptr>(ptr) + offset) & ~(alignment - 1));
-        
+
         returnedPtr[-1] = ptr;
         return returnedPtr;
     }

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cstdlib>
-#include <cstddef>
-
 #include "Foundation/Memory/IMemoryApi.h"
 
 namespace Kitsune

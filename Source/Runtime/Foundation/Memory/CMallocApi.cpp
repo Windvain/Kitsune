@@ -1,5 +1,7 @@
 #include "Foundation/Memory/CMallocApi.h"
+
 #include <cstdlib>
+#include "Foundation/Common/Macros.h"
 
 namespace Kitsune
 {

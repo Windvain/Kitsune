@@ -4,9 +4,8 @@
 #include <type_traits>
 
 #include "Foundation/Common/Types.h"
-#include "Foundation/Common/Macros.h"
-
 #include "Foundation/Templates/Forward.h"
+
 #include "Foundation/Memory/IMemoryApi.h"
 #include "Foundation/Memory/MemoryProtection.h"
 

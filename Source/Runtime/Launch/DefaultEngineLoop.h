@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstddef>
-
 #include "Launch/IEngineLoop.h"
 #include "Application/IApplication.h"
 

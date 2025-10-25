@@ -1,9 +1,10 @@
 #pragma once
 
 #include <type_traits>
+
+#include "Foundation/Common/Types.h"
 #include "Foundation/Templates/Move.h"
 
-#include "Foundation/Memory/AddressOf.h"
 #include "Foundation/Iterators/Iterator.h"
 
 namespace Kitsune

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Foundation/Common/Types.h"
 #include "Foundation/Diagnostics/IException.h"
 
 namespace Kitsune

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Foundation/Common/Macros.h"
 #include "Foundation/Logging/IStream.h"
 
 namespace Kitsune

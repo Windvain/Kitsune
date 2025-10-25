@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include "Foundation/Common/Macros.h"
 
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Memory/Deleter.h"

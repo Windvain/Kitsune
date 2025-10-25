@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Foundation/Common/Macros.h"
 #include "Foundation/Filesystem/Path.h"
 
 namespace Kitsune::Filesystem

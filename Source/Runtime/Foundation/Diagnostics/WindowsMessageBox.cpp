@@ -3,10 +3,7 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 
-#include "Foundation/Algorithms/Copy.h"
 #include "Foundation/Containers/Array.h"
-
-#include "Foundation/Maths/Vector2.h"
 #include "Foundation/String/UnicodeConversion.h"
 
 namespace Kitsune

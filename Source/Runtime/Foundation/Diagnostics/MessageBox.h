@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
-#include "Foundation/Common/Macros.h"
 
 #include "Foundation/String/String.h"
 #include "Foundation/Containers/Array.h"

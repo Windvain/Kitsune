@@ -4,7 +4,6 @@
 #include <cstdio>
 
 #include "Foundation/String/String.h"
-#include "Foundation/String/FormatException.h"
 
 #include "Foundation/Algorithms/Copy.h"
 #include "Foundation/Algorithms/Reverse.h"

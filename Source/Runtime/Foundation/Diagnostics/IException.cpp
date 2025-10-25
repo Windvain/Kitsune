@@ -7,8 +7,6 @@
 #include "Foundation/Memory/BackupMemoryAllocator.h"
 
 #include "Foundation/Threading/Mutex.h"
-
-#include "Foundation/Diagnostics/Assert.h"
 #include "Foundation/Diagnostics/StackTrace.h"
 
 namespace Kitsune

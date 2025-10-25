@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
-#include "Foundation/Common/Macros.h"
-
-#include "Foundation/Common/Predefined.h"
 
 namespace Kitsune
 {

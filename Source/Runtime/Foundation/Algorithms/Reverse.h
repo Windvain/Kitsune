@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/Algorithms/Swap.h"
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Concepts/Swappable.h"
 
 #include "Foundation/Iterators/Iterator.h"

@@ -5,9 +5,9 @@
 
 #include "Foundation/String/String.h"
 #include "Foundation/String/Formatter.h"
+#include "Foundation/String/FormatException.h"
 
 #include "Foundation/Algorithms/Find.h"
-
 #include "Foundation/Iterators/Iterator.h"
 #include "Foundation/Iterators/BackInsertIterator.h"
 

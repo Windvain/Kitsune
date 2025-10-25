@@ -5,6 +5,7 @@
 
 #include "Foundation/Common/Types.h"
 #include "Foundation/Common/Macros.h"
+
 #include "Foundation/Concepts/Character.h"
 
 namespace Kitsune

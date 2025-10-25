@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Foundation/Common/Macros.h"
 #include "Foundation/Memory/Memory.h"
 
 namespace Kitsune

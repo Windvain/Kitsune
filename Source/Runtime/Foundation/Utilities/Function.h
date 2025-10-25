@@ -6,9 +6,7 @@
 #include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
 
-#include "Foundation/Memory/Allocator.h"
-#include "Foundation/Memory/GlobalAllocator.h"
-
+#include "Foundation/Memory/Memory.h"
 #include "Foundation/Utilities/BadCallException.h"
 
 namespace Kitsune

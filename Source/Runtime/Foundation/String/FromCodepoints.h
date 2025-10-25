@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Foundation/Common/Macros.h"
 #include "Foundation/Concepts/Character.h"
 
 #include "Foundation/Iterators/Iterator.h"

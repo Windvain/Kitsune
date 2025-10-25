@@ -1,7 +1,6 @@
 #pragma once
 
 #include <exception>
-#include "Foundation/Common/Types.h"
 
 namespace Kitsune
 {
