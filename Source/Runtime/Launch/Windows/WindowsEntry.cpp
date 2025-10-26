@@ -11,9 +11,6 @@
 #include <Windows.h>
 
 #include "Foundation/Common/Macros.h"
-#include "Foundation/Common/Features.h"
-#include "Foundation/Common/Predefined.h"
-
 #include "Foundation/Diagnostics/IException.h"
 
 // Exception codes with no macro definitions in the <Windows.h> header.

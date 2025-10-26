@@ -4,8 +4,8 @@
 #include <cxxabi.h>         // Required header to use __cxa_demangle(), clang specific.
 #include "Foundation/Diagnostics/Assert.h"
 
-#include "Foundation/Diagnostics/GeneralStackFrame.h"
 #include "Foundation/Diagnostics/StackTraceException.h"
+#include "Foundation/GeneralPlatform/GeneralStackFrame.h"
 
 // Clang runs on basically all of the modern operating systems. We have to
 // test for each one and include the necessary headers..

@@ -5,7 +5,7 @@
 #include <Psapi.h>
 #include <DbgHelp.h>
 
-#include "Foundation/Diagnostics/MsvcStackFrame.h"
+#include "Foundation/Msvc/MsvcStackFrame.h"
 #include "Foundation/Diagnostics/StackTraceException.h"
 
 namespace Kitsune::Details

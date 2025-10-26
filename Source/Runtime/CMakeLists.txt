@@ -129,17 +129,13 @@ add_library(
 
 if (WIN32)
     target_sources(KitsuneEngine PRIVATE
-        "Foundation/Diagnostics/WindowsDebuggerAttached.cpp"
-        "Foundation/Diagnostics/WindowsMessageBox.cpp"
-
-        "Foundation/Filesystem/WindowsPathChecks.cpp"
-
-        "Foundation/Logging/WindowsConsoleInputStream.cpp"
-        "Foundation/Logging/WindowsConsoleOutputStream.cpp"
-
-        "Foundation/Memory/WindowsMemory.cpp"
-
-        "Foundation/Threading/WindowsMutex.cpp"
+        "Foundation/Windows/WindowsConsoleInputStream.cpp"
+        "Foundation/Windows/WindowsConsoleOutputStream.cpp"
+        "Foundation/Windows/WindowsDebuggerAttached.cpp"
+        "Foundation/Windows/WindowsMemory.cpp"
+        "Foundation/Windows/WindowsMessageBox.cpp"
+        "Foundation/Windows/WindowsMutex.cpp"
+        "Foundation/Windows/WindowsPathChecks.cpp"
 
         "Launch/Windows/WindowsDefaultEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
@@ -148,10 +144,10 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_sources(KitsuneEngine PRIVATE
-        "Foundation/Diagnostics/ClangStackTrace.cpp"
-        "Foundation/Diagnostics/GeneralStackFrame.h"
+        "Foundation/Clang/ClangInterlocked.inl"
+        "Foundation/Clang/ClangStackTrace.cpp"
 
-        "Foundation/Threading/ClangInterlocked.inl"
+        "Foundation/GeneralPlatform/GeneralStackFrame.h"
     )
 
     target_sources(KitsuneEngine PUBLIC
@@ -163,10 +159,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     )
 elseif (MSVC)
     target_sources(KitsuneEngine PRIVATE
-        "Foundation/Diagnostics/MsvcStackFrame.h"
-        "Foundation/Diagnostics/MsvcStackTrace.cpp"
-
-        "Foundation/Threading/MSVCInterlocked.inl"
+        "Foundation/Msvc/MsvcInterlocked.inl"
+        "Foundation/Msvc/MsvcStackFrame.h"
+        "Foundation/Msvc/MsvcStackTrace.cpp"
 
         "KitsuneEngine.natvis"
     )

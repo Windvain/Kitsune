@@ -56,9 +56,9 @@ namespace Kitsune
 }
 
 #if defined(KITSUNE_COMPILER_MSVC)
-    #include "Foundation/Threading/MSVCInterlocked.inl"
+    #include "Foundation/Msvc/MsvcInterlocked.inl"
 #elif defined(KITSUNE_COMPILER_CLANG)
-    #include "Foundation/Threading/ClangInterlocked.inl"
+    #include "Foundation/Clang/ClangInterlocked.inl"
 #else
     #error Could not find implementation for interlocked functions.
 #endif
