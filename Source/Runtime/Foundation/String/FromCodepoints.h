@@ -4,7 +4,6 @@
 #include "Foundation/Concepts/Character.h"
 
 #include "Foundation/Iterators/Iterator.h"
-#include "Foundation/Iterators/IteratorTraits.h"
 
 #include "Foundation/String/UnicodeTypes.h"
 #include "Foundation/String/UnicodeValidity.h"
@@ -22,10 +21,8 @@ namespace Kitsune::Unicode
         }
     }
 
-    template<ForwardIterator It, Iterator OutIt>
-        requires (Utf8Character<typename IteratorTraits<OutIt>::ValueType> &&
-                  WritableIterator<OutIt, typename IteratorTraits<OutIt>::ValueType>)
-    OutIt CodepointsToUtf8(It begin, It end, OutIt outBegin)
+    template<Utf8Character T, ForwardIterator It, WritableIterator<T> OutIt>
+    OutIt FromCodepoints(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
         {
@@ -57,10 +54,8 @@ namespace Kitsune::Unicode
         return outBegin;
     }
 
-    template<ForwardIterator It, Iterator OutIt>
-        requires (Utf16Character<typename IteratorTraits<OutIt>::ValueType> &&
-                  WritableIterator<OutIt, typename IteratorTraits<OutIt>::ValueType>)
-    OutIt CodepointsToUtf16(It begin, It end, OutIt outBegin)
+    template<Utf16Character T, ForwardIterator It, WritableIterator<T> OutIt>
+    OutIt FromCodepoints(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
         {
@@ -80,10 +75,8 @@ namespace Kitsune::Unicode
         return outBegin;
     }
 
-    template<ForwardIterator It, Iterator OutIt>
-        requires (Utf32Character<typename IteratorTraits<OutIt>::ValueType> &&
-                  WritableIterator<OutIt, typename IteratorTraits<OutIt>::ValueType>)
-    OutIt CodepointsToUtf32(It begin, It end, OutIt outBegin)
+    template<Utf32Character T, ForwardIterator It, WritableIterator<T> OutIt>
+    OutIt FromCodepoints(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
         {
@@ -94,20 +87,5 @@ namespace Kitsune::Unicode
         }
 
         return outBegin;
-    }
-
-    template<ForwardIterator It, Iterator OutIt>
-    inline OutIt FromCodepoints(It begin, It end, OutIt outBegin)
-    {
-        using OutputChar = typename IteratorTraits<OutIt>::ValueType;
-        static_assert(WritableIterator<OutIt, OutputChar>,
-            "Output should satisfy the WritableIterator concept.");
-
-        if constexpr (Utf8Character<OutputChar>)
-            return CodepointsToUtf8(begin, end, outBegin);
-        else if constexpr (Utf16Character<OutputChar>)
-            return CodepointsToUtf16(begin, end, outBegin);
-        else
-            return CodepointsToUtf32(begin, end, outBegin);
     }
 }

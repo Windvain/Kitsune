@@ -1,4 +1,4 @@
-// The crtdbg.h header only works when compiling with /MDd and /MTd
+// The crtdbg.h header only works when compiling with /MDd and /MTd.
 #if defined(_MSC_VER) && defined(KITSUNE_BUILD_DEBUG)
     #define _CRTDBG_MAP_ALLOC
     #include <cstdlib>
@@ -55,10 +55,24 @@ const char* FormatExceptionCode(DWORD code)
 
 KITSUNE_FORCEINLINE bool SetDpiAwareness()
 {
-#if defined(KITSUNE_COMPILER_MSVC)
-    return (::SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != nullptr);
+#if defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
+    // MinGW doesn't load the DPI-aware functions.
+    using SetThreadDpiAwarenessContextFunction = DPI_AWARENESS_CONTEXT (*)(DPI_AWARENESS_CONTEXT);
+
+    HMODULE user32 = ::GetModuleHandleW(L"user32.dll");
+    SetThreadDpiAwarenessContextFunction setThreadDpiAwarenessContext;
+
+    if (user32 == nullptr)
+        return false;
+
+    setThreadDpiAwarenessContext = (SetThreadDpiAwarenessContextFunction)(void*)
+                                    (::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
+
+    return (setThreadDpiAwarenessContext != nullptr) ?
+        (setThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != nullptr) :
+        false;
 #else
-    return (::SetProcessDPIAware() != 0);
+    return (::SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != nullptr);
 #endif
 }
 

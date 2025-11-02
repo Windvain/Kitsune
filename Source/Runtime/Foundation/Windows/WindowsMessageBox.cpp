@@ -8,14 +8,6 @@
 
 namespace Kitsune
 {
-    WideString WindowsConvertToUtf16(StringView string)
-    {
-        WideString wideString;
-        Unicode::Convert(string.GetBegin(), string.GetEnd(), BackInsertIterator<WideString>(wideString));
-
-        return wideString;
-    }
-
     bool ShowFallbackMessageBox(const MessageBoxSpecifications& specs, MessageBoxButtonId* pressed)
     {
         // Unimplemented. Will implement once I iron out the needed changes.
@@ -43,15 +35,15 @@ namespace Kitsune
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 
-        WideString wideTitle = WindowsConvertToUtf16(specs.Title);
-        WideString wideDescription = WindowsConvertToUtf16(specs.Description);
+        WideString wideTitle = Unicode::ConvertString<char, wchar_t>(specs.Title);
+        WideString wideDescription = Unicode::ConvertString<char, wchar_t>(specs.Description);
 
         Array<WideString> buttonTexts(specs.Buttons.Size());
         Array<TASKDIALOG_BUTTON> buttons(specs.Buttons.Size());
 
         for (const MessageBoxButton& button : specs.Buttons)
         {
-            buttonTexts.PushBack(WindowsConvertToUtf16(button.Text));
+            buttonTexts.PushBack(Unicode::ConvertString<char, wchar_t>(button.Text));
 
             TASKDIALOG_BUTTON nativeButton;
             nativeButton.nButtonID = IDCONTINUE + button.Id + 1;        // Look at the comment below.

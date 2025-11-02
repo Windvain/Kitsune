@@ -41,7 +41,7 @@ namespace Kitsune
         WriteToConsole(m_Buffer, m_Pointer);
 #else
         NativeString convString;
-        Unicode::Convert(m_Buffer, m_Pointer, BackInsertIterator(convString));
+        Unicode::ConvertTo<NativeChar>(m_Buffer, m_Pointer, BackInsertIterator(convString));
 
         WriteToConsole(convString.GetBegin(), convString.GetEnd());
 #endif

@@ -41,7 +41,10 @@ namespace Kitsune::Unicode
         template<ForwardIterator It>
         inline bool CheckUtf16HeaderLength(It curr, It end)
         {
-            KITSUNE_ASSERT((*curr & 0xFC00) == 0xD800, "The current iterator does not contain a high surrogate. This is an implementation bug.");
+            KITSUNE_ASSERT((*curr & 0xFC00) == 0xD800,
+                           "The current iterator does not contain a high surrogate. "
+                           "This is an implementation bug.");
+
             return (++curr != end);
         }
 
@@ -54,7 +57,7 @@ namespace Kitsune::Unicode
 
     template<ForwardIterator It, WritableIterator<Codepoint> OutIt>
         requires Utf8Character<typename IteratorTraits<It>::ValueType>
-    OutIt ToCodepoints(It begin, It end, OutIt outBegin)
+    inline OutIt ToCodepoints(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
         {
@@ -95,7 +98,7 @@ namespace Kitsune::Unicode
 
     template<ForwardIterator It, WritableIterator<Codepoint> OutIt>
         requires Utf16Character<typename IteratorTraits<It>::ValueType>
-    OutIt ToCodepoints(It begin, It end, OutIt outBegin)
+    inline OutIt ToCodepoints(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
         {
@@ -121,7 +124,7 @@ namespace Kitsune::Unicode
 
     template<ForwardIterator It, WritableIterator<Codepoint> OutIt>
         requires Utf32Character<typename IteratorTraits<It>::ValueType>
-    OutIt ToCodepoints(It begin, It end, OutIt outBegin)
+    inline OutIt ToCodepoints(It begin, It end, OutIt outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
             *outBegin = *begin;

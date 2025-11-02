@@ -5,10 +5,10 @@
     #define KITSUNE_OS_WINDOWS 1
     #define KITSUNE_OS_NT_KERNEL 1
 
-    #if defined(_WIN32)
-        #define KITSUNE_OS_WINDOWS_32_BIT 1
-    #else
+    #if defined(_WIN64)
         #define KITSUNE_OS_WINDOWS_64_BIT 1
+    #else
+        #define KITSUNE_OS_WINDOWS_32_BIT 1
     #endif
 
 #elif defined(__linux__)
