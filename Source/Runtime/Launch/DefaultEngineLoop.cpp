@@ -3,6 +3,10 @@
 #include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Logging/ConsoleLogger.h"
 
+#if defined(KITSUNE_OS_WINDOWS)
+    #include "Application/Windows/WindowsDisplayManager.h"
+#endif
+
 namespace Kitsune
 {
     namespace Details
@@ -109,12 +113,21 @@ namespace Kitsune
 
     bool DefaultEngineLoop::Initialize(int argc, char** argv)
     {
+        if (argc == 0)
+            return false;
+
+        // First initialize the logger so we can start logging things out.
         m_Loggers.PushBack(MakeShared<ConsoleLogger>());
 
-        KITSUNE_ENGINE_INFO_FORMAT_("Initializing Kitsune Engine {0}. For the source code, visit https://github.com/Windvain/Kitsune",
+        KITSUNE_ENGINE_INFO_FORMAT_("Initializing Kitsune Engine {0}. "
+                                    "For the source code, visit https://github.com/Windvain/Kitsune",
                                     GetEngineVersion());
 
-        KITSUNE_ASSERT(argc != 0, "Tried to initialize the engine loop with no arguments.");
+        // Then the rest of the initialization.
+#if defined(KITSUNE_OS_WINDOWS)
+        m_DisplayManager = Memory::New<WindowsDisplayManager>();
+#endif
+
         KITSUNE_ENGINE_INFO_FORMAT_(
             "Initializing application \"{0}\"",
             argv[0]);
@@ -135,7 +148,7 @@ namespace Kitsune
 
         while (!m_ExitRequested)
         {
-            PlatformUpdate();
+            m_DisplayManager->Update();
             m_Application->OnUpdate();
         }
 
@@ -154,6 +167,7 @@ namespace Kitsune
 
         // Shutting the subsystems down has to be done manually, because the destructors of
         // our member variables are called based on its initialization order.
+        Memory::Delete(m_DisplayManager);
         m_Loggers.Clear();
     }
 

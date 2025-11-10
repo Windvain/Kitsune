@@ -33,9 +33,9 @@ namespace Kitsune
             : m_Size(sizeof(std::remove_cvref_t<Func>)),
               m_Pointer(Memory::Allocate(m_Size)),
 
-              m_CreateFunction(reinterpret_cast<CreateFunction>(StaticCreateFunction<Func>)),
-              m_InvokeFunction(reinterpret_cast<InvokeFunction>(StaticInvokeFunction<Func>)),
-              m_DestroyFunction(reinterpret_cast<DestroyFunction>(StaticDestroyFunction<Func>))
+              m_CreateFunction(reinterpret_cast<CreateFunction>(StaticCreateFunction<std::remove_cvref_t<Func>>)),
+              m_InvokeFunction(reinterpret_cast<InvokeFunction>(StaticInvokeFunction<std::remove_cvref_t<Func>>)),
+              m_DestroyFunction(reinterpret_cast<DestroyFunction>(StaticDestroyFunction<std::remove_cvref_t<Func>>))
         {
             using FuncType = std::remove_cvref_t<Func>;
             Memory::ConstructAt(static_cast<FuncType*>(m_Pointer), Forward<Func>(func));

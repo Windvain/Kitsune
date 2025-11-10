@@ -6,6 +6,10 @@ add_library(
     "Application/CommandLineArguments.h"
     "Application/IApplication.cpp"
     "Application/IApplication.h"
+    "Application/IDisplayManager.cpp"
+    "Application/IDisplayManager.h"
+    "Application/IScreen.h"
+    "Application/IWindow.h"
 
     "Foundation/Algorithms/Copy.h"
     "Foundation/Algorithms/Count.h"
@@ -129,6 +133,13 @@ add_library(
 
 if (WIN32)
     target_sources(KitsuneEngine PRIVATE
+        "Application/Windows/WindowsDisplayManager.cpp"
+        "Application/Windows/WindowsDisplayManager.h"
+        "Application/Windows/WindowsScreen.cpp"
+        "Application/Windows/WindowsScreen.h"
+        "Application/Windows/WindowsWindow.cpp"
+        "Application/Windows/WindowsWindow.h"
+
         "Foundation/Windows/WindowsConsoleInputStream.cpp"
         "Foundation/Windows/WindowsConsoleOutputStream.cpp"
         "Foundation/Windows/WindowsDebuggerAttached.cpp"

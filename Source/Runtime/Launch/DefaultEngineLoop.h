@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Launch/IEngineLoop.h"
+
 #include "Application/IApplication.h"
+#include "Application/IDisplayManager.h"
 
 #include "Foundation/Logging/ILogger.h"
 #include "Foundation/Memory/SharedPtr.h"
@@ -19,7 +21,7 @@ namespace Kitsune
             BackupMemoryBlock* Next;
             Usize Size;
 
-            static_assert(((sizeof(Next) + sizeof(Size)) % DefaultAlignment) == 0,
+            static_assert(((sizeof(BackupMemoryBlock*) + sizeof(Size)) % DefaultAlignment) == 0,
                           "BackupMemoryBlock isn't aligned correctly.");
         };
 
@@ -92,9 +94,6 @@ namespace Kitsune
         }
 
     private:
-        void PlatformUpdate();
-
-    private:
         static Usize CalculateBackupMemoryPoolSize();
 
     private:
@@ -106,6 +105,8 @@ namespace Kitsune
 
         Array<SharedPtr<ILogger>> m_Loggers;
         Details::BackupMemoryPool m_BackupMemoryPool;
+
+        IDisplayManager* m_DisplayManager;
 
         bool m_ExitRequested = false;
         int m_ExitCode = 0;

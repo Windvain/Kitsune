@@ -25,18 +25,6 @@ namespace Kitsune
         Exit(exitCode);
         ::TerminateProcess(::GetCurrentProcess(), exitCode);
     }
-
-    void DefaultEngineLoop::PlatformUpdate()
-    {
-        // Might move this to Application/ directory. Kind of equivalent to
-        // Xlib's XNextEvent().
-        MSG message;
-        if (::PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE) != 0)
-        {
-            ::TranslateMessage(&message);
-            ::DispatchMessageW(&message);
-        }
-    }
 }
 
 KITSUNE_POP_COMPILER_WARNINGS()
