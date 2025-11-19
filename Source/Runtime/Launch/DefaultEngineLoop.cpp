@@ -3,6 +3,8 @@
 #include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Logging/ConsoleLogger.h"
 
+#include "Application/SystemInformation.h"
+
 #if defined(KITSUNE_OS_WINDOWS)
     #include "Application/Windows/WindowsDisplayManager.h"
 #endif
@@ -185,7 +187,7 @@ namespace Kitsune
 
     Usize DefaultEngineLoop::CalculateBackupMemoryPoolSize()
     {
-        // TODO: Actually calculate memory pool size based on RAM.
-        return 4096;
+        // Arbitrary calculation, [n]GB of RAM --> [n]KB of backup memory.
+        return SystemInformation::GetTotalPhysicalMemory() / 1'000'000;
     }
 }

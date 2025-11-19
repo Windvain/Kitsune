@@ -6,3 +6,7 @@
 #if defined(KITSUNE_COMPILER_MSVC)
     #define KITSUNE_COMPILER_SUPPORTS_SEH 1
 #endif
+
+#if defined(KITSUNE_COMPILER_MSVC)
+    #define KITSUNE_COMPILER_SUPPORTS_WMI 1
+#endif

@@ -10,6 +10,7 @@ add_library(
     "Application/IDisplayManager.h"
     "Application/IScreen.h"
     "Application/IWindow.h"
+    "Application/SystemInformation.h"
 
     "Foundation/Algorithms/Copy.h"
     "Foundation/Algorithms/Count.h"
@@ -137,6 +138,7 @@ if (WIN32)
         "Application/Windows/WindowsDisplayManager.h"
         "Application/Windows/WindowsScreen.cpp"
         "Application/Windows/WindowsScreen.h"
+        "Application/Windows/WindowsSystemInformation.cpp"
         "Application/Windows/WindowsWindow.cpp"
         "Application/Windows/WindowsWindow.h"
 
@@ -183,6 +185,7 @@ elseif (MSVC)
 
     target_link_libraries(KitsuneEngine PRIVATE
         "DbgHelp.lib"
+        "wbemuuid.lib"
     )
 endif()
 
