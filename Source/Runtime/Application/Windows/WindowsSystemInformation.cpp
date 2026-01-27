@@ -135,7 +135,7 @@ namespace Kitsune
         LRESULT result;
         HKEY keyHandle;
 
-        result = ::RegOpenKeyEx(HKEY_LOCAL_MACHINE, path, 0, KEY_READ, &keyHandle);
+        result = ::RegOpenKeyExW(HKEY_LOCAL_MACHINE, path, 0, KEY_READ, &keyHandle);
         if (result != ERROR_SUCCESS)
             return "<unknown>";
 

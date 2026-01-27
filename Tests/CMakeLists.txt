@@ -1,6 +1,21 @@
-kitsune_add_test(
-    NAME FoundationTests
-    SOURCES
+if (WIN32)
+    set(TEST_EXE_TYPE WIN32)
+endif()
+
+include_directories(
+    "${PROJECT_SOURCE_DIR}/External/googletest/googletest/include"
+    "${PROJECT_SOURCE_DIR}/External/googletest/googlemock/include"
+)
+
+link_libraries(
+    GTest::gtest
+    GTest::gmock
+
+    KitsuneEngine
+)
+
+# ========== FoundationTests ========================================]
+add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/AddressOfTests.cpp"
     "FoundationTests/ArrayTests.cpp"
     "FoundationTests/BackInsertIteratorTests.cpp"
@@ -38,3 +53,6 @@ kitsune_add_test(
     "FoundationTests/WindowsPathTests.cpp"
     "FoundationTests/WriteStreamIteratorTests.cpp"
 )
+
+add_test(FoundationTests COMMAND FoundationTests)
+set_target_properties(FoundationTests PROPERTIES FOLDER "Tests")

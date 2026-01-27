@@ -1,8 +1,4 @@
-project(KitsuneEngine)
-add_library(
-    KitsuneEngine
-    STATIC
-
+set(FILES
     "Application/CommandLineArguments.h"
     "Application/IApplication.cpp"
     "Application/IApplication.h"
@@ -132,8 +128,12 @@ add_library(
     "Launch/IEngineLoop.h"
 )
 
-if (WIN32)
-    target_sources(KitsuneEngine PRIVATE
+set(COMPILER_OPTIONS "")
+set(COMPILER_DEFS "")
+set(LINKED_LIBRARIES "")
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    list(APPEND FILES
         "Application/Windows/WindowsDisplayManager.cpp"
         "Application/Windows/WindowsDisplayManager.h"
         "Application/Windows/WindowsScreen.cpp"
@@ -153,25 +153,22 @@ if (WIN32)
         "Launch/Windows/WindowsDefaultEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
     )
+
+    list(APPEND COMPILER_DEFS
+        # Enable the usage of "wide" functions in the Win32 API.
+        "UNICODE=1"
+        "_UNICODE=1"
+
+        # Undefines MIN() and MAX() macros from the <Windows.h> header.
+        "NOMINMAX=1"
+
+        # Disable warnings from MSVC about using unsafe C functions.
+        "_CRT_SECURE_NO_WARNINGS=1"
+    )
 endif()
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    target_sources(KitsuneEngine PRIVATE
-        "Foundation/Clang/ClangInterlocked.inl"
-        "Foundation/Clang/ClangStackTrace.cpp"
-
-        "Foundation/GeneralPlatform/GeneralStackFrame.h"
-    )
-
-    target_sources(KitsuneEngine PUBLIC
-        "KitsuneEngine.rc"
-    )
-
-    target_link_libraries(KitsuneEngine PRIVATE
-        "libbacktrace"
-    )
-elseif (MSVC)
-    target_sources(KitsuneEngine PRIVATE
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    list(APPEND FILES
         "Foundation/Msvc/MsvcInterlocked.inl"
         "Foundation/Msvc/MsvcStackFrame.h"
         "Foundation/Msvc/MsvcStackTrace.cpp"
@@ -179,25 +176,98 @@ elseif (MSVC)
         "KitsuneEngine.natvis"
     )
 
-    target_sources(KitsuneEngine PUBLIC
-        "KitsuneEngine.manifest"
+    list(APPEND LINKED_LIBRARIES
+        # Used for querying WMI which is used in getting information about the system.
+        "wbemuuid.lib"
+
+        # Used in getting the backtrace of our program.
+        "dbghelp.lib"
     )
 
-    target_link_libraries(KitsuneEngine PRIVATE
-        "DbgHelp.lib"
-        "wbemuuid.lib"
+    append_if_backtrace_supported(COMPILER_DEFS "KITSUNE_SUPPORTS_BACKTRACES=1")
+    list(APPEND COMPILER_OPTIONS
+        "/Zc:wchar_t"                 # Treat wchar_t as a native type.
+        "/Zc:preprocessor"            # Use a C++ standard conforming preprocessor.
+
+        "/utf-8"                      # Specifies the source and execution charset as UTF-8.
+        "/MP"                         # Compile the engine source with multiple processes.
+
+        "/W4"                         # Enable all reasonable warnings.
+        "/WX"                         # Turn all warnings into errors.
+        "/permissive"                 # Enable standards conformance.
+
+        "/wd4244"                     # Disable "conversion from "type1" to "type2"  possible loss of data".
+    )
+
+    list(APPEND COMPILER_OPTIONS
+        # /Zi: Create a seperate PDB file with symbols.
+        # /MDd: Link to the debug runtime library.
+        # /Od: Disable optimizations.
+        "$<$<CONFIG:Debug>:/Zi;/MDd;/Od>"
+
+        # /Zi: Create a seperate PDB file with symbols.
+        # /MD: Link to the release runtime library.
+        # /O2: Enable level 2 optimizations.
+        "$<$<CONFIG:Optimized>:/Zi;/MD;/O2>"
+
+        # /MD: Link to the release runtime library.
+        # /Ox: Optimize for speed.
+        "$<$<CONFIG:Production>:/MD;/Ox>"
+    )
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    list(APPEND FILES
+        "Foundation/Clang/ClangInterlocked.inl"
+        "Foundation/Clang/ClangStackTrace.cpp"
+
+        "Foundation/GeneralPlatform/GeneralStackFrame.h"
+    )
+
+    find_library(LIBBACKTRACE_LIBRARY
+        NAMES libbacktrace backtrace
+        OPTIONAL
+    )
+
+    list(APPEND LINKED_LIBRARIES "${LIBBACKTRACE_LIBRARY}")
+    list(APPEND COMPILER_OPTIONS
+        "-Wall"                          # Enable all warnings about construction.
+        "-Wextra"                        # Enable warnings that aren"t enabled by -Wall.
+        "-Werror"                        # Turn all warnings into errors.
+
+        "-pedantic"                      # Enable warnings about compiler extensions.
+        "-Wshadow"                       # Warn when a local declaration shadows another.
+    )
+
+    list(APPEND COMPILER_OPTIONS
+        # /-g: Generate debug info.
+        # /O0: Disable optimizations.
+        "$<$<CONFIG:Debug>:-g;-O0>"
+
+        # -g: Generate debug info.
+        # -O2: Enable level 2 optimizations.
+        "$<$<CONFIG:Optimized>:-g;-O2>"
+
+        # /Ox: Optimize level 3 optimizations.
+        "$<$<CONFIG:Production>:-O3>"
+    )
+else()
+    message(FATAL_ERROR
+        "${CMAKE_CXX_COMPILER_ID} is unsupported for compiling Kitsune. Please use one of the listed supported compilers."
     )
 endif()
 
+list(APPEND COMPILER_DEFS
+    "KITSUNE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}"
+    "KITSUNE_VERSION_MINOR=${PROJECT_VERSION_MINOR}"
+    "KITSUNE_VERSION_PATCH=${PROJECT_VERSION_PATCH}"
+
+    "KITSUNE_BUILD_$<UPPER_CASE:$<CONFIG>>=1"
+)
+
+add_library(KitsuneEngine STATIC ${FILES})
 set_target_properties(KitsuneEngine PROPERTIES FOLDER "Engine")
 
-# Temporary.
-target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_VERSION_MAJOR=0")
-target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_VERSION_MINOR=0")
-target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_VERSION_PATCH=1")
+target_compile_options(KitsuneEngine PRIVATE ${COMPILER_OPTIONS})
+target_compile_definitions(KitsuneEngine PRIVATE ${COMPILER_DEFS})
 
-target_compile_options(KitsuneEngine PRIVATE ${KITSUNE_GLOBAL_COMPILER_FLAGS})
-target_compile_definitions(KitsuneEngine PRIVATE ${KITSUNE_GLOBAL_COMPILER_DEFINITIONS})
-
-target_link_options(KitsuneEngine PRIVATE ${KITSUNE_GLOBAL_LINKER_FLAGS})
-target_include_directories(KitsuneEngine PUBLIC ${KITSUNE_GLOBAL_INCLUDE_DIRECTORIES})
+target_link_libraries(KitsuneEngine PRIVATE ${LINKED_LIBRARIES})
+target_include_directories(KitsuneEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

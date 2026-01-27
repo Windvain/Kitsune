@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 6,
   "configurePresets": [
     {
       "name": "Base Preset",
@@ -16,8 +16,9 @@
       }
     },
     {
-      "name": "Visual Studio 2022",
-      "generator": "Visual Studio 17 2022",
+      "name": "Visual Studio 2026",
+      "displayName": "Visual Studio 2026",
+      "generator": "Visual Studio 18 2026",
 
       "cacheVariables": {
         "CMAKE_SHARED_LINKER_FLAGS_OPTIMIZED": "",
@@ -26,27 +27,21 @@
         "CMAKE_EXE_LINKER_FLAGS_PRODUCTION": ""
       },
 
-      "vendor": {
-        "jetbrains.com/clion": {
-          "toolchain": "Visual Studio"
-        }
-      },
-
-      "inherits": [ "Base Preset" ]
+      "inherits": [ "Base Preset" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
     },
     {
-      "name": "MinGW Clang",
-      "generator": "Ninja",
+      "name": "Clang",
+      "displayName": "Clang",
+      "generator": "Ninja Multi-Config",
 
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang.exe",
         "CMAKE_CXX_COMPILER": "clang++.exe"
-      },
-
-      "vendor": {
-        "jetbrains.com/clion": {
-          "toolchain": "MinGW Clang"
-        }
       },
 
       "inherits": [ "Base Preset" ]
@@ -55,34 +50,34 @@
 
   "buildPresets": [
     {
-      "name": "Visual Studio 2022 -- Debug",
-      "configurePreset": "Visual Studio 2022",
+      "name": "Visual Studio 2026 - Debug",
+      "configurePreset": "Visual Studio 2026",
       "configuration": "Debug"
     },
     {
-      "name": "Visual Studio 2022 -- Optimized",
-      "configurePreset": "Visual Studio 2022",
+      "name": "Visual Studio 2026 - Optimized",
+      "configurePreset": "Visual Studio 2026",
       "configuration": "Optimized"
     },
     {
-      "name": "Visual Studio 2022 -- Production",
-      "configurePreset": "Visual Studio 2022",
+      "name": "Visual Studio 2026 - Production",
+      "configurePreset": "Visual Studio 2026",
       "configuration": "Production"
     },
 
     {
-      "name": "MinGW Clang -- Debug",
-      "configurePreset": "MinGW Clang",
+      "name": "Clang - Debug",
+      "configurePreset": "Clang",
       "configuration": "Debug"
     },
     {
-      "name": "MinGW Clang -- Optimized",
-      "configurePreset": "MinGW Clang",
+      "name": "Clang - Optimized",
+      "configurePreset": "Clang",
       "configuration": "Optimized"
     },
     {
-      "name": "MinGW Clang -- Production",
-      "configurePreset": "MinGW Clang",
+      "name": "Clang - Production",
+      "configurePreset": "Clang",
       "configuration": "Production"
     }
   ]
