@@ -5,31 +5,35 @@
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator It,
-             Invokable<typename IteratorTraits<It>::ValueType&> Fn>
-    inline void ForEach(It begin, It end, Fn fn)
+    // Invokes the function `func` for every element in `[begin, end]`.
+    template<ForwardIterator Iter,
+             Invokable<typename IteratorTraits<Iter>::ValueType&> Func>
+    inline void ForEach(Iter begin, Iter end, Func func)
     {
         for (; begin != end; ++begin)
-            fn(*begin);
+            func(*begin);
     }
 
-    template<ForwardIterator It, typename Size,
-             Invokable<typename IteratorTraits<It>::ValueType&> Fn>
-    inline void ForEachN(It begin, Size n, Fn fn)
+    // Invokes the function `func` for every element in `[begin, begin + n]`.
+    template<ForwardIterator Iter, typename Size,
+             Invokable<typename IteratorTraits<Iter>::ValueType&> Func>
+    inline void ForEachN(Iter begin, Size n, Func func)
     {
         for (; n > 0; ++begin, --n)
-            fn(*begin);
+            func(*begin);
     }
 
-    template<ForwardIterator It,
-             Invokable<typename IteratorTraits<It>::ValueType&> Fn,
-             Invokable<typename IteratorTraits<It>::ValueType&> Pred>
-    inline void ForEachIf(It begin, It end, Pred pred, Fn fn)
+    // Invokes the function `func` for every element in `[begin, end]` which satisfies the
+    // predicate `pred`.
+    template<ForwardIterator Iter,
+             Invokable<typename IteratorTraits<Iter>::ValueType&> Func,
+             Invokable<typename IteratorTraits<Iter>::ValueType&> Pred>
+    inline void ForEachIf(Iter begin, Iter end, Pred pred, Func func)
     {
         for (; begin != end; ++begin)
         {
             if (pred(*begin))
-                fn(*begin);
+                func(*begin);
         }
     }
 }

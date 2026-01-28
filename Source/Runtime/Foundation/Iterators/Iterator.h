@@ -1,9 +1,11 @@
 #pragma once
 
 #include <concepts>
-#include "Foundation/Templates/Forward.h"
 
+#include "Foundation/Templates/Forward.h"
 #include "Foundation/Concepts/Comparable.h"
+
+#include "Foundation/Iterators/ToAddress.h"
 #include "Foundation/Iterators/IteratorTraits.h"
 
 namespace Kitsune
@@ -14,7 +16,7 @@ namespace Kitsune
         using AddReference = T&;
 
         template<typename T>
-        concept CanDereference = requires (T val)
+        concept CanReference = requires (T val)
         {
             typename AddReference<T>;
         };
@@ -24,10 +26,9 @@ namespace Kitsune
     concept Iterator =
         std::default_initializable<It> &&
         std::copyable<It> &&
-
         requires (It iterator)
         {
-            { *iterator } -> Details::CanDereference;
+            { *iterator  } -> Details::CanReference;
             { ++iterator } -> std::same_as<It&>;
             { iterator++ } -> std::same_as<It>;
 
@@ -36,7 +37,7 @@ namespace Kitsune
         };
 
     template<typename It, typename T>
-    concept WritableIterator =
+    concept OutputIterator =
         Iterator<It> &&
         requires (It iterator, T&& val)
         {
@@ -44,7 +45,7 @@ namespace Kitsune
         };
 
     template<typename It>
-    concept ReadableIterator =
+    concept InputIterator =
         Iterator<It> &&
         requires (It iterator)
         {
@@ -52,7 +53,7 @@ namespace Kitsune
         };
 
     template<typename It>
-    concept ForwardIterator = ReadableIterator<It> &&
+    concept ForwardIterator = InputIterator<It> &&
                               Equatable<const It, const It>;
 
     template<typename It>
@@ -68,7 +69,8 @@ namespace Kitsune
     concept RandomAccessIterator =
         BidirectionalIterator<It> &&
         Comparable<const It, const It> &&
-        requires (It iter, const It const_iter, typename IteratorTraits<It>::DifferenceType n)
+        requires (It iter, const It const_iter,
+                  typename IteratorTraits<It>::DifferenceType n)
         {
             { iter += n               } -> std::same_as<It&>;
             { const_iter + n          } -> std::same_as<It>;
@@ -76,6 +78,8 @@ namespace Kitsune
             { iter -= n               } -> std::same_as<It&>;
             { const_iter - n          } -> std::same_as<It>;
             { const_iter - const_iter } -> std::same_as<decltype(n)>;
-            { const_iter[n]           } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
+
+            { const_iter[n] } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
+            { ToAddress(const_iter) } -> std::same_as<typename IteratorTraits<It>::ValueType*>;
         };
 }

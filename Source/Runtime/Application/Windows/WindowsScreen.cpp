@@ -2,9 +2,10 @@
 #include <cwchar>
 
 #include <Windows.h>
-#include <shellscalingapi.h>
+#include <shellscalingapi.h>        // Even though we're dynamically loading Shcore.dll, we still need the MONITOR_DPI_TYPE struct for
+                                    // GetDpiForMonitor's function signature.
 
-#include "Application/IScreen.h"
+#include "Application/Screen.h"
 
 #include "Foundation/Maths/Vector2.h"
 #include "Foundation/Diagnostics/SystemException.h"
@@ -53,21 +54,14 @@ namespace Kitsune
         // You only need to record one of the values to determine the DPI and respond appropriately.
         // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getdpiformonitor
         UINT dpiX, _dpiY;
-        if (getDpiForMonitor(m_MonitorHandle, MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
+        if (FAILED(getDpiForMonitor(m_MonitorHandle, MDT_EFFECTIVE_DPI, &dpiX, &_dpiY)))
             dpiX = USER_DEFAULT_SCREEN_DPI;
 
         ::FreeLibrary(shcore);
         return dpiX;
     }
 
-    ScreenOrientation WindowsScreen::GetOrientation() const
-    {
-        DEVMODEW deviceMode = GetDeviceMode();
-        return (deviceMode.dmPelsWidth < deviceMode.dmPelsHeight) ? ScreenOrientation::Portrait :
-                                                                    ScreenOrientation::Landscape;
-    }
-
-    float WindowsScreen::GetRefreshRate() const
+    Fraction<Uint32> WindowsScreen::GetRefreshRate() const
     {
         DEVMODEW deviceMode = GetDeviceMode();
         DWORD refreshRate = deviceMode.dmDisplayFrequency;
@@ -79,11 +73,10 @@ namespace Kitsune
         if ((refreshRate == 0) || (refreshRate == 1))
         {
             // Yeah, I'm not writing WMI code just for this.
-            // Just assume 60Hz and be done with it.
-            return 1.0f / 60;
+            return Fraction<Uint32>();
         }
 
-        return 1.0f / deviceMode.dmDisplayFrequency;
+        return Fraction<Uint32>(1.0f, deviceMode.dmDisplayFrequency);
     }
 
     void WindowsScreen::SetOrientation(ScreenOrientation orientation)
@@ -98,7 +91,7 @@ namespace Kitsune
         deviceMode.dmSize = sizeof(deviceMode);
         deviceMode.dmDriverExtra = 0;
 
-        if (::EnumDisplaySettingsExW(m_AdapterDevice.DeviceName, ENUM_CURRENT_SETTINGS, &deviceMode, 0) == 0)
+        if (!::EnumDisplaySettingsExW(m_AdapterDevice.DeviceName, ENUM_CURRENT_SETTINGS, &deviceMode, 0))
             throw SystemException("Failed to retrieve the adapter device's display settings.");
 
         return deviceMode;
@@ -110,7 +103,7 @@ namespace Kitsune
         MONITORINFOEXW monitorInfo;
 
         monitorInfo.cbSize = sizeof(MONITORINFOEXW);
-        if (::GetMonitorInfoW(monitor, &monitorInfo) == 0)
+        if (!::GetMonitorInfoW(monitor, &monitorInfo))
             return TRUE;
 
         if (std::wcscmp(monitorInfo.szDevice, data.Name) == 0)

@@ -11,14 +11,14 @@ Follow the instructions below to build and run Kitsune from source. As of now, K
 
 **1. Requirements**
 - A C/C++ compiler. You can use one of the following tested compilers:
-    - [Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/), be sure to install the **Desktop development with C++** workload or install the MSVC compiler with the Windows SDK.
+    - [Visual Studio Community 2026](https://visualstudio.microsoft.com/vs/), be sure to install the **Desktop development with C++** workload or install the MSVC compiler with the Windows SDK.
     - [MinGW-w64](https://www.mingw-w64.org/) with Clang can also be used, but keep in mind that some features will be disabled because of compiler support.
 - The [CMake](https://cmake.org/) build system. The later the release version, the better.
 - [Git](https://git-scm.com/), which will be required to clone this repository.
 
 **2. Additional Requirements**
 - If you are building with a compiler other than MSVC, the following have to be installed:
-    - [libbacktrace](https://github.com/ianlancetaylor/libbacktrace/) for stack trace support.
+    - [libbacktrace](https://github.com/ianlancetaylor/libbacktrace/) for stack trace support. (Optional)
     - [Ninja](https://ninja-build.org/) as the build system.
 
 **3. Getting the Source Code** \
@@ -29,9 +29,9 @@ If the repository was not cloned recursively, run `git submodule update --init` 
 Run the following command with this repository as your current working directory. The engine can be built with three different build types, **Debug**, **Optimized**, and **Production**. Replace `<your build type>` with the desired build type.
 \
 \
-For Visual Studio 2022:
+For Visual Studio 2026:
 ```bash
-$ cmake --preset "Visual Studio 2022"
+$ cmake --preset "Visual Studio 2026"
 ...
 -- Configuring done (18.8s)
 -- Generating done (0.2s)
@@ -49,11 +49,11 @@ $ cmake --preset "Clang MinGW" -DCMAKE_BUILD_TYPE="<your build type>"
 After configuring the project using CMake, we can go on to the last step, which is building the engine.
 \
 \
-Visual Studio 2022 users can use this command:
+Visual Studio 2026 users can use this command:
 ```bash
-$ cmake --build build/ --preset "Visual Studio 2022 -- <your build type>"
+$ cmake --build build/ --preset "Visual Studio 2026 - <your build type>"
 ```
 Or with MinGW-Clang:
 ```bash
-$ cmake --build build/
+$ cmake --build build/ --preset "Clang MinGW - <your build type>"
 ```

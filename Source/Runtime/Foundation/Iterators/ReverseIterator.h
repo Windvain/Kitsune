@@ -19,14 +19,20 @@ namespace Kitsune
         using IteratorType = Iter;
 
     public:
-        inline ReverseIterator() : Current() { /* ... */ }
-        inline explicit ReverseIterator(Iter it)
-            : Current(Move(it)) { /* ... */ }
+        inline ReverseIterator()
+            : m_Current()
+        {
+        }
+
+        inline explicit ReverseIterator(Iter iterator)
+            : m_Current(Move(iterator))
+        {
+        }
 
         template<typename OtherIter>
             requires std::is_convertible_v<const OtherIter&, Iter>
         inline ReverseIterator(const ReverseIterator<OtherIter>& other)
-            : Current(other.Current)
+            : m_Current(other.m_Current)
         {
         }
 
@@ -36,54 +42,90 @@ namespace Kitsune
                      std::assignable_from<Iter&, const OtherIter&>
         inline ReverseIterator& operator=(const ReverseIterator<OtherIter>& other)
         {
-            Current = other.Current;
+            m_Current = other.m_Current;
             return *this;
         }
 
     public:
-        inline ValueType& operator*() const { Iter temp = Current; return *(--temp); }
+        inline ValueType& operator*() const
+        {
+            Iter temp = m_Current;
+            return *(--temp);
+        }
+
         inline ValueType* operator->() const
         {
             if constexpr (std::is_pointer_v<Iter>)
-                return (Current - 1);
+                return (m_Current - 1);
             else
             {
-                auto curr = Current;
+                auto curr = m_Current;
                 return (--curr).operator->();
             }
         }
 
     public:
         inline ValueType& operator[](Index index) const
-            requires RandomAccessIterator<Iter> { return *(Current - index - 1); }
+            requires RandomAccessIterator<Iter>
+        {
+            return *(m_Current - index - 1);
+        }
 
     public:
-        inline ReverseIterator& operator++() { --Current; return *this; }
-        inline ReverseIterator& operator--() { ++Current; return *this; }
+        inline ReverseIterator& operator++() { --m_Current; return *this; }
+        inline ReverseIterator& operator--() { ++m_Current; return *this; }
 
-        inline ReverseIterator operator++(int) { ReverseIterator temp = *this; --Current; return temp; }
-        inline ReverseIterator operator--(int) { ReverseIterator temp = *this; ++Current; return temp; }
+        inline ReverseIterator operator++(int)
+        {
+            ReverseIterator temp = *this;
+            --m_Current;
+
+            return temp;
+        }
+
+        inline ReverseIterator operator--(int)
+        {
+            ReverseIterator temp = *this;
+            ++m_Current;
+
+            return temp;
+        }
 
         inline ReverseIterator operator+(DifferenceType offset) const
-            requires RandomAccessIterator<Iter> { return ReverseIterator(Current - offset); }
+            requires RandomAccessIterator<Iter>
+        {
+            return ReverseIterator(m_Current - offset);
+        }
 
         inline ReverseIterator& operator+=(DifferenceType offset)
-            requires RandomAccessIterator<Iter> { Current -= offset; return *this; }
+            requires RandomAccessIterator<Iter>
+        {
+            m_Current -= offset;
+            return *this;
+        }
 
         inline ReverseIterator operator-(DifferenceType offset) const
-            requires RandomAccessIterator<Iter> { return ReverseIterator(Current + offset); }
+            requires RandomAccessIterator<Iter>
+        {
+            return ReverseIterator(m_Current + offset);
+        }
 
         inline ReverseIterator& operator-=(DifferenceType offset)
-            requires RandomAccessIterator<Iter> { Current += offset; return *this; }
+            requires RandomAccessIterator<Iter>
+        {
+            m_Current += offset;
+            return *this;
+        }
 
     public:
-        [[nodiscard]] inline Iter GetBase() const { return Current; }
+        [[nodiscard]]
+        inline Iter GetBase() const { return m_Current; }
 
-    protected:
+    private:
         template<BidirectionalIterator U>
         friend class ReverseIterator;
 
-        Iter Current;
+        Iter m_Current;
     };
 
     template<BidirectionalIterator It>
@@ -130,8 +172,7 @@ namespace Kitsune
     }
 
     template<RandomAccessIterator It1, RandomAccessIterator It2>
-    inline auto operator-(const ReverseIterator<It1>& it1, const ReverseIterator<It2>& it2)
-        -> decltype(it2.GetBase() - it1.GetBase())
+    inline typename IteratorTraits<It2>::DifferenceType operator-(const ReverseIterator<It1>& it1, const ReverseIterator<It2>& it2)
     {
         return (it2.GetBase() - it1.GetBase());
     }

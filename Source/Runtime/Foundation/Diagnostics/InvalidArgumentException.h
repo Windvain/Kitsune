@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
 {
-    class InvalidArgumentException : public IException
+    class InvalidArgumentException : public Exception
     {
     public:
         InvalidArgumentException(const char* desc = "Invalid argument passed")
-            : IException("InvalidArgumentException", desc)
+            : Exception("InvalidArgumentException", desc)
         {
         }
     };

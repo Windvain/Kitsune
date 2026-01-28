@@ -9,20 +9,31 @@
 #include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
 
+#include "Foundation/Algorithms/Equal.h"
+#include "Foundation/Algorithms/Destroy.h"
+
+#include "Foundation/Algorithms/Distance.h"
+#include "Foundation/Algorithms/Uninitialized.h"
+
 #include "Foundation/Iterators/Iterator.h"
 #include "Foundation/Iterators/ReverseIterator.h"
 #include "Foundation/Diagnostics/OutOfRangeException.h"
 
-#include "Foundation/Algorithms/Equal.h"
-#include "Foundation/Algorithms/Destroy.h"
-#include "Foundation/Algorithms/Distance.h"
-#include "Foundation/Algorithms/Uninitialized.h"
-
 namespace Kitsune
 {
+    // A container that stores a contiguous array of elements with type `T`.
     template<typename T, Allocator Alloc = GlobalAllocator>
     class Array
     {
+    private:
+        // std::initializer_list is usually implemented as a pair of pointers or as a pointer and size pair.
+        // This assertion should not fail with the commonly used compilers.
+        static_assert(ForwardIterator<typename std::initializer_list<T>::iterator>,
+                      "std::initializer_list iterators do not satisfy ForwardIterator.");
+
+        static_assert(ForwardIterator<typename std::initializer_list<T>::const_iterator>,
+                      "std::initializer_list iterators do not satisfy ForwardIterator.");
+
     public:
         using ValueType = T;
         using AllocatorType = Alloc;
@@ -34,7 +45,11 @@ namespace Kitsune
         using ReverseConstIterator = Kitsune::ReverseIterator<ConstIterator>;
 
     public:
-        inline Array() : m_Begin(nullptr), m_End(nullptr), m_StorageEnd(nullptr) { /* ... */ }
+        inline Array()
+            : m_Begin(nullptr), m_End(nullptr), m_StorageEnd(nullptr),
+              m_Allocator()
+        {
+        }
 
         inline explicit Array(const Alloc& alloc)
             : m_Begin(nullptr), m_End(nullptr), m_StorageEnd(nullptr),
@@ -42,65 +57,35 @@ namespace Kitsune
         {
         }
 
-        inline explicit Array(Alloc&& alloc)
-            : m_Begin(nullptr), m_End(nullptr), m_StorageEnd(nullptr),
-             m_Allocator(Move(alloc))
-        {
-        }
-
-        inline Array(Usize cap, const Alloc& alloc)
+        inline Array(Usize capacity, const Alloc& alloc = Alloc())
             : Array(alloc)
         {
-            if (cap == 0) return;
+            if (capacity == 0)
+                return;
 
-            m_Begin = static_cast<T*>(m_Allocator.Allocate(cap * sizeof(T), alignof(T)));
-            m_End = m_Begin;
-            m_StorageEnd = m_Begin + cap;
+            Usize adjustedCapacity = s_AllocationFactor * capacity;
+            void* data = m_Allocator.Allocate(adjustedCapacity * sizeof(T), alignof(T));
+
+            m_Begin = m_End = static_cast<T*>(data);
+            m_StorageEnd = m_Begin + capacity;
         }
 
-        inline explicit Array(Usize cap, Alloc&& alloc = Alloc())
-            : Array(Move(alloc))
-        {
-            if (cap == 0) return;
-
-            m_Begin = static_cast<T*>(m_Allocator.Allocate(cap * sizeof(T), alignof(T)));
-            m_End = m_Begin;
-            m_StorageEnd = m_Begin + cap;
-        }
-
-        inline Array(Usize count, const T& value, const Alloc& alloc)
+        inline Array(Usize count, const T& value, const Alloc& alloc = Alloc())
             : Array(count, alloc)
         {
             m_End = Algorithms::UninitializedFillN(m_Begin, count, value);
         }
 
-        inline Array(Usize count, const T& value, Alloc&& alloc = Alloc())
-            : Array(count, Move(alloc))
-        {
-            m_End = Algorithms::UninitializedFillN(m_Begin, count, value);
-        }
 
         template<ForwardIterator It>
-        inline Array(It begin, It end, const Alloc& alloc)
+        inline Array(It begin, It end, const Alloc& alloc = Alloc())
             : Array(Algorithms::Distance(begin, end), alloc)
         {
             m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
         }
 
-        template<ForwardIterator It>
-        inline Array(It begin, It end, Alloc&& alloc = Alloc())
-            : Array(Algorithms::Distance(begin, end), Move(alloc))
-        {
-            m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
-        }
-
-        inline Array(std::initializer_list<T> ilist, const Alloc& alloc)
+        inline Array(std::initializer_list<T> ilist, const Alloc& alloc = Alloc())
             : Array(ilist.begin(), ilist.end(), alloc)
-        {
-        }
-
-        inline Array(std::initializer_list<T> ilist, Alloc&& alloc = Alloc())
-            : Array(ilist.begin(), ilist.end(), Move(alloc))
         {
         }
 
@@ -123,7 +108,7 @@ namespace Kitsune
                 return;
 
             Algorithms::Destroy(m_Begin, m_End);
-            m_Allocator.Free(m_Begin);
+            m_Allocator.Free(m_Begin, Capacity());
         }
 
     public:
@@ -136,7 +121,7 @@ namespace Kitsune
                 Array().Swap(*this);
 
             m_Allocator = array.GetAllocator();
-            RangeAssign(array.GetBegin(), array.GetEnd());
+            Assign(array.GetBegin(), array.GetEnd());
 
             return *this;
         }
@@ -152,7 +137,7 @@ namespace Kitsune
 
         inline Array& operator=(std::initializer_list<T> ilist)
         {
-            RangeAssign(ilist.begin(), ilist.end());
+            Assign(ilist.begin(), ilist.end());
             return *this;
         }
 
@@ -244,11 +229,16 @@ namespace Kitsune
     public:
         inline void Reserve(Usize newCapacity)
         {
-            if (newCapacity <= Capacity()) return;
+            if (newCapacity <= Capacity())
+                return;
+
             ReallocateExact(newCapacity);
         }
 
-        inline void ShrinkToFit() { ReallocateExact(Size()); }
+        inline void ShrinkToFit()
+        {
+            ReallocateExact(Size());
+        }
 
     public:
         inline void Swap(Array& array)
@@ -267,8 +257,44 @@ namespace Kitsune
             m_End = m_Begin;
         }
 
-        inline Iterator Insert(Iterator pos, const T& val) { return Emplace(pos, val); }
-        inline Iterator Insert(Iterator pos, T&& val)      { return Emplace(pos, Move(val)); }
+        template<ForwardIterator It>
+        inline void Assign(It begin, It end)
+        {
+            Usize size = static_cast<Usize>(Algorithms::Distance(begin, end));
+
+            if (Capacity() >= size)
+                Algorithms::Destroy(m_Begin, m_End);
+            else
+                Array(size, Move(m_Allocator)).Swap(*this);
+
+            m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
+        }
+
+        inline void Assign(std::initializer_list<T> ilist)
+        {
+            Assign(ilist.begin(), ilist.end());
+        }
+
+        inline void Assign(Usize count, const T& value)
+        {
+            if (Capacity() >= count)
+                Algorithms::Destroy(m_Begin, m_End);
+            else
+                Array(count, Move(m_Allocator)).Swap(*this);
+
+            m_End = Algorithms::UninitializedFillN(m_Begin, count, value);
+        }
+
+    public:
+        inline Iterator Insert(Iterator pos, const T& val)
+        {
+            return Emplace(pos, val);
+        }
+
+        inline Iterator Insert(Iterator pos, T&& val)
+        {
+            return Emplace(pos, Move(val));
+        }
 
         inline Iterator Insert(Iterator pos, Usize count, const T& value)
         {
@@ -324,15 +350,20 @@ namespace Kitsune
             return pos;
         }
 
-        inline void Remove(Iterator pos) { return Remove(pos, pos + 1); }
+        inline void Remove(Iterator pos)
+        {
+            return Remove(pos, pos + 1);
+        }
+
         inline void Remove(Iterator begin, Iterator end)
         {
-            if (begin == end) return;
+            if (begin == end)
+                return;
 
             if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) || (end > GetEnd()))
                 throw OutOfRangeException();
 
-            Usize removedSize = static_cast<Usize>(Algorithms::Distance(begin, end));
+            Ptrdiff removedSize = end - begin;
             Algorithms::Destroy(begin, end);
 
             for (auto it = end; it != GetEnd(); ++it, ++begin)
@@ -344,8 +375,35 @@ namespace Kitsune
             m_End -= removedSize;
         }
 
-        inline void PushBack(const T& val) { EmplaceBack(val); }
-        inline void PushBack(T&& val)      { EmplaceBack(Move(val)); }
+        inline void RemoveUnsorted(Iterator it)
+        {
+            RemoveUnsorted(it, it + 1);
+        }
+
+        inline void RemoveUnsorted(Iterator begin, Iterator end)
+        {
+            if (begin == end)
+                return;
+
+            if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) || (end > GetEnd()))
+                throw OutOfRangeException();
+
+            Ptrdiff removedSize = end - begin;
+            Algorithms::Destroy(begin, end);
+
+            Algorithms::UninitializedMoveN(GetReverseBegin(), KITSUNE_MIN(removedSize, GetEnd() - end), begin);
+            m_End -= removedSize;
+        }
+
+        inline void PushBack(const T& val)
+        {
+            EmplaceBack(val);
+        }
+
+        inline void PushBack(T&& val)
+        {
+            EmplaceBack(Move(val));
+        }
 
         template<typename... Args>
         inline T& EmplaceBack(Args&&... args)
@@ -378,37 +436,23 @@ namespace Kitsune
     private:
         inline void ReallocateExact(Usize newCapacity)
         {
-            T* ptr = static_cast<T*>(m_Allocator.Allocate(newCapacity * sizeof(T), alignof(T)));
+            T* pointer = static_cast<T*>(m_Allocator.Allocate(newCapacity * sizeof(T), alignof(T)));
             Usize moveCount = KITSUNE_MIN(newCapacity, Size());
 
-            Algorithms::UninitializedMoveN(m_Begin, moveCount, ptr);
+            Algorithms::UninitializedMoveN(m_Begin, moveCount, pointer);
             Algorithms::Destroy(m_Begin, m_End);
 
-            m_Allocator.Free(m_Begin);
+            m_Allocator.Free(m_Begin, Capacity());
 
-            m_Begin = ptr;
+            m_Begin = pointer;
             m_End = m_Begin + moveCount;
             m_StorageEnd = m_Begin + newCapacity;
         }
 
         inline void Reallocate(Usize newCapacity)
         {
-            Usize adjustedCapacity(static_cast<float>(newCapacity) * s_AllocationFactor);
+            Usize adjustedCapacity = s_AllocationFactor * newCapacity;
             ReallocateExact(adjustedCapacity);
-        }
-
-    private:
-        template<ForwardIterator It>
-        inline void RangeAssign(It begin, It end)
-        {
-            Usize size = static_cast<Usize>(Algorithms::Distance(begin, end));
-
-            if (Capacity() >= size)
-                Algorithms::Destroy(m_Begin, m_End);
-            else
-                Array(size, Move(m_Allocator)).Swap(*this);
-
-            m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
         }
 
     private:

@@ -92,19 +92,19 @@ namespace Kitsune
     };
 
     template<typename T>
-    VectorBase<T, 2> operator*(const T& scalar, const VectorBase<T, 2>& vec)
+    inline VectorBase<T, 2> operator*(const T& scalar, const VectorBase<T, 2>& vec)
     {
         return (vec * scalar);
     }
 
     template<typename T>
-    VectorBase<T, 2> operator/(const T& scalar, const VectorBase<T, 2>& vec)
+    inline VectorBase<T, 2> operator/(const T& scalar, const VectorBase<T, 2>& vec)
     {
         return (VectorBase<T, 2>(scalar) /= vec);
     }
 
     template<typename T, typename U>
-    bool operator==(const VectorBase<T, 2>& vec1, const VectorBase<U, 2>& vec2)
+    inline bool operator==(const VectorBase<T, 2>& vec1, const VectorBase<U, 2>& vec2)
     {
         return ((vec1.x == vec2.x) && (vec1.y == vec2.y));
     }

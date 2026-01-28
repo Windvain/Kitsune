@@ -2,5 +2,6 @@
 
 namespace Kitsune
 {
-    [[nodiscard]] bool IsDebuggerAttached();
+    [[nodiscard]]
+    bool IsDebuggerAttached();
 }

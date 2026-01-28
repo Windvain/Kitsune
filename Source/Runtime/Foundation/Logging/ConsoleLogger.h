@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Foundation/Logging/ILogger.h"
-#include "Foundation/Logging/ConsoleOutputStream.h"
+#include "Foundation/Logging/Logger.h"
+#include "Foundation/IO/ConsoleOutputStream.h"
 
 namespace Kitsune
 {
-    class ConsoleLogger : public ILogger
+    class ConsoleLogger : public Logger
     {
     public:
         void Log(const LogPayload& payload) override;
@@ -20,19 +20,10 @@ namespace Kitsune
         static constexpr const char* FatalColor = "\x1B[31m";
 
     private:
-        inline static const char* ConvertToAnsiColor(LogSeverity severity)
-        {
-            switch (severity)
-            {
-            case LogSeverity::Trace:   return TraceColor;
-            case LogSeverity::Info:    return InfoColor;
-            case LogSeverity::Warning: return WarningColor;
-            case LogSeverity::Error:   return ErrorColor;
-            case LogSeverity::Fatal:   return FatalColor;
-            default:
-                KITSUNE_UNREACHABLE();
-            };
-        }
+        static String MakeTimeHeader();
+        static String MakeSeverityHeader(const LogSeverity severity);
+
+        static String MakeLoggerNameHeader(const StringView loggerName);
 
     private:
         ConsoleOutputStream m_Stream;

@@ -1,13 +1,13 @@
 set(FILES
+    "Application/Application.cpp"
+    "Application/Application.h"
     "Application/CommandLineArguments.h"
-    "Application/IApplication.cpp"
-    "Application/IApplication.h"
-    "Application/IDisplayManager.cpp"
-    "Application/IDisplayManager.h"
-    "Application/IScreen.h"
-    "Application/IWindow.h"
-    "Application/SystemInformation.h"
+    "Application/DisplayManager.cpp"
+    "Application/DisplayManager.h"
+    "Application/Screen.h"
+    "Application/Window.h"
 
+    "Foundation/Algorithms/Advance.h"
     "Foundation/Algorithms/Copy.h"
     "Foundation/Algorithms/Count.h"
     "Foundation/Algorithms/Destroy.h"
@@ -22,7 +22,6 @@ set(FILES
     "Foundation/Algorithms/Swap.h"
     "Foundation/Algorithms/Uninitialized.h"
 
-    "Foundation/Common/Features.h"
     "Foundation/Common/Macros.h"
     "Foundation/Common/Predefined.h"
     "Foundation/Common/Types.h"
@@ -37,73 +36,69 @@ set(FILES
 
     "Foundation/Diagnostics/Assert.cpp"
     "Foundation/Diagnostics/Assert.h"
-    "Foundation/Diagnostics/IException.cpp"
-    "Foundation/Diagnostics/IException.h"
+    "Foundation/Diagnostics/Backtrace.h"
+    "Foundation/Diagnostics/BacktraceFrame.h"
+    "Foundation/Diagnostics/Exception.cpp"
+    "Foundation/Diagnostics/Exception.h"
     "Foundation/Diagnostics/InvalidArgumentException.h"
     "Foundation/Diagnostics/IsDebuggerAttached.h"
     "Foundation/Diagnostics/MessageBox.h"
     "Foundation/Diagnostics/OutOfRangeException.h"
     "Foundation/Diagnostics/SourceLocation.h"
-    "Foundation/Diagnostics/StackFrame.h"
-    "Foundation/Diagnostics/StackTrace.h"
-    "Foundation/Diagnostics/StackTraceException.h"
     "Foundation/Diagnostics/SystemException.h"
 
-    "Foundation/Filesystem/Path.h"
-    "Foundation/Filesystem/PathChecks.h"
-    "Foundation/Filesystem/WindowsPath.cpp"
-    "Foundation/Filesystem/WindowsPath.h"
+    "Foundation/IO/ConsoleOutputStream.cpp"
+    "Foundation/IO/ConsoleOutputStream.h"
+    "Foundation/IO/Stream.h"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
     "Foundation/Iterators/IteratorTraits.h"
     "Foundation/Iterators/ReverseIterator.h"
+    "Foundation/Iterators/ToAddress.h"
 
-    "Foundation/Logging/ConsoleInputStream.cpp"
-    "Foundation/Logging/ConsoleInputStream.h"
     "Foundation/Logging/ConsoleLogger.cpp"
     "Foundation/Logging/ConsoleLogger.h"
-    "Foundation/Logging/ConsoleOutputStream.cpp"
-    "Foundation/Logging/ConsoleOutputStream.h"
     "Foundation/Logging/GlobalLog.cpp"
     "Foundation/Logging/GlobalLog.h"
-    "Foundation/Logging/ILogger.h"
-    "Foundation/Logging/IStream.h"
+    "Foundation/Logging/Logger.h"
     "Foundation/Logging/LogPayload.h"
     "Foundation/Logging/WriteStreamIterator.h"
 
+    "Foundation/Maths/Fraction.h"
     "Foundation/Maths/Vector2.h"
     "Foundation/Maths/VectorBase.h"
 
     "Foundation/Memory/AddressOf.h"
     "Foundation/Memory/Allocator.h"
-    "Foundation/Memory/BackupMemoryAllocator.cpp"
-    "Foundation/Memory/BackupMemoryAllocator.h"
     "Foundation/Memory/BadAllocException.h"
     "Foundation/Memory/BadWeakPtrException.h"
     "Foundation/Memory/CMallocApi.cpp"
     "Foundation/Memory/CMallocApi.h"
     "Foundation/Memory/Deleter.h"
     "Foundation/Memory/GlobalAllocator.h"
-    "Foundation/Memory/IMemoryApi.h"
     "Foundation/Memory/Memory.cpp"
     "Foundation/Memory/Memory.h"
-    "Foundation/Memory/MemoryProtection.h"
+    "Foundation/Memory/MemoryApi.h"
     "Foundation/Memory/ScopedPtr.h"
     "Foundation/Memory/SharedPtr.h"
 
-    "Foundation/String/CharTraits.h"
+    "Foundation/String/Decode.h"
+    "Foundation/String/Encode.h"
+    "Foundation/String/Encoding.h"
+    "Foundation/String/EncodingException.h"
     "Foundation/String/Format.h"
+    "Foundation/String/FormatArguments.h"
     "Foundation/String/FormatException.h"
+    "Foundation/String/FormatScanner.h"
     "Foundation/String/Formatter.h"
-    "Foundation/String/FromCodepoints.h"
     "Foundation/String/String.h"
     "Foundation/String/StringView.h"
-    "Foundation/String/ToCodepoints.h"
-    "Foundation/String/UnicodeConversion.h"
-    "Foundation/String/UnicodeException.h"
-    "Foundation/String/UnicodeTypes.h"
-    "Foundation/String/UnicodeValidity.h"
+    "Foundation/String/Transcode.h"
+    "Foundation/String/Utf8Encoding.h"
+    "Foundation/String/Utf16Encoding.h"
+    "Foundation/String/Utf32Encoding.h"
+    "Foundation/String/Valid.h"
 
     "Foundation/Templates/Exchange.h"
     "Foundation/Templates/Forward.h"
@@ -117,20 +112,34 @@ set(FILES
     "Foundation/Threading/ThreadSafety.h"
 
     "Foundation/Utilities/BadCallException.h"
+    "Foundation/Utilities/CpuId.h"
     "Foundation/Utilities/EnumFlags.h"
     "Foundation/Utilities/Function.h"
     "Foundation/Utilities/MemberFunction.h"
     "Foundation/Utilities/NonCopyable.h"
+    "Foundation/Utilities/SystemInformation.cpp"
+    "Foundation/Utilities/SystemInformation.h"
 
-    "Launch/DefaultEngineLoop.cpp"
-    "Launch/DefaultEngineLoop.h"
-    "Launch/EngineMain.cpp"
-    "Launch/IEngineLoop.h"
+    "Launch/EngineLoop.cpp"
+    "Launch/EngineLoop.h"
+    "Launch/UniversalMain.cpp"
 )
 
 set(COMPILER_OPTIONS "")
 set(COMPILER_DEFS "")
 set(LINKED_LIBRARIES "")
+
+macro(append_if_backtrace_supported var value)
+    # if ((config != Production) || (OVERRIDE_BACKTRACE_SUPPORT))
+    #     list(APPEND ${var} ${value})
+    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${OVERRIDE_BACKTRACE_SUPPORT}>>:${value}>")
+endmacro()
+
+macro(append_if_debug_terminal_enabled var value)
+    # if ((config != Production) || (SHOW_TERMINAL))
+    #     list(APPEND ${var} ${value})
+    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${ENABLE_TERMINAL_FOR_DEBUGGING}>>:${value}>")
+endmacro()
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     list(APPEND FILES
@@ -138,19 +147,15 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Application/Windows/WindowsDisplayManager.h"
         "Application/Windows/WindowsScreen.cpp"
         "Application/Windows/WindowsScreen.h"
-        "Application/Windows/WindowsSystemInformation.cpp"
         "Application/Windows/WindowsWindow.cpp"
         "Application/Windows/WindowsWindow.h"
 
-        "Foundation/Windows/WindowsConsoleInputStream.cpp"
-        "Foundation/Windows/WindowsConsoleOutputStream.cpp"
+        "Foundation/Windows/WindowsConsoleStream.cpp"
         "Foundation/Windows/WindowsDebuggerAttached.cpp"
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"
-        "Foundation/Windows/WindowsPathChecks.cpp"
 
-        "Launch/Windows/WindowsDefaultEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
     )
 
@@ -169,19 +174,15 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     list(APPEND FILES
+        "Foundation/Msvc/MsvcBacktrace.cpp"
         "Foundation/Msvc/MsvcInterlocked.inl"
-        "Foundation/Msvc/MsvcStackFrame.h"
-        "Foundation/Msvc/MsvcStackTrace.cpp"
-
-        "KitsuneEngine.natvis"
+        "Foundation/Msvc/MsvcSystemInformation.cpp"
     )
 
+    append_if_backtrace_supported(LINKED_LIBRARIES "dbghelp.lib")
     list(APPEND LINKED_LIBRARIES
         # Used for querying WMI which is used in getting information about the system.
         "wbemuuid.lib"
-
-        # Used in getting the backtrace of our program.
-        "dbghelp.lib"
     )
 
     append_if_backtrace_supported(COMPILER_DEFS "KITSUNE_SUPPORTS_BACKTRACES=1")
@@ -216,10 +217,11 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND FILES
+        "Foundation/Clang/ClangBacktrace.cpp"
         "Foundation/Clang/ClangInterlocked.inl"
-        "Foundation/Clang/ClangStackTrace.cpp"
 
-        "Foundation/GeneralPlatform/GeneralStackFrame.h"
+        # This file is for compilers OTHER than MSVC.
+        "Foundation/Windows/WindowsSystemInformation.cpp"
     )
 
     find_library(LIBBACKTRACE_LIBRARY
@@ -227,7 +229,16 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         OPTIONAL
     )
 
-    list(APPEND LINKED_LIBRARIES "${LIBBACKTRACE_LIBRARY}")
+    if (NOT LIBBACKTRACE_LIBRARY)
+        message(STATUS "libbacktrace FOUND: FALSE")
+        message(WARNING "Dependency libbacktrace required for obtaining backtraces was not found. Backtraces will be disabled.")
+    else()
+        message(STATUS "libbacktrace FOUND: TRUE")
+
+        append_if_backtrace_supported(LINKED_LIBRARIES "${LIBBACKTRACE_LIBRARY}")
+        append_if_backtrace_supported(COMPILER_DEFS "KITSUNE_SUPPORTS_BACKTRACES=1")
+    endif()
+
     list(APPEND COMPILER_OPTIONS
         "-Wall"                          # Enable all warnings about construction.
         "-Wextra"                        # Enable warnings that aren"t enabled by -Wall.
@@ -255,6 +266,7 @@ else()
     )
 endif()
 
+append_if_debug_terminal_enabled(COMPILER_DEFS "KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING=1")
 list(APPEND COMPILER_DEFS
     "KITSUNE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}"
     "KITSUNE_VERSION_MINOR=${PROJECT_VERSION_MINOR}"

@@ -1,16 +1,14 @@
 #pragma once
 
-#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
 {
-    class BadCallException : public IException
+    class BadCallException : public Exception
     {
     public:
         inline BadCallException()
-            : IException(
-                "BadCallException",
-                "Tried to call Function<T>::operator(Args...) without a target.")
+            : Exception("BadCallException", "Tried to invoke an empty Function<T>.")
         {
         }
     };

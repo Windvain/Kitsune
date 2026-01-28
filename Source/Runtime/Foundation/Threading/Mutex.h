@@ -1,47 +1,28 @@
 #pragma once
 
-#include "Foundation/Memory/ScopedPtr.h"
+#include "Foundation/Common/Types.h"
+#include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    namespace Details
-    {
-        class IMutexImpl
-        {
-        public:
-            virtual ~IMutexImpl() { /* ... */ }
-
-        public:
-            virtual void Acquire() = 0;
-            virtual bool TryAcquire() = 0;
-
-            virtual void Release() = 0;
-        };
-    }
-
-    class Mutex
+    class Mutex : public NonCopyable
     {
     public:
         Mutex();
-        ~Mutex() = default;
+        ~Mutex();
 
     public:
-        Mutex(Mutex&) = delete;
-        Mutex& operator=(const Mutex&) = delete;
+        void Acquire();
+        bool TryAcquire();
 
-    public:
-        inline void Acquire() { m_MutexImpl->Acquire(); }
-        inline bool TryAcquire()
-        {
-            return m_MutexImpl->TryAcquire();
-        }
-
-        inline void Release()
-        {
-            return m_MutexImpl->Release();
-        }
+        void Release();
 
     private:
-        ScopedPtr<Details::IMutexImpl> m_MutexImpl;
+        static constexpr Usize s_BufferSize = 64;
+
+    private:
+        // Not using the PImpl idiom here, because I'm trying to make
+        // threading primitives as fast as possible.
+        Uint8 m_Buffer[s_BufferSize];
     };
 }

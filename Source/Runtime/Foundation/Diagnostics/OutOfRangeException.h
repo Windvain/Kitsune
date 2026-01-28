@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
 {
-    class OutOfRangeException : public IException
+    class OutOfRangeException : public Exception
     {
     public:
         inline OutOfRangeException()
-            : IException("OutOfRangeException", "Requested an out of range index")
+            : Exception("OutOfRangeException", "Requested an out of range index")
         {
         }
     };

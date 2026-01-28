@@ -5,18 +5,20 @@
 
 namespace Kitsune::Algorithms
 {
-    template<RandomAccessIterator It>
+    // Returns the amount of increments needed for `begin` to reach `end`.
+    template<RandomAccessIterator Iter>
     [[nodiscard]]
-    inline typename IteratorTraits<It>::DifferenceType Distance(It begin, It end)
+    inline typename IteratorTraits<Iter>::DifferenceType Distance(Iter begin, Iter end)
     {
         return (end - begin);
     }
 
-    template<ForwardIterator It>
+    // Returns the amount of increments needed for `begin` to reach `end`.
+    template<ForwardIterator Iter>
     [[nodiscard]]
-    inline typename IteratorTraits<It>::DifferenceType Distance(It begin, It end)
+    inline typename IteratorTraits<Iter>::DifferenceType Distance(Iter begin, Iter end)
     {
-        typename IteratorTraits<It>::DifferenceType dist = 0;
+        typename IteratorTraits<Iter>::DifferenceType dist = 0;
         for (; begin != end; ++begin, ++dist);
 
         return dist;

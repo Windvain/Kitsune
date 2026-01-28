@@ -1,88 +1,50 @@
-// The crtdbg.h header only works when compiling with /MDd and /MTd.
-#if defined(_MSC_VER) && defined(KITSUNE_BUILD_DEBUG)
+#include "Foundation/Common/Predefined.h"
+
+#if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN) && defined(KITSUNE_BUILD_DEBUG)
     #define _CRTDBG_MAP_ALLOC
     #include <cstdlib>
     #include <crtdbg.h>
 #endif
 
 #include <cstdio>
-#include <cwchar>
+#include <exception>
 
 #include <Windows.h>
-
 #include "Foundation/Common/Macros.h"
-#include "Foundation/Diagnostics/IException.h"
 
 // Exception codes with no macro definitions in the <Windows.h> header.
-// Usually undocumented, so don't ask why Microsoft chose that as an error code.
-#define KITSUNE_CXX_EXCEPTION_CODE 0xE06D7363
+#define EXCEPTION_CXX_THROW 0xE06D7363
 
 namespace Kitsune
 {
-    extern int EngineMain(int argc, char** argv);
+    int UniversalMain(int argc, char** argv);
 }
 
-using namespace Kitsune;
-
-const char* FormatExceptionCode(DWORD code)
+static void SetPerMonitorDpiAwareness()
 {
-    switch (code)
-    {
-    case EXCEPTION_BREAKPOINT:               return "Breakpoint Triggered";
-    case EXCEPTION_DATATYPE_MISALIGNMENT:    return "Misaligned Data Type";
-    case EXCEPTION_ILLEGAL_INSTRUCTION:      return "Illegal Instruction";
+    using SetThreadDpiAwarenessCtx = DPI_AWARENESS_CONTEXT (*)(DPI_AWARENESS_CONTEXT);
+    SetThreadDpiAwarenessCtx setThreadDpiAwarenessCtx;
 
-    case EXCEPTION_FLT_DENORMAL_OPERAND:     return "Floating-point Operation on Denormal Number";
-    case EXCEPTION_FLT_DIVIDE_BY_ZERO:       return "Floating-point Division by 0";
-    case EXCEPTION_FLT_INEXACT_RESULT:       return "Floating-point Result Inexact";
-    case EXCEPTION_FLT_OVERFLOW:             return "Floating-point Overflow";
-    case EXCEPTION_FLT_UNDERFLOW:            return "Floating-point Underflow";
-    case EXCEPTION_FLT_STACK_CHECK:          return "Stack Overflow due to Floating-point Operation";
-    case EXCEPTION_FLT_INVALID_OPERATION:    return "Unknown Floating-point Error";
-
-    case EXCEPTION_ACCESS_VIOLATION:         return "Access Violation";
-    case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:    return "Array Bounds Exceeded";
-    case EXCEPTION_IN_PAGE_ERROR:            return "Accessed Non-Present Page";
-
-    case EXCEPTION_INT_DIVIDE_BY_ZERO:       return "Integer Division by 0";
-    case EXCEPTION_INT_OVERFLOW:             return "Integer Overflow";
-
-    case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occurred";
-    case KITSUNE_CXX_EXCEPTION_CODE:         return "C++ Exception";
-    default:                                 return "Unknown";
-    }
-}
-
-KITSUNE_FORCEINLINE bool SetDpiAwareness()
-{
-#if defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
+#if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
+    setThreadDpiAwarenessCtx = ::SetThreadDpiAwarenessContext;
+#else
     // MinGW doesn't load the DPI-aware functions.
-    using SetThreadDpiAwarenessContextFunction = DPI_AWARENESS_CONTEXT (*)(DPI_AWARENESS_CONTEXT);
-
     HMODULE user32 = ::GetModuleHandleW(L"user32.dll");
-    SetThreadDpiAwarenessContextFunction setThreadDpiAwarenessContext;
-
     if (user32 == nullptr)
-        return false;
+        return;
 
-    setThreadDpiAwarenessContext = (SetThreadDpiAwarenessContextFunction)(void*)
-                                    (::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
+    setThreadDpiAwarenessCtx = (SetThreadDpiAwarenessCtx)(void*)(
+        ::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
 
-    return (setThreadDpiAwarenessContext != nullptr) ?
-        (setThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != nullptr) :
-        false;
-#else
-    return (::SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != nullptr);
+    if (setThreadDpiAwarenessCtx == nullptr)
+        return;
 #endif
+
+    setThreadDpiAwarenessCtx(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 }
 
-inline bool AllocateConsoleInDev()
+static bool TryCreateTerminal()
 {
-#if defined(KITSUNE_BUILD_PRODUCTION)
-    return true;
-#else
-    // Allocating a console in developer builds for logging, since WinMain() doesn't
-    // allocate one.
     BOOL consoleAllocSuccess = ::AllocConsole();
     if (consoleAllocSuccess == 0)
         return false;
@@ -114,129 +76,162 @@ inline bool AllocateConsoleInDev()
     ::SetConsoleMode(conin, inputConsoleMode | ENABLE_VIRTUAL_TERMINAL_INPUT);
 
     return true;
-#endif
 }
 
-DWORD ProcessSehException(LPEXCEPTION_POINTERS exceptionInfo)
+static void DestroyTerminal()
 {
-    PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-    DWORD exceptionCode = exceptionRecord->ExceptionCode;
+    // Can't use KITSUNE_VERIFY() this early on in the startup process.
+    KITSUNE_UNUSED(::FreeConsole());
+
+    // Direct standard streams to NUL just in case.
+    KITSUNE_UNUSED(std::freopen("NUL:", "w", stdout));
+    KITSUNE_UNUSED(std::freopen("NUL:", "r", stdin));
+    KITSUNE_UNUSED(std::freopen("NUL:", "w", stderr));
+}
+
+#if defined(KITSUNE_COMPILER_MSVC)
+static const char* FormatExceptionCode(const DWORD code)
+{
+    switch (code)
+    {
+    case EXCEPTION_BREAKPOINT:               return "Breakpoint Triggered";
+    case EXCEPTION_DATATYPE_MISALIGNMENT:    return "Misaligned Data Type";
+    case EXCEPTION_ILLEGAL_INSTRUCTION:      return "Illegal Instruction";
+
+    case EXCEPTION_FLT_DENORMAL_OPERAND:     return "Floating-point Operation on Denormal Number";
+    case EXCEPTION_FLT_DIVIDE_BY_ZERO:       return "Floating-point Division by 0";
+    case EXCEPTION_FLT_INEXACT_RESULT:       return "Floating-point Result Inexact";
+    case EXCEPTION_FLT_OVERFLOW:             return "Floating-point Overflow";
+    case EXCEPTION_FLT_UNDERFLOW:            return "Floating-point Underflow";
+    case EXCEPTION_FLT_STACK_CHECK:          return "Stack Overflow due to Floating-point Operation";
+    case EXCEPTION_FLT_INVALID_OPERATION:    return "Unknown Floating-point Error";
+
+    case EXCEPTION_ACCESS_VIOLATION:         return "Access Violation";
+    case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:    return "Array Bounds Exceeded";
+    case EXCEPTION_IN_PAGE_ERROR:            return "Accessed Non-Present Page";
+
+    case EXCEPTION_INT_DIVIDE_BY_ZERO:       return "Integer Division by 0";
+    case EXCEPTION_INT_OVERFLOW:             return "Integer Overflow";
+
+    case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occurred";
+    case EXCEPTION_CXX_THROW:                return "C++ Exception";
+
+    default:
+        return "Unknown";
+    }
+}
+
+static DWORD ProcessSehException(const LPEXCEPTION_POINTERS exceptionInfo)
+{
+    PEXCEPTION_RECORD record = exceptionInfo->ExceptionRecord;
+    DWORD exceptionCode = record->ExceptionCode;
 
     std::printf(
         "The engine has been terminated by an SEH exception. (Code: 0x%lx)\n"
         "Description: %s\n",
         exceptionCode,
-        FormatExceptionCode(exceptionCode)
-    );
+        FormatExceptionCode(exceptionCode));
 
-    for (DWORD i = 0; i < exceptionRecord->NumberParameters; ++i)
+    for (DWORD index = 0; index < record->NumberParameters; ++index)
     {
-        void* ptr = reinterpret_cast<void*>(exceptionRecord->ExceptionInformation[i]);
-        std::printf("Parameter[%lx]: 0x%p\n", i, ptr);
+        void* pointer = reinterpret_cast<void*>(record->ExceptionInformation[index]);
+        std::printf("Parameter[%lx]: 0x%p\n", index, pointer);
     }
 
     // Certain exceptions have additional information regarding why it was thrown.
     // https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-exception_record#members/
-    if (exceptionCode == KITSUNE_CXX_EXCEPTION_CODE)
+    if (exceptionCode == EXCEPTION_CXX_THROW)
     {
         // https://devblogs.microsoft.com/oldnewthing/20100730-00/?p=13273
-        IException& cppException = *reinterpret_cast<IException*>(exceptionRecord->ExceptionInformation[1]);
-        std::printf("\nC++ exception name: %s\n"
-                    "C++ exception description: %s\n",
-                    cppException.GetName(), cppException.GetDescription());
+        auto* exception = reinterpret_cast<std::exception*>(record->ExceptionInformation[1]);
+        std::printf("\nC++ exception name: %s\n", exception->what());
     }
-    else if ((exceptionCode == EXCEPTION_ACCESS_VIOLATION) || (exceptionCode == EXCEPTION_IN_PAGE_ERROR))
+    else if ((exceptionCode == EXCEPTION_ACCESS_VIOLATION) ||
+             (exceptionCode == EXCEPTION_IN_PAGE_ERROR))
     {
-        ULONG_PTR rwx = exceptionRecord->ExceptionInformation[0];
-        const char* desc;
+        ULONG_PTR filePermissions = record->ExceptionInformation[0];
+        const char* description;
 
-        switch (rwx)
+        switch (filePermissions)
         {
-        case 0: desc = "Attempted to write to an inaccessible address"; break;
-        case 1: desc = "Attempted to read to an inaccessible address"; break;
-        case 8: desc = "The thread caused a user-mode data execution prevention violation"; break;
+        case 0:
+            description = "Attempted to write to an inaccessible address";
+            break;
+        case 1:
+            description = "Attempted to read to an inaccessible address";
+            break;
+        case 8:
+            description = "The thread caused a user-mode data execution "
+                          "prevention violation";
+            break;
+
         default:
             KITSUNE_UNREACHABLE();
         };
 
-        std::printf("\nAccess violation description: %s\n"
-                    "Virtual data accessed: 0x%p",
-                    desc, reinterpret_cast<void*>(exceptionRecord->ExceptionInformation[1]));
+        std::printf(
+            "\nAccess violation description: %s\nVirtual data accessed: 0x%p",
+            description,
+            reinterpret_cast<void*>(record->ExceptionInformation[1]));
     }
 
     return EXCEPTION_CONTINUE_SEARCH;       // Continue finding exception filters.
 }
+#endif
 
-int StartWindowsEntry()
+#if defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
+int main()
+#else
+int WINAPI WinMain(HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
+                   LPSTR /* lpCmdLine */, int /* nShowCmd */)
+#endif
 {
-    int returnValue = 0;
+    int returnValue = EXIT_SUCCESS;
 
-    // MinGW doesn't seem to define the _CRTDBG_LEAK_CHECK_DF macro.
-    // In addition to that, most of the <crtdbg.h> functions are just macros to (void)0.
-#if defined(KITSUNE_COMPILER_MSVC) && defined(KITSUNE_BUILD_DEBUG)
+    // MinGW doesn't define the <crtdbg.h> header functions.
+    // Enables debug heap allocations (ALLOC_MEM_DF) and automatically dump memory leaks
+    // when the program exits (LEAK_CHECK_DF).
+#if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN) && defined(KITSUNE_BUILD_DEBUG)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
-    if ((!SetDpiAwareness()) || (!AllocateConsoleInDev()))
-        return 1;
+    SetPerMonitorDpiAwareness();
 
-    // Most things passed in via the terminal will be in ASCII, so for now I don't see a need
-    // to transcode the UTF-16 output of CommandLineToArgvW() to UTF-8.
-    // If unicode support is ever needed in the terminal, do not rollback the change here,
-    // that implementation is incorrect and messy.
-    int argc = __argc;
-    char** argv = __argv;
+#if defined(KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING)
+    if (!TryCreateTerminal())
+        return EXIT_FAILURE;
+#endif
 
     if (::IsDebuggerPresent())
-    {
-        returnValue = EngineMain(argc, argv);
-    }
+        returnValue = Kitsune::UniversalMain(__argc, __argv);
     else
     {
-        // MinGW doesn't support SEH (Structured Exception Handling).
-        // Only Microsoft VC++ and Borland *really* support SEH.
-#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
+        // Only MSVC has support for SEH (Structured Exception Handling) exceptions.
+        //
+#if defined(KITSUNE_COMPILER_MSVC)
         __try
 #endif
         {
-            returnValue = EngineMain(argc, argv);
+            returnValue = Kitsune::UniversalMain(__argc, __argv);
         }
-#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
+#if defined(KITSUNE_COMPILER_MSVC)
         __except (ProcessSehException(GetExceptionInformation()))
         {
             KITSUNE_UNREACHABLE();
         }
 #endif
+
+        // Makes debugging much easier. Gives me a chance to look at the backtrace that the
+        // program produces.
+#if !defined(KITSUNE_BUILD_PRODUCTION)
+        if (returnValue != 0)
+            ::Sleep(INFINITE);
+#endif
     }
 
-    // Makes debugging much, much easier. Gives you a chance to look at the stacktrace
-    // that the program produces.
-#if !defined(KITSUNE_BUILD_PRODUCTION)
-    if (returnValue != 0)
-        ::Sleep(INFINITE);
+#if defined(KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING)
+    DestroyTerminal();
 #endif
 
     return returnValue;
-}
-
-void ShutdownWindowsEntry()
-{
-#if !defined(KITSUNE_BUILD_PRODUCTION)
-    ::FreeConsole();
-#endif
-}
-
-// MSVC just works as long as a WinMain() function was forward-declared.
-// MinGW struggles with 'undefined reference to 'WinMain''.
-#if !defined(KITSUNE_COMPILER_MSVC)
-int main()
-#else
-int WINAPI WinMain(HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
-                   char* /* lpCmdLine */, int /* nShowCmd */)
-#endif
-{
-    int success = StartWindowsEntry();
-    ShutdownWindowsEntry();
-
-    return success;
 }

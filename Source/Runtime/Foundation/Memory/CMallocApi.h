@@ -1,17 +1,36 @@
 #pragma once
 
-#include <cstdlib>
-#include "Foundation/Memory/IMemoryApi.h"
+#include "Foundation/Memory/MemoryApi.h"
 
 namespace Kitsune
 {
-    class CMallocApi : public IMemoryApi
+    // Implementation of the Memory API interface using the default
+    // C runtime malloc and free. (Well, actually its std::aligned_alloc..)
+    class CMallocApi : public MemoryApi
     {
     public:
-        void* TryAllocate(Usize bytes, Usize alignment) override;
-        void Free(void* ptr) override;
+        [[nodiscard]] void* TryAllocate(Usize bytes) override;
+        [[nodiscard]] void* TryAllocate(Usize bytes, Usize alignment) override;
 
-        inline Usize GetDefaultAlignment() const override { return s_DefaultAlignment; }
+        void Free(void* pointer, Usize bytes) override;
+
+    public:
+        inline constexpr Usize GetDefaultAlignment() const override
+        {
+            return s_DefaultAlignment;
+        }
+
+    public:
+        [[nodiscard]]
+        inline void* TryNew(Usize bytes, Usize alignment) override
+        {
+            return TryAllocate(bytes, alignment);
+        }
+
+        void Delete(void* pointer) override
+        {
+            Free(pointer, /* Unused: */ 0);
+        }
 
     private:
         static constexpr Usize s_DefaultAlignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;

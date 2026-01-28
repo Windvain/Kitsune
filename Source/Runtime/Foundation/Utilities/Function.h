@@ -68,7 +68,7 @@ namespace Kitsune
             if (m_Pointer != nullptr)
             {
                 m_DestroyFunction(m_Pointer);
-                Memory::Free(m_Pointer);
+                Memory::Free(m_Pointer, m_Size);
             }
         }
 

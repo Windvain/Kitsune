@@ -35,10 +35,12 @@ namespace Kitsune
         DefaultDeleter& operator=(const DefaultDeleter&) = default;
 
     public:
-        void operator()(ValueType* ptr)
+        void operator()(ValueType* pointer)
         {
             if constexpr (!std::is_void_v<ValueType>)
-                Memory::Delete(ptr);
+                Memory::Delete(pointer);
+
+            KITSUNE_UNUSED(pointer);
         }
     };
 }

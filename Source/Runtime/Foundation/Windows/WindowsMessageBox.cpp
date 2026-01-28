@@ -3,14 +3,17 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 
+#include "Foundation/String/Transcode.h"
 #include "Foundation/Containers/Array.h"
-#include "Foundation/String/UnicodeConversion.h"
+
+#include "Foundation/String/Utf8Encoding.h"
+#include "Foundation/String/Utf16Encoding.h"
 
 namespace Kitsune
 {
     bool ShowFallbackMessageBox(const MessageBoxSpecifications& specs, MessageBoxButtonId* pressed)
     {
-        // Unimplemented. Will implement once I iron out the needed changes.
+        // TODO: Unimplemented. Will implement once I iron out the needed changes.
         KITSUNE_UNUSED(specs);
         KITSUNE_UNUSED(pressed);
 
@@ -19,12 +22,16 @@ namespace Kitsune
 
     bool ShowMessageBox(const MessageBoxSpecifications& specs, MessageBoxButtonId* pressed)
     {
+        // As of now, Windows will always load versions <6.0, which doesn't have
+        // TaskDialogIndirect(). Applications will have to use an application manifest to load
+        // the correct version.
         HMODULE comctl32 = ::LoadLibraryW(L"comctl32.dll");
         if (comctl32 == nullptr)
             return ShowFallbackMessageBox(specs, pressed);
 
         using TaskDialogIndirectProc = HRESULT (*)(const TASKDIALOGCONFIG*, int*, int*, BOOL*);
-        auto taskDialogIndirect = (TaskDialogIndirectProc)(void*)(::GetProcAddress(comctl32, "TaskDialogIndirect"));
+        auto taskDialogIndirect = (TaskDialogIndirectProc)(void*)(
+            ::GetProcAddress(comctl32, "TaskDialogIndirect"));
 
         if (taskDialogIndirect == nullptr)
         {
@@ -32,18 +39,19 @@ namespace Kitsune
             return ShowFallbackMessageBox(specs, pressed);
         }
 
+        // The actual message box code.
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 
-        WideString wideTitle = Unicode::ConvertString<char, wchar_t>(specs.Title);
-        WideString wideDescription = Unicode::ConvertString<char, wchar_t>(specs.Description);
+        auto wideTitle = Transcode<Utf8Encoding<char>, Utf16Encoding<wchar_t>>(specs.Title);
+        auto wideDescription = Transcode<Utf8Encoding<char>, Utf16Encoding<wchar_t>>(specs.Description);
 
         Array<WideString> buttonTexts(specs.Buttons.Size());
         Array<TASKDIALOG_BUTTON> buttons(specs.Buttons.Size());
 
         for (const MessageBoxButton& button : specs.Buttons)
         {
-            buttonTexts.PushBack(Unicode::ConvertString<char, wchar_t>(button.Text));
+            buttonTexts.PushBack(Transcode<Utf8Encoding<char>, Utf16Encoding<wchar_t>>(button.Text));
 
             TASKDIALOG_BUTTON nativeButton;
             nativeButton.nButtonID = IDCONTINUE + button.Id + 1;        // Look at the comment below.

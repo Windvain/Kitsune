@@ -9,3 +9,9 @@ option(
     "Builds the test executables."
     TRUE
 )
+
+option(
+    OVERRIDE_BACKTRACE_SUPPORT
+    "Enables backtrace support even when the build type disables it."
+    FALSE
+)

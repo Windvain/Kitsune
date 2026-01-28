@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
 {
-    class BadWeakPtrException : public IException
+    class BadWeakPtrException : public Exception
     {
     public:
         inline BadWeakPtrException()
-            : IException("BadWeakPtrException",
-                         "Requested SharedPtr<T> to manage a deleted object")
+            : Exception("BadWeakPtrException",
+                         "Requested SharedPtr<T> to manage a deleted object.")
         {
         }
     };

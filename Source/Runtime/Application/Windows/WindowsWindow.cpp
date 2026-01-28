@@ -1,6 +1,6 @@
 #include "Application/Windows/WindowsWindow.h"
 
-#include "Foundation/String/UnicodeConversion.h"
+// #include "Foundation/String/UnicodeConversion.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
@@ -74,11 +74,12 @@ namespace Kitsune
 
     String WindowsWindow::GetTitle() const
     {
-        int length = GetWindowTextLengthW(m_WindowHandle);
-        WideString wideTitle(length, '\0');
+        return "";
+        // int length = GetWindowTextLengthW(m_WindowHandle);
+        // WideString wideTitle(length, '\0');
 
-        ::GetWindowTextW(m_WindowHandle, wideTitle.Data(), static_cast<int>(wideTitle.Size() + 1));
-        return Unicode::ConvertString<wchar_t, char>(wideTitle);
+        // ::GetWindowTextW(m_WindowHandle, wideTitle.Data(), static_cast<int>(wideTitle.Size() + 1));
+        // return Unicode::ConvertString<wchar_t, char>(wideTitle);
     }
 
     void WindowsWindow::SetSize(const Vector2<Uint32>& size)
@@ -115,8 +116,9 @@ namespace Kitsune
 
     void WindowsWindow::SetTitle(const StringView title)
     {
-        WideString wideTitle = Unicode::ConvertString<char, wchar_t>(title);
-        ::SetWindowTextW(m_WindowHandle, wideTitle.Raw());
+    KITSUNE_UNUSED(title);
+        // WideString wideTitle = Unicode::ConvertString<char, wchar_t>(title);
+        // ::SetWindowTextW(m_WindowHandle, wideTitle.Raw());
     }
 
     void WindowsWindow::Fullscreen()

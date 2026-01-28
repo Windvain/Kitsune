@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/Logging/IStream.h"
+#include "Foundation/IO/Stream.h"
 
 namespace Kitsune
 {
@@ -13,7 +13,7 @@ namespace Kitsune
 
     public:
         WriteStreamIterator() = default;
-        inline explicit WriteStreamIterator(IWriteStream<T>& stream)
+        inline explicit WriteStreamIterator(OutputStream<T>& stream)
             : m_Stream(&stream)
         {
         }
@@ -32,9 +32,9 @@ namespace Kitsune
         inline WriteStreamIterator& operator*() { return *this; }
 
     public:
-        inline IWriteStream<T>* GetStream() const { return m_Stream; }
+        inline OutputStream<T>* GetStream() const { return m_Stream; }
 
     private:
-        IWriteStream<T>* m_Stream = nullptr;
+        OutputStream<T>* m_Stream = nullptr;
     };
 }

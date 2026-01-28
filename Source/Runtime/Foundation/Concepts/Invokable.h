@@ -4,15 +4,19 @@
 
 namespace Kitsune
 {
+    // Specifies that the type `T` is invokable (callable) with
+    // the argument types `Args`.
     template<typename T, typename... Args>
     concept Invokable = requires (T func, Args... args)
     {
         func(args...);
     };
 
-    template<typename T, typename Ret, typename... Args>
+    // Specifies that the type `T` is invokable with the argument types
+    // `Args` and returns the type `Return`.
+    template<typename T, typename Return, typename... Args>
     concept InvokableReturn = requires (T func, Args... args)
     {
-        { func(args...) } -> std::same_as<Ret>;
+        { func(args...) } -> std::same_as<Return>;
     };
 }

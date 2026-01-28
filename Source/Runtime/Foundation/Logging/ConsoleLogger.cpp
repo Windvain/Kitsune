@@ -1,4 +1,5 @@
 #include "Foundation/Logging/ConsoleLogger.h"
+#include <ctime>        // TODO: Replace this with our own functions.
 
 #include "Foundation/String/Format.h"
 #include "Foundation/Logging/WriteStreamIterator.h"
@@ -7,24 +8,72 @@ namespace Kitsune
 {
     void ConsoleLogger::Log(const LogPayload& payload)
     {
-        String header;
-        String locationInfo;
+        FormatTo(WriteStreamIterator<char>(m_Stream), "{0}{1}{2}: {3}\x1B[0m\n",
+                 MakeTimeHeader(), MakeSeverityHeader(payload.Severity),
+                 MakeLoggerNameHeader(payload.LoggerName),
+                 payload.Message);
+    }
 
-        const SourceLocation& location = payload.Location;
+    String ConsoleLogger::MakeTimeHeader()
+    {
+        std::time_t time;
+        std::time(&time);
 
-        if (!payload.LoggerName.IsEmpty())
-            header = Format("[{0}]: ", payload.LoggerName);
+        std::tm* timeInfo = std::localtime(&time);
+        if (timeInfo == nullptr)
+            return "";
 
-        if (payload.Location != SourceLocation())
+        return Format(
+            "\x1B[34m[{0}:{1}:{2}] ",
+            timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+    }
+
+    String ConsoleLogger::MakeSeverityHeader(const LogSeverity severity)
+    {
+        StringView severityString;
+        StringView severityColor;
+
+        switch (severity)
         {
-            locationInfo = Format(" [In function {0}, {1}:{2}]",
-                                  location.FunctionName(), location.FileName(),
-                                  location.Line());
+        case LogSeverity::Trace:
+            severityString = "TRACE";
+            severityColor = TraceColor;
+            break;
+
+        case LogSeverity::Info:
+            severityString = "INFO";
+            severityColor = InfoColor;
+            break;
+
+        case LogSeverity::Warning:
+            severityString = "WARN";
+            severityColor = WarningColor;
+            break;
+
+        case LogSeverity::Error:
+            severityString = "ERROR";
+            severityColor = ErrorColor;
+            break;
+
+        case LogSeverity::Fatal:
+            severityString = "FATAL";
+            severityColor = FatalColor;
+            break;
+
+        default:
+            KITSUNE_UNREACHABLE();
         }
 
-        StringView format = "{0}{1}{2}{3}\x1B[0m\n";
-        FormatTo(WriteStreamIterator<char>(m_Stream), format,
-                 ConvertToAnsiColor(payload.Severity), header, payload.Message,
-                 locationInfo);
+        return Format(
+            "{0}[{1}] ",
+            severityColor, severityString);
+    }
+
+    String ConsoleLogger::MakeLoggerNameHeader(const StringView loggerName)
+    {
+        if (loggerName.IsEmpty())
+            return "";
+
+        return Format("\x1B[32m({0})\x1B[0m", loggerName);
     }
 }

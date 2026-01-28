@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
 {
-    class FormatException : public IException
+    class FormatException : public Exception
     {
     public:
         inline FormatException(const char* desc = "Unknown format error")
-            : IException("FormatException", desc)
+            : Exception("FormatException", desc)
         {
         }
     };

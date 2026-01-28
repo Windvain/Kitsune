@@ -7,17 +7,21 @@ namespace Kitsune
 {
     void* Memory::VirtualAllocate(Usize bytes, MemoryProtection protection)
     {
-        DWORD flProt = (protection == MemoryProtection::ReadWrite) ? PAGE_READWRITE : PAGE_EXECUTE_READWRITE;
-        void* ptr = ::VirtualAlloc(nullptr, bytes, MEM_COMMIT | MEM_RESERVE, flProt);
+        DWORD pageProtection = PAGE_EXECUTE_READWRITE;
+        if (protection == MemoryProtection::ReadWrite)
+            pageProtection = PAGE_READWRITE;
 
-        if (ptr == nullptr)
+        void* pointer = ::VirtualAlloc(nullptr, bytes, MEM_COMMIT | MEM_RESERVE,
+                                       pageProtection);
+
+        if (pointer == nullptr)
             throw BadAllocException();
 
-        return ptr;
+        return pointer;
     }
 
-    void Memory::VirtualFree(void *ptr, Usize /* bytes */)
+    void Memory::VirtualFree(void* pointer, Usize /* bytes */)
     {
-        ::VirtualFree(ptr, 0, MEM_RELEASE);
+        ::VirtualFree(pointer, 0, MEM_RELEASE);
     }
 }

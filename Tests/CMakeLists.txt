@@ -16,43 +16,19 @@ link_libraries(
 
 # ========== FoundationTests ========================================]
 add_executable(FoundationTests ${TEST_EXE_TYPE}
-    "FoundationTests/AddressOfTests.cpp"
-    "FoundationTests/ArrayTests.cpp"
-    "FoundationTests/BackInsertIteratorTests.cpp"
-    "FoundationTests/BasicStringTests.cpp"
-    "FoundationTests/CharTraitsTests.cpp"
-    "FoundationTests/CompareStrings.h"
-    "FoundationTests/CopyTests.cpp"
-    "FoundationTests/CountTests.cpp"
-    "FoundationTests/DestroyTests.cpp"
-    "FoundationTests/DistanceTests.cpp"
-    "FoundationTests/EqualTests.cpp"
-    "FoundationTests/FillTests.cpp"
-    "FoundationTests/FindTests.cpp"
-    "FoundationTests/ForEachTests.cpp"
-    "FoundationTests/FormatTests.cpp"
-    "FoundationTests/FormatterTests.cpp"
-    "FoundationTests/FoundationMain.cpp"
-    "FoundationTests/FromCodepointsTests.cpp"
-    "FoundationTests/FunctionTests.cpp"
-    "FoundationTests/IteratorWrappers.h"
-    "FoundationTests/LoggerTests.cpp"
-    "FoundationTests/MemoryTests.cpp"
-    "FoundationTests/MoveTests.cpp"
-    "FoundationTests/ReplaceTests.cpp"
-    "FoundationTests/ReverseIteratorTests.cpp"
-    "FoundationTests/ReverseTests.cpp"
-    "FoundationTests/ScopedPtrTests.cpp"
-    "FoundationTests/SharedPtrTests.cpp"
+    "FoundationTests/IsValidUnicodeTests.cpp"
+    "FoundationTests/Main.cpp"
+    "FoundationTests/StringTests.cpp"
     "FoundationTests/StringViewTests.cpp"
-    "FoundationTests/SwapTests.cpp"
-    "FoundationTests/TestContainer.h"
-    "FoundationTests/ToCodepointsTests.cpp"
-    "FoundationTests/UninitializedTests.cpp"
-    "FoundationTests/Vector2Tests.cpp"
-    "FoundationTests/WindowsPathTests.cpp"
-    "FoundationTests/WriteStreamIteratorTests.cpp"
 )
 
 add_test(FoundationTests COMMAND FoundationTests)
 set_target_properties(FoundationTests PROPERTIES FOLDER "Tests")
+
+# ========== SystemInformationTests ========================================]
+add_executable(SystemInformationTests ${TEST_EXE_TYPE}
+    "SystemInformationTests/Main.cpp"
+)
+
+add_test(SystemInformationTests COMMAND SystemInformationTests)
+set_target_properties(SystemInformationTests PROPERTIES FOLDER "Tests")

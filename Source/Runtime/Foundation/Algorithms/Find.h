@@ -7,36 +7,40 @@
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator It, typename T>
-        requires Equatable<typename IteratorTraits<It>::ValueType, T>
+    // Returns an iterator to the first occurance of the value `value` in the range
+    // `[begin, end]`, or `end` if no occurences were found.
+    template<ForwardIterator Iter, typename T>
+        requires Equatable<typename IteratorTraits<Iter>::ValueType, T>
     [[nodiscard]]
-    inline It Find(It begin, It end, const T& val)
+    inline Iter Find(Iter begin, Iter end, const T& value)
     {
-        using ValueType = IteratorTraits<It>::ValueType;
-        return FindIf(begin, end, [&val](const ValueType& elem)
+        using ValueType = IteratorTraits<Iter>::ValueType;
+        return FindIf(begin, end, [&value](const ValueType& elem)
         {
-            return (val == elem);
+            return (value == elem);
         });
     }
 
-    template<ForwardIterator It1, ForwardIterator It2>
-        requires Equatable<typename IteratorTraits<It1>::ValueType,
-                           typename IteratorTraits<It2>::ValueType>
+    // Returns an iterator to the first occurance of the range `[findBegin, findEnd]` in the
+    // range `[begin, end]`, or `end` if no occurences were found.
+    template<ForwardIterator Iter1, ForwardIterator Iter2>
+        requires Equatable<typename IteratorTraits<Iter1>::ValueType,
+                           typename IteratorTraits<Iter2>::ValueType>
     [[nodiscard]]
-    inline It1 Find(It1 begin, It1 end, It2 findBegin, It2 findEnd)
+    inline Iter1 Find(Iter1 begin, Iter1 end, Iter2 findBegin, Iter2 findEnd)
     {
         // Thanks MSVC.
         while (true)
         {
-            It1 it = begin;
-            for (It2 fit = findBegin; /* ... */; ++it, ++fit)
+            Iter1 Iter = begin;
+            for (Iter2 fit = findBegin; /* ... */; ++Iter, ++fit)
             {
                 if (fit == findEnd)
                     return begin;
-                else if (it == end)
-                    return it;
+                else if (Iter == end)
+                    return Iter;
 
-                if (*it != *fit)
+                if (*Iter != *fit)
                     break;
             }
 
@@ -44,10 +48,12 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator It,
-             Invokable<typename IteratorTraits<It>::ValueType> Pred>
+    // Returns an iterator to the first occurance of a value which satisfies the
+    // predicate `pred` in the range `[begin, end]`, or `end` if no occurences were found.
+    template<ForwardIterator Iter,
+             Invokable<typename IteratorTraits<Iter>::ValueType> Pred>
     [[nodiscard]]
-    inline It FindIf(It begin, It end, Pred pred)
+    inline Iter FindIf(Iter begin, Iter end, Pred pred)
     {
         for (; begin != end; ++begin)
         {
@@ -58,23 +64,26 @@ namespace Kitsune::Algorithms
         return begin;
     }
 
-
-    template<ForwardIterator It, typename T>
-        requires Equatable<typename IteratorTraits<It>::ValueType, T>
-    [[nodiscard]] inline It FindLast(It begin, It end, const T& val)
+    // Returns an iterator to the last occurance of the value `value` in the range
+    // `[begin, end]`, or `end` if no occurences were found.
+    template<ForwardIterator Iter, typename T>
+        requires Equatable<typename IteratorTraits<Iter>::ValueType, T>
+    [[nodiscard]] inline Iter FindLast(Iter begin, Iter end, const T& value)
     {
-        using ValueType = IteratorTraits<It>::ValueType;
-        return FindLastIf(begin, end, [&val](const ValueType& elem) -> bool
+        using ValueType = IteratorTraits<Iter>::ValueType;
+        return FindLastIf(begin, end, [&value](const ValueType& elem) -> bool
         {
-            return (val == elem);
+            return (value == elem);
         });
     }
 
-    template<ForwardIterator It,
-             Invokable<typename IteratorTraits<It>::ValueType> Pred>
-    [[nodiscard]] inline It FindLastIf(It begin, It end, Pred pred)
+    // Returns an iterator to the last occurance of a value which satisfies the
+    // predicate `pred` in the range `[begin, end]`, or `end` if no occurences were found.
+    template<ForwardIterator Iter,
+             Invokable<typename IteratorTraits<Iter>::ValueType> Pred>
+    [[nodiscard]] inline Iter FindLastIf(Iter begin, Iter end, Pred pred)
     {
-        It last = end;
+        Iter last = end;
         for (; begin != end; ++begin)
         {
             if (pred(*begin))

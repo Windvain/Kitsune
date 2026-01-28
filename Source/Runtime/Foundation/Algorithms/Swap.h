@@ -5,14 +5,15 @@
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator It1, ForwardIterator It2>
-        requires SwappableWith<typename IteratorTraits<It1>::ValueType,
-                               typename IteratorTraits<It2>::ValueType>
-    inline It2 Swap(It1 begin, It1 end, It2 outBegin)
+    // Swaps the elements in the range `[begin, end]` with the range `[begin2, -]`
+    template<ForwardIterator Iter1, ForwardIterator Iter2>
+        requires SwappableWith<typename IteratorTraits<Iter1>::ValueType,
+                               typename IteratorTraits<Iter2>::ValueType>
+    inline Iter2 Swap(Iter1 begin, Iter1 end, Iter2 begin2)
     {
-        for (; begin != end; ++begin, ++outBegin)
-            Kitsune::Swap(*begin, *outBegin);
+        for (; begin != end; ++begin, ++begin2)
+            Kitsune::Swap(*begin, *begin2);
 
-        return outBegin;
+        return begin2;
     }
 }

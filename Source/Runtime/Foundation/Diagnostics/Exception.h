@@ -1,0 +1,31 @@
+#pragma once
+
+#include <exception>
+
+namespace Kitsune
+{
+    class Exception : public std::exception
+    {
+    public:
+        Exception() noexcept;
+        Exception(const char* name, const char* description) noexcept;
+
+        virtual ~Exception() noexcept;
+
+    public:
+        const char* GetName() const noexcept;
+        const char* GetDescription() const noexcept;
+
+    public:
+        // Override the what() member function of std::exception, some compilers
+        // will log it to the console if the exception escapes our try/catch block.
+        const char* what() const noexcept override
+        {
+            return GetName();
+        }
+
+    private:
+        const char* m_Name;
+        const char* m_Description;
+    };
+}

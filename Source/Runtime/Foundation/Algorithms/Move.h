@@ -7,9 +7,10 @@
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator It,
-             WritableIterator<typename IteratorTraits<It>::ValueType> OutIt>
-    inline OutIt Move(It begin, It end, OutIt outBegin)
+    // Moves all of the elements in the range `[begin, end]` into `outBegin`.
+    template<ForwardIterator Iter,
+             OutputIterator<typename IteratorTraits<Iter>::ValueType> OutIter>
+    inline OutIter Move(Iter begin, Iter end, OutIter outBegin)
     {
         for (; begin != end; ++begin, ++outBegin)
             *outBegin = Kitsune::Move(*begin);
@@ -17,9 +18,10 @@ namespace Kitsune::Algorithms
         return outBegin;
     }
 
-    template<ForwardIterator It, typename Sz,
-             WritableIterator<typename IteratorTraits<It>::ValueType> OutIt>
-    inline OutIt MoveN(It begin, Sz n, OutIt outBegin)
+    // Moves all of the elements in the range `[begin, begin + n]` into `outBegin`.
+    template<ForwardIterator Iter, typename Size,
+             OutputIterator<typename IteratorTraits<Iter>::ValueType> OutIter>
+    inline OutIter MoveN(Iter begin, Size n, OutIter outBegin)
     {
         for (; n > 0; ++begin, ++outBegin, --n)
             *outBegin = Kitsune::Move(*begin);
@@ -27,8 +29,10 @@ namespace Kitsune::Algorithms
         return outBegin;
     }
 
-    template<BidirectionalIterator It, BidirectionalIterator OutIt>
-    inline OutIt MoveBackwards(It begin, It end, OutIt outEnd)
+    // Moves all of the elements in the range `[begin, end]` backwards into `outEnd`, then
+    // returns an iterator pointing one before the last moved element.
+    template<BidirectionalIterator Iter, BidirectionalIterator OutIter>
+    inline OutIter MoveBackwards(Iter begin, Iter end, OutIter outEnd)
     {
         while (begin != end)
         {

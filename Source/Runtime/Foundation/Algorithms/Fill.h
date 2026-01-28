@@ -4,18 +4,20 @@
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator It, typename T>
-    inline void Fill(It begin, It end, const T& val)
+    // Fills the range `[begin, end]` with the value `value`.
+    template<ForwardIterator Iter, typename T>
+    inline void Fill(Iter begin, Iter end, const T& value)
     {
         for (; begin != end; ++begin)
-            *begin = val;
+            *begin = value;
     }
 
-    template<ForwardIterator It, typename Sz, typename T>
-    inline It FillN(It begin, Sz n, const T& val)
+    // Fills the range `[begin, begin + n]` with the value `value`.
+    template<ForwardIterator Iter, typename Size, typename T>
+    inline Iter FillN(Iter begin, Size n, const T& value)
     {
         for (; n > 0; ++begin, --n)
-            *begin = val;
+            *begin = value;
 
         return begin;
     }

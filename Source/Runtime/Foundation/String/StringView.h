@@ -1,6 +1,12 @@
 #pragma once
 
-#include "Foundation/String/CharTraits.h"
+#include <cwchar>
+#include <cstring>
+
+#include "Foundation/Common/Macros.h"
+#include "Foundation/Algorithms/Find.h"
+
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Concepts/Character.h"
 
 #include "Foundation/Iterators/ReverseIterator.h"
@@ -8,12 +14,10 @@
 
 namespace Kitsune
 {
+    // Provides a view to a contiguous block of characters.
     template<Character T>
     class BasicStringView
     {
-    private:
-        using ThisCharTraits = CharTraits<T>;
-
     public:
         using ValueType = T;
 
@@ -27,19 +31,19 @@ namespace Kitsune
         inline BasicStringView() = default;
         inline BasicStringView(std::nullptr_t) = delete;
 
-        inline BasicStringView(const T* str)
-            : m_Pointer(str), m_Size(ThisCharTraits::Length(str))
+        inline BasicStringView(const T* string)
+            : m_Pointer(string), m_Size(CalculateStringSize(string))
         {
         }
 
-        inline BasicStringView(const T* str, Usize size)
-            : m_Pointer(str), m_Size(size)
+        inline BasicStringView(const T* string, Usize size)
+            : m_Pointer(string), m_Size(size)
         {
         }
 
         template<RandomAccessIterator It>
         inline BasicStringView(It begin, It end)
-            : m_Pointer(begin), m_Size(end - begin)
+            : m_Pointer(ToAddress(begin)), m_Size(end - begin)
         {
         }
 
@@ -58,48 +62,141 @@ namespace Kitsune
         }
 
     public:
-        [[nodiscard]] inline const T& Front() const
+        [[nodiscard]]
+        inline const T& Front() const
         {
-            if (m_Pointer == nullptr)
+            if (IsEmpty())
                 throw OutOfRangeException();
 
             return m_Pointer[0];
         }
 
-        [[nodiscard]] inline const T& Back() const
+        [[nodiscard]]
+        inline const T& Back() const
         {
-            if (m_Pointer == nullptr)
+            if (IsEmpty())
                 throw OutOfRangeException();
 
             return m_Pointer[m_Size - 1];
         }
 
-        [[nodiscard]] inline const T* Data() const { return m_Pointer; }
-
-    public:
-        [[nodiscard]] inline Usize Size()   const { return m_Size; }
-        [[nodiscard]] inline bool IsEmpty() const { return (m_Size == 0); }
-
-    public:
-        inline void RemovePrefix(Usize n)
+        [[nodiscard]]
+        inline const T* Data() const
         {
-            if (n > Size())
-                throw OutOfRangeException();
-
-            m_Pointer += n;
-            m_Size -= n;
+            return m_Pointer;
         }
 
-        inline void RemoveSuffix(Usize n)
+    public:
+        [[nodiscard]]
+        inline Usize Size() const
         {
-            if (n > Size())
-                throw OutOfRangeException();
-
-            m_Size -= n;
+            return m_Size;
         }
 
         [[nodiscard]]
-        inline BasicStringView Substring(Usize startPos = 0, Usize count = 0) const
+        inline bool IsEmpty() const
+        {
+            return (m_Size == 0);
+        }
+
+    public:
+        inline void RemovePrefix(Usize offset)
+        {
+            if (offset > Size())
+                throw OutOfRangeException();
+
+            m_Pointer += offset;
+            m_Size -= offset;
+        }
+
+        inline void RemoveSuffix(Usize offset)
+        {
+            if (offset > Size())
+                throw OutOfRangeException();
+
+            m_Size -= offset;
+        }
+
+        inline void Swap(BasicStringView<T>& string)
+        {
+            Kitsune::Swap(m_Pointer, string.m_Pointer);
+            Kitsune::Swap(m_Size, string.m_Size);
+        }
+
+    public:
+        [[nodiscard]]
+        inline bool StartsWith(BasicStringView<T> string) const
+        {
+            return (BasicStringView<T>(Data(), KITSUNE_MIN(Size(), string.Size())) == string);
+        }
+
+        [[nodiscard]]
+        inline bool StartsWith(T character) const
+        {
+            return (!IsEmpty() && (Front() == character));
+        }
+
+        [[nodiscard]]
+        inline bool StartsWith(const T* string) const
+        {
+            return StartsWith(BasicStringView<T>(string));
+        }
+
+        [[nodiscard]]
+        inline bool EndsWith(BasicStringView<T> string)
+        {
+            return (Size() >= string.Size()) &&
+                   (BasicStringView<T>(m_Pointer + (Size() - string.Size())) == string);
+        }
+
+        [[nodiscard]]
+        inline bool EndsWith(const T character)
+        {
+            return (!IsEmpty() && (Back() == character));
+        }
+
+        [[nodiscard]]
+        inline bool EndsWith(const T* string)
+        {
+            return EndsWith(BasicStringView<T>(string));
+        }
+
+        [[nodiscard]]
+        inline bool Contains(BasicStringView<T> string)
+        {
+            auto iterator = Algorithms::Find(
+                GetBegin(), GetEnd(), string.GetBegin(), string.GetEnd());
+
+            return (iterator != GetEnd());
+        }
+
+        [[nodiscard]]
+        inline bool Contains(T character)
+        {
+            auto iterator = Algorithms::Find(GetBegin(), GetEnd(), character);
+            return (iterator != GetEnd());
+        }
+
+        [[nodiscard]]
+        inline bool Contains(const T* string)
+        {
+            return Contains(BasicStringView<T>(string));
+        }
+
+        [[nodiscard]]
+        inline T* Find(const BasicStringView<T> stringView)
+        {
+            return Algorithms::Find(GetBegin(), GetEnd(), stringView.GetBegin(), stringView.GetEnd());
+        }
+
+        [[nodiscard]]
+        inline T* Find(T character)
+        {
+            return Algorithms::Find(GetBegin(), GetEnd(), character);
+        }
+
+        [[nodiscard]]
+        inline BasicStringView Substring(Index startPos, Usize count) const
         {
             if (startPos > Size())
                 throw OutOfRangeException();
@@ -108,17 +205,35 @@ namespace Kitsune
         }
 
     public:
-        [[nodiscard]] inline Iterator GetBegin()            { return m_Pointer; }
+        [[nodiscard]] inline Iterator GetBegin() { return m_Pointer; }
         [[nodiscard]] inline ConstIterator GetBegin() const { return m_Pointer; }
 
-        [[nodiscard]] inline Iterator GetEnd()            { return (m_Pointer + m_Size); }
+        [[nodiscard]] inline Iterator GetEnd() { return (m_Pointer + m_Size); }
         [[nodiscard]] inline ConstIterator GetEnd() const { return (m_Pointer + m_Size); }
 
-        [[nodiscard]] inline ReverseIterator GetReverseBegin()            { return ReverseIterator(GetEnd()); }
-        [[nodiscard]] inline ReverseConstIterator GetReverseBegin() const { return ReverseIterator(GetEnd()); }
+        [[nodiscard]]
+        inline ReverseIterator GetReverseBegin()
+        {
+            return ReverseIterator(GetEnd());
+        }
 
-        [[nodiscard]] inline ReverseIterator GetReverseEnd()            { return ReverseIterator(GetBegin()); }
-        [[nodiscard]] inline ReverseConstIterator GetReverseEnd() const { return ReverseIterator(GetBegin()); }
+        [[nodiscard]]
+        inline ReverseConstIterator GetReverseBegin() const
+        {
+            return ReverseIterator(GetEnd());
+        }
+
+        [[nodiscard]]
+        inline ReverseIterator GetReverseEnd()
+        {
+            return ReverseIterator(GetBegin());
+        }
+
+        [[nodiscard]]
+        inline ReverseConstIterator GetReverseEnd() const
+        {
+            return ReverseIterator(GetBegin());
+        }
 
     public:
         // Should not be called by engine/client code.
@@ -130,21 +245,44 @@ namespace Kitsune
         inline Iterator end() const { return GetEnd(); }
 
     private:
+        inline static Usize CalculateStringSize(const T* string)
+        {
+            if constexpr (std::is_same_v<T, char>)
+                return std::strlen(string);
+            else if constexpr (std::is_same_v<T, wchar_t>)
+                return std::wcslen(string);
+            else
+            {
+                Usize size = 0;
+                for (; *string != T(); ++string, ++size);
+
+                return size;
+            }
+        }
+
+    private:
         const T* m_Pointer = nullptr;
         Usize m_Size = 0;
     };
 
     template<Character T>
-    inline bool operator==(const BasicStringView<T>& str1, const BasicStringView<T>& str2)
+    inline bool operator==(const BasicStringView<T>& string1,
+                           const BasicStringView<T>& string2)
     {
-        return (str1.Size() == str2.Size()) &&
-               (CharTraits<T>::Compare(str1.Data(), str2.Data(), str1.Size()) == 0);
+        return (string1.Size() == string2.Size()) &&
+               (std::memcmp(string1.Data(), string2.Data(), string1.Size() * sizeof(T)) == 0);
     }
 
     template<Character T>
-    inline bool operator==(const BasicStringView<T>& str1, const T* str2)
+    inline bool operator==(const BasicStringView<T>& string1, const T* string2)
     {
-        return (str1 == BasicStringView<T>(str2));
+        return (string1 == BasicStringView<T>(string2));
+    }
+
+    template<Character T>
+    inline bool operator==(const T* string1, const BasicStringView<T>& string2)
+    {
+        return (string2 == string1);
     }
 
     using StringView = BasicStringView<char>;

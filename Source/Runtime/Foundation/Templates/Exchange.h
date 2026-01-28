@@ -6,6 +6,7 @@
 namespace Kitsune
 {
     template<typename T, typename U = T>
+    [[nodiscard]]
     inline T Exchange(T& val, U&& newValue)
     {
         T tmp = Move(val);

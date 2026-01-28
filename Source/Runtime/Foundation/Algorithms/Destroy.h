@@ -7,15 +7,17 @@
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator It>
-    inline void Destroy(It begin, It end)
+    // Destroys the objects in the range `[begin, end]`.
+    template<ForwardIterator Iter>
+    inline void Destroy(Iter begin, Iter end)
     {
         for (; begin != end; ++begin)
             Memory::DestroyAt(AddressOf(*begin));
     }
 
-    template<ForwardIterator It, typename Sz>
-    inline It DestroyN(It begin, Sz n)
+    // Destroys the objects in the range `[begin, begin + n]`.
+    template<ForwardIterator Iter, typename Size>
+    inline Iter DestroyN(Iter begin, Size n)
     {
         for (; n > 0; ++begin, --n)
             Memory::DestroyAt(AddressOf(*begin));

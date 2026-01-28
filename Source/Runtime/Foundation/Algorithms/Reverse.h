@@ -7,17 +7,19 @@
 
 namespace Kitsune::Algorithms
 {
-    template<RandomAccessIterator It>
-        requires Swappable<typename IteratorTraits<It>::ValueType>
-    inline void Reverse(It begin, It end)
+    // Reverses the elements in the range `[begin, end]`.
+    template<RandomAccessIterator Iter>
+        requires Swappable<typename IteratorTraits<Iter>::ValueType>
+    inline void Reverse(Iter begin, Iter end)
     {
         for (--end; end > begin; ++begin, --end)
             IteratorSwap(begin, end);
     }
 
-    template<BidirectionalIterator It>
-        requires Swappable<typename IteratorTraits<It>::ValueType>
-    inline void Reverse(It begin, It end)
+    // Reverses the elements in the range `[begin, end]`.
+    template<BidirectionalIterator Iter>
+        requires Swappable<typename IteratorTraits<Iter>::ValueType>
+    inline void Reverse(Iter begin, Iter end)
     {
         for (; (begin != end) && (begin != --end); ++begin)
             IteratorSwap(begin, end);
