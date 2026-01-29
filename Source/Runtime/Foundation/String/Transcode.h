@@ -7,9 +7,15 @@
 
 namespace Kitsune
 {
+    template<Iterator InputIter, Iterator OutputIter>
+    struct TranscodeResult
+    {
+        InputIter InputPosition;
+        OutputIter OutputPosition;
+    };
+
     // Transcodes the characters in the range [begin, end] from `InEncoding` to `OutEncoding`.
-    template<typename InEncoding,
-             typename OutEncoding,
+    template<TextEncoding InEncoding, TextEncoding OutEncoding,
              ForwardIterator InputIter,
              OutputIterator<typename OutEncoding::CodeunitType> OutputIter>
     inline TranscodeResult<InputIter, OutputIter> Transcode(InputIter begin, InputIter end,
@@ -38,7 +44,7 @@ namespace Kitsune
         return Result(begin, outBegin);
     }
 
-    template<typename InEncoding, typename OutEncoding>
+    template<TextEncoding InEncoding, TextEncoding OutEncoding>
     inline auto Transcode(BasicStringView<typename InEncoding::CodeunitType> string)
     {
         BasicString<typename OutEncoding::CodeunitType> outputString;

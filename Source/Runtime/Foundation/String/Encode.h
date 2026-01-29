@@ -14,7 +14,7 @@ namespace Kitsune
     }
 
     // Encodes codepoints in the range [begin, end] into the specified encoding.
-    template<typename Encoding,
+    template<TextEncoding Encoding,
              Details::ForwardIteratorToCodepoints<Encoding> InputIter,
              OutputIterator<typename Encoding::CodeunitType> OutputIter>
     inline EncodeResult<InputIter, OutputIter> Encode(InputIter begin, InputIter end,

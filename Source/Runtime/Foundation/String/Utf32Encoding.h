@@ -18,8 +18,10 @@ namespace Kitsune
         using CodeunitType = T;
 
     public:
-        static constexpr CodepointType MaxCodepointValue = 0x10FFFF;
-        static constexpr Usize MaxCodeunits = 1;
+        inline static CodepointType MaxCodepointValue()
+        {
+            return 0x10FFFF;
+        }
 
     public:
         template<ForwardIterator InputIter, OutputIterator<CodepointType> OutputIter>

@@ -14,7 +14,7 @@ namespace Kitsune
                          typename IteratorTraits<Iter>::ValueType>;
     }
 
-    template<typename Encoding,
+    template<TextEncoding Encoding,
              Details::ForwardIteratorToChars<Encoding> Iter>
     inline bool IsValidEncoding(Iter begin, Iter end)
     {

@@ -6,7 +6,7 @@
 namespace Kitsune
 {
     // Decodes a range of characters into codepoints with the specified encoding.
-    template<typename Encoding,
+    template<TextEncoding Encoding,
              ForwardIterator InputIter,
              OutputIterator<typename Encoding::CodeunitType> OutputIter>
     inline DecodeResult<InputIter, OutputIter> Decode(InputIter begin, InputIter end,
