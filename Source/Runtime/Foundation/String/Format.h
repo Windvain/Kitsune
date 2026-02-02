@@ -8,12 +8,18 @@
 namespace Kitsune
 {
     template<OutputIterator<const char&> OutputIter, typename... Args>
-    inline OutputIter FormatTo(OutputIter outputIter, StringView formatString, Args&&... args)
+    inline OutputIter FormatTo(
+        OutputIter outputIter, StringView formatString, Args&&... args)
     {
-        FormatArgumentPack<sizeof...(Args), OutputIter> argumentPack = { Forward<Args>(args)... };
+        FormatArgumentPack<sizeof...(Args), OutputIter> argumentPack = {
+            Forward<Args>(args)...
+        };
+
         while (!formatString.IsEmpty())
         {
-            auto [newFormatString, newOutputIter] = DefaultFormatScanner::Format(argumentPack, formatString, outputIter);
+            auto [newFormatString, newOutputIter] =
+                DefaultFormatScanner::Format(argumentPack, formatString, outputIter);
+
             formatString = newFormatString;
             outputIter = newOutputIter;
         }

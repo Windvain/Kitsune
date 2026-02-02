@@ -29,23 +29,26 @@ namespace Kitsune
 
     public:
         template<OutputIterator<const CharType&> OutputIter, Usize ArgCount>
-        inline static FormatResult<OutputIter> Format(const FormatArgumentPack<ArgCount, OutputIter>& arguments,
-                                                      StringView formatString,
-                                                      OutputIter outputIter)
+        inline static FormatResult<OutputIter> Format(
+            const FormatArgumentPack<ArgCount, OutputIter>& arguments,
+            StringView formatString,
+            OutputIter outputIter)
         {
             if (formatString.IsEmpty())
                 return { formatString, outputIter };
 
-            auto leftBrace = Algorithms::Find(formatString.GetBegin(), formatString.GetEnd(), '{');
-            auto rightBrace = Algorithms::Find(formatString.GetBegin(), formatString.GetEnd(), '}');
+            auto leftBrace = formatString.Find('{');
+            auto rightBrace = formatString.Find('}');
 
             // Handle regular text.
-            if ((leftBrace != formatString.GetBegin()) && (rightBrace != formatString.GetBegin()))
+            if ((leftBrace != formatString.GetBegin()) &&
+                (rightBrace != formatString.GetBegin()))
             {
-                outputIter = Algorithms::Copy(formatString.GetBegin(), KITSUNE_MIN(leftBrace, rightBrace), outputIter);
-                Usize charsCopied = leftBrace - formatString.GetBegin();
+                outputIter = Algorithms::Copy(
+                    formatString.GetBegin(), KITSUNE_MIN(leftBrace, rightBrace),
+                    outputIter);
 
-                formatString.RemovePrefix(charsCopied);
+                formatString.RemovePrefix(leftBrace - formatString.GetBegin());
                 return { formatString, outputIter };
             }
 
@@ -84,12 +87,14 @@ namespace Kitsune
 
     private:
         template<OutputIterator<const CharType&> OutputIter, Usize ArgCount>
-        inline static OutputIter HandleFormatting(const FormatArgumentPack<ArgCount, OutputIter>& arguments,
-                                                  StringView formatArguments,
-                                                  OutputIter outputIter)
+        inline static OutputIter HandleFormatting(
+            const FormatArgumentPack<ArgCount, OutputIter>& arguments,
+            StringView formatArguments,
+            OutputIter outputIter)
         {
             char* indexEnd;
-            Index index = static_cast<Index>(std::strtoumax(formatArguments.Data(), &indexEnd, 10));
+            auto index = static_cast<Index>(
+                std::strtoumax(formatArguments.Data(), &indexEnd, 10));
 
             formatArguments.RemovePrefix(indexEnd - formatArguments.GetBegin());
 
@@ -97,7 +102,11 @@ namespace Kitsune
             arguments[index].Visit([&](const auto value) -> void
             {
                 using ValueType = std::remove_cvref_t<decltype(value)>;
-                if constexpr (std::is_same_v<ValueType, typename FormatArgument<OutputIter>::HandleType>)
+                constexpr bool isHandleType = std::is_same_v<
+                    ValueType,
+                    typename FormatArgument<OutputIter>::HandleType>;
+
+                if constexpr (isHandleType)
                     outputIter = value.Format(context);
                 else
                     outputIter = Formatter<ValueType, CharType>::Format(value, context);

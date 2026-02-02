@@ -8,8 +8,9 @@ namespace Kitsune
     {
     public:
         inline BadWeakPtrException()
-            : Exception("BadWeakPtrException",
-                         "Requested SharedPtr<T> to manage a deleted object.")
+            : Exception(
+                "BadWeakPtrException",
+                "Requested SharedPtr<T> to manage a deleted object.")
         {
         }
     };

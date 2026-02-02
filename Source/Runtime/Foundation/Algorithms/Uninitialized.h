@@ -9,9 +9,9 @@
 
 namespace Kitsune::Algorithms
 {
-    // Copies the elements in the range `[begin, end]` into the uninitialzed memory range
-    // starting with `outBegin`. Returns an iterator pointing to the element one past the last
-    // copied element.
+    // Copies the elements in the range `[begin, end]` into the uninitialized memory
+    // range which starts at the iterator `outBegin`. Returns an iterator pointing
+    // to the element one past the last copied element.
     template<ForwardIterator Iter, ForwardIterator OutIter>
     inline OutIter UninitializedCopy(Iter begin, Iter end, OutIter outBegin)
     {
@@ -30,9 +30,9 @@ namespace Kitsune::Algorithms
         }
     }
 
-    // Copies the elements in the range `[begin, begin + n]` into the uninitialzed memory range
-    // starting with `outBegin`. Returns an iterator pointing to the element one past the last
-    // copied element.
+    // Copies the elements in the range `[begin, begin + n]` into the uninitialized
+    // memory range starting with `outBegin`. Returns an iterator pointing to the
+    // element one past the last copied element.
     template<ForwardIterator Iter, typename Size, ForwardIterator OutIter>
     inline OutIter UninitializedCopyN(Iter begin, Size n, OutIter outBegin)
     {
@@ -51,9 +51,9 @@ namespace Kitsune::Algorithms
         }
     }
 
-    // Moves the elements in the range `[begin, end]` into the uninitialzed memory range
-    // starting with `outBegin`. Returns an iterator pointing to the element one past the last
-    // copied element.
+    // Moves the elements in the range `[begin, end]` into the uninitialized memory
+    // range starting with `outBegin`. Returns an iterator pointing to the element
+    // one past the last copied element.
     template<ForwardIterator Iter, ForwardIterator OutIter>
     inline OutIter UninitializedMove(Iter begin, Iter end, OutIter outBegin)
     {
@@ -72,9 +72,9 @@ namespace Kitsune::Algorithms
         }
     }
 
-    // Copies the elements in the range `[begin, begin + n]` into the uninitialzed memory range
-    // starting with `outBegin`. Returns an iterator pointing to the element one past the last
-    // copied element.
+    // Copies the elements in the range `[begin, begin + n]` into the uninitialized
+    // memory range starting with `outBegin`. Returns an iterator pointing to the
+    // element one past the last copied element.
     template<ForwardIterator Iter, typename Size, ForwardIterator OutIter>
     inline OutIter UninitializedMoveN(Iter begin, Size n, OutIter outBegin)
     {

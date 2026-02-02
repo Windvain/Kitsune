@@ -5,7 +5,7 @@
 namespace Kitsune
 {
     // Returns the address of an object, even if the `&` operator
-    // has been overriden.
+    // has been overridden.
     template<typename T>
     [[nodiscard]]
     inline T* AddressOf(T& object)

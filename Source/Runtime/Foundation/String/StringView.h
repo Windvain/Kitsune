@@ -19,6 +19,10 @@ namespace Kitsune
     class BasicStringView
     {
     public:
+        static_assert(std::is_trivial_v<T>,
+                    "BasicStringView<T> assumes that the element type being "
+                    "passed to it is a trivial type.");
+
         using ValueType = T;
 
         using Iterator = const T*;
@@ -127,7 +131,8 @@ namespace Kitsune
         [[nodiscard]]
         inline bool StartsWith(BasicStringView<T> string) const
         {
-            return (BasicStringView<T>(Data(), KITSUNE_MIN(Size(), string.Size())) == string);
+            Usize minimumSize = KITSUNE_MIN(Size(), string.Size());
+            return (BasicStringView<T>(Data(), minimumSize) == string);
         }
 
         [[nodiscard]]
@@ -184,13 +189,14 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline T* Find(const BasicStringView<T> stringView)
+        inline ConstIterator Find(BasicStringView<T> string) const
         {
-            return Algorithms::Find(GetBegin(), GetEnd(), stringView.GetBegin(), stringView.GetEnd());
+            return Algorithms::Find(GetBegin(), GetEnd(),
+                                    string.GetBegin(), string.GetEnd());
         }
 
         [[nodiscard]]
-        inline T* Find(T character)
+        inline ConstIterator Find(T character) const
         {
             return Algorithms::Find(GetBegin(), GetEnd(), character);
         }
@@ -201,7 +207,8 @@ namespace Kitsune
             if (startPos > Size())
                 throw OutOfRangeException();
 
-            return BasicStringView(m_Pointer + startPos, KITSUNE_MIN(count, Size() - startPos));
+            Usize minimum = KITSUNE_MIN(count, Size() - startPos);
+            return BasicStringView(m_Pointer + startPos, minimum);
         }
 
     public:
@@ -270,7 +277,8 @@ namespace Kitsune
                            const BasicStringView<T>& string2)
     {
         return (string1.Size() == string2.Size()) &&
-               (std::memcmp(string1.Data(), string2.Data(), string1.Size() * sizeof(T)) == 0);
+               (std::memcmp(string1.Data(), string2.Data(),
+                            string1.Size() * sizeof(T)) == 0);
     }
 
     template<Character T>

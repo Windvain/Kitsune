@@ -8,9 +8,9 @@
 
 namespace Kitsune
 {
-    // An abstract representation of the UTF-8 encoding. This is the main encoding used
-    // in most software and all of the content on the Web. Takes up less space at the cost
-    // of computational speed.
+    // An abstract representation of the UTF-8 encoding. This is the main encoding
+    // used in most software and all of the content on the Web. Takes up less space
+    // at the cost of computational speed.
     template<Utf8Character T>
     class Utf8Encoding
     {
@@ -95,7 +95,7 @@ namespace Kitsune
             if (begin == end)
                 return Result(begin, outBegin);
 
-            if ((*begin > MaxCodepointValue) || ((*begin >= 0xD800) && (*begin <= 0xDFFF)))
+            if ((*begin > MaxCodepointValue()) || ((*begin >= 0xD800) && (*begin <= 0xDFFF)))
                 return Result(begin, outBegin);
 
             if (*begin <= 0x7F)

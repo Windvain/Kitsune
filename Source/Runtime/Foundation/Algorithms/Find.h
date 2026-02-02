@@ -7,8 +7,8 @@
 
 namespace Kitsune::Algorithms
 {
-    // Returns an iterator to the first occurance of the value `value` in the range
-    // `[begin, end]`, or `end` if no occurences were found.
+    // Returns an iterator to the first occurrence of the value `value` in the range
+    // `[begin, end]`, or `end` if no occurrence were found.
     template<ForwardIterator Iter, typename T>
         requires Equatable<typename IteratorTraits<Iter>::ValueType, T>
     [[nodiscard]]
@@ -21,8 +21,8 @@ namespace Kitsune::Algorithms
         });
     }
 
-    // Returns an iterator to the first occurance of the range `[findBegin, findEnd]` in the
-    // range `[begin, end]`, or `end` if no occurences were found.
+    // Returns an iterator to the first occurrence of the range `[findBegin, findEnd]`
+    // in the range `[begin, end]`, or `end` if no occurrence were found.
     template<ForwardIterator Iter1, ForwardIterator Iter2>
         requires Equatable<typename IteratorTraits<Iter1>::ValueType,
                            typename IteratorTraits<Iter2>::ValueType>
@@ -48,8 +48,8 @@ namespace Kitsune::Algorithms
         }
     }
 
-    // Returns an iterator to the first occurance of a value which satisfies the
-    // predicate `pred` in the range `[begin, end]`, or `end` if no occurences were found.
+    // Returns an iterator to the first occurrence of a value which satisfies the
+    // predicate `pred` in the range `[begin, end]`, or `end` if no occurrence were found.
     template<ForwardIterator Iter,
              Invokable<typename IteratorTraits<Iter>::ValueType> Pred>
     [[nodiscard]]
@@ -64,8 +64,8 @@ namespace Kitsune::Algorithms
         return begin;
     }
 
-    // Returns an iterator to the last occurance of the value `value` in the range
-    // `[begin, end]`, or `end` if no occurences were found.
+    // Returns an iterator to the last occurrence of the value `value` in the range
+    // `[begin, end]`, or `end` if no occurrence were found.
     template<ForwardIterator Iter, typename T>
         requires Equatable<typename IteratorTraits<Iter>::ValueType, T>
     [[nodiscard]] inline Iter FindLast(Iter begin, Iter end, const T& value)
@@ -77,8 +77,8 @@ namespace Kitsune::Algorithms
         });
     }
 
-    // Returns an iterator to the last occurance of a value which satisfies the
-    // predicate `pred` in the range `[begin, end]`, or `end` if no occurences were found.
+    // Returns an iterator to the last occurrence of a value which satisfies the
+    // predicate `pred` in the range `[begin, end]`, or `end` if no occurrence were found.
     template<ForwardIterator Iter,
              Invokable<typename IteratorTraits<Iter>::ValueType> Pred>
     [[nodiscard]] inline Iter FindLastIf(Iter begin, Iter end, Pred pred)

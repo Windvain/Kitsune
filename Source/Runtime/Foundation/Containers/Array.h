@@ -26,7 +26,8 @@ namespace Kitsune
     class Array
     {
     private:
-        // std::initializer_list is usually implemented as a pair of pointers or as a pointer and size pair.
+        // std::initializer_list is usually implemented as a pair of pointers or as a pointer
+        // and size pair.
         // This assertion should not fail with the commonly used compilers.
         static_assert(ForwardIterator<typename std::initializer_list<T>::iterator>,
                       "std::initializer_list iterators do not satisfy ForwardIterator.");
@@ -64,7 +65,8 @@ namespace Kitsune
                 return;
 
             Usize adjustedCapacity = s_AllocationFactor * capacity;
-            void* data = m_Allocator.Allocate(adjustedCapacity * sizeof(T), alignof(T));
+            void* data = m_Allocator.Allocate(
+                adjustedCapacity * sizeof(T), alignof(T));
 
             m_Begin = m_End = static_cast<T*>(data);
             m_StorageEnd = m_Begin + capacity;
@@ -84,8 +86,9 @@ namespace Kitsune
             m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
         }
 
-        inline Array(std::initializer_list<T> ilist, const Alloc& alloc = Alloc())
-            : Array(ilist.begin(), ilist.end(), alloc)
+        inline Array(std::initializer_list<T> initList,
+                     const Alloc& alloc = Alloc())
+            : Array(initList.begin(), initList.end(), alloc)
         {
         }
 
@@ -135,9 +138,9 @@ namespace Kitsune
             return *this;
         }
 
-        inline Array& operator=(std::initializer_list<T> ilist)
+        inline Array& operator=(std::initializer_list<T> initList)
         {
-            Assign(ilist.begin(), ilist.end());
+            Assign(initList.begin(), initList.end());
             return *this;
         }
 
@@ -177,7 +180,8 @@ namespace Kitsune
             return *m_Begin;
         }
 
-        [[nodiscard]] inline T& Back()
+        [[nodiscard]]
+        inline T& Back()
         {
             if (IsEmpty())
                 throw OutOfRangeException();
@@ -185,7 +189,8 @@ namespace Kitsune
             return *(m_End - 1);
         }
 
-        [[nodiscard]] inline const T& Back() const
+        [[nodiscard]]
+        inline const T& Back() const
         {
             if (IsEmpty())
                 throw OutOfRangeException();
@@ -193,11 +198,29 @@ namespace Kitsune
             return *(m_End - 1);
         }
 
-        [[nodiscard]] inline T* Data()             { return m_Begin; }
-        [[nodiscard]] inline const T* Data() const { return m_Begin; }
+        [[nodiscard]]
+        inline T* Data()
+        {
+            return m_Begin;
+        }
 
-        [[nodiscard]] inline Alloc& GetAllocator()             { return m_Allocator; }
-        [[nodiscard]] inline const Alloc& GetAllocator() const { return m_Allocator; }
+        [[nodiscard]]
+        inline const T* Data() const
+        {
+            return m_Begin;
+        }
+
+        [[nodiscard]]
+        inline Alloc& GetAllocator()
+        {
+            return m_Allocator;
+        }
+
+        [[nodiscard]]
+        inline const Alloc& GetAllocator() const
+        {
+            return m_Allocator;
+        }
 
     public:
         [[nodiscard]] inline Usize Size() const
@@ -211,7 +234,10 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool IsEmpty() const { return (m_Begin == m_End); }
+        inline bool IsEmpty() const
+        {
+            return (m_Begin == m_End);
+        }
 
     public:
         [[nodiscard]] inline Iterator GetBegin()            { return m_Begin; }
@@ -220,11 +246,29 @@ namespace Kitsune
         [[nodiscard]] inline Iterator GetEnd()            { return m_End; }
         [[nodiscard]] inline ConstIterator GetEnd() const { return m_End; }
 
-        [[nodiscard]] inline ReverseIterator GetReverseBegin()            { return ReverseIterator(m_End); }
-        [[nodiscard]] inline ReverseConstIterator GetReverseBegin() const { return ReverseIterator(m_End); }
+        [[nodiscard]]
+        inline ReverseIterator GetReverseBegin()
+        {
+            return ReverseIterator(m_End);
+        }
 
-        [[nodiscard]] inline ReverseIterator GetReverseEnd()            { return ReverseIterator(m_Begin); }
-        [[nodiscard]] inline ReverseConstIterator GetReverseEnd() const { return ReverseIterator(m_Begin); }
+        [[nodiscard]]
+        inline ReverseConstIterator GetReverseBegin() const
+        {
+            return ReverseIterator(m_End);
+        }
+
+        [[nodiscard]]
+        inline ReverseIterator GetReverseEnd()
+        {
+            return ReverseIterator(m_Begin);
+        }
+
+        [[nodiscard]]
+        inline ReverseConstIterator GetReverseEnd() const
+        {
+            return ReverseIterator(m_Begin);
+        }
 
     public:
         inline void Reserve(Usize newCapacity)
@@ -270,9 +314,9 @@ namespace Kitsune
             m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
         }
 
-        inline void Assign(std::initializer_list<T> ilist)
+        inline void Assign(std::initializer_list<T> initList)
         {
-            Assign(ilist.begin(), ilist.end());
+            Assign(initList.begin(), initList.end());
         }
 
         inline void Assign(Usize count, const T& value)
@@ -286,14 +330,14 @@ namespace Kitsune
         }
 
     public:
-        inline Iterator Insert(Iterator pos, const T& val)
+        inline Iterator Insert(Iterator pos, const T& value)
         {
-            return Emplace(pos, val);
+            return Emplace(pos, value);
         }
 
-        inline Iterator Insert(Iterator pos, T&& val)
+        inline Iterator Insert(Iterator pos, T&& value)
         {
-            return Emplace(pos, Move(val));
+            return Emplace(pos, Move(value));
         }
 
         inline Iterator Insert(Iterator pos, Usize count, const T& value)
@@ -314,9 +358,9 @@ namespace Kitsune
             return pos - rangeLen;
         }
 
-        inline Iterator Insert(Iterator pos, std::initializer_list<T> ilist)
+        inline Iterator Insert(Iterator pos, std::initializer_list<T> initList)
         {
-            return Insert(pos, ilist.begin(), ilist.end());
+            return Insert(pos, initList.begin(), initList.end());
         }
 
         template<typename... Args>
@@ -360,8 +404,11 @@ namespace Kitsune
             if (begin == end)
                 return;
 
-            if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) || (end > GetEnd()))
+            if ((begin < GetBegin()) || (begin >= GetEnd()) ||
+                (end < GetBegin()) || (end > GetEnd()))
+            {
                 throw OutOfRangeException();
+            }
 
             Ptrdiff removedSize = end - begin;
             Algorithms::Destroy(begin, end);
@@ -375,9 +422,9 @@ namespace Kitsune
             m_End -= removedSize;
         }
 
-        inline void RemoveUnsorted(Iterator it)
+        inline void RemoveUnsorted(Iterator pos)
         {
-            RemoveUnsorted(it, it + 1);
+            RemoveUnsorted(pos, pos + 1);
         }
 
         inline void RemoveUnsorted(Iterator begin, Iterator end)
@@ -385,24 +432,30 @@ namespace Kitsune
             if (begin == end)
                 return;
 
-            if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) || (end > GetEnd()))
+            if ((begin < GetBegin()) || (begin >= GetEnd()) ||
+                (end < GetBegin()) || (end > GetEnd()))
+            {
                 throw OutOfRangeException();
+            }
 
             Ptrdiff removedSize = end - begin;
             Algorithms::Destroy(begin, end);
 
-            Algorithms::UninitializedMoveN(GetReverseBegin(), KITSUNE_MIN(removedSize, GetEnd() - end), begin);
+            Algorithms::UninitializedMoveN(
+                GetReverseBegin(),
+                KITSUNE_MIN(removedSize, GetEnd() - end), begin);
+
             m_End -= removedSize;
         }
 
-        inline void PushBack(const T& val)
+        inline void PushBack(const T& value)
         {
-            EmplaceBack(val);
+            EmplaceBack(value);
         }
 
-        inline void PushBack(T&& val)
+        inline void PushBack(T&& value)
         {
-            EmplaceBack(Move(val));
+            EmplaceBack(Move(value));
         }
 
         template<typename... Args>
@@ -436,7 +489,9 @@ namespace Kitsune
     private:
         inline void ReallocateExact(Usize newCapacity)
         {
-            T* pointer = static_cast<T*>(m_Allocator.Allocate(newCapacity * sizeof(T), alignof(T)));
+            T* pointer = static_cast<T*>(m_Allocator.Allocate(
+                newCapacity * sizeof(T), alignof(T)));
+
             Usize moveCount = KITSUNE_MIN(newCapacity, Size());
 
             Algorithms::UninitializedMoveN(m_Begin, moveCount, pointer);
@@ -465,8 +520,10 @@ namespace Kitsune
 
     template<typename T, Allocator TAlloc, typename U, Allocator UAlloc>
         requires Equatable<T, U>
-    inline bool operator==(const Array<T, TAlloc>& arr1, const Array<U, UAlloc>& arr2)
+    inline bool operator==(const Array<T, TAlloc>& array1,
+                           const Array<U, UAlloc>& array2)
     {
-        return Algorithms::Equal(arr1.GetBegin(), arr1.GetEnd(), arr2.GetBegin(), arr2.GetEnd());
+        return Algorithms::Equal(array1.GetBegin(), array1.GetEnd(),
+                                 array2.GetBegin(), array2.GetEnd());
     }
 }

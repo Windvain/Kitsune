@@ -5,8 +5,9 @@
 
 namespace Kitsune::Details
 {
-    bool HandleAssertionFailure(const char* expression, const char* message,
-                                             SourceLocation loc = SourceLocation::Current());
+    bool HandleAssertionFailure(const char* expression,
+                                const char* message,
+                                SourceLocation location = SourceLocation::Current());
 }
 
 #define KITSUNE_ALWAYS_ASSERT(expr, message)                                        \
@@ -24,5 +25,5 @@ namespace Kitsune::Details
     #define KITSUNE_VERIFY KITSUNE_ALWAYS_ASSERT
 #else
     #define KITSUNE_ASSERT(expr, message) ((void)0)
-    #define KITSUNE_VERIFY(expr, message) if (expr) {}
+    #define KITSUNE_VERIFY(expr, message) if (expr) { /* ... */ }
 #endif

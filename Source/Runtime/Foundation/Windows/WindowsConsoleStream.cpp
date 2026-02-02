@@ -1,10 +1,7 @@
 #include "Foundation/IO/ConsoleOutputStream.h"
 #include <Windows.h>
 
-#include "Foundation/String/Transcode.h"
-
-#include "Foundation/String/Utf8Encoding.h"
-#include "Foundation/String/Utf16Encoding.h"
+#include "Foundation/String/TranscodePresets.h"
 
 namespace Kitsune
 {
@@ -15,9 +12,10 @@ namespace Kitsune
             return;
 
         StringView string(m_Buffer, m_Pointer);
-        auto wideString = Transcode<Utf8Encoding<char>, Utf16Encoding<wchar_t>>(string);
+        auto wideString = Utf8ToUtf16<char, wchar_t>(string);
 
-        ::WriteConsoleW(outputHandle, wideString.Raw(), static_cast<DWORD>(wideString.Size()),
+        ::WriteConsoleW(outputHandle, wideString.Raw(),
+                        static_cast<DWORD>(wideString.Size()),
                         nullptr, nullptr);
 
         m_Pointer = m_Buffer;

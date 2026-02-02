@@ -7,11 +7,13 @@
 
 namespace Kitsune::Algorithms
 {
-    // Returns the amount of occurences of the value `value` in the range `[begin, end]`.
+    // Returns the amount of occurrences of the value `value` in the
+    // range `[begin, end]`.
     template<ForwardIterator Iter, typename T>
         requires Equatable<typename IteratorTraits<Iter>::ValueType, T>
     [[nodiscard]]
-    inline typename IteratorTraits<Iter>::DifferenceType Count(Iter begin, Iter end, const T& value)
+    inline typename IteratorTraits<Iter>::DifferenceType Count(
+        Iter begin, Iter end, const T& value)
     {
         using ValueType = IteratorTraits<Iter>::ValueType;
         return CountIf(begin, end, [&value](const ValueType& elem) -> bool
@@ -21,9 +23,11 @@ namespace Kitsune::Algorithms
     }
 
     // Returns the amount of elements which satisfy `pred` in the range `[begin, end]`.
-    template<ForwardIterator Iter, Invokable<typename IteratorTraits<Iter>::ValueType&> Pred>
+    template<ForwardIterator Iter,
+             Invokable<typename IteratorTraits<Iter>::ValueType&> Pred>
     [[nodiscard]]
-    inline typename IteratorTraits<Iter>::DifferenceType CountIf(Iter begin, Iter end, Pred pred)
+    inline typename IteratorTraits<Iter>::DifferenceType CountIf(
+        Iter begin, Iter end, Pred pred)
     {
         using Diff = IteratorTraits<Iter>::DifferenceType;
         Diff count = Diff();

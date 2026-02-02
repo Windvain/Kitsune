@@ -29,8 +29,9 @@ namespace Kitsune
                       "A reference type cannot be pointed to and therefore is not valid.");
 
         static_assert(std::is_convertible_v<T*, typename Del::ValueType*>,
-                      "The specified deleter cannot be used to delete an object of type T, "
-                      "because T* is not implicitly convertible to a pointer to the deleter's value type.");
+                      "The specified deleter cannot be used to delete an object of "
+                      "type T, because T* is not implicitly convertible to a pointer "
+                      "to the deleter's value type.");
 
     public:
         inline ScopedPtr()
@@ -161,8 +162,8 @@ namespace Kitsune
         KITSUNE_MAYBE_OVERLAPPING Del m_Deleter;
     };
 
-    // Creates a ScopedPtr<T> which manages an object T created with
-    // the arguments passed in.
+    // Creates an object of type T whose lifetime is managed by the returned
+    // scoped pointer.
     template<typename T, typename... Args>
     [[nodiscard]]
     inline ScopedPtr<T> MakeScoped(Args&&... args)
@@ -175,13 +176,6 @@ namespace Kitsune
                            const ScopedPtr<U, UDel>& pointer2)
     {
         return (pointer1.Get() == pointer2.Get());
-    }
-
-    template<typename T, Deleter Del, typename U, Deleter UDel>
-    inline bool operator!=(const ScopedPtr<T, Del>& pointer1,
-                           const ScopedPtr<U, UDel>& pointer2)
-    {
-        return (pointer1.Get() != pointer2.Get());
     }
 
     template<typename T, Deleter Del, typename U, Deleter UDel>
@@ -219,12 +213,6 @@ namespace Kitsune
     }
 
     template<typename T, Deleter Del>
-    inline bool operator!=(std::nullptr_t, const ScopedPtr<T, Del>& pointer)
-    {
-        return (pointer.Get() != nullptr);
-    }
-
-    template<typename T, Deleter Del>
     inline bool operator>=(std::nullptr_t, const ScopedPtr<T, Del>& pointer)
     {
         return !(nullptr < pointer);
@@ -252,12 +240,6 @@ namespace Kitsune
     inline bool operator==(const ScopedPtr<T, Del>& pointer, std::nullptr_t)
     {
         return (pointer.Get() == nullptr);
-    }
-
-    template<typename T, Deleter Del>
-    inline bool operator!=(const ScopedPtr<T, Del>& pointer, std::nullptr_t)
-    {
-        return (pointer.Get() != nullptr);
     }
 
     template<typename T, Deleter Del>

@@ -7,8 +7,8 @@
 
 namespace Kitsune::Algorithms
 {
-    // Checks whether the two ranges `[begin1, end1]` and `[begin2, -]` contain the same elements.
-    // This function does not check the second range's size.
+    // Checks whether the two ranges `[begin1, end1]` and `[begin2, -]` contain
+    // the same elements. This function does not check the size of the second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2>
     [[nodiscard]]
     inline bool Equal(Iter1 begin1, Iter1 end1, Iter2 begin2)
@@ -25,8 +25,9 @@ namespace Kitsune::Algorithms
             });
     }
 
-    // Checks whether the two ranges `[begin1, end1]` and `[begin2, -]` are both equal based on
-    // the predicate `pred`. This function does not check the second range's size.
+    // Checks whether the two ranges `[begin1, end1]` and `[begin2, -]` are both
+    // equal based on the predicate `pred`. This function does not check the size
+    // of the second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2,
              Invokable<typename IteratorTraits<Iter1>::ValueType&,
                        typename IteratorTraits<Iter2>::ValueType&> Pred>
@@ -42,8 +43,9 @@ namespace Kitsune::Algorithms
         return true;
     }
 
-    // Checks whether the two ranges `[begin1, end1]` and `[begin2, end2]` contain the same
-    // elements. This function does not check the second range's size.
+    // Checks whether the two ranges `[begin1, end1]` and `[begin2, end2]`
+    // contain the same elements. This function does not check the size of the
+    // second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2>
     [[nodiscard]]
     inline bool Equal(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2)
@@ -60,8 +62,9 @@ namespace Kitsune::Algorithms
             });
     }
 
-    // Checks whether the two ranges `[begin1, end1]` and `[begin2, end2]` are both equal based on
-    // the predicate `pred`. This function does not check the second range's size.
+    // Checks whether the two ranges `[begin1, end1]` and `[begin2, end2]` are
+    // both equal based on the predicate `pred`. This function does not check the
+    // size of the second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2,
              Invokable<typename IteratorTraits<Iter1>::ValueType&,
                        typename IteratorTraits<Iter2>::ValueType&> Pred>
@@ -81,8 +84,9 @@ namespace Kitsune::Algorithms
         return true;
     }
 
-    // Checks whether the two ranges `[begin1, end1]` and `[begin2, end2]` are both equal based on
-    // the predicate `pred`. This function does not check the second range's size.
+    // Checks whether the two ranges `[begin1, end1]` and `[begin2, end2]` are
+    // both equal based on the predicate `pred`. This function does not check the
+    // size of the second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2,
              Invokable<typename IteratorTraits<Iter1>::ValueType&,
                        typename IteratorTraits<Iter2>::ValueType&> Pred>

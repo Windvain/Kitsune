@@ -20,36 +20,46 @@ namespace Kitsune
         Array<BacktraceFrame, Details::BacktraceAllocator> BacktraceArray;
     };
 
-    static void BacktraceErrorCallback(void* /* data */, const char* /* message*/, int /* error */)
+    static void BacktraceErrorCallback(void* /* data */,
+                                       const char* /* message*/,
+                                       int /* error */)
     {
     }
 
-    static int BacktraceCallback(void* data, std::uintptr_t programCounter,
-                                 const char* filename, int line,
+    static int BacktraceCallback(void* data,
+                                 std::uintptr_t programCounter,
+                                 const char* filename,
+                                 int line,
                                  const char* mangledName)
     {
         auto* backtraceData = reinterpret_cast<BacktraceData*>(data);
         if (backtraceData->CurrentDepth == backtraceData->MaxDepth)
             return 1;
 
-        // Since the symbol name is going to be demangled, the check for whether it is
-        // a nullptr or not will be done much later.
+        // Since the symbol name is going to be de-mangled, the nullptr check will
+        // be done much later in the code.
         if (filename == nullptr)
             filename = "<unknown>";
 
         struct DemangleDeleter
         {
             using ValueType = char;
-            KITSUNE_FORCEINLINE void operator()(char* ptr) { std::free(ptr); }
+            KITSUNE_FORCEINLINE void operator()(char* pointer)
+            {
+                std::free(pointer);
+            }
         };
 
         try
         {
             int demangleStatus;
             ScopedPtr<char, DemangleDeleter> namePointer(
-                ::abi::__cxa_demangle(mangledName, nullptr, nullptr, &demangleStatus));
+                ::abi::__cxa_demangle(mangledName, nullptr, nullptr,
+                                      &demangleStatus));
 
-            const char* symbolName = (demangleStatus != -2) ? namePointer.Get() : mangledName;
+            const char* symbolName = (demangleStatus != -2) ? namePointer.Get() :
+                                                              mangledName;
+
             if (symbolName == nullptr)
                 symbolName = "<unknown>";            //< Here!
 
@@ -67,7 +77,8 @@ namespace Kitsune
         }
     }
 
-    Backtrace Backtrace::Capture(Uint32 skipCount, Uint32 maxDepth) noexcept
+    Backtrace Backtrace::Capture(Uint32 skipCount,
+                                 Uint32 maxDepth) noexcept
     {
         BacktraceData backtraceData = {
             .CurrentDepth = 0,
@@ -79,8 +90,9 @@ namespace Kitsune
         static backtrace_state* backtraceState = ::backtrace_create_state(
             nullptr, true, BacktraceErrorCallback, nullptr);
 
-        int result = ::backtrace_full(backtraceState, skipCount + 1, BacktraceCallback,
-                                      BacktraceErrorCallback, &backtraceData);
+        int result = ::backtrace_full(backtraceState, skipCount + 1,
+                                      BacktraceCallback, BacktraceErrorCallback,
+                                      &backtraceData);
 
         if (result != 0)
             return Backtrace();
@@ -88,7 +100,8 @@ namespace Kitsune
         return Backtrace(Move(backtraceData.BacktraceArray));
     }
 #else
-    Backtrace Backtrace::Capture(Uint32 /* skipCount */, Uint32 /* maxDepth */) noexcept
+    Backtrace Backtrace::Capture(Uint32 /* skipCount */,
+                                 Uint32 /* maxDepth */) noexcept
     {
         return Backtrace();
     }

@@ -10,7 +10,8 @@ namespace Kitsune
         template<typename Iter, typename Encoding>
         concept ForwardIteratorToCodepoints =
             ForwardIterator<Iter> &&
-            std::same_as<typename IteratorTraits<Iter>::ValueType, typename Encoding::CodepointType>;
+            std::same_as<typename IteratorTraits<Iter>::ValueType,
+                         typename Encoding::CodepointType>;
     }
 
     // Encodes codepoints in the range [begin, end] into the specified encoding.

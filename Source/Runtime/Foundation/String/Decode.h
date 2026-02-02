@@ -15,7 +15,9 @@ namespace Kitsune
         using Result = DecodeResult<InputIter, OutputIter>;
         while (begin != end)
         {
-            auto [newBegin, newOutBegin] = Encoding::DecodeSingle(begin, end, outBegin);
+            auto [newBegin, newOutBegin] = Encoding::DecodeSingle(
+                begin, end, outBegin);
+
             if (newBegin == begin)
                 return Result(newBegin, newOutBegin);
 

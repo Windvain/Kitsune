@@ -15,7 +15,7 @@ namespace Kitsune
         static constexpr const char* InfoColor = "\x1B[36m";
         static constexpr const char* WarningColor = "\x1B[33m";
 
-        // The bold colours appear *lighter* than their non-bolded counterparts (?)
+        // The bold colors appear *lighter* than their non-bold counterparts (?)
         static constexpr const char* ErrorColor = "\x1B[31;1m";
         static constexpr const char* FatalColor = "\x1B[31m";
 

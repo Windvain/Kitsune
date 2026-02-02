@@ -59,8 +59,8 @@ namespace Kitsune
                       "does not satisfy the requirements of OutputIterator.");
     }
 
-    // The result of a text encoding operation. Contains the values of the input and output
-    // iterators when the encoding was stopped.
+    // The result of a text encoding operation. Contains the values of the input
+    // and output iterators when the encoding was stopped.
     template<Iterator InputIter, Iterator OutputIter>
     struct EncodeResult
     {
@@ -68,8 +68,8 @@ namespace Kitsune
         OutputIter OutputPosition;
     };
 
-    // The result of a text decoding operation. Contains the values of the input and output
-    // iterators when the decoding operation was stopped.
+    // The result of a text decoding operation. Contains the values of the input
+    // and output iterators when the decoding operation was stopped.
     template<Iterator InputIter, Iterator OutputIter>
     struct DecodeResult
     {

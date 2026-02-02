@@ -29,8 +29,8 @@ namespace Kitsune::Algorithms
         return outBegin;
     }
 
-    // Moves all of the elements in the range `[begin, end]` backwards into `outEnd`, then
-    // returns an iterator pointing one before the last moved element.
+    // Moves all of the elements in the range `[begin, end]` backwards into
+    // `outEnd`, then returns an iterator pointing one before the last moved element.
     template<BidirectionalIterator Iter, BidirectionalIterator OutIter>
     inline OutIter MoveBackwards(Iter begin, Iter end, OutIter outEnd)
     {

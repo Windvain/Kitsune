@@ -42,7 +42,8 @@ namespace Kitsune
             template<typename T>
             inline explicit CustomTypeHandle(const T& value)
                 : m_Pointer(AddressOf(value)),
-                  m_FormatFunction(reinterpret_cast<GeneralFunctionType>(StaticFormatFunction<T>))
+                  m_FormatFunction(reinterpret_cast<GeneralFunctionType>(
+                      StaticFormatFunction<T>))
             {
             }
 
@@ -50,7 +51,8 @@ namespace Kitsune
             [[nodiscard]]
             inline OutputIter Format(const FormatContext<OutputIter>& context) const
             {
-                using FunctionType = OutputIter (*)(const void*, const FormatContext<OutputIter>&);
+                using FunctionType = OutputIter (*)(
+                    const void*, const FormatContext<OutputIter>&);
 
                 auto func = reinterpret_cast<FunctionType>(m_FormatFunction);
                 return func(m_Pointer, context);
@@ -58,7 +60,8 @@ namespace Kitsune
 
         public:
             template<typename T>
-            static OutputIter StaticFormatFunction(const void* pointer, const FormatContext<OutputIter>& context)
+            static OutputIter StaticFormatFunction(
+                const void* pointer, const FormatContext<OutputIter>& context)
             {
                 const T& typedValue = *static_cast<const T*>(pointer);
                 return Formatter<T, Char>::Format(typedValue, context);
@@ -227,7 +230,10 @@ namespace Kitsune
     class BasicFormatArgumentPack
     {
     public:
-        inline const BasicFormatArgument<Char, OutputIter>& operator[](Index index) const
+        using FormatArgumentType = BasicFormatArgument<Char, OutputIter>;
+
+    public:
+        inline const FormatArgumentType& operator[](Index index) const
         {
             if (index >= GetCount())
                 throw OutOfRangeException();
@@ -243,7 +249,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline const BasicFormatArgument<Char, OutputIter>* GetArguments() const
+        inline const FormatArgumentType* GetArguments() const
         {
             return m_Arguments;
         }
@@ -257,7 +263,10 @@ namespace Kitsune
     class BasicFormatArgumentPack<Char, 0, OutputIter>
     {
     public:
-        inline const BasicFormatArgument<Char, OutputIter>& operator[](Index /* index */) const
+        using FormatArgumentType = BasicFormatArgument<Char, OutputIter>;
+
+    public:
+        inline const FormatArgumentType& operator[](Index /* index */) const
         {
             throw OutOfRangeException();
         }
@@ -270,7 +279,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline const BasicFormatArgument<Char, OutputIter>* GetArguments() const
+        inline const FormatArgumentType* GetArguments() const
         {
             return nullptr;
         }

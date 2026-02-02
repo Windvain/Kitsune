@@ -11,10 +11,11 @@
 
 namespace Kitsune::Details
 {
-    constexpr int MessageBoxAbortId = 1;
-    constexpr int MessageBoxIgnoreId = 2;
+    static const int MessageBoxAbortId = 1;
+    static const int MessageBoxIgnoreId = 2;
 
-    inline void FallbackLogAssertionMessage(const char* expression, const char* message,
+    inline void FallbackLogAssertionMessage(const char* expression,
+                                            const char* message,
                                             const SourceLocation& location)
     {
         // The global logger might not have been set just yet, so just print the
@@ -27,13 +28,15 @@ namespace Kitsune::Details
                     location.Line());
     }
 
-    MessageBoxButtonId ShowAssertMessageBox(const char* expression, const char* message,
+    MessageBoxButtonId ShowAssertMessageBox(const char* expression,
+                                            const char* message,
                                             const SourceLocation& location)
     {
         String description = Format(
             "Assertion failed!\n\nFile: {0}\nLine: {1}\nFunction: {2}\n\n"
             "Expression: {3}\nMessage: {4}",
-            location.FileName(), location.Line(), location.FunctionName(), expression, message);
+            location.FileName(), location.Line(), location.FunctionName(),
+            expression, message);
 
         MessageBoxSpecifications msgBoxSpecs;
         msgBoxSpecs.Title = "Kitsune Engine";
@@ -58,13 +61,12 @@ namespace Kitsune::Details
         if (message == nullptr)    message = "";
 
         auto* engineLoop = EngineLoop::GetInstance();
-        if (!engineLoop || (engineLoop->GetLoggers().Size() == 0))
+        if (!engineLoop || (engineLoop->GetLoggers().IsEmpty()))
             FallbackLogAssertionMessage(expression, message, location);
         else
         {
             KITSUNE_ENGINE_FATAL_FORMAT_(
                 "Assertion `{0}` has failed.\n`{1}`",
-                Move(location),
                 expression, message);
         }
 

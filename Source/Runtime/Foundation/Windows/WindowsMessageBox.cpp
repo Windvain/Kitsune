@@ -3,15 +3,13 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 
-#include "Foundation/String/Transcode.h"
 #include "Foundation/Containers/Array.h"
-
-#include "Foundation/String/Utf8Encoding.h"
-#include "Foundation/String/Utf16Encoding.h"
+#include "Foundation/String/TranscodePresets.h"
 
 namespace Kitsune
 {
-    bool ShowFallbackMessageBox(const MessageBoxSpecifications& specs, MessageBoxButtonId* pressed)
+    bool ShowFallbackMessageBox(const MessageBoxSpecifications& specs,
+                                MessageBoxButtonId* pressed)
     {
         // TODO: Unimplemented. Will implement once I iron out the needed changes.
         KITSUNE_UNUSED(specs);
@@ -20,16 +18,19 @@ namespace Kitsune
         return false;
     }
 
-    bool ShowMessageBox(const MessageBoxSpecifications& specs, MessageBoxButtonId* pressed)
+    bool ShowMessageBox(const MessageBoxSpecifications& specs,
+                        MessageBoxButtonId* pressed)
     {
         // As of now, Windows will always load versions <6.0, which doesn't have
-        // TaskDialogIndirect(). Applications will have to use an application manifest to load
-        // the correct version.
+        // TaskDialogIndirect(). Applications will have to use an application manifest
+        // to load the correct version.
         HMODULE comctl32 = ::LoadLibraryW(L"comctl32.dll");
         if (comctl32 == nullptr)
             return ShowFallbackMessageBox(specs, pressed);
 
-        using TaskDialogIndirectProc = HRESULT (*)(const TASKDIALOGCONFIG*, int*, int*, BOOL*);
+        using TaskDialogIndirectProc = HRESULT (*)(const TASKDIALOGCONFIG*,
+                                                   int*, int*, BOOL*);
+
         auto taskDialogIndirect = (TaskDialogIndirectProc)(void*)(
             ::GetProcAddress(comctl32, "TaskDialogIndirect"));
 
@@ -43,18 +44,18 @@ namespace Kitsune
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 
-        auto wideTitle = Transcode<Utf8Encoding<char>, Utf16Encoding<wchar_t>>(specs.Title);
-        auto wideDescription = Transcode<Utf8Encoding<char>, Utf16Encoding<wchar_t>>(specs.Description);
+        auto wideTitle = Utf8ToUtf16<char, wchar_t>(specs.Title);
+        auto wideDescription = Utf8ToUtf16<char, wchar_t>(specs.Description);
 
         Array<WideString> buttonTexts(specs.Buttons.Size());
         Array<TASKDIALOG_BUTTON> buttons(specs.Buttons.Size());
 
         for (const MessageBoxButton& button : specs.Buttons)
         {
-            buttonTexts.PushBack(Transcode<Utf8Encoding<char>, Utf16Encoding<wchar_t>>(button.Text));
+            buttonTexts.PushBack(Utf8ToUtf16<char, wchar_t>(button.Text));
 
             TASKDIALOG_BUTTON nativeButton;
-            nativeButton.nButtonID = IDCONTINUE + button.Id + 1;        // Look at the comment below.
+            nativeButton.nButtonID = IDCONTINUE + button.Id + 1;
             nativeButton.pszButtonText = buttonTexts.Back().Data();
 
             buttons.PushBack(nativeButton);
@@ -70,10 +71,18 @@ namespace Kitsune
 
         switch (specs.Icon)
         {
-        case MessageBoxIcon::None:    config.pszMainIcon = nullptr;             break;
-        case MessageBoxIcon::Info:    config.pszMainIcon = TD_INFORMATION_ICON; break;
-        case MessageBoxIcon::Warning: config.pszMainIcon = TD_WARNING_ICON;     break;
-        case MessageBoxIcon::Error:   config.pszMainIcon = TD_ERROR_ICON;       break;
+        case MessageBoxIcon::None:
+            config.pszMainIcon = nullptr;
+            break;
+        case MessageBoxIcon::Info:
+            config.pszMainIcon = TD_INFORMATION_ICON;
+            break;
+        case MessageBoxIcon::Warning:
+            config.pszMainIcon = TD_WARNING_ICON;
+            break;
+        case MessageBoxIcon::Error:
+            config.pszMainIcon = TD_ERROR_ICON;
+            break;
         }
 
         int internalPressed;
@@ -84,11 +93,13 @@ namespace Kitsune
         if (FAILED(result))
             return false;
 
-        // HACK: IDCANCEL, IDABORT, and all other predefined IDs cause unintended consequences.
-        // Offset the button ID internally to avoid this issue. Why IDCONTINUE, you might ask?
+        // HACK: IDCANCEL, IDABORT, and all other predefined IDs cause unintended
+        // consequences. Offset the button ID internally to avoid this issue. Why
+        // IDCONTINUE, you might ask?
         // Because it has the largest value out of all of the predefined button IDs.
         //
-        // If no buttons were specified, then the message box automatically adds an Ok button.
+        // If no buttons were specified, then the message box automatically adds
+        // an Ok button.
         if ((pressed != nullptr) && !buttons.IsEmpty())
             *pressed = internalPressed - (IDCONTINUE + 1);
 

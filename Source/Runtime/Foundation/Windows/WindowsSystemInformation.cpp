@@ -6,9 +6,7 @@
 #include "Foundation/Common/Predefined.h"
 #include "Foundation/Diagnostics/Assert.h"
 
-#include "Foundation/String/Transcode.h"
-#include "Foundation/String/Utf8Encoding.h"
-#include "Foundation/String/Utf16Encoding.h"
+#include "Foundation/String/TranscodePresets.h"
 
 #include "Foundation/Diagnostics/SystemException.h"
 
@@ -45,7 +43,7 @@ namespace Kitsune
                        "This function should have failed on the first call.");
 
         ::RegCloseKey(keyHandle);
-        return Transcode<Utf16Encoding<wchar_t>, Utf8Encoding<char>>(wideData);
+        return Utf16ToUtf8<wchar_t, char>(wideData);
     }
 
     CpuInformation SystemInformation::GetCpuInformation()
@@ -76,7 +74,7 @@ namespace Kitsune
 
         cpuInfo.LogicalCoreCount = systemInfo.dwNumberOfProcessors;
 
-        // Get vendor and features. (CPUID instructiom)
+        // Get vendor and features. (CPUID instruction)
 #if defined(KITSUNE_ARCH_X86)
         {
             CpuIdResult cpuIdResult = CallCpuId(/* Manufacturer ID */ 0, 0);
@@ -136,23 +134,27 @@ namespace Kitsune
             L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
             L"ProductName");
 
-        // HACK: The registry returns 10 for both Windows 10 and 11 for backwards compatibility
-        // with old Win10 software. If the build number indicates Win11,
+        // HACK: The registry returns 10 for both Windows 10 and 11 for backwards
+        // compatibility with old Win10 software. If the build number indicates Win11,
         // just replace the 10 --> 11.
         if (ntdll == nullptr)
         {
-            throw SystemException("Failed to obtain handle to ntdll.dll. Please make sure that "
-                                  "the application has already been linked to ntdll.");
+            throw SystemException("Failed to obtain handle to ntdll.dll. Please make "
+                                  "sure that the application has already been linked "
+                                  "to ntdll.dll.");
         }
 
-        auto rtlGetVersion = (RtlGetVersionFunction)(void*)(::GetProcAddress(ntdll, "RtlGetVersion"));
+        auto rtlGetVersion = (RtlGetVersionFunction)(void*)(
+            ::GetProcAddress(ntdll, "RtlGetVersion"));
+
         if (rtlGetVersion == nullptr)
             throw SystemException("Failed to get the address of RtlGetVersion().");
 
         OSVERSIONINFOEXW osVersionInfo;
         if (SUCCEEDED(rtlGetVersion(&osVersionInfo)))
         {
-            if ((osVersionInfo.dwMajorVersion == 10) && (osVersionInfo.dwBuildNumber >= 21996))
+            if ((osVersionInfo.dwMajorVersion == 10) &&
+                (osVersionInfo.dwBuildNumber >= 21996))
             {
                 auto iterator = currentVersion.Find("10");
                 if (iterator != currentVersion.GetEnd())
@@ -160,10 +162,7 @@ namespace Kitsune
             }
         }
 
-        return OsInformation{
-            .Name = currentVersion,
-            .ShortName = "Windows"
-        };
+        return OsInformation{ .Name = currentVersion, .ShortName = "Windows" };
     }
 
     BatteryInformation SystemInformation::GetBatteryInformation()

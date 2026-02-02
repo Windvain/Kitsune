@@ -70,8 +70,8 @@ namespace Kitsune
         if (pointer == nullptr)
             return;
 
-        // No need to lazily initialize. If they called Free() without calling Allocate(),
-        // that means that the pointer is invalid anyways.
+        // No need to lazily initialize. If the user called Free() without calling
+        // Allocate(), that means that the pointer is invalid anyways.
         s_MemoryApi->Free(pointer, bytes);
     }
 }

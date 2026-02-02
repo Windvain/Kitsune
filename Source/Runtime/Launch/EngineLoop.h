@@ -37,8 +37,17 @@ namespace Kitsune
         [[noreturn]] void ForceExit(int exitCode);
 
     public:
-        [[nodiscard]] inline Array<ScopedPtr<Logger>>& GetLoggers()             { return m_Loggers; }
-        [[nodiscard]] inline const Array<ScopedPtr<Logger>>& GetLoggers() const { return m_Loggers; }
+        [[nodiscard]]
+        inline Array<ScopedPtr<Logger>>& GetLoggers()
+        {
+            return m_Loggers;
+        }
+
+        [[nodiscard]]
+        inline const Array<ScopedPtr<Logger>>& GetLoggers() const
+        {
+            return m_Loggers;
+        }
 
         [[nodiscard]]
         inline const Backtrace& GetExceptionBacktrace() const

@@ -6,8 +6,6 @@
 #include "Foundation/String/String.h"
 
 #include "Foundation/Algorithms/Copy.h"
-#include "Foundation/Algorithms/Find.h"
-
 #include "Foundation/Algorithms/Reverse.h"
 
 namespace Kitsune
@@ -19,7 +17,8 @@ namespace Kitsune
         using Iterator = Iter;
 
     public:
-        inline explicit BasicFormatContext(BasicStringView<Char> formatSpecs, Iter outputIter)
+        inline explicit BasicFormatContext(BasicStringView<Char> formatSpecs,
+                                           Iter outputIter)
             : m_FormatSpecs(formatSpecs), m_OutputIter(outputIter)
         {
         }
@@ -122,9 +121,12 @@ namespace Kitsune
 
             if (specs.Contains('0'))
             {
-                // This can be derived from the equation: <base>^<width in base> >= 2^<width in base 2> - 1.
+                // This can be derived from the equation:
+                // <base>^<width in base> >= 2^<width in base 2> - 1.
                 bool adjustPadding = std::is_signed_v<Integer> && (base == 10);
-                float pow = std::pow(2, sizeof(Integer) * (8 - Usize(adjustPadding))) - 1;
+                float pow = std::pow(
+                    2,
+                    sizeof(Integer) * (8 - Usize(adjustPadding))) - 1;
 
                 float numerator = std::logf(pow);
                 float denominator = std::logf(base);
@@ -165,8 +167,14 @@ namespace Kitsune
             StringView specs = context.GetFormatSpecifications();
             if (specs.Contains('I') || specs.Contains('i'))
             {
-                using IntType = std::conditional_t<std::is_signed_v<char>, signed char, unsigned char>;
-                return Formatter<IntType, char>::Format(static_cast<IntType>(character), context);
+                using IntType = std::conditional_t<
+                    std::is_signed_v<char>,
+                    signed char,
+                    unsigned char>;
+
+                return Formatter<IntType, char>::Format(
+                    static_cast<IntType>(character),
+                    context);
             }
             else
             {
@@ -185,8 +193,8 @@ namespace Kitsune
         template<OutputIterator<const char&> Iter>
         inline static Iter Format(Float floatNum, const FormatContext<Iter>& context)
         {
-            long double value = static_cast<long double>(floatNum);
-            Usize count = static_cast<Usize>(std::snprintf(nullptr, 0, "%Lf", value) - 1);
+            auto value = static_cast<long double>(floatNum);
+            auto count = static_cast<Usize>(std::snprintf(nullptr, 0, "%Lf", value) - 1);
 
             String str(count, '\0');
             std::snprintf(str.Data(), count, "%Lf", value);
@@ -203,7 +211,9 @@ namespace Kitsune
         inline static Iter Format(T* pointer, const FormatContext<Iter>& context)
         {
             auto pointerInt = *reinterpret_cast<Uintptr*>(&pointer);
-            return Formatter<Uintptr, char>::Format(pointerInt, FormatContext<Iter>("0#x", context.GetOutput()));
+            FormatContext<Iter> modifiedContext("0#x", context.GetOutput());
+
+            return Formatter<Uintptr, char>::Format(pointerInt, modifiedContext);
         }
 
     private:
@@ -215,9 +225,10 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(const StringView str, const FormatContext<Iter>& context)
+        inline static Iter Format(StringView string, const FormatContext<Iter>& context)
         {
-            return Algorithms::Copy(str.GetBegin(), str.GetEnd(), context.GetOutput());
+            return Algorithms::Copy(string.GetBegin(), string.GetEnd(),
+                                    context.GetOutput());
         }
     };
 }

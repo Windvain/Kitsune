@@ -8,6 +8,9 @@ namespace Kitsune
     [[nodiscard]]
     constexpr auto MemberFunction(Return (T::*memFuncPtr)(Args...))
     {
-        return [memFuncPtr](T& object, Args&&... args) { return (object.*memFuncPtr)(Forward<Args>(args)...); };
+        return [memFuncPtr](T& object, Args&&... args)
+        {
+            return (object.*memFuncPtr)(Forward<Args>(args)...);
+        };
     }
 }

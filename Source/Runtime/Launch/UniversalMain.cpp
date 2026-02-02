@@ -77,6 +77,8 @@ namespace Kitsune
     // Basically serves as a guard for UnguardedEngineMain().
     int UniversalMain(int argc, char** argv)
     {
+        // This is the try/catch block for the scope that prints out exception and
+        // backtrace information.
         try
         {
             return UnguardedEngineMain(argc, argv);

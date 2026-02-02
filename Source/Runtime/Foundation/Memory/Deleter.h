@@ -26,7 +26,7 @@ namespace Kitsune
         DefaultDeleter(const DefaultDeleter&) = default;
 
         template<typename U>
-        DefaultDeleter(const DefaultDeleter<U>&)
+        inline DefaultDeleter(const DefaultDeleter<U>&)
             requires (std::is_convertible_v<U*, T*>)
         {
         }
@@ -35,7 +35,7 @@ namespace Kitsune
         DefaultDeleter& operator=(const DefaultDeleter&) = default;
 
     public:
-        void operator()(ValueType* pointer)
+        inline void operator()(ValueType* pointer)
         {
             if constexpr (!std::is_void_v<ValueType>)
                 Memory::Delete(pointer);

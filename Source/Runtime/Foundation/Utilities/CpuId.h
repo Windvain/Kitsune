@@ -10,7 +10,7 @@
         #include <cpuid.h>
     #endif
 #else
-    #error "CpuId.h is only supported when compiling programs targetting x86."
+    #error CpuId.h is only supported when compiling programs targetting x86.
 #endif
 
 namespace Kitsune

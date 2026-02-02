@@ -13,8 +13,8 @@ namespace Kitsune
         using BacktraceAllocator = GlobalAllocator;
     }
 
-    // Represents a sequence of function calls that had happened right before when the
-    // backtrace was created.
+    // Represents a sequence of active functions calls leading up to
+    // the call which creates this class (Backtrace::Capture()).
     class Backtrace
     {
     public:
@@ -39,8 +39,17 @@ namespace Kitsune
         }
 
     public:
-        [[nodiscard]] inline Usize Size() const { return m_Frames.Size(); }
-        [[nodiscard]] inline bool IsEmpty() const { return m_Frames.IsEmpty(); }
+        [[nodiscard]]
+        inline Usize Size() const
+        {
+            return m_Frames.Size();
+        }
+
+        [[nodiscard]]
+        inline bool IsEmpty() const
+        {
+            return m_Frames.IsEmpty();
+        }
 
     public:
         [[nodiscard]] inline ConstIterator GetBegin() const { return m_Frames.GetBegin(); }
@@ -72,7 +81,8 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        static Backtrace Capture(Uint32 skipCount = 0, Uint32 maxDepth = Uint32(-1)) noexcept;
+        static Backtrace Capture(Uint32 skipCount = 0,
+                                 Uint32 maxDepth = Uint32(-1)) noexcept;
 
         [[nodiscard]]
         inline static bool IsSupported();
@@ -98,7 +108,8 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(const Backtrace& backtrace, const FormatContext<Iter>& context)
+        inline static Iter Format(const Backtrace& backtrace,
+                                  const FormatContext<Iter>& context)
         {
             auto output = context.GetOutput();
             output = FormatTo(output, "Stack backtrace:\n");

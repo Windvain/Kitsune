@@ -23,8 +23,8 @@ namespace Kitsune::Algorithms
             func(*begin);
     }
 
-    // Invokes the function `func` for every element in `[begin, end]` which satisfies the
-    // predicate `pred`.
+    // Invokes the function `func` for every element in `[begin, end]` which
+    // satisfies the predicate `pred`.
     template<ForwardIterator Iter,
              Invokable<typename IteratorTraits<Iter>::ValueType&> Func,
              Invokable<typename IteratorTraits<Iter>::ValueType&> Pred>

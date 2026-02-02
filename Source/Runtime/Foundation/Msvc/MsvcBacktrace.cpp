@@ -1,5 +1,4 @@
 #include "Foundation/Diagnostics/Backtrace.h"
-#include <climits>
 
 #include <Windows.h>
 #include <DbgHelp.h>
@@ -50,7 +49,8 @@ namespace Kitsune
             lineStruct.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 
             DWORD offset_;
-            if (::SymGetLineFromAddr64(::GetCurrentProcess(), address, &offset_, &lineStruct))
+            if (::SymGetLineFromAddr64(::GetCurrentProcess(), address, &offset_,
+                                       &lineStruct))
             {
                 fileName = lineStruct.FileName;
                 lineNumber = lineStruct.LineNumber;
@@ -87,8 +87,10 @@ namespace Kitsune
     }
 
 #else
-    Backtrace Backtrace::Capture(Uint32 /* skipCount */, Uint32 /* maxDepth */) noexcept
+    Backtrace Backtrace::Capture(Uint32 skipCount, Uint32 maxDepth) noexcept
     {
+        KITSUNE_UNUSED(skipCount);
+        KITSUNE_UNUSED(maxDepth);
         return Backtrace();
     }
 #endif

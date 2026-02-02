@@ -21,7 +21,9 @@ namespace Kitsune
         typename Encoding::CodepointType codepoint;
         while (begin != end)
         {
-            auto [newBegin, _] = Encoding::DecodeSingle(begin, end, AddressOf(codepoint));
+            auto [newBegin, _] = Encoding::DecodeSingle(
+                begin, end, AddressOf(codepoint));
+
             if (newBegin == begin)
                 return false;
         }

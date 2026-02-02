@@ -7,10 +7,11 @@
 #endif
 
 #include <cstdio>
-#include <exception>
-
+#include <exception>        // IWYU pragma: keep
 #include <Windows.h>
+
 #include "Foundation/Common/Macros.h"
+#include "Foundation/Diagnostics/Assert.h"
 
 // Exception codes with no macro definitions in the <Windows.h> header.
 #define EXCEPTION_CXX_THROW 0xE06D7363
@@ -43,14 +44,15 @@ static void SetPerMonitorDpiAwareness()
     setThreadDpiAwarenessCtx(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 }
 
+#if defined(KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING)
 static bool TryCreateTerminal()
 {
     BOOL consoleAllocSuccess = ::AllocConsole();
     if (consoleAllocSuccess == 0)
         return false;
 
-    // Redirect stdout, stderr, and stdin to CONIN$ and CONOUT$, because GetStdHandle() is not set
-    // in applications not compiling with /SUBSYSTEM:CONSOLE.
+    // Redirect stdout, stderr, and stdin to CONIN$ and CONOUT$, because GetStdHandle()
+    // is not set in Win32 GUI applications (/SUBSYSTEM:WINDOWS).
     KITSUNE_UNUSED(std::freopen("CONOUT$", "w", stdout));
     KITSUNE_UNUSED(std::freopen("CONOUT$", "w", stderr));
     KITSUNE_UNUSED(std::freopen("CONIN$", "r", stdin));
@@ -80,14 +82,14 @@ static bool TryCreateTerminal()
 
 static void DestroyTerminal()
 {
-    // Can't use KITSUNE_VERIFY() this early on in the startup process.
-    KITSUNE_UNUSED(::FreeConsole());
+    KITSUNE_VERIFY(::FreeConsole(), "Failed to free the console.");
 
-    // Direct standard streams to NUL just in case.
+    // Direct standard streams to NULL just in case.
     KITSUNE_UNUSED(std::freopen("NUL:", "w", stdout));
     KITSUNE_UNUSED(std::freopen("NUL:", "r", stdin));
     KITSUNE_UNUSED(std::freopen("NUL:", "w", stderr));
 }
+#endif
 
 #if defined(KITSUNE_COMPILER_MSVC)
 static const char* FormatExceptionCode(const DWORD code)

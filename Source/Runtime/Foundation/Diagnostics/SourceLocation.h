@@ -36,17 +36,19 @@ namespace Kitsune
     {
     public:
         inline SourceLocation()
-            : m_FileName("<unknown>"), m_FunctionName("<unknown>"),
+            : m_FileName("<unknown>"),
+              m_FunctionName("<unknown>"),
               m_Line(0)
         {
         }
 
     public:
-        // Obtains the source information at the current location. Do not call this function
-        // with any arguments.
-        inline static SourceLocation Current(const char* file = KITSUNE_BUILTIN_FILE(),
-                                             const char* func = KITSUNE_BUILTIN_FUNC(),
-                                             Uint32 line = KITSUNE_BUILTIN_LINE())
+        // Obtains the source information at the current location. Do not call
+        // this function with any arguments.
+        inline static SourceLocation Current(
+            const char* file = KITSUNE_BUILTIN_FILE(),
+            const char* func = KITSUNE_BUILTIN_FUNC(),
+            Uint32 line = KITSUNE_BUILTIN_LINE())
         {
             return SourceLocation(file, func, line);
         }
@@ -70,6 +72,14 @@ namespace Kitsune
             return m_Line;
         }
 
+    public:
+        inline bool operator==(const SourceLocation& location)
+        {
+            return (m_Line         == location.m_Line) &&
+                   (m_FileName     == location.m_FileName) &&
+                   (m_FunctionName == location.m_FunctionName);
+        }
+
     private:
         inline SourceLocation(const char* file, const char* func, Uint32 line)
             : m_FileName(file), m_FunctionName(func), m_Line(line)
@@ -82,13 +92,6 @@ namespace Kitsune
 
         Uint32 m_Line;
     };
-
-    inline bool operator==(const SourceLocation& location1, const SourceLocation& location2)
-    {
-        return (location1.Line() == location2.Line()) &&
-               (location1.FileName() == location2.FileName()) &&
-               (location1.FunctionName() == location2.FunctionName());
-    }
 }
 
 #undef KITSUNE_BUILTIN_FILE

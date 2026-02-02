@@ -15,10 +15,10 @@ namespace Kitsune
         {
         }
 
-        inline BacktraceFrame(const StringView fileName, const StringView symbolName,
-                              const Uint64 lineNumber, void* const address)
-            : m_FileName(fileName), m_SymbolName(symbolName), m_LineNumber(lineNumber),
-              m_Address(address)
+        inline BacktraceFrame(StringView fileName, StringView symbolName,
+                              Uint64 lineNumber, void* address)
+            : m_FileName(fileName), m_SymbolName(symbolName),
+              m_LineNumber(lineNumber), m_Address(address)
         {
         }
 
@@ -50,10 +50,10 @@ namespace Kitsune
     public:
         inline bool operator==(const BacktraceFrame& backtraceFrame) const
         {
-            return (GetFileName()   == backtraceFrame.GetFileName()) &&
-                   (GetSymbolName() == backtraceFrame.GetSymbolName()) &&
-                   (GetLineNumber() == backtraceFrame.GetLineNumber()) &&
-                   (GetAddress()    == backtraceFrame.GetAddress());
+            return (m_FileName   == backtraceFrame.m_FileName) &&
+                   (m_SymbolName == backtraceFrame.m_SymbolName) &&
+                   (m_LineNumber == backtraceFrame.m_LineNumber) &&
+                   (m_Address    == backtraceFrame.m_Address);
         }
 
     private:

@@ -22,13 +22,16 @@ namespace Kitsune
                       "BasicString<T> assumes that the element type being "
                       "passed to it is a trivial type.");
 
-        // std::initializer_list is usually implemented as a pair of pointers or as a pointer and size pair.
-        // This assertion should not fail with the commonly used compilers.
+        // std::initializer_list is usually implemented as a pair of pointers or
+        // as a pointer and size pair. This assertion should not fail with the
+        // commonly used compilers.
         static_assert(ForwardIterator<typename std::initializer_list<T>::iterator>,
-                      "std::initializer_list iterators do not satisfy ForwardIterator.");
+                      "std::initializer_list iterators do not satisfy "
+                      "ForwardIterator.");
 
         static_assert(ForwardIterator<typename std::initializer_list<T>::const_iterator>,
-                      "std::initializer_list iterators do not satisfy ForwardIterator.");
+                      "std::initializer_list iterators do not satisfy "
+                      "ForwardIterator.");
 
     public:
         using ValueType = T;
@@ -52,7 +55,8 @@ namespace Kitsune
             m_Allocator = allocator;
         }
 
-        inline explicit BasicString(Usize capacity, const Alloc& allocator = Alloc())
+        inline explicit BasicString(Usize capacity,
+                                    const Alloc& allocator = Alloc())
             : m_Size(0), m_Allocator(allocator)
         {
             if (capacity < s_SmallBufferSize)
@@ -62,18 +66,21 @@ namespace Kitsune
                 // No need to align allocations, all character types should be trivial
                 // and therefore align to alignof(std::max_align_t).
                 m_SharedData.Capacity = s_AllocationFactor * capacity;
-                m_Pointer = static_cast<T*>(m_Allocator.Allocate((m_SharedData.Capacity + 1) * sizeof(T)));
+                m_Pointer = static_cast<T*>(
+                    m_Allocator.Allocate((m_SharedData.Capacity + 1) * sizeof(T)));
             }
 
             // Close it off with a null terminator.
             *m_Pointer = T();
         }
 
-        inline BasicString(Usize count, T character, const Alloc& allocator = Alloc())
+        inline BasicString(Usize count, T character,
+                           const Alloc& allocator = Alloc())
             : BasicString(count, allocator)
         {
-            // Optimization for char types, std::memset() is usually converted to a form of
-            // __builtin_memset(), which is faster than UninitializedFill().
+            // Optimization for char types, std::memset() is usually converted to
+            // a form of __builtin_memset(), which is faster
+            // than UninitializedFill().
             if constexpr (!std::is_same_v<T, char>)
                 *Algorithms::UninitializedFillN(m_Pointer, count, character) = T();
             else
@@ -85,7 +92,8 @@ namespace Kitsune
             m_Size = count;
         }
 
-        inline BasicString(const T* string, Usize size, const Alloc& allocator = Alloc())
+        inline BasicString(const T* string, Usize size,
+                           const Alloc& allocator = Alloc())
             : BasicString(size, allocator)
         {
             std::memcpy(m_Pointer, string, size * sizeof(T));
@@ -100,25 +108,27 @@ namespace Kitsune
         }
 
         template<ForwardIterator It>
-        inline BasicString(It begin, It end, const Alloc& allocator = Alloc())
+        inline BasicString(It begin, It end,
+                           const Alloc& allocator = Alloc())
             : BasicString(Algorithms::Distance(begin, end), allocator)
         {
             *Algorithms::UninitializedCopy(begin, end, m_Pointer) = T();
             m_Size = Algorithms::Distance(begin, end);
         }
 
-        inline BasicString(const BasicString<T, Alloc>& string)
+        inline BasicString(const BasicString& string)
             : BasicString(string.Raw(), string.Size(), string.GetAllocator())
         {
         }
 
-        inline BasicString(BasicString<T, Alloc>&& string)
+        inline BasicString(BasicString&& string)
             : m_Allocator(Move(string.GetAllocator()))
         {
             m_Size = string.Size();
             m_SharedData = string.m_SharedData;
 
-            m_Pointer = string.IsStorageLocal() ? m_SharedData.Buffer : string.m_Pointer;
+            m_Pointer = string.IsStorageLocal() ? m_SharedData.Buffer :
+                                                  string.m_Pointer;
 
             // Leave the moved string in an undefined state.
             string.m_Pointer = string.m_SharedData.Buffer;
@@ -130,9 +140,9 @@ namespace Kitsune
         {
         }
 
-        inline explicit BasicString(BasicStringView<T> stringView,
+        inline explicit BasicString(BasicStringView<T> string,
                                     const Alloc& allocator = Alloc())
-            : BasicString(stringView.Data(), stringView.Size(), allocator)
+            : BasicString(string.Data(), string.Size(), allocator)
         {
         }
 
@@ -142,7 +152,7 @@ namespace Kitsune
         }
 
     public:
-        inline BasicString<T, Alloc>& operator=(const BasicString<T, Alloc>& string)
+        inline BasicString& operator=(const BasicString& string)
         {
             if (this == &string)
                 return *this;
@@ -154,7 +164,7 @@ namespace Kitsune
             return operator=(BasicStringView<T>(string.Raw(), string.Size()));
         }
 
-        inline BasicString<T, Alloc>& operator=(BasicString<T, Alloc>&& string)
+        inline BasicString& operator=(BasicString&& string)
         {
             if (this == &string)
                 return *this;
@@ -165,37 +175,38 @@ namespace Kitsune
             m_Size = string.Size();
             m_SharedData = string.m_SharedData;
 
-            m_Pointer = string.IsStorageLocal() ? m_SharedData.Buffer : string.m_Pointer;
-            string.m_Pointer = string.m_SharedData.Buffer;
+            m_Pointer = string.IsStorageLocal() ? m_SharedData.Buffer :
+                                                  string.m_Pointer;
 
+            string.m_Pointer = string.m_SharedData.Buffer;
             return *this;
         }
 
-        inline BasicString<T, Alloc>& operator=(const T* string)
+        inline BasicString& operator=(const T* string)
         {
             return operator=(BasicStringView<T>(string));
         }
 
-        inline BasicString<T, Alloc>& operator=(T character)
+        inline BasicString& operator=(T character)
         {
             return operator=(BasicStringView<T>(&character, 1));
         }
 
-        inline BasicString<T, Alloc>& operator=(std::initializer_list<T> initList)
+        inline BasicString& operator=(std::initializer_list<T> initList)
         {
             Assign(initList.begin(), initList.end());
             return *this;
         }
 
-        inline BasicString<T, Alloc>& operator=(BasicStringView<T> stringView)
+        inline BasicString& operator=(BasicStringView<T> string)
         {
-            if (stringView.Size() > Capacity())
-                BasicString<T, Alloc>(stringView.Size(), Move(m_Allocator)).Swap(*this);
+            if (string.Size() > Capacity())
+                BasicString(string.Size(), Move(m_Allocator)).Swap(*this);
 
-            m_Size = stringView.Size();
-            std::memcpy(m_Pointer, stringView.Data(), m_Size * sizeof(T));
+            m_Size = string.Size();
+            std::memcpy(m_Pointer, string.Data(), m_Size * sizeof(T));
 
-            m_Pointer[stringView.Size()] = T();
+            m_Pointer[string.Size()] = T();
             return *this;
         }
 
@@ -221,36 +232,36 @@ namespace Kitsune
             return BasicStringView<T>(Data(), Size());
         }
 
-        inline BasicString<T, Alloc>& operator+=(const BasicString<T, Alloc>& string)
+        inline BasicString& operator+=(const BasicString& string)
         {
             Append(string.Raw(), string.Size());
             return *this;
         }
 
-        inline BasicString<T, Alloc>& operator+=(T character)
+        inline BasicString& operator+=(T character)
         {
             Append(1, character);
             return *this;
         }
 
-        inline BasicString<T, Alloc>& operator+=(const T* string)
+        inline BasicString& operator+=(const T* string)
         {
             return operator+=(BasicStringView<T>(string));
         }
 
-        inline BasicString<T, Alloc>& operator+=(std::initializer_list<T> initList)
+        inline BasicString& operator+=(std::initializer_list<T> initList)
         {
             Append(initList.begin(), initList.end());
             return *this;
         }
 
-        inline BasicString<T, Alloc>& operator+=(BasicStringView<T> stringView)
+        inline BasicString& operator+=(BasicStringView<T> string)
         {
-            Append(stringView.Data(), stringView.Size());
+            Append(string.Data(), string.Size());
             return *this;
         }
 
-        inline BasicString<T, Alloc> operator+(const BasicString<T, Alloc>& string)
+        inline BasicString operator+(const BasicString& string)
         {
             BasicString copy = *this;
             copy += string;
@@ -258,7 +269,7 @@ namespace Kitsune
             return copy;
         }
 
-        inline BasicString<T, Alloc> operator+(T character)
+        inline BasicString operator+(T character)
         {
             BasicString copy = *this;
             copy += character;
@@ -266,7 +277,7 @@ namespace Kitsune
             return copy;
         }
 
-        inline BasicString<T, Alloc> operator+(const T* string)
+        inline BasicString operator+(const T* string)
         {
             BasicString copy = *this;
             copy += string;
@@ -274,7 +285,7 @@ namespace Kitsune
             return copy;
         }
 
-        inline BasicString<T, Alloc> operator+(std::initializer_list<T> initList)
+        inline BasicString operator+(std::initializer_list<T> initList)
         {
             BasicString copy = *this;
             copy += initList;
@@ -282,10 +293,10 @@ namespace Kitsune
             return copy;
         }
 
-        inline BasicString<T, Alloc> operator+(const BasicStringView<T>& stringView)
+        inline BasicString operator+(BasicStringView<T> string)
         {
             BasicString copy = *this;
-            copy += stringView;
+            copy += string;
 
             return copy;
         }
@@ -370,8 +381,17 @@ namespace Kitsune
             return (Size() == 0);
         }
 
-        [[nodiscard]] inline Alloc& GetAllocator() { return m_Allocator; }
-        [[nodiscard]] inline const Alloc& GetAllocator() const { return m_Allocator; }
+        [[nodiscard]]
+        inline Alloc& GetAllocator()
+        {
+            return m_Allocator;
+        }
+
+        [[nodiscard]]
+        inline const Alloc& GetAllocator() const
+        {
+            return m_Allocator;
+        }
 
     public:
         [[nodiscard]] inline Iterator GetBegin() { return m_Pointer; }
@@ -408,7 +428,7 @@ namespace Kitsune
         inline void Assign(Usize count, T character)
         {
             if (count > Capacity())
-                BasicString<T, Alloc>(count, Move(m_Allocator)).Swap(*this);
+                BasicString(count, Move(m_Allocator)).Swap(*this);
 
             m_Size = count;
             *Algorithms::UninitializedFillN(m_Pointer, count, character) = T();
@@ -418,7 +438,7 @@ namespace Kitsune
         inline void Assign(It begin, It end)
         {
             if (m_Size > Capacity())
-                BasicString<T, Alloc>(m_Size, Move(m_Allocator)).Swap(*this);
+                BasicString(m_Size, Move(m_Allocator)).Swap(*this);
 
             m_Size = Algorithms::Distance(begin, end);
             *Algorithms::UninitializedCopy(begin, end, m_Pointer) = T();
@@ -454,20 +474,21 @@ namespace Kitsune
             Insert(index, BasicStringView<T>(string, size));
         }
 
-        inline void Insert(Index index, BasicStringView<T> stringView)
+        inline void Insert(Index index, BasicStringView<T> string)
         {
             if ((index < 0) || (index > Size()))
                 throw OutOfRangeException();
 
-            Usize newSize = Size() + stringView.Size();
+            Usize newSize = Size() + string.Size();
             if (newSize > Capacity())
                 Reserve(newSize);
 
             T* position = Data() + index;
 
-            std::memmove(position + stringView.Size(), position, (GetEnd() - position + 1) * sizeof(T));
-            std::memcpy(position, stringView.Data(), stringView.Size() * sizeof(T));
+            std::memmove(position + string.Size(), position,
+                         (GetEnd() - position + 1) * sizeof(T));
 
+            std::memcpy(position, string.Data(), string.Size() * sizeof(T));
             m_Size = newSize;
         }
 
@@ -487,13 +508,14 @@ namespace Kitsune
 
             T* position = Data() + index;
 
-            std::memmove(position + count, position, (GetEnd() - position + 1) * sizeof(T));
-            Algorithms::UninitializedFillN(position, count, character);
+            std::memmove(position + count, position,
+                         (GetEnd() - position + 1) * sizeof(T));
 
+            Algorithms::UninitializedFillN(position, count, character);
             m_Size = newSize;
         }
 
-        inline void Insert(Index index, const BasicString<T, Alloc>& string)
+        inline void Insert(Index index, const BasicString& string)
         {
             Insert(index, BasicStringView<T>(string));
         }
@@ -512,9 +534,10 @@ namespace Kitsune
 
             T* position = Data() + index;
 
-            std::memmove(position + count, position, (GetEnd() - position + 1) * sizeof(T));
-            Algorithms::UninitializedCopy(begin, end, position);
+            std::memmove(position + count, position,
+                         (GetEnd() - position + 1) * sizeof(T));
 
+            Algorithms::UninitializedCopy(begin, end, position);
             m_Size = newSize;
         }
 
@@ -592,13 +615,13 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool StartsWith(BasicStringView<T> stringView)
+        inline bool StartsWith(BasicStringView<T> string)
         {
-            return BasicStringView<T>(*this).StartsWith(stringView);
+            return BasicStringView<T>(*this).StartsWith(string);
         }
 
         [[nodiscard]]
-        inline bool StartsWith(const T character)
+        inline bool StartsWith(T character)
         {
             return BasicStringView<T>(*this).StartsWith(character);
         }
@@ -616,7 +639,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool EndsWith(const T character)
+        inline bool EndsWith(T character)
         {
             return BasicStringView<T>(*this).EndsWith(character);
         }
@@ -646,9 +669,10 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline T* Find(const BasicStringView<T> stringView)
+        inline T* Find(BasicStringView<T> string)
         {
-            return Algorithms::Find(GetBegin(), GetEnd(), stringView.GetBegin(), stringView.GetEnd());
+            return Algorithms::Find(GetBegin(), GetEnd(),
+                                    string.GetBegin(), string.GetEnd());
         }
 
         [[nodiscard]]
@@ -658,12 +682,18 @@ namespace Kitsune
         }
 
         [[nodiscard]]
+        inline T* Find(const T* string)
+        {
+            return Find(BasicStringView<T>(string));
+        }
+
+        [[nodiscard]]
         inline BasicStringView<T> Substring(Index startPos, Usize count) const
         {
             return BasicStringView<T>(GetBegin() + startPos, count);
         }
 
-        inline void Swap(BasicString<T, Alloc>& string)
+        inline void Swap(BasicString& string)
         {
             // This is incredibly hard to read. Gosh.
             T* oldPointer = m_Pointer;
@@ -687,7 +717,7 @@ namespace Kitsune
 
             // Create a copy of the current string with a larger capacity
             // and swap with *this.
-            BasicString<T, Alloc> newString(newCapacity);
+            BasicString newString(newCapacity);
 
             std::memcpy(newString.m_Pointer, Raw(), (Size() + 1) * sizeof(T));
             newString.m_Size = Size();
@@ -697,8 +727,8 @@ namespace Kitsune
 
         inline void Shrink(Usize newCapacity)
         {
-            if (IsStorageLocal() ||
-                (newCapacity < Size()) || (newCapacity >= Capacity()))
+            if (IsStorageLocal() || (newCapacity < Size()) ||
+                (newCapacity >= Capacity()))
             {
                 return;
             }
@@ -715,9 +745,10 @@ namespace Kitsune
             {
                 // No need to align allocations, all character types should be trivial
                 // and therefore align to alignof(std::max_align_t).
-                T* pointer = static_cast<T*>(m_Allocator.Allocate((newCapacity + 1) * sizeof(T)));
-                std::memcpy(pointer, m_Pointer, (Size() + 1) * sizeof(T));
+                T* pointer = static_cast<T*>(
+                    m_Allocator.Allocate((newCapacity + 1) * sizeof(T)));
 
+                std::memcpy(pointer, m_Pointer, (Size() + 1) * sizeof(T));
                 m_Allocator.Free(m_Pointer, m_SharedData.Capacity);
 
                 m_Pointer = pointer;

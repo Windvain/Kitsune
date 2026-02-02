@@ -8,8 +8,9 @@
 
 namespace Kitsune
 {
-    // An abstract representation of the UTF-16 encoding. Fairly rare to see this encoding
-    // out in the wild except for when dealing with the Win32 API or the Qt libraries.
+    // An abstract representation of the UTF-16 encoding. Fairly rare to see this
+    // encoding out in the wild except for when dealing with the Win32 API or the
+    // Qt libraries.
     template<Utf16Character T>
     class Utf16Encoding
     {
@@ -73,7 +74,7 @@ namespace Kitsune
             if (begin == end)
                 return Result(begin, outBegin);
 
-            if ((*begin > MaxCodepointValue) || ((*begin >= 0xD800) && (*begin <= 0xDFFF)))
+            if ((*begin > MaxCodepointValue()) || ((*begin >= 0xD800) && (*begin <= 0xDFFF)))
                 return Result(begin, outBegin);
 
             if (*begin <= 0xFFFF)
