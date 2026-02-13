@@ -73,7 +73,7 @@ namespace Kitsune
         }
 
     public:
-        inline bool operator==(const SourceLocation& location)
+        inline bool operator==(const SourceLocation& location) const
         {
             return (m_Line         == location.m_Line) &&
                    (m_FileName     == location.m_FileName) &&

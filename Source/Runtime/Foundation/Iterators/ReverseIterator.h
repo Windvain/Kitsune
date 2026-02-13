@@ -72,8 +72,17 @@ namespace Kitsune
         }
 
     public:
-        inline ReverseIterator& operator++() { --m_Current; return *this; }
-        inline ReverseIterator& operator--() { ++m_Current; return *this; }
+        inline ReverseIterator& operator++()
+        {
+            --m_Current;
+            return *this;
+        }
+
+        inline ReverseIterator& operator--()
+        {
+            ++m_Current;
+            return *this;
+        }
 
         inline ReverseIterator operator++(int)
         {
@@ -119,7 +128,10 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline Iter GetBase() const { return m_Current; }
+        inline Iter GetBase() const
+        {
+            return m_Current;
+        }
 
     private:
         template<BidirectionalIterator U>
@@ -128,52 +140,61 @@ namespace Kitsune
         Iter m_Current;
     };
 
-    template<BidirectionalIterator It>
-    inline bool operator==(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
+    template<BidirectionalIterator Iter>
+    inline bool operator==(const ReverseIterator<Iter>& iter1,
+                           const ReverseIterator<Iter>& iter2)
     {
-        return (it1.GetBase() == it2.GetBase());
+        return (iter1.GetBase() == iter2.GetBase());
     }
 
-    template<BidirectionalIterator It>
-    inline bool operator!=(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
+    template<BidirectionalIterator Iter>
+    inline bool operator!=(const ReverseIterator<Iter>& iter1,
+                           const ReverseIterator<Iter>& iter2)
     {
-        return (it1.GetBase() != it2.GetBase());
+        return (iter1.GetBase() != iter2.GetBase());
     }
 
-    template<RandomAccessIterator It>
-    inline bool operator>=(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
+    template<RandomAccessIterator Iter>
+    inline bool operator>=(const ReverseIterator<Iter>& iter1,
+                           const ReverseIterator<Iter>& iter2)
     {
-        return (it1.GetBase() <= it2.GetBase());
+        return (iter1.GetBase() <= iter2.GetBase());
     }
 
-    template<RandomAccessIterator It>
-    inline bool operator<=(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
+    template<RandomAccessIterator Iter>
+    inline bool operator<=(const ReverseIterator<Iter>& iter1,
+                           const ReverseIterator<Iter>& iter2)
     {
-        return (it1.GetBase() >= it2.GetBase());
+        return (iter1.GetBase() >= iter2.GetBase());
     }
 
-    template<RandomAccessIterator It>
-    inline bool operator>(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
+    template<RandomAccessIterator Iter>
+    inline bool operator>(const ReverseIterator<Iter>& iter1,
+                          const ReverseIterator<Iter>& iter2)
     {
-        return (it1.GetBase() < it2.GetBase());
+        return (iter1.GetBase() < iter2.GetBase());
     }
 
-    template<RandomAccessIterator It>
-    inline bool operator<(const ReverseIterator<It>& it1, const ReverseIterator<It>& it2)
+    template<RandomAccessIterator Iter>
+    inline bool operator<(const ReverseIterator<Iter>& iter1,
+                          const ReverseIterator<Iter>& iter2)
     {
-        return (it1.GetBase() > it2.GetBase());
+        return (iter1.GetBase() > iter2.GetBase());
     }
 
-    template<RandomAccessIterator It>
-    inline ReverseIterator<It> operator+(typename IteratorTraits<It>::DifferenceType offset,
-                                         const ReverseIterator<It>& it)
+    template<RandomAccessIterator Iter>
+    inline ReverseIterator<Iter> operator+(
+        typename IteratorTraits<Iter>::DifferenceType offset,
+        const ReverseIterator<Iter>& it)
     {
-        return ReverseIterator<It>(it.GetBase() - offset);
+        return ReverseIterator<Iter>(it.GetBase() - offset);
     }
 
-    template<RandomAccessIterator It1, RandomAccessIterator It2>
-    inline typename IteratorTraits<It2>::DifferenceType operator-(const ReverseIterator<It1>& it1, const ReverseIterator<It2>& it2)
+    template<RandomAccessIterator Iter1, RandomAccessIterator Iter2>
+    inline typename IteratorTraits<Iter2>::DifferenceType operator-(
+        const ReverseIterator<Iter1>& iter1,
+        const ReverseIterator<Iter2>& iter2)
     {
-        return (it2.GetBase() - it1.GetBase());
+        return (iter2.GetBase() - iter1.GetBase());
     }
 }

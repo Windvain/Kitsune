@@ -157,10 +157,59 @@ protected:
         else
             return U"uhh";
     }
+
+    const T* GetFoundString()
+    {
+        if constexpr (std::is_same_v<T, char>)
+            return "Mouse";
+        else if constexpr (std::is_same_v<T, wchar_t>)
+            return L"Mouse";
+        else if constexpr (std::is_same_v<T, char8_t>)
+            return u8"Mouse";
+        else if constexpr (std::is_same_v<T, char16_t>)
+            return u"Mouse";
+        else
+            return U"Mouse";
+    }
+
+    const T* GetNotFoundString()
+    {
+        if constexpr (std::is_same_v<T, char>)
+            return "Standee";
+        else if constexpr (std::is_same_v<T, wchar_t>)
+            return L"Lamp";
+        else if constexpr (std::is_same_v<T, char8_t>)
+            return u8"Cubes";
+        else if constexpr (std::is_same_v<T, char16_t>)
+            return u"Phone Stand";
+        else
+            return U"Laptop";
+    }
+
+    const T* GetFindString()
+    {
+        if constexpr (std::is_same_v<T, char>)
+            return "Earphones Mouse Pen Eraser Remote";
+        else if constexpr (std::is_same_v<T, wchar_t>)
+            return L"Earphones Mouse Pen Eraser Remote";
+        else if constexpr (std::is_same_v<T, char8_t>)
+            return u8"Earphones Mouse Pen Eraser Remote";
+        else if constexpr (std::is_same_v<T, char16_t>)
+            return u"Earphones Mouse Pen Eraser Remote";
+        else
+            return U"Earphones Mouse Pen Eraser Remote";
+    }
 };
 
-using StringTestsImplementations = ::testing::Types<char, wchar_t, char8_t, char16_t, char32_t>;
-TYPED_TEST_SUITE(StringTests, StringTestsImplementations);
+using StringTestsImpl =
+    ::testing::Types<
+        char,
+        wchar_t,
+        char8_t,
+        char16_t,
+        char32_t>;
+
+TYPED_TEST_SUITE(StringTests, StringTestsImpl);
 
 // BasicString<T, Alloc>()
 TYPED_TEST(StringTests, DefaultConstructor)
@@ -858,7 +907,6 @@ TYPED_TEST(StringTests, Reset)
 
 /* Insert(index, const T* string) and Insert(index, const T* string,
  * Usize size) are both one-liners, skipping.
- *
  * */
 
 // void Insert(Index index, BasicStringView<T> stringView)
@@ -940,6 +988,8 @@ TYPED_TEST(StringTests, Remove)
 
     EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
 }
+
+/* Remove(Index index) is just Remove(index, 1), skipping.. */
 
 // void Remove(Index beginPos, Usize count)
 TYPED_TEST(StringTests, RemoveRange)
@@ -1091,7 +1141,7 @@ TYPED_TEST(StringTests, EndsWith)
     EXPECT_FALSE(string.EndsWith(differingSubstring));
 
     EXPECT_TRUE(string.EndsWith(expectedString.back()));
-    EXPECT_FALSE(string.EndsWith('@'));
+    EXPECT_FALSE(string.EndsWith(static_cast<T>('@')));
 
     EXPECT_TRUE(string.EndsWith(expectedString.substr(expectedString.size() - 3, 3).data()));
     EXPECT_FALSE(string.EndsWith(expectedString.substr(2, 4).data()));
@@ -1116,11 +1166,41 @@ TYPED_TEST(StringTests, Contains)
     EXPECT_FALSE(string.Contains(differingSubstring));
 
     EXPECT_TRUE(string.Contains(expectedString.back()));
-    EXPECT_FALSE(string.Contains('@'));
+    EXPECT_FALSE(string.Contains(static_cast<T>('@')));
 
     EXPECT_TRUE(string.Contains(expectedString.substr(expectedString.size() - 3, 3).data()));
     EXPECT_TRUE(string.Contains(expectedString.substr(2, 4).data()));
     EXPECT_FALSE(string.Contains(differingSubstring.Data()));
+}
+
+// [Const]Iterator Find(BasicStringView<T> string) [const]
+TYPED_TEST(StringTests, FindStringView)
+{
+    using T = typename TestFixture::CharType;
+    BasicString<T> string = this->GetFindString();
+
+    EXPECT_EQ(string.Find(BasicStringView<T>(this->GetFoundString())), string.GetBegin() + 10);
+    EXPECT_EQ(string.Find(BasicStringView<T>(this->GetNotFoundString())), string.GetEnd());
+}
+
+// [Const]Iterator Find(const T* string) [const]
+TYPED_TEST(StringTests, FindCString)
+{
+    using T = typename TestFixture::CharType;
+    BasicString<T> string = this->GetFindString();
+
+    EXPECT_EQ(string.Find(this->GetFoundString()), string.GetBegin() + 10);
+    EXPECT_EQ(string.Find(this->GetNotFoundString()), string.GetEnd());
+}
+
+// [Const]Iterator Find(T character) [const]
+TYPED_TEST(StringTests, FindCharacter)
+{
+    using T = typename TestFixture::CharType;
+    BasicString<T> string = this->GetFindString();
+
+    EXPECT_EQ(string.Find(static_cast<T>('M')), string.GetBegin() + 10);
+    EXPECT_EQ(string.Find(static_cast<T>('x')), string.GetEnd());
 }
 
 // BasicStringView<T> Substring(Index startPos, Usize count)

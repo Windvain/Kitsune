@@ -669,20 +669,41 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline T* Find(BasicStringView<T> string)
+        inline Iterator Find(BasicStringView<T> string)
         {
-            return Algorithms::Find(GetBegin(), GetEnd(),
-                                    string.GetBegin(), string.GetEnd());
+            return Algorithms::Find(
+                GetBegin(), GetEnd(),
+                string.GetBegin(), string.GetEnd());
         }
 
         [[nodiscard]]
-        inline T* Find(T character)
+        inline ConstIterator Find(BasicStringView<T> string) const
+        {
+            return Algorithms::Find(
+                GetBegin(), GetEnd(),
+                string.GetBegin(), string.GetEnd());
+        }
+
+        [[nodiscard]]
+        inline Iterator Find(T character)
         {
             return Algorithms::Find(GetBegin(), GetEnd(), character);
         }
 
         [[nodiscard]]
-        inline T* Find(const T* string)
+        inline ConstIterator Find(T character) const
+        {
+            return Algorithms::Find(GetBegin(), GetEnd(), character);
+        }
+
+        [[nodiscard]]
+        inline Iterator Find(const T* string)
+        {
+            return Find(BasicStringView<T>(string));
+        }
+
+        [[nodiscard]]
+        inline ConstIterator Find(const T* string) const
         {
             return Find(BasicStringView<T>(string));
         }

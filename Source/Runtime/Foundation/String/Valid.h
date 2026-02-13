@@ -26,6 +26,8 @@ namespace Kitsune
 
             if (newBegin == begin)
                 return false;
+
+            begin = newBegin;
         }
 
         return true;

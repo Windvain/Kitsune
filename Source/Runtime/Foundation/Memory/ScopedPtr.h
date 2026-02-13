@@ -49,13 +49,10 @@ namespace Kitsune
         {
         }
 
-        inline ScopedPtr(T* pointer, const Del& deleter)
-            : m_Pointer(pointer), m_Deleter(deleter)
-        {
-        }
-
-        inline ScopedPtr(T* pointer, Del&& deleter)
-            : m_Pointer(pointer), m_Deleter(Move(deleter))
+        template<typename DeleterRef>
+            requires std::same_as<Del, std::remove_reference_t<DeleterRef>>
+        inline ScopedPtr(T* pointer, DeleterRef&& deleter)
+            : m_Pointer(pointer), m_Deleter(Forward<DeleterRef>(deleter))
         {
         }
 

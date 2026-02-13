@@ -41,8 +41,9 @@ namespace Kitsune
         }
 
         template<ForwardIterator InputIter, OutputIterator<CodeunitType> OutputIter>
-        inline static InputIter Encode(InputIter begin, InputIter end,
-                                       OutputIter outBegin)
+        inline static EncodeResult<InputIter, OutputIter> EncodeSingle(
+            InputIter begin, InputIter end,
+            OutputIter outBegin)
         {
             using Result = EncodeResult<InputIter, OutputIter>;
             if (begin == end)

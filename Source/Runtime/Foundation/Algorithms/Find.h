@@ -2,7 +2,7 @@
 
 #include "Foundation/Iterators/Iterator.h"
 
-#include "Foundation/Concepts/Invokable.h"
+#include "Foundation/Concepts/Invocable.h"
 #include "Foundation/Concepts/Comparable.h"
 
 namespace Kitsune::Algorithms
@@ -51,7 +51,7 @@ namespace Kitsune::Algorithms
     // Returns an iterator to the first occurrence of a value which satisfies the
     // predicate `pred` in the range `[begin, end]`, or `end` if no occurrence were found.
     template<ForwardIterator Iter,
-             Invokable<typename IteratorTraits<Iter>::ValueType> Pred>
+             Invocable<typename IteratorTraits<Iter>::ValueType> Pred>
     [[nodiscard]]
     inline Iter FindIf(Iter begin, Iter end, Pred pred)
     {
@@ -80,7 +80,7 @@ namespace Kitsune::Algorithms
     // Returns an iterator to the last occurrence of a value which satisfies the
     // predicate `pred` in the range `[begin, end]`, or `end` if no occurrence were found.
     template<ForwardIterator Iter,
-             Invokable<typename IteratorTraits<Iter>::ValueType> Pred>
+             Invocable<typename IteratorTraits<Iter>::ValueType> Pred>
     [[nodiscard]] inline Iter FindLastIf(Iter begin, Iter end, Pred pred)
     {
         Iter last = end;

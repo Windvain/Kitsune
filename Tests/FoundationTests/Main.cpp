@@ -1,7 +1,7 @@
 #include "Application/Application.h"
 #include <gtest/gtest.h>
 
-// #include "Launch/DefaultEngineLoop.h"
+#include "Launch/EngineLoop.h"
 #include "Foundation/Memory/Memory.h"
 
 using namespace Kitsune;
@@ -14,8 +14,8 @@ public:
     {
         testing::InitGoogleTest();
 
-//        DefaultEngineLoop* engineLoop = DefaultEngineLoop::GetInstance();
-//        engineLoop->Exit(RUN_ALL_TESTS());
+        EngineLoop* engineLoop = EngineLoop::GetInstance();
+        engineLoop->Exit(RUN_ALL_TESTS());
     }
 
     ~FoundationTests()

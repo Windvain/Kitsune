@@ -10,6 +10,9 @@ namespace Kitsune
         std::default_initializable<T> &&
         std::copy_constructible<T> &&
 
+        std::is_copy_assignable_v<T> &&
+        std::is_move_assignable_v<T> &&
+
         requires (T deleter)
         {
             typename T::ValueType;

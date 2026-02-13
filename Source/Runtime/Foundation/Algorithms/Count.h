@@ -2,7 +2,7 @@
 
 #include "Foundation/Iterators/Iterator.h"
 
-#include "Foundation/Concepts/Invokable.h"
+#include "Foundation/Concepts/Invocable.h"
 #include "Foundation/Concepts/Comparable.h"
 
 namespace Kitsune::Algorithms
@@ -24,7 +24,7 @@ namespace Kitsune::Algorithms
 
     // Returns the amount of elements which satisfy `pred` in the range `[begin, end]`.
     template<ForwardIterator Iter,
-             Invokable<typename IteratorTraits<Iter>::ValueType&> Pred>
+             Invocable<typename IteratorTraits<Iter>::ValueType&> Pred>
     [[nodiscard]]
     inline typename IteratorTraits<Iter>::DifferenceType CountIf(
         Iter begin, Iter end, Pred pred)

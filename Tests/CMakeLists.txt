@@ -16,10 +16,34 @@ link_libraries(
 
 # ========== FoundationTests ========================================]
 add_executable(FoundationTests ${TEST_EXE_TYPE}
-    "FoundationTests/IsValidUnicodeTests.cpp"
+    "FoundationTests/AddressOfTests.cpp"
+    "FoundationTests/AdvanceTests.cpp"
+    "FoundationTests/ArrayTests.cpp"
+    "FoundationTests/BackInsertIteratorTests.cpp"
+    "FoundationTests/CopyTests.cpp"
+    "FoundationTests/CountTests.cpp"
+    "FoundationTests/DecodeTests.cpp"
+    "FoundationTests/DestroyTests.cpp"
+    "FoundationTests/DistanceTests.cpp"
+    "FoundationTests/EqualTests.cpp"
+    "FoundationTests/FillTests.cpp"
+    "FoundationTests/FindTests.cpp"
+    "FoundationTests/ForEachTests.cpp"
     "FoundationTests/Main.cpp"
+    "FoundationTests/MoveTests.cpp"
+    "FoundationTests/ReplaceTests.cpp"
+    "FoundationTests/ReverseTests.cpp"
+    "FoundationTests/ScopedPtrTests.cpp"
+    "FoundationTests/SourceLocationTests.cpp"
     "FoundationTests/StringTests.cpp"
     "FoundationTests/StringViewTests.cpp"
+    "FoundationTests/SwapTests.cpp"
+    "FoundationTests/TestContainer.h"
+    "FoundationTests/TestIterators.h"
+    "FoundationTests/TestStrings.h"
+    "FoundationTests/UninitializedTests.cpp"
+    "FoundationTests/Utf8EncodingTests.cpp"
+    "FoundationTests/Vector2Tests.cpp"
 )
 
 add_test(FoundationTests COMMAND FoundationTests)

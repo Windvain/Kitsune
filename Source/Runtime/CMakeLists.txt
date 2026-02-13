@@ -29,7 +29,7 @@ set(FILES
     "Foundation/Concepts/Character.h"
     "Foundation/Concepts/Comparable.h"
     "Foundation/Concepts/Container.h"
-    "Foundation/Concepts/Invokable.h"
+    "Foundation/Concepts/Invocable.h"
     "Foundation/Concepts/Swappable.h"
 
     "Foundation/Containers/Array.h"
@@ -115,7 +115,6 @@ set(FILES
     "Foundation/Utilities/CpuId.h"
     "Foundation/Utilities/EnumFlags.h"
     "Foundation/Utilities/Function.h"
-    "Foundation/Utilities/MemberFunction.h"
     "Foundation/Utilities/NonCopyable.h"
     "Foundation/Utilities/SystemInformation.cpp"
     "Foundation/Utilities/SystemInformation.h"
@@ -155,7 +154,9 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"
+        "Foundation/Windows/WindowsSystemInformation.cpp"
 
+        "Launch/Windows/WindowsEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
     )
 

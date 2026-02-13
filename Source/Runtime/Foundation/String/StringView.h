@@ -202,6 +202,12 @@ namespace Kitsune
         }
 
         [[nodiscard]]
+        inline ConstIterator Find(const T* string) const
+        {
+            return Find(BasicStringView<T>(string));
+        }
+
+        [[nodiscard]]
         inline BasicStringView Substring(Index startPos, Usize count) const
         {
             if (startPos > Size())

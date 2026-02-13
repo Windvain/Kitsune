@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/Concepts/Invokable.h"
+#include "Foundation/Concepts/Invocable.h"
 #include "Foundation/Iterators/Iterator.h"
 
 #include "Foundation/Concepts/Comparable.h"
@@ -29,7 +29,7 @@ namespace Kitsune::Algorithms
     // equal based on the predicate `pred`. This function does not check the size
     // of the second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2,
-             Invokable<typename IteratorTraits<Iter1>::ValueType&,
+             Invocable<typename IteratorTraits<Iter1>::ValueType&,
                        typename IteratorTraits<Iter2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(Iter1 begin1, Iter1 end1, Iter2 begin2, Pred pred)
@@ -66,7 +66,7 @@ namespace Kitsune::Algorithms
     // both equal based on the predicate `pred`. This function does not check the
     // size of the second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2,
-             Invokable<typename IteratorTraits<Iter1>::ValueType&,
+             Invocable<typename IteratorTraits<Iter1>::ValueType&,
                        typename IteratorTraits<Iter2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2, Pred pred)
@@ -88,7 +88,7 @@ namespace Kitsune::Algorithms
     // both equal based on the predicate `pred`. This function does not check the
     // size of the second range.
     template<ForwardIterator Iter1, ForwardIterator Iter2,
-             Invokable<typename IteratorTraits<Iter1>::ValueType&,
+             Invocable<typename IteratorTraits<Iter1>::ValueType&,
                        typename IteratorTraits<Iter2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2, Pred pred)

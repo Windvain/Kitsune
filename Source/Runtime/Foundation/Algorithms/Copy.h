@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/Concepts/Invokable.h"
+#include "Foundation/Concepts/Invocable.h"
 #include "Foundation/Iterators/Iterator.h"
 
 namespace Kitsune::Algorithms
@@ -35,7 +35,7 @@ namespace Kitsune::Algorithms
     // one past the last copied element.
     template<ForwardIterator Iter,
              OutputIterator<typename IteratorTraits<Iter>::ValueType> OutIter,
-             Invokable<typename IteratorTraits<Iter>::ValueType&> Pred>
+             Invocable<typename IteratorTraits<Iter>::ValueType&> Pred>
     inline OutIter CopyIf(Iter begin, Iter end, OutIter outBegin, Pred pred)
     {
         for (; begin != end; ++begin)

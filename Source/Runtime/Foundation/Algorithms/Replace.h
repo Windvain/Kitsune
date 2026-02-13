@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/Concepts/Invokable.h"
+#include "Foundation/Concepts/Invocable.h"
 #include "Foundation/Iterators/Iterator.h"
 
 namespace Kitsune::Algorithms
@@ -34,7 +34,7 @@ namespace Kitsune::Algorithms
     // Replaces all elements in the range `[begin, begin + n]` which satisfy the
     // predicate `pred` with `newValue`.
     template<ForwardIterator Iter,
-             Invokable<typename IteratorTraits<Iter>::ValueType&> Pred,
+             Invocable<typename IteratorTraits<Iter>::ValueType&> Pred,
              typename T>
     inline void ReplaceIf(Iter begin, Iter end, Pred pred, const T& newValue)
     {
