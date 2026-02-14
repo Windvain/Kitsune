@@ -34,7 +34,7 @@ namespace Kitsune
         inline virtual ScreenOrientation GetOrientation() const
         {
             Vector2<Uint32> size = GetSize();
-            return (size.x < size.y) ? ScreenOrientation::Portrait : ScreenOrientation::Landscape;
+            return (size.X < size.Y) ? ScreenOrientation::Portrait : ScreenOrientation::Landscape;
         }
 
     public:

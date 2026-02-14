@@ -102,8 +102,8 @@ TYPED_TEST(Vector2Tests, DefaultConstructor)
     using T = typename TestFixture::ValueType;
 
     Vector2<T> vector;
-    EXPECT_TEMPLATED_EQ(vector.x, T(0));
-    EXPECT_TEMPLATED_EQ(vector.y, T(0));
+    EXPECT_TEMPLATED_EQ(vector.X, T(0));
+    EXPECT_TEMPLATED_EQ(vector.Y, T(0));
 }
 
 TYPED_TEST(Vector2Tests, ScalarConstructor)
@@ -113,8 +113,8 @@ TYPED_TEST(Vector2Tests, ScalarConstructor)
     T scalar(this->GetRandomValue());
     Vector2<T> vector(scalar);
 
-    EXPECT_TEMPLATED_EQ(vector.x, scalar);
-    EXPECT_TEMPLATED_EQ(vector.y, scalar);
+    EXPECT_TEMPLATED_EQ(vector.X, scalar);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalar);
 }
 
 TYPED_TEST(Vector2Tests, XYConstructor)
@@ -125,8 +125,8 @@ TYPED_TEST(Vector2Tests, XYConstructor)
     T scalarY(this->GetRandomValue());
     Vector2<T> vector(scalarX, scalarY);
 
-    EXPECT_TEMPLATED_EQ(vector.x, scalarX);
-    EXPECT_TEMPLATED_EQ(vector.y, scalarY);
+    EXPECT_TEMPLATED_EQ(vector.X, scalarX);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalarY);
 }
 
 TYPED_TEST(Vector2Tests, TemplatedCopy)
@@ -139,8 +139,8 @@ TYPED_TEST(Vector2Tests, TemplatedCopy)
     Vector2<T> vector(scalarX, scalarY);
     Vector2<T> copy = vector;
 
-    EXPECT_TEMPLATED_EQ(copy.x, scalarX);
-    EXPECT_TEMPLATED_EQ(copy.y, scalarY);
+    EXPECT_TEMPLATED_EQ(copy.X, scalarX);
+    EXPECT_TEMPLATED_EQ(copy.Y, scalarY);
 }
 
 TYPED_TEST(Vector2Tests, TemplatedMove)
@@ -150,11 +150,11 @@ TYPED_TEST(Vector2Tests, TemplatedMove)
     Vector2<A<T>> vector(A<T>(3), A<T>(54));
     Vector2<B<T>> copy = std::move(vector);
 
-    EXPECT_TEMPLATED_EQ(copy.x.Number, 3);
-    EXPECT_TEMPLATED_EQ(copy.y.Number, 54);
+    EXPECT_TEMPLATED_EQ(copy.X.Number, 3);
+    EXPECT_TEMPLATED_EQ(copy.Y.Number, 54);
 
-    EXPECT_TEMPLATED_EQ(vector.x.Number, 0);
-    EXPECT_TEMPLATED_EQ(vector.y.Number, 0);
+    EXPECT_TEMPLATED_EQ(vector.X.Number, 0);
+    EXPECT_TEMPLATED_EQ(vector.Y.Number, 0);
 }
 
 TYPED_TEST(Vector2Tests, TemplatedCopyAssign)
@@ -170,8 +170,8 @@ TYPED_TEST(Vector2Tests, TemplatedCopyAssign)
 
     copy = vector;
 
-    EXPECT_TEMPLATED_EQ(copy.x.Number, scalarX);
-    EXPECT_TEMPLATED_EQ(copy.y.Number, scalarY);
+    EXPECT_TEMPLATED_EQ(copy.X.Number, scalarX);
+    EXPECT_TEMPLATED_EQ(copy.Y.Number, scalarY);
 }
 
 TYPED_TEST(Vector2Tests, TemplatedMoveAssign)
@@ -187,11 +187,11 @@ TYPED_TEST(Vector2Tests, TemplatedMoveAssign)
 
     moved = std::move(vector);
 
-    EXPECT_TEMPLATED_EQ(moved.x.Number, scalarX);
-    EXPECT_TEMPLATED_EQ(moved.y.Number, scalarY);
+    EXPECT_TEMPLATED_EQ(moved.X.Number, scalarX);
+    EXPECT_TEMPLATED_EQ(moved.Y.Number, scalarY);
 
-    EXPECT_TEMPLATED_EQ(vector.x.Number, 0);
-    EXPECT_TEMPLATED_EQ(vector.y.Number, 0);
+    EXPECT_TEMPLATED_EQ(vector.X.Number, 0);
+    EXPECT_TEMPLATED_EQ(vector.Y.Number, 0);
 }
 
 TYPED_TEST(Vector2Tests, Subscript)
@@ -200,8 +200,8 @@ TYPED_TEST(Vector2Tests, Subscript)
     Vector2<T> vector = { this->GetRandomValue(),
                           this->GetRandomValue() };
 
-    EXPECT_EQ(&vector[0], &vector.x);
-    EXPECT_EQ(&vector[1], &vector.y);
+    EXPECT_EQ(&vector[0], &vector.X);
+    EXPECT_EQ(&vector[1], &vector.Y);
 }
 
 TYPED_TEST(Vector2Tests, Negate)
@@ -215,8 +215,8 @@ TYPED_TEST(Vector2Tests, Negate)
         Vector2<T> vector = { scalarX, scalarY };
         Vector2<T> neg = -vector;
 
-        EXPECT_TEMPLATED_EQ(neg.x, -scalarX);
-        EXPECT_TEMPLATED_EQ(neg.y, -scalarY);
+        EXPECT_TEMPLATED_EQ(neg.X, -scalarX);
+        EXPECT_TEMPLATED_EQ(neg.Y, -scalarY);
     }
 }
 
@@ -235,28 +235,28 @@ TYPED_TEST(Vector2Tests, AssignmentOperators)
                            this->GetRandomValue() };
 
     vector /= 4;
-    EXPECT_TEMPLATED_EQ(vector.x, scalarX /= 4);
-    EXPECT_TEMPLATED_EQ(vector.y, scalarY /= 4);
+    EXPECT_TEMPLATED_EQ(vector.X, scalarX /= 4);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalarY /= 4);
 
     vector *= 7;
-    EXPECT_TEMPLATED_EQ(vector.x, scalarX *= 7);
-    EXPECT_TEMPLATED_EQ(vector.y, scalarY *= 7);
+    EXPECT_TEMPLATED_EQ(vector.X, scalarX *= 7);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalarY *= 7);
 
     vector -= vector2;
-    EXPECT_TEMPLATED_EQ(vector.x, scalarX -= vector2.x);
-    EXPECT_TEMPLATED_EQ(vector.y, scalarY -= vector2.y);
+    EXPECT_TEMPLATED_EQ(vector.X, scalarX -= vector2.X);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalarY -= vector2.Y);
 
     vector += vector2;
-    EXPECT_TEMPLATED_EQ(vector.x, scalarX += vector2.x);
-    EXPECT_TEMPLATED_EQ(vector.y, scalarY += vector2.y);
+    EXPECT_TEMPLATED_EQ(vector.X, scalarX += vector2.X);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalarY += vector2.Y);
 
     vector *= vector3;
-    EXPECT_TEMPLATED_EQ(vector.x, scalarX *= vector3.x);
-    EXPECT_TEMPLATED_EQ(vector.y, scalarY *= vector3.y);
+    EXPECT_TEMPLATED_EQ(vector.X, scalarX *= vector3.X);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalarY *= vector3.Y);
 
     vector /= vector3;
-    EXPECT_TEMPLATED_EQ(vector.x, scalarX /= vector3.x);
-    EXPECT_TEMPLATED_EQ(vector.y, scalarY /= vector3.y);
+    EXPECT_TEMPLATED_EQ(vector.X, scalarX /= vector3.X);
+    EXPECT_TEMPLATED_EQ(vector.Y, scalarY /= vector3.Y);
 }
 
 TYPED_TEST(Vector2Tests, ArithmeticOperators)
@@ -273,36 +273,36 @@ TYPED_TEST(Vector2Tests, ArithmeticOperators)
                            this->GetRandomValue() };
 
     Vector2<T> scalarDivValue = vector / scalar;
-    EXPECT_TEMPLATED_EQ(scalarDivValue.x, vector.x / scalar);
-    EXPECT_TEMPLATED_EQ(scalarDivValue.y, vector.y / scalar);
+    EXPECT_TEMPLATED_EQ(scalarDivValue.X, vector.X / scalar);
+    EXPECT_TEMPLATED_EQ(scalarDivValue.Y, vector.Y / scalar);
 
     Vector2<T> scalarMulValue = vector * scalar;
-    EXPECT_TEMPLATED_EQ(scalarMulValue.x, vector.x * scalar);
-    EXPECT_TEMPLATED_EQ(scalarMulValue.y, vector.y * scalar);
+    EXPECT_TEMPLATED_EQ(scalarMulValue.X, vector.X * scalar);
+    EXPECT_TEMPLATED_EQ(scalarMulValue.Y, vector.Y * scalar);
 
     Vector2<T> subValue = vector - vector2;
-    EXPECT_TEMPLATED_EQ(subValue.x, vector.x - vector2.x);
-    EXPECT_TEMPLATED_EQ(subValue.y, vector.y - vector2.y);
+    EXPECT_TEMPLATED_EQ(subValue.X, vector.X - vector2.X);
+    EXPECT_TEMPLATED_EQ(subValue.Y, vector.Y - vector2.Y);
 
     Vector2<T> addValue = vector + vector2;
-    EXPECT_TEMPLATED_EQ(addValue.x, vector.x + vector2.x);
-    EXPECT_TEMPLATED_EQ(addValue.y, vector.y + vector2.y);
+    EXPECT_TEMPLATED_EQ(addValue.X, vector.X + vector2.X);
+    EXPECT_TEMPLATED_EQ(addValue.Y, vector.Y + vector2.Y);
 
     Vector2<T> mulValue = vector * vector2;
-    EXPECT_TEMPLATED_EQ(mulValue.x, vector.x * vector2.x);
-    EXPECT_TEMPLATED_EQ(mulValue.y, vector.y * vector2.y);
+    EXPECT_TEMPLATED_EQ(mulValue.X, vector.X * vector2.X);
+    EXPECT_TEMPLATED_EQ(mulValue.Y, vector.Y * vector2.Y);
 
     Vector2<T> divValue = vector / vector2;
-    EXPECT_TEMPLATED_EQ(divValue.x, vector.x / vector2.x);
-    EXPECT_TEMPLATED_EQ(divValue.y, vector.y / vector2.y);
+    EXPECT_TEMPLATED_EQ(divValue.X, vector.X / vector2.X);
+    EXPECT_TEMPLATED_EQ(divValue.Y, vector.Y / vector2.Y);
 
     Vector2<T> flippedDivValue = scalar / vector;
-    EXPECT_TEMPLATED_EQ(flippedDivValue.x, scalar / vector.x);
-    EXPECT_TEMPLATED_EQ(flippedDivValue.y, scalar / vector.y);
+    EXPECT_TEMPLATED_EQ(flippedDivValue.X, scalar / vector.X);
+    EXPECT_TEMPLATED_EQ(flippedDivValue.Y, scalar / vector.Y);
 
     Vector2<T> flippedMulValue = scalar * vector;
-    EXPECT_TEMPLATED_EQ(flippedMulValue.x, vector.x * scalar);
-    EXPECT_TEMPLATED_EQ(flippedMulValue.y, vector.y * scalar);
+    EXPECT_TEMPLATED_EQ(flippedMulValue.X, vector.X * scalar);
+    EXPECT_TEMPLATED_EQ(flippedMulValue.Y, vector.Y * scalar);
 }
 
 TYPED_TEST(Vector2Tests, RangedForLoop)
@@ -330,10 +330,10 @@ TYPED_TEST(Vector2Tests, EqualityOperators)
     Vector2<T> equalVector = { scalarX, scalarY };
     Vector2<T> unequalVector = { this->GetRandomValue(), this->GetRandomValue() };
 
-    while ((unequalVector.x == scalarX) && (unequalVector.y == scalarY))
+    while ((unequalVector.X == scalarX) && (unequalVector.Y == scalarY))
     {
-        unequalVector.x = this->GetRandomValue();
-        unequalVector.y = this->GetRandomValue();
+        unequalVector.X = this->GetRandomValue();
+        unequalVector.Y = this->GetRandomValue();
     }
 
     EXPECT_TRUE(vector == equalVector);

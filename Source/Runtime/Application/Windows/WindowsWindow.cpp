@@ -13,7 +13,7 @@ namespace Kitsune
         DWORD windowStyles = GetWindowStyles();
         DWORD exWindowStyles = GetExtendedWindowStyles();
 
-        RECT adjustedRect = { position.x, position.y, position.x + size.x, position.y + size.y };
+        RECT adjustedRect = { position.X, position.Y, position.X + size.X, position.Y + size.Y };
         ::AdjustWindowRectEx(&adjustedRect, windowStyles, false, exWindowStyles);
 
         m_WindowHandle = ::CreateWindowExW(GetExtendedWindowStyles(),
@@ -90,7 +90,7 @@ namespace Kitsune
         DWORD style = ::GetWindowLongPtrW(m_WindowHandle, GWL_STYLE);
         DWORD exStyle = ::GetWindowLongPtrW(m_WindowHandle, GWL_EXSTYLE);
 
-        RECT rect = { 0, 0, static_cast<LONG>(size.x), static_cast<LONG>(size.y) };
+        RECT rect = { 0, 0, static_cast<LONG>(size.X), static_cast<LONG>(size.Y) };
         ::AdjustWindowRectEx(&rect, style, false, exStyle);
 
         ::SetWindowPos(m_WindowHandle, nullptr, 0, 0,
@@ -108,7 +108,7 @@ namespace Kitsune
         DWORD exStyle = ::GetWindowLongPtrW(m_WindowHandle, GWL_EXSTYLE);
 
         auto size = static_cast<Vector2<LONG>>(GetSize());
-        RECT rect = { position.x, position.y, size.x, size.y };
+        RECT rect = { position.X, position.Y, size.X, size.Y };
 
         ::AdjustWindowRectEx(&rect, style, false, exStyle);
         ::SetWindowPos(m_WindowHandle, nullptr, rect.left, rect.top, 0, 0, SWP_NOSIZE);
