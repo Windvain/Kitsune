@@ -92,11 +92,12 @@ namespace Kitsune
         class TypedReferenceCount : public ReferenceCountBase<Mode>
         {
         public:
-            template<typename DelRef, typename AllocRef>
-            inline TypedReferenceCount(T* pointer, DelRef&& deleter, AllocRef&& allocator)
+            template<typename DelRef>
+            inline TypedReferenceCount(T* pointer, DelRef&& deleter,
+                                       const Alloc& allocator)
                 : m_Pointer(pointer),
                   m_Deleter(Forward<DelRef>(deleter)),
-                  m_Allocator(Forward<AllocRef>(allocator))
+                  m_Allocator(allocator)
             {
             }
 
@@ -123,19 +124,30 @@ namespace Kitsune
         };
 
         template<typename To, typename From>
-        concept StaticPointerCastable = requires { static_cast<To*>((From*)nullptr); };
+        concept StaticPointerCastable = requires
+        {
+            static_cast<To*>(std::declval<From*>());
+        };
 
         template<typename To, typename From>
-        concept DynamicPointerCastable = requires { dynamic_cast<To*>((From*)nullptr); };
+        concept DynamicPointerCastable = requires
+        {
+            dynamic_cast<To*>(std::declval<From*>());
+        };
 
         template<typename To, typename From>
-        concept ConstPointerCastable = requires { const_cast<To*>((From*)nullptr); };
+        concept ConstPointerCastable = requires
+        {
+            const_cast<To*>(std::declval<From*>());
+        };
 
         template<typename To, typename From>
-        concept ReinterpretPointerCastable = requires { reinterpret_cast<To*>((From*)nullptr); };
+        concept ReinterpretPointerCastable = requires
+        {
+            reinterpret_cast<To*>(std::declval<From*>());
+        };
     }
 
-    // Forward declarations.
     template<typename T, ThreadSafety Mode>
     class WeakPtr;
 
@@ -167,15 +179,16 @@ namespace Kitsune
         }
 
         template<typename U, typename Del>
-            requires (std::is_convertible_v<U*, T*> && Deleter<std::remove_reference_t<Del>>)
-        inline SharedPtr(U* pointer, Del deleter)
+            requires (std::is_convertible_v<U*, T*> &&
+                      Deleter<std::remove_reference_t<Del>>)
+        inline SharedPtr(U* pointer, Del&& deleter)
             : SharedPtr(pointer, Forward<Del>(deleter), GlobalAllocator())
         {
         }
 
         template<typename Del>
             requires Deleter<std::remove_reference_t<Del>>
-        inline SharedPtr(std::nullptr_t, Del deleter)
+        inline SharedPtr(std::nullptr_t, Del&& deleter)
             : SharedPtr(static_cast<T*>(nullptr), Forward<Del>(deleter))
         {
         }
@@ -186,22 +199,24 @@ namespace Kitsune
         inline SharedPtr(U* pointer, Del deleter, const Alloc& allocator)
             : m_Pointer(pointer)
         {
-            // The deleter's type could be Del&, Del&&, or Del.
             using InternalDataType = Details::TypedReferenceCount<
                 U, Mode,
-                std::remove_reference_t<Del>, Alloc>;
+                std::remove_reference_t<Del>,
+                Alloc>;
 
             try
             {
-                std::remove_cv_t<Alloc> internalAlloc = allocator;
-                auto* data = internalAlloc.Allocate(sizeof(InternalDataType), alignof(InternalDataType));
+                Alloc internalAllocator = allocator;
+                auto* data = internalAllocator.Allocate(
+                    sizeof(InternalDataType), alignof(InternalDataType));
 
-                m_Data = Memory::ConstructAt(static_cast<InternalDataType*>(data),
-                                             pointer,
-                                             Forward<Del>(deleter),
-                                             Move(internalAlloc));
+                m_Data = Memory::ConstructAt(
+                    static_cast<InternalDataType*>(data),
+                    pointer,
+                    Forward<Del>(deleter),
+                    Move(internalAllocator));
             }
-            catch (const Exception&)
+            catch (...)
             {
                 if (pointer)
                     deleter(pointer);
@@ -210,7 +225,7 @@ namespace Kitsune
             }
         }
 
-        template<typename Del, typename Alloc>
+        template<typename Del, Allocator Alloc>
             requires Deleter<std::remove_reference_t<Del>>
         inline SharedPtr(std::nullptr_t, Del deleter, const Alloc& allocator)
             : SharedPtr(static_cast<T*>(nullptr), Forward<Del>(deleter), allocator)
@@ -276,7 +291,8 @@ namespace Kitsune
         template<typename U, Deleter Del>
             requires std::is_convertible_v<U*, T*>
         inline SharedPtr(ScopedPtr<U, Del>&& pointer)
-            : SharedPtr(pointer.Release(), Move(pointer.GetDeleter()), GlobalAllocator())
+            : SharedPtr(pointer.Release(), Move(pointer.GetDeleter()),
+                        GlobalAllocator())
         {
         }
 
@@ -381,8 +397,8 @@ namespace Kitsune
         }
 
     private:
-        template<typename U, ThreadSafety ModeU> friend class SharedPtr;
-        template<typename U, ThreadSafety ModeU> friend class WeakPtr;
+        template<typename U, ThreadSafety OtherMode> friend class SharedPtr;
+        template<typename U, ThreadSafety OtherMode> friend class WeakPtr;
 
     private:
         T* m_Pointer;

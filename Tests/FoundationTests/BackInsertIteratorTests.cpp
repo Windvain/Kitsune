@@ -16,20 +16,21 @@ namespace
     public:
         void PushBack(int x)
         {
-            Container.push_back(x);
+            Vector.push_back(x);
         }
 
         Usize Size() const
         {
-            return Container.size();
+            return Vector.size();
         }
 
         bool IsEmpty() const
         {
-            return Container.empty();
+            return Vector.empty();
         }
 
     public:
+        // Unused.
         int* GetBegin()
         {
             return nullptr;
@@ -52,7 +53,7 @@ namespace
 
         void Swap(MyContainer& container)
         {
-            Container.swap(container.Container);
+            Vector.swap(container.Vector);
         }
 
         bool operator==(const MyContainer&) const
@@ -61,7 +62,7 @@ namespace
         }
 
     public:
-        std::vector<int> Container;
+        std::vector<int> Vector;
     };
 }
 
@@ -87,7 +88,7 @@ TEST(BackInsertIteratorTests, Assign)
     it = 27;
     it = 3;
 
-    EXPECT_EQ(container.Container.size(), 2);
-    EXPECT_EQ(container.Container[0], 27);
-    EXPECT_EQ(container.Container[1], 3);
+    EXPECT_EQ(container.Vector.size(), 2);
+    EXPECT_EQ(container.Vector[0], 27);
+    EXPECT_EQ(container.Vector[1], 3);
 }

@@ -1,6 +1,6 @@
 #include "Foundation/Containers/Array.h"
-
 #include <gtest/gtest.h>
+
 #include "TestContainer.h"
 #include "Foundation/Concepts/Container.h"
 
@@ -91,64 +91,11 @@ namespace
     public:
         int Id = 0;
     };
-
-    class O
-    {
-    public:
-        O() = default;
-        O(int id)
-            : Id(id)
-        {
-        }
-
-        O(const O&) = default;
-        O(O&& obj)
-        {
-            Id = std::exchange(obj.Id, 0);
-        }
-
-        ~O() = default;
-
-    public:
-        O& operator=(const O&) = default;
-        O& operator=(O&& obj)
-        {
-            Id = std::exchange(obj.Id, 0);
-            return *this;
-        }
-
-    public:
-        int Id = 0;
-    };
-
-    class B
-    {
-    public:
-        B(int id)
-            : Id(id)
-        {
-        }
-
-        B(const B& b)
-            : Id(b.Id), Copied(true)
-        {
-        }
-
-        B(B&& b)
-            : Id(std::exchange(b.Id, 0)),
-              Moved(true)
-        {
-        }
-
-    public:
-        int Id = 0;
-
-        bool Moved = false;
-        bool Copied = false;
-    };
 }
 
-static_assert(Container<Array<int>>, "Array does not satisfy the Container concept.");
+static_assert(
+    Container<Array<int>>,
+    "Array does not satisfy the Container concept.");
 
 TEST(ArrayTests, DefaultConstructor)
 {
@@ -208,7 +155,8 @@ TEST(ArrayTests, RangeConstructor)
     std::vector<int> vector = { 1, 2, 3, 4, 56 };
 
     ForwardTestContainer<int, 5> container({ 1, 2, 3, 4, 56 });
-    Array<int, TestAllocator> array(container.GetBegin(), container.GetEnd(), allocator);
+    Array<int, TestAllocator> array(
+        container.GetBegin(), container.GetEnd(), allocator);
 
     EXPECT_EQ(allocator.Id, 22);
     EXPECT_EQ(array.GetAllocator().Id, 22);
@@ -254,22 +202,14 @@ TEST(ArrayTests, CopyConstructor)
 
 TEST(ArrayTests, MoveConstructor)
 {
-    Array<B, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(33));
-    for (B& element : array)
-    {
-        element.Copied = false;
-        element.Moved = false;
-    }
+    Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(33));
+    std::vector<int> vector = { 23, 2, 65, 12, 98 };
 
-    std::vector<B> vector = { 23, 2, 65, 12, 98 };
     auto movedArray = std::move(array);
 
     EXPECT_EQ(movedArray.Size(), 5);
     for (std::size_t i = 0; i < movedArray.Size(); ++i)
-    {
-        EXPECT_FALSE(movedArray[i].Copied);
-        EXPECT_EQ(movedArray[i].Id, vector[i].Id);
-    }
+        EXPECT_EQ(movedArray[i], vector[i]);
 
     EXPECT_EQ(array.Size(), 0);
 
@@ -293,8 +233,8 @@ TEST(ArrayTests, Destructor)
 
 TEST(ArrayTests, CopyAssign)
 {
-    Array<O, TestAllocator> array({ 1, 34, 65, 234, 123 }, TestAllocator(321));
-    Array<O, TestAllocator> copiedArray({ 234, 54 }, TestAllocator(32));
+    Array<int, TestAllocator> array({ 1, 34, 65, 234, 123 }, TestAllocator(321));
+    Array<int, TestAllocator> copiedArray({ 234, 54 }, TestAllocator(32));
 
     array = copiedArray;
 
@@ -302,35 +242,24 @@ TEST(ArrayTests, CopyAssign)
     EXPECT_EQ(array.Size(), copiedArray.Size());
 
     for (Usize i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(copiedArray[i].Id, array[i].Id);
+        EXPECT_EQ(copiedArray[i], array[i]);
 }
 
 TEST(ArrayTests, MoveAssign)
 {
+    Array<int, TestAllocator> array({ 1, 2, 3, 52, 21 }, TestAllocator(32));
+
     TestAllocator allocator = TestAllocator(74);
-    Array<B, TestAllocator> array({ 1, 2, 3, 52, 21 }, TestAllocator(32));
+    Array<int, TestAllocator> movedArray({ 1, 25, 124, 13 }, allocator);
 
-    std::vector<B> vector = { 1, 25, 124, 13 };
-    Array<B, TestAllocator> movedArray({ 1, 25, 124, 13 }, allocator);
-
-    for (B& element : movedArray)
-    {
-        element.Copied = false;
-        element.Moved = false;
-    }
-
+    std::vector<int> vector = { 1, 25, 124, 13 };
     array = std::move(movedArray);
 
     EXPECT_EQ(array.GetAllocator(), allocator);
     EXPECT_EQ(array.Size(), 4);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
-    {
-        B& element = array[i];
-
-        EXPECT_FALSE(element.Copied);
-        EXPECT_EQ(element.Id, vector[i].Id);
-    }
+        EXPECT_EQ(array[i], vector[i]);
 }
 
 TEST(ArrayTests, InitializerListAssign)
@@ -358,7 +287,7 @@ TEST(ArrayTests, Subscript)
 {
     Array<int> array = { 1, 2, 3, 45, 21 };
     for (Index i = 0; i < 5; ++i)
-        EXPECT_EQ(array[i], array.Data()[i]);
+        EXPECT_EQ(&array[i], &array.Data()[i]);
 
     EXPECT_THROW(array[5], OutOfRangeException);
 }
@@ -391,8 +320,8 @@ TEST(ArrayTests, Iterators)
 {
     Array<int> array = { 54, 12, 390, 16 };
 
-    EXPECT_EQ(std::addressof(*array.GetBegin()), array.Data());
-    EXPECT_EQ(std::addressof(*array.GetReverseBegin()), &array.Back());
+    EXPECT_EQ(ToAddress(array.GetBegin()), array.Data());
+    EXPECT_EQ(ToAddress(array.GetReverseBegin()), &array.Back());
 
     EXPECT_EQ(array.GetEnd(), array.GetBegin() + array.Size());
     EXPECT_EQ(array.GetReverseEnd(), array.GetReverseBegin() + array.Size());
@@ -456,76 +385,71 @@ TEST(ArrayTests, Clear)
 
 TEST(ArrayTests, InsertCopy)
 {
-    Array<B> array = { 32, 54, 12, 9834, 9 };
-    std::vector<B> vector = { 3, 32, 54, 12, 9834, 9 };
+    Array<int> array = { 32, 54, 12, 9834, 9 };
+    std::vector<int> vector = { 3, 32, 54, 12, 9834, 9 };
 
-    B value1(3);
-    auto it = array.Insert(array.GetBegin(), value1);
+    int value1(3);
+    auto iter = array.Insert(array.GetBegin(), value1);
 
-    EXPECT_EQ(it, array.GetBegin());
-    EXPECT_TRUE(array[0].Copied);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i].Id, vector[i].Id);
-
-    std::vector<B> vec2 = { 3, 32, 54, 4, 12, 9834, 9 };
-
-    B value2(4);
-    auto it2 = array.Insert(array.GetBegin() + 3, value2);
-
-    EXPECT_EQ(it2, array.GetBegin() + 3);
-    EXPECT_TRUE(array[3].Copied);
+    EXPECT_EQ(iter, array.GetBegin());
 
     for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i].Id, vec2[i].Id);
+        EXPECT_EQ(array[i], vector[i]);
 
-    std::vector<B> vec3 = { 3, 32, 54, 4, 12, 9834, 9, 5 };
+    std::vector<int> vec2 = { 3, 32, 54, 4, 12, 9834, 9 };
 
-    B value3(5);
-    auto it3 = array.Insert(array.GetEnd(), value3);
+    int value2(4);
+    auto iter2 = array.Insert(array.GetBegin() + 3, value2);
 
-    EXPECT_EQ(it3, array.GetEnd() - 1);
-    EXPECT_TRUE(array.Back().Copied);
+    EXPECT_EQ(iter2, array.GetBegin() + 3);
+    EXPECT_TRUE(array[3]);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i].Id, vec3[i].Id);
+        EXPECT_EQ(array[i], vec2[i]);
 
-    B value4(4);
+    std::vector<int> vec3 = { 3, 32, 54, 4, 12, 9834, 9, 5 };
+
+    int value3(5);
+    auto iter3 = array.Insert(array.GetEnd(), value3);
+
+    EXPECT_EQ(iter3, array.GetEnd() - 1);
+    EXPECT_TRUE(array.Back());
+
+    for (std::size_t i = 0; i < array.Size(); ++i)
+        EXPECT_EQ(array[i], vec3[i]);
+
+    int value4(4);
     EXPECT_THROW(array.Insert(array.GetEnd() + 1, value4), OutOfRangeException);
 }
 
 TEST(ArrayTests, InsertMove)
 {
-    Array<B> array = { 32, 54, 12, 9834, 9 };
-    std::vector<B> vector = { 3, 32, 54, 12, 9834, 9 };
+    Array<int> array = { 32, 54, 12, 9834, 9 };
+    std::vector<int> vector = { 3, 32, 54, 12, 9834, 9 };
 
-    auto it = array.Insert(array.GetBegin(), B(3));
-
-    EXPECT_EQ(it, array.GetBegin());
-    EXPECT_FALSE(array[0].Copied);
+    auto iter = array.Insert(array.GetBegin(), int(3));
+    EXPECT_EQ(iter, array.GetBegin());
 
     for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i].Id, vector[i].Id);
+        EXPECT_EQ(array[i], vector[i]);
 
-    std::vector<B> vec2 = { 3, 32, 54, 4, 12, 9834, 9 };
-    auto it2 = array.Insert(array.GetBegin() + 3, B(4));
+    std::vector<int> vec2 = { 3, 32, 54, 4, 12, 9834, 9 };
+    auto iter2 = array.Insert(array.GetBegin() + 3, int(4));
 
-    EXPECT_EQ(it2, array.GetBegin() + 3);
-    EXPECT_FALSE(array[3].Copied);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i].Id, vec2[i].Id);
-
-    std::vector<B> vec3 = { 3, 32, 54, 4, 12, 9834, 9, 5 };
-    auto it3 = array.Insert(array.GetEnd(), 5);
-
-    EXPECT_EQ(it3, array.GetEnd() - 1);
-    EXPECT_FALSE(array.Back().Copied);
+    EXPECT_EQ(iter2, array.GetBegin() + 3);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i].Id, vec3[i].Id);
+        EXPECT_EQ(array[i], vec2[i]);
 
-    EXPECT_THROW(array.Insert(array.GetEnd() + 1, B(4)), OutOfRangeException);
+    std::vector<int> vec3 = { 3, 32, 54, 4, 12, 9834, 9, 5 };
+    auto iter3 = array.Insert(array.GetEnd(), 5);
+
+    EXPECT_EQ(iter3, array.GetEnd() - 1);
+
+    for (std::size_t i = 0; i < array.Size(); ++i)
+        EXPECT_EQ(array[i], vec3[i]);
+
+    EXPECT_THROW(array.Insert(array.GetEnd() + 1, int(4)), OutOfRangeException);
 }
 
 TEST(ArrayTests, InsertFill)
@@ -533,33 +457,33 @@ TEST(ArrayTests, InsertFill)
     Array<int> array = { 54, 657, 123, 677 };
     std::vector<int> vector = { 4, 4, 4, 4, 4, 4, 4, 54, 657, 123, 677 };
 
-    auto it = array.Insert(array.GetBegin(), 7, int(4));
-    EXPECT_EQ(it, array.GetBegin());
+    auto iter = array.Insert(array.GetBegin(), 7, int(4));
+    EXPECT_EQ(iter, array.GetBegin());
 
     EXPECT_EQ(array.Size(), vector.size());
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vector[i]);
 
     std::vector<int> vec2 = { 4, 4, 4, 4, 4, 4, 4, 54, 657, 123, 677, 2, 2, 2 };
-    auto it2 = array.Insert(array.GetEnd(), 3, int(2));
+    auto iter2 = array.Insert(array.GetEnd(), 3, int(2));
 
-    EXPECT_EQ(it2, array.GetBegin() + 11);
+    EXPECT_EQ(iter2, array.GetBegin() + 11);
     EXPECT_EQ(array.Size(), vec2.size());
 
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vec2[i]);
 
     std::vector<int> vec3 = { 4, 4, 4, 4, 4, 4, 4, 54, 0, 0, 657, 123, 677, 2, 2, 2 };
-    auto it3 = array.Insert(array.GetBegin() + 8, 2, int(0));
+    auto iter3 = array.Insert(array.GetBegin() + 8, 2, int(0));
 
-    EXPECT_EQ(it3, array.GetBegin() + 8);
+    EXPECT_EQ(iter3, array.GetBegin() + 8);
     EXPECT_EQ(array.Size(), vec3.size());
 
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vec3[i]);
 
-    auto it4 = array.Insert(array.GetBegin() + 2, 0, int(342));
-    EXPECT_EQ(it4, array.GetBegin() + 2);
+    auto iter4 = array.Insert(array.GetBegin() + 2, 0, int(342));
+    EXPECT_EQ(iter4, array.GetBegin() + 2);
 
     EXPECT_EQ(array.Size(), vec3.size());
     for (std::size_t i = 0; i < array.Size(); ++i)
@@ -573,9 +497,9 @@ TEST(ArrayTests, InsertRange)
     Array<int> array;
     ForwardTestContainer<int, 3> range1({ 43, 6, 5 });
 
-    auto it = array.Insert(array.GetBegin(), range1.GetBegin(), range1.GetEnd());
+    auto iter = array.Insert(array.GetBegin(), range1.GetBegin(), range1.GetEnd());
 
-    EXPECT_EQ(it, &array.Front());
+    EXPECT_EQ(iter, &array.Front());
     EXPECT_EQ(array.Size(), 3);
 
     EXPECT_EQ(array[0], 43);
@@ -583,18 +507,18 @@ TEST(ArrayTests, InsertRange)
     EXPECT_EQ(array[2], 5);
 
     ForwardTestContainer<int, 2> range2({ 3, 55 });
-    auto it2 = array.Insert(array.GetBegin() + 1, range2.GetBegin(), range2.GetEnd());
+    auto iter2 = array.Insert(array.GetBegin() + 1, range2.GetBegin(), range2.GetEnd());
 
     std::vector<int> vec2 = { 43, 3, 55, 6, 5 };
 
-    EXPECT_EQ(it2, &array.Front() + 1);
+    EXPECT_EQ(iter2, &array.Front() + 1);
     EXPECT_EQ(array.Size(), 5);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vec2[i]);
 
-    auto it3 = array.Insert(array.GetBegin(), (int*)nullptr, (int*)nullptr);
-    EXPECT_EQ(it3, array.GetBegin());
+    auto iter3 = array.Insert(array.GetBegin(), (int*)nullptr, (int*)nullptr);
+    EXPECT_EQ(iter3, array.GetBegin());
     EXPECT_EQ(array.Size(), 5);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
@@ -602,13 +526,13 @@ TEST(ArrayTests, InsertRange)
 
     ForwardTestContainer<int, 2> range3({ 45, 65 });
 
-    auto it4 = array.Insert(array.GetEnd(), range3.GetBegin(), range3.GetEnd());
+    auto iter4 = array.Insert(array.GetEnd(), range3.GetBegin(), range3.GetEnd());
     std::vector<int> vec4 = { 43, 3, 55, 6, 5, 45, 65 };
 
     auto expectedIt4 = array.GetEnd();
     --expectedIt4; --expectedIt4;
 
-    EXPECT_EQ(it4, expectedIt4);
+    EXPECT_EQ(iter4, expectedIt4);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vec4[i]);
@@ -624,38 +548,38 @@ TEST(ArrayTests, InsertRange)
 TEST(ArrayTests, InsertInitializerList)
 {
     Array<int> array;
-    auto it = array.Insert(array.GetBegin(), { 43, 6, 5 });
+    auto iter = array.Insert(array.GetBegin(), { 43, 6, 5 });
 
-    EXPECT_EQ(it, &array.Front());
+    EXPECT_EQ(iter, &array.Front());
     EXPECT_EQ(array.Size(), 3);
 
     EXPECT_EQ(array[0], 43);
     EXPECT_EQ(array[1], 6);
     EXPECT_EQ(array[2], 5);
 
-    auto it2 = array.Insert(array.GetBegin() + 1, { 3, 55 });
+    auto iter2 = array.Insert(array.GetBegin() + 1, { 3, 55 });
     std::vector<int> vec2 = { 43, 3, 55, 6, 5 };
 
-    EXPECT_EQ(it2, &array.Front() + 1);
+    EXPECT_EQ(iter2, &array.Front() + 1);
     EXPECT_EQ(array.Size(), 5);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vec2[i]);
 
-    auto it3 = array.Insert(array.GetBegin(), { /* ... */ });
-    EXPECT_EQ(it3, array.GetBegin());
+    auto iter3 = array.Insert(array.GetBegin(), {  });
+    EXPECT_EQ(iter3, array.GetBegin());
     EXPECT_EQ(array.Size(), 5);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vec2[i]);
 
-    auto it4 = array.Insert(array.GetEnd(), { 45, 65 });
+    auto iter4 = array.Insert(array.GetEnd(), { 45, 65 });
     std::vector<int> vec4 = { 43, 3, 55, 6, 5, 45, 65 };
 
     auto expectedIt4 = array.GetEnd();
     --expectedIt4; --expectedIt4;
 
-    EXPECT_EQ(it4, expectedIt4);
+    EXPECT_EQ(iter4, expectedIt4);
 
     for (std::size_t i = 0; i < array.Size(); ++i)
         EXPECT_EQ(array[i], vec4[i]);
@@ -708,45 +632,39 @@ TEST(ArrayTests, RemoveRange)
 
 TEST(ArrayTests, PushBackCopy)
 {
-    Array<B> array = { 453, 431 };
-    B x = 534;
+    Array<int> array = { 453, 431 };
+    int x = 534;
 
     array.PushBack(x);
 
     EXPECT_EQ(array.Size(), 3);
-    EXPECT_EQ(array[0].Id, 453);
-    EXPECT_EQ(array[1].Id, 431);
-
-    EXPECT_TRUE(array[2].Copied);
-    EXPECT_EQ(array[2].Id, 534);
+    EXPECT_EQ(array[0], 453);
+    EXPECT_EQ(array[1], 431);
+    EXPECT_EQ(array[2], 534);
 }
 
 TEST(ArrayTests, PushBackMove)
 {
-    Array<B> array = { 453, 431 };
-    array.PushBack(B(534));
+    Array<int> array = { 453, 431 };
+    array.PushBack(int(534));
 
     EXPECT_EQ(array.Size(), 3);
-    EXPECT_EQ(array[0].Id, 453);
-    EXPECT_EQ(array[1].Id, 431);
-
-    EXPECT_FALSE(array[2].Copied);
-    EXPECT_EQ(array[2].Id, 534);
+    EXPECT_EQ(array[0], 453);
+    EXPECT_EQ(array[1], 431);
+    EXPECT_EQ(array[2], 534);
 }
 
 TEST(ArrayTests, EmplaceBack)
 {
-    Array<B> array = { 453, 431 };
-    B& back = array.EmplaceBack(534);
+    Array<int> array = { 453, 431 };
+    int& back = array.EmplaceBack(534);
 
     EXPECT_EQ(&back, &array.Back());
 
     EXPECT_EQ(array.Size(), 3);
-    EXPECT_EQ(array[0].Id, 453);
-    EXPECT_EQ(array[1].Id, 431);
-
-    EXPECT_EQ(array[2].Id, 534);
-    EXPECT_FALSE(array[2].Moved);
+    EXPECT_EQ(array[0], 453);
+    EXPECT_EQ(array[1], 431);
+    EXPECT_EQ(array[2], 534);
 }
 
 TEST(ArrayTests, PopBack)
@@ -797,22 +715,22 @@ TEST(ArrayTests, Equal)
 
 TEST(ArrayTests, Swap)
 {
-    Array<O> array1 = { 14, 23, 4343, 121 };
-    Array<O> array2 = { 32, 54, 11, 43, 11 };
+    Array<int> array1 = { 14, 23, 4343, 121 };
+    Array<int> array2 = { 32, 54, 11, 43, 11 };
 
     array1.Swap(array2);
 
     EXPECT_EQ(array1.Size(), 5);
     EXPECT_EQ(array2.Size(), 4);
 
-    EXPECT_EQ(array1[0].Id, 32);
-    EXPECT_EQ(array1[1].Id, 54);
-    EXPECT_EQ(array1[2].Id, 11);
-    EXPECT_EQ(array1[3].Id, 43);
-    EXPECT_EQ(array1[4].Id, 11);
+    EXPECT_EQ(array1[0], 32);
+    EXPECT_EQ(array1[1], 54);
+    EXPECT_EQ(array1[2], 11);
+    EXPECT_EQ(array1[3], 43);
+    EXPECT_EQ(array1[4], 11);
 
-    EXPECT_EQ(array2[0].Id, 14);
-    EXPECT_EQ(array2[1].Id, 23);
-    EXPECT_EQ(array2[2].Id, 4343);
-    EXPECT_EQ(array2[3].Id, 121);
+    EXPECT_EQ(array2[0], 14);
+    EXPECT_EQ(array2[1], 23);
+    EXPECT_EQ(array2[2], 4343);
+    EXPECT_EQ(array2[3], 121);
 }

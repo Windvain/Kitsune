@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Foundation/String/Encoding.h"
+#include "Foundation/Memory/AddressOf.h"
 
 namespace Kitsune
 {

@@ -10,7 +10,7 @@ namespace Kitsune
         template<typename Iter, typename Encoding>
         concept ForwardIteratorToChars =
             ForwardIterator<Iter> &&
-            std::same_as<typename Encoding::ValueType,
+            std::same_as<typename Encoding::CodeunitType,
                          typename IteratorTraits<Iter>::ValueType>;
     }
 

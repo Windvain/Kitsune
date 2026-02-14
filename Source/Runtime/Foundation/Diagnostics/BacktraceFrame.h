@@ -4,7 +4,7 @@
 
 namespace Kitsune
 {
-    // An entry in a backtrace, contains file, function, line, and address
+    // An entry in a backtrace that contains file, function, line, and address
     // info.
     class BacktraceFrame
     {
