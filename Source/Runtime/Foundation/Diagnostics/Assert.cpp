@@ -65,8 +65,12 @@ namespace Kitsune::Details
             FallbackLogAssertionMessage(expression, message, location);
         else
         {
-            KITSUNE_ENGINE_FATAL_FORMAT_(
+            KITSUNE_LOG_FORMAT_LEVEL_(
+                "Engine",
+                LogSeverity::Fatal,
+
                 "Assertion `{0}` has failed.\n`{1}`",
+                location,
                 expression, message);
         }
 

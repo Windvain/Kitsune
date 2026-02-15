@@ -128,16 +128,17 @@ set(COMPILER_OPTIONS "")
 set(COMPILER_DEFS "")
 set(LINKED_LIBRARIES "")
 
+# Can't make these any shorter, because.. CMake...
 macro(append_if_backtrace_supported var value)
-    # if ((config != Production) || (OVERRIDE_BACKTRACE_SUPPORT))
+    # if ((config != Production) || (KITSUNE_OVERRIDE_BACKTRACE_SUPPORT))
     #     list(APPEND ${var} ${value})
-    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${OVERRIDE_BACKTRACE_SUPPORT}>>:${value}>")
+    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${KITSUNE_OVERRIDE_BACKTRACE_SUPPORT}>>:${value}>")
 endmacro()
 
 macro(append_if_debug_terminal_enabled var value)
-    # if ((config != Production) || (SHOW_TERMINAL))
+    # if ((config != Production) || (KITSUNE_SHOW_TERMINAL))
     #     list(APPEND ${var} ${value})
-    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${ENABLE_TERMINAL_FOR_DEBUGGING}>>:${value}>")
+    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${KITSUNE_ENABLE_TERMINAL_FOR_DEBUGGING}>>:${value}>")
 endmacro()
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")

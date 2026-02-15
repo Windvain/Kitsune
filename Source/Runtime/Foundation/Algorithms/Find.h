@@ -32,15 +32,15 @@ namespace Kitsune::Algorithms
         // Thanks MSVC.
         while (true)
         {
-            Iter1 Iter = begin;
-            for (Iter2 fit = findBegin; /* ... */; ++Iter, ++fit)
+            Iter1 iter = begin;
+            for (Iter2 findIter = findBegin; /* ... */; ++iter, ++findIter)
             {
-                if (fit == findEnd)
+                if (findIter == findEnd)
                     return begin;
-                else if (Iter == end)
-                    return Iter;
+                else if (iter == end)
+                    return iter;
 
-                if (*Iter != *fit)
+                if (*iter != *findIter)
                     break;
             }
 

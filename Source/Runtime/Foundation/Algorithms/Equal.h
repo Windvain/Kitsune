@@ -65,12 +65,11 @@ namespace Kitsune::Algorithms
     // Checks whether the two ranges `[begin1, end1]` and `[begin2, end2]` are
     // both equal based on the predicate `pred`. This function does not check the
     // size of the second range.
-    template<ForwardIterator Iter1, ForwardIterator Iter2,
+    template<RandomAccessIterator Iter1, RandomAccessIterator Iter2,
              Invocable<typename IteratorTraits<Iter1>::ValueType&,
                        typename IteratorTraits<Iter2>::ValueType&> Pred>
     [[nodiscard]]
     inline bool Equal(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2, Pred pred)
-        requires RandomAccessIterator<Iter1> && RandomAccessIterator<Iter2>
     {
         if (end1 - begin1 != end2 - begin2)
             return false;

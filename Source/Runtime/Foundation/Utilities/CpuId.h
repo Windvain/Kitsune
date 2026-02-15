@@ -20,6 +20,8 @@ namespace Kitsune
         int Eax, Ebx, Ecx, Edx;
     };
 
+    // Returns the result of calling the CPUID instruction. Returns the values
+    // of the registers EAX, EBX, ECX, and EDX.
     KITSUNE_FORCEINLINE CpuIdResult CallCpuId(Int32 eax, Int32 ecx)
     {
 #if defined(KITSUNE_COMPILER_MSVC)

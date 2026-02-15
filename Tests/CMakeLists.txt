@@ -44,6 +44,7 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/TestContainer.h"
     "FoundationTests/TestIterators.h"
     "FoundationTests/TestStrings.h"
+    "FoundationTests/ToAddressTests.cpp"
     "FoundationTests/TranscodeTests.cpp"
     "FoundationTests/UninitializedTests.cpp"
     "FoundationTests/Utf8EncodingTests.cpp"

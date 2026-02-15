@@ -1,4 +1,4 @@
-if (BUILD_TEST_EXECUTABLES)
+if (KITSUNE_BUILD_TEST_EXECUTABLES)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     add_subdirectory("googletest")
 

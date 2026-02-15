@@ -80,6 +80,33 @@ TEST(CopyTests, CopyN)
     EXPECT_EQ(destContainer[4].Value, 7);
 }
 
+TEST(CopyTests, CopyIf)
+{
+    ForwardTestContainer<A, 5> container = { A(2), A(3), A(1), A(4), A(6) };
+    ForwardTestContainer<A, 3> destContainer = { A(54), A(1), A(3) };
+
+    auto predicate = [](const A& object) -> bool
+    {
+        return (object.Value % 2) == 0;
+    };
+
+    auto it = Algorithms::CopyIf(container.GetBegin(), container.GetEnd(),
+                                 destContainer.GetBegin(),
+                                 predicate);
+
+    EXPECT_EQ(it, destContainer.GetEnd());
+
+    EXPECT_EQ(container[0].Value, 2);
+    EXPECT_EQ(container[1].Value, 3);
+    EXPECT_EQ(container[2].Value, 1);
+    EXPECT_EQ(container[3].Value, 4);
+    EXPECT_EQ(container[4].Value, 6);
+
+    EXPECT_EQ(destContainer[0].Value, 3);
+    EXPECT_EQ(destContainer[1].Value, 5);
+    EXPECT_EQ(destContainer[2].Value, 7);
+}
+
 TEST(CopyTests, CopyBackwards)
 {
     BidirectionalTestContainer<A, 5> container = { A(2), A(3), A(1), A(4), A(6) };

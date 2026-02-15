@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "TestContainer.h"
+#include "Foundation/Algorithms/Find.h"
 #include "Foundation/Concepts/Container.h"
 
 using namespace Kitsune;
@@ -627,6 +628,54 @@ TEST(ArrayTests, RemoveRange)
 
     Array<int> array2 = { 54, 92, 172, 5 };
     EXPECT_THROW(array2.Remove(
+        array2.GetBegin(), array2.GetEnd() + 1), OutOfRangeException);
+}
+
+TEST(ArrayTests, RemoveUnsorted)
+{
+    Array<int> array = { 54, 657, 123, 677 };
+    std::vector<int> vector = { 657, 123, 677 };
+
+    array.RemoveUnsorted(array.GetBegin());
+    EXPECT_EQ(array.Size(), 3);
+
+    for (Usize i = 0; i < vector.size(); ++i)
+    {
+        EXPECT_NE(Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]), array.GetEnd());
+    }
+
+    array.Clear();
+    ASSERT_EQ(array.Size(), 0);
+
+    EXPECT_THROW(array.RemoveUnsorted(array.GetEnd()), OutOfRangeException);
+}
+
+TEST(ArrayTests, RemoveUnsortedRange)
+{
+    Array<int> array = { 54, 657, 123, 677, 65, 11, 540 };
+    std::vector<int> vector = { 54, 657, 11, 540 };
+
+    array.RemoveUnsorted(array.GetBegin() + 2, array.GetEnd() - 2);
+
+    EXPECT_EQ(array.Size(), vector.size());
+    for (std::size_t i = 0; i < array.Size(); ++i)
+    {
+        EXPECT_NE(Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]), array.GetEnd());
+    }
+
+    array.Remove(array.GetBegin(), array.GetBegin());
+
+    EXPECT_EQ(array.Size(), vector.size());
+    for (std::size_t i = 0; i < array.Size(); ++i)
+    {
+        EXPECT_NE(Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]), array.GetEnd());
+    }
+
+    array.Remove(array.GetBegin(), array.GetEnd());
+    EXPECT_EQ(array.Size(), 0);
+
+    Array<int> array2 = { 54, 92, 172, 5 };
+    EXPECT_THROW(array2.RemoveUnsorted(
         array2.GetBegin(), array2.GetEnd() + 1), OutOfRangeException);
 }
 

@@ -18,7 +18,7 @@
 
 namespace Kitsune
 {
-    int UniversalMain(int argc, char** argv);
+    extern int UniversalMain(int argc, char** argv);
 }
 
 static void SetPerMonitorDpiAwareness()

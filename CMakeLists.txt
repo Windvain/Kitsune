@@ -38,7 +38,7 @@ message(STATUS "Binary directory: ${CMAKE_BINARY_DIR}")
 message(STATUS "")
 message(STATUS "Generator: ${CMAKE_GENERATOR}")
 
-if (BUILD_TEST_EXECUTABLES)
+if (KITSUNE_BUILD_TEST_EXECUTABLES)
     enable_testing()
 endif()
 
@@ -47,10 +47,10 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneOptions.cmake")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/External")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Source/Runtime")
 
-if (BUILD_TEST_EXECUTABLES)
+if (KITSUNE_BUILD_TEST_EXECUTABLES)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Tests")
 endif()
 
-if (BUILD_EXAMPLE_EXECUTABLES)
+if (KITSUNE_BUILD_EXAMPLE_EXECUTABLES)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Examples")
 endif()
