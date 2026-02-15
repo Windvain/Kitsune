@@ -1,11 +1,13 @@
 #pragma once
 
 #include <Windows.h>
-#include "Application/IWindow.h"
+
+#include "Application/Window.h"
+#include "Application/DisplayManager.h"
 
 namespace Kitsune
 {
-    class WindowsWindow : public IWindow
+    class WindowsWindow : public Window
     {
     public:
         WindowsWindow(const wchar_t* className,

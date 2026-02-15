@@ -1,16 +1,25 @@
 #pragma once
 
-#include <new>
+#include <new>              // IWYU pragma: keep
 #include <type_traits>
 
 #include "Foundation/Common/Types.h"
 #include "Foundation/Templates/Forward.h"
 
-#include "Foundation/Memory/IMemoryApi.h"
-#include "Foundation/Memory/MemoryProtection.h"
+#include "Foundation/Memory/MemoryApi.h"
+#include "Foundation/Memory/BadAllocException.h"
 
 namespace Kitsune
 {
+    // Specifies the protection placed on a page of memory.
+    enum class MemoryProtection
+    {
+        ReadWrite,
+        ReadWriteExecute
+    };
+
+    // The memory class. Contains most of the common functions for dealing with
+    // memory.
     class Memory
     {
     public:
@@ -24,51 +33,54 @@ namespace Kitsune
         [[nodiscard]] static void* Allocate(Usize bytes);
         [[nodiscard]] static void* Allocate(Usize bytes, Usize alignment);
 
-        static void Free(void* ptr);
-
-    public:
-        [[nodiscard]] static void* VirtualAllocate(Usize bytes, MemoryProtection protection);
-        static void VirtualFree(void* ptr, Usize bytes);
+        static void Free(void* pointer, Usize bytes);
 
     public:
         [[nodiscard]]
-        static inline Usize GetDefaultAlignment()
-        {
-            return s_MemoryApi->GetDefaultAlignment();
-        }
+        static void* VirtualAllocate(Usize bytes, MemoryProtection protection);
+
+        static void VirtualFree(void* pointer, Usize bytes);
 
     public:
         template<typename T, typename... Args>
             requires std::is_constructible_v<T, Args...>
-        static T* ConstructAt(T* ptr, Args&&... args)
+        inline static T* ConstructAt(T* pointer, Args&&... args)
         {
-            new (static_cast<void*>(ptr)) T(Forward<Args>(args)...);
-            return ptr;
+            new (static_cast<void*>(pointer)) T(Forward<Args>(args)...);
+            return pointer;
         }
 
         template<typename T>
-        static void DestroyAt(T* ptr)
+        inline static void DestroyAt(T* pointer)
         {
-            ptr->~T();
+            pointer->~T();
         }
 
         template<typename T, typename... Args>
             requires std::is_constructible_v<T, Args...>
-        [[nodiscard]] static T* New(Args&&... args)
+        [[nodiscard]]
+        inline static T* New(Args&&... args)
         {
-            T* ptr = (T*)Memory::Allocate(sizeof(T), alignof(T));
-            return ConstructAt(ptr, Forward<Args>(args)...);
+            T* pointer = static_cast<T*>(s_MemoryApi->TryNew(sizeof(T), alignof(T)));
+            if (pointer == nullptr)
+                throw BadAllocException();
+
+            return ConstructAt(pointer, Forward<Args>(args)...);
         }
 
         template<typename T>
-        static void Delete(T* ptr)
+        inline static void Delete(T* pointer)
         {
-            DestroyAt(ptr);
-            Memory::Free(ptr);
+            DestroyAt(pointer);
+            s_MemoryApi->Delete(pointer);
         }
+
+    public:
+        Memory() = delete;
+        ~Memory() = delete;
 
     private:
         static bool s_Initialized;
-        static IMemoryApi* s_MemoryApi;
+        static MemoryApi* s_MemoryApi;
     };
 }

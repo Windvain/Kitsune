@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
 {
-    class SystemException : public IException
+    // Thrown when a general operating system level error happens.
+    class SystemException : public Exception
     {
     public:
-        inline SystemException(const char* desc = "Unknown system error")
-            : IException("SystemException", desc)
+        inline SystemException(const char* description = "Unknown system error")
+            : Exception("SystemException", description)
         {
         }
     };

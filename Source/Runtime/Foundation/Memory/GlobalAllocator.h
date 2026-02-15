@@ -5,6 +5,8 @@
 
 namespace Kitsune
 {
+    // The default allocator used for allocations/deallocations in containers
+    // and smart pointers, if none was specified.
     class GlobalAllocator
     {
     public:
@@ -13,17 +15,19 @@ namespace Kitsune
             return Memory::Allocate(bytes);
         }
 
-        KITSUNE_FORCEINLINE void* Allocate(Usize bytes, Usize align)
+        KITSUNE_FORCEINLINE void* Allocate(Usize bytes, Usize alignment)
         {
-            return Memory::Allocate(bytes, align);
+            return Memory::Allocate(bytes, alignment);
         }
 
-        KITSUNE_FORCEINLINE void Free(void* ptr)
+        KITSUNE_FORCEINLINE void Free(void* pointer, Usize bytes)
         {
-            Memory::Free(ptr);
+            Memory::Free(pointer, bytes);
         }
     };
 
-    inline bool operator==(const GlobalAllocator&, const GlobalAllocator&) { return true; }
-    inline bool operator!=(const GlobalAllocator&, const GlobalAllocator&) { return false; }
+    inline bool operator==(const GlobalAllocator&, const GlobalAllocator&)
+    {
+        return true;
+    }
 }

@@ -1,12 +1,10 @@
 #include "Foundation/Memory/Memory.h"
-
 #include "Foundation/Memory/CMallocApi.h"
-#include "Foundation/Memory/BadAllocException.h"
 
 namespace Kitsune
 {
-    IMemoryApi* Memory::s_MemoryApi = nullptr;
     bool Memory::s_Initialized = false;
+    MemoryApi* Memory::s_MemoryApi = nullptr;
 
     bool Memory::InitializeExplicit()
     {
@@ -24,7 +22,9 @@ namespace Kitsune
 
     void Memory::Shutdown()
     {
-        delete s_MemoryApi;
+        if (s_MemoryApi != nullptr)
+            delete s_MemoryApi;
+
         s_Initialized = false;
     }
 
@@ -33,42 +33,45 @@ namespace Kitsune
         if ((bytes == 0) || !Memory::InitializeExplicit())
             return nullptr;
 
-        return s_MemoryApi->TryAllocate(bytes, s_MemoryApi->GetDefaultAlignment());
+        return s_MemoryApi->TryAllocate(bytes);
     }
 
     void* Memory::TryAllocate(Usize bytes, Usize alignment)
     {
-        if ((bytes == 0) || !Memory::InitializeExplicit())
+        if ((bytes == 0) || ((alignment & (alignment - 1)) != 0) ||
+            !Memory::InitializeExplicit())
+        {
             return nullptr;
+        }
 
         return s_MemoryApi->TryAllocate(bytes, alignment);
     }
 
     void* Memory::Allocate(Usize bytes)
     {
-        void* ptr = TryAllocate(bytes);
-        if (ptr == nullptr)
+        void* pointer = TryAllocate(bytes);
+        if (pointer == nullptr)
             throw BadAllocException();
 
-        return ptr;
+        return pointer;
     }
 
     void* Memory::Allocate(Usize bytes, Usize alignment)
     {
-        void* ptr = TryAllocate(bytes, alignment);
-        if (ptr == nullptr)
+        void* pointer = TryAllocate(bytes, alignment);
+        if (pointer == nullptr)
             throw BadAllocException();
 
-        return ptr;
+        return pointer;
     }
 
-    void Memory::Free(void* ptr)
+    void Memory::Free(void* pointer, Usize bytes)
     {
-        if (ptr == nullptr)
+        if (pointer == nullptr)
             return;
 
-        // No need to lazily initialize. If they called Free() without calling Allocate(),
-        // that means that the pointer is invalid anyways.
-        s_MemoryApi->Free(ptr);
+        // No need to lazily initialize. If the user called Free() without calling
+        // Allocate(), that means that the pointer is invalid anyways.
+        s_MemoryApi->Free(pointer, bytes);
     }
 }

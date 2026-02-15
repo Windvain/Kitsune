@@ -1,75 +1,99 @@
 #pragma once
 
-#include <cstring>
-
 #include "Foundation/Common/Types.h"
 #include "Foundation/Common/Macros.h"
 
+#include "Foundation/String/StringView.h"
+
 #if KITSUNE_HAS_BUILTIN(__builtin_FILE) || defined(KITSUNE_COMPILER_MSVC)
-    #define KITSUNE_BUILTIN_FILE_() __builtin_FILE()
+    #define KITSUNE_BUILTIN_FILE() __builtin_FILE()
 #else
-    #define KITSUNE_BUILTIN_FILE_() "<unknown>"
+    #define KITSUNE_BUILTIN_FILE() "<unknown>"
 #endif
 
 #if KITSUNE_HAS_BUILTIN(__builtin_LINE) || defined(KITSUNE_COMPILER_MSVC)
-    #define KITSUNE_BUILTIN_LINE_() __builtin_LINE()
+    #define KITSUNE_BUILTIN_LINE() __builtin_LINE()
 #else
-    #define KITSUNE_BUILTIN_LINE_() 0
+    #define KITSUNE_BUILTIN_LINE() 0
 #endif
 
-#if defined(KITSUNE_COMPILER_MSVC)      // MSVC defines both __builtin_FUNCTION() and __builtin_FUNCSIG().
-    #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCSIG()
+// MSVC defines both __builtin_FUNCSIG() and __builtin_FUNCTION().
+// __builtin_FUNCSIG is preferred here because it returns the entire function
+// signature, not just its name.
+#if defined(KITSUNE_COMPILER_MSVC)
+    #define KITSUNE_BUILTIN_FUNC() __builtin_FUNCSIG()
 #elif KITSUNE_HAS_BUILTIN(__builtin_FUNCTION)
-    #define KITSUNE_BUILTIN_FUNC_() __builtin_FUNCTION()
+    #define KITSUNE_BUILTIN_FUNC() __builtin_FUNCTION()
 #else
-    #define KITSUNE_BUILTIN_FUNC_() "<unknown>"
+    #define KITSUNE_BUILTIN_FUNC() "<unknown>"
 #endif
 
 namespace Kitsune
 {
+    // Contains information about the line, file, and function in which
+    // a function call happens.
     class SourceLocation
     {
     public:
-        SourceLocation()
-            : m_FileName("<unknown>"), m_FunctionName("<unknown>"),
+        inline SourceLocation()
+            : m_FileName("<unknown>"),
+              m_FunctionName("<unknown>"),
               m_Line(0)
         {
         }
 
     public:
-        static SourceLocation Current(const char* file = KITSUNE_BUILTIN_FILE_(),
-                                      const char* func = KITSUNE_BUILTIN_FUNC_(),
-                                      Uint32 line = KITSUNE_BUILTIN_LINE_())
+        // Obtains the source information at the current location. Do not call
+        // this function with any arguments.
+        inline static SourceLocation Current(
+            const char* file = KITSUNE_BUILTIN_FILE(),
+            const char* func = KITSUNE_BUILTIN_FUNC(),
+            Uint32 line = KITSUNE_BUILTIN_LINE())
         {
             return SourceLocation(file, func, line);
         }
 
     public:
-        [[nodiscard]] const char* FileName()     const { return m_FileName; }
-        [[nodiscard]] const char* FunctionName() const { return m_FunctionName; }
-        [[nodiscard]] Uint32 Line()              const { return m_Line; }
+        [[nodiscard]]
+        inline StringView FileName() const
+        {
+            return m_FileName;
+        }
+
+        [[nodiscard]]
+        inline StringView FunctionName() const
+        {
+            return m_FunctionName;
+        }
+
+        [[nodiscard]]
+        inline Uint32 Line() const
+        {
+            return m_Line;
+        }
+
+    public:
+        inline bool operator==(const SourceLocation& location) const
+        {
+            return (m_Line         == location.m_Line) &&
+                   (m_FileName     == location.m_FileName) &&
+                   (m_FunctionName == location.m_FunctionName);
+        }
 
     private:
-        SourceLocation(const char* file, const char* func, Uint32 line)
+        inline SourceLocation(const char* file, const char* func, Uint32 line)
             : m_FileName(file), m_FunctionName(func), m_Line(line)
         {
         }
 
     private:
-        const char* m_FileName;
-        const char* m_FunctionName;
+        StringView m_FileName;
+        StringView m_FunctionName;
 
         Uint32 m_Line;
     };
-
-    inline bool operator==(const SourceLocation& loc1, const SourceLocation& loc2)
-    {
-        return (loc1.Line() == loc2.Line()) &&
-               (std::strcmp(loc1.FileName(), loc2.FileName()) == 0) &&
-               (std::strcmp(loc1.FunctionName(), loc2.FunctionName()) == 0);
-    }
 }
 
-#undef KITSUNE_BUILTIN_FILE_
-#undef KITSUNE_BUILTIN_LINE_
-#undef KITSUNE_BUILTIN_FUNC_
+#undef KITSUNE_BUILTIN_FILE
+#undef KITSUNE_BUILTIN_LINE
+#undef KITSUNE_BUILTIN_FUNC

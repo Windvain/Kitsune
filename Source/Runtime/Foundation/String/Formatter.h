@@ -10,50 +10,41 @@
 
 namespace Kitsune
 {
-    template<Character Char>
-    class BasicParseContext
-    {
-    public:
-        BasicParseContext() = default;
-        inline explicit BasicParseContext(const BasicStringView<Char> specs)
-            : m_FormatSpecs(specs)
-        {
-        }
-
-    public:
-        [[nodiscard]]
-        inline BasicStringView<Char> GetFormatSpecs() const { return m_FormatSpecs; }
-
-    private:
-        BasicStringView<Char> m_FormatSpecs;
-    };
-
-    template<Character Char, WritableIterator<Char> Iter>
+    template<Character Char, OutputIterator<const Char&> Iter>
     class BasicFormatContext
     {
     public:
         using Iterator = Iter;
 
     public:
-        inline explicit BasicFormatContext(Iter outputIter)
-            : m_OutputIter(outputIter)
+        inline explicit BasicFormatContext(BasicStringView<Char> formatSpecs,
+                                           Iter outputIter)
+            : m_FormatSpecs(formatSpecs), m_OutputIter(outputIter)
         {
         }
 
     public:
-        [[nodiscard]] inline Iterator GetOutput() const { return m_OutputIter; }
+        [[nodiscard]]
+        inline BasicStringView<Char> GetFormatSpecifications() const
+        {
+            return m_FormatSpecs;
+        }
+
+        [[nodiscard]]
+        inline Iterator GetOutput() const
+        {
+            return m_OutputIter;
+        }
 
     private:
+        BasicStringView<Char> m_FormatSpecs;
         Iter m_OutputIter;
     };
 
-    using ParseContext = BasicParseContext<char>;
-    using WideParseContext = BasicParseContext<wchar_t>;
-
-    template<WritableIterator<char> Iter>
+    template<OutputIterator<const char&> Iter>
     using FormatContext = BasicFormatContext<char, Iter>;
 
-    template<WritableIterator<wchar_t> Iter>
+    template<OutputIterator<const wchar_t&> Iter>
     using WideFormatContext = BasicFormatContext<wchar_t, Iter>;
 
     template<typename T, Character Char>
@@ -63,209 +54,166 @@ namespace Kitsune
     class Formatter<bool, char>
     {
     public:
-        inline void Parse(const ParseContext& context)
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(bool boolean, const FormatContext<Iter>& context)
         {
-            StringView specs = context.GetFormatSpecs();
-            for (char ch : specs)
-            {
-                if ((ch == 'i') || (ch == 'I'))
-                    m_AsInteger = true;
-            }
-        }
+            StringView specs = context.GetFormatSpecifications();
+            bool formatAsInteger = false;
 
-        template<WritableIterator<char> Iter>
-        [[nodiscard]]
-        inline Iter Format(bool boolean, const FormatContext<Iter>& context)
-        {
-            StringView str = (m_AsInteger) ? (boolean ? "1"    : "0") :
-                                             (boolean ? "true" : "false");
+            if (specs.Contains('i') || specs.Contains('I'))
+                formatAsInteger = true;
 
-            return Algorithms::Copy(str.GetBegin(), str.GetEnd(),
+            StringView result = formatAsInteger ? FormatAsInteger(boolean) :
+                                                  FormatAsBoolean(boolean);
+
+            return Algorithms::Copy(result.GetBegin(), result.GetEnd(),
                                     context.GetOutput());
         }
 
     private:
-        bool m_AsInteger = false;
-    };
-
-    template<std::integral T>
-    class Formatter<T, char>
-    {
-    public:
-        inline void Parse(const ParseContext& context)
+        inline static StringView FormatAsInteger(bool boolean)
         {
-            StringView specs = context.GetFormatSpecs();
-            for (char spec : specs)
-            {
-                if (spec == '+')      m_AlwaysAddSign = true;
-                else if (spec == '-') m_AlwaysAddSign = false;
-                else if (spec == '#') m_AddPrefix = true;
-                else if (spec == '0') m_AddLeadingZeroes = true;
-
-                m_Base = ((spec == 'b') || (spec == 'B')) ? 2 :
-                         ((spec == 'o') || (spec == 'O')) ? 8 :
-                         ((spec == 'd') || (spec == 'D')) ? 10 :
-                         ((spec == 'x') || (spec == 'X')  ? 16 :
-                                                            m_Base);
-            }
+            // A false value will be converted to zero, while a true value
+            // to one, so there is no need to use the integer formatter.
+            return boolean ? "1" : "0";
         }
 
-        template<WritableIterator<char> Iter>
-        [[nodiscard]]
-        inline Iter Format(T integer, const FormatContext<Iter>& context)
+        inline static StringView FormatAsBoolean(bool boolean)
         {
-            using UnsignedType = std::make_unsigned_t<T>;
-            UnsignedType unsignedValue;
+            return boolean ? "true" : "false";
+        }
+    };
 
-            if ((m_Base != 10) || (integer >= 0))
-                std::memcpy(&unsignedValue, &integer, sizeof(T));
+    template<std::integral Integer>
+    class Formatter<Integer, char>
+    {
+    public:
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(Integer integer, const FormatContext<Iter>& context)
+        {
+            using UnsignedType = std::make_unsigned_t<Integer>;
+            StringView specs = context.GetFormatSpecifications();
+
+            UnsignedType unsignedValue;
+            UnsignedType base = 10;
+
+            if (specs.Contains('b') || specs.Contains('B'))      base = 2;
+            else if (specs.Contains('o') || specs.Contains('O')) base = 4;
+            else if (specs.Contains('d') || specs.Contains('D')) base = 10;
+            else if (specs.Contains('x') || specs.Contains('X')) base = 16;
+
+            if ((base != 10) || (integer >= 0))
+                std::memcpy(&unsignedValue, &integer, sizeof(Integer));
             else
                 unsignedValue = static_cast<UnsignedType>(~integer) + 1;
 
             UnsignedType remainder;
-            String str;
+            String result;
 
-            constexpr const char* DigitsArray = "0123456789ABCDEF";
-
+            const char DigitsArray[] = "0123456789ABCDEF";
             do
             {
-                remainder = unsignedValue % m_Base;
-                str += DigitsArray[remainder];
+                remainder = unsignedValue % base;
+                result += DigitsArray[remainder];
 
-                unsignedValue /= m_Base;
+                unsignedValue /= base;
             } while (unsignedValue != 0);
 
-            if (m_AddLeadingZeroes)
+            if (specs.Contains('0'))
             {
-                // This can be derived from the equation: (base)^(width in base) >= 2^(width in base 2) - 1.
-                // With a little bit of algebra: width >= log_<base>(2^<width in base 2> - 1)
-                bool adjustPadding = std::is_signed_v<T> && (m_Base == 10);
-                float pow = std::pow(2, sizeof(T) * (8 - Usize(adjustPadding))) - 1;
+                // This can be derived from the equation:
+                // <base>^<width in base> >= 2^<width in base 2> - 1.
+                bool adjustPadding = std::is_signed_v<Integer> && (base == 10);
+                float pow = std::pow(
+                    2,
+                    sizeof(Integer) * (8 - Usize(adjustPadding))) - 1;
 
                 float numerator = std::logf(pow);
-                float denominator = std::logf(m_Base);
+                float denominator = std::logf(base);
 
-                Usize count = Usize(std::ceil(numerator / denominator)) - str.Size();
-                str.Append(count, '0');
+                Usize count = Usize(std::ceil(numerator / denominator)) - result.Size();
+                result.Append(count, '0');
             }
 
-            if (m_AddPrefix && (m_Base != 10))
+            if (specs.Contains('#') && (base != 10))
             {
                 // b0, 0, x0 gets flipped at the end and turns into 0b, 0, and 0x.
-                str += (m_Base == 2)  ? "b0" :
-                       (m_Base == 8)  ? "0"  :
-                       (m_Base == 16) ? "x0" :
-                                        "";
+                result += (base == 2)  ? "b0" :
+                          (base == 8)  ? "0"  :
+                          (base == 16) ? "x0" :
+                                         "";
             }
 
-            if (m_Base == 10)
+            if (base == 10)
             {
                 if (integer < 0)
-                    str += '-';
-                else if (m_AlwaysAddSign)
-                    str += '+';
+                    result += '-';
+                else if (specs.Contains('+'))
+                    result += '+';
             }
 
-            Algorithms::Reverse(str.GetBegin(), str.GetEnd());
-            return Algorithms::Copy(str.GetBegin(), str.GetEnd(), context.GetOutput());
+            Algorithms::Reverse(result.GetBegin(), result.GetEnd());
+            return Algorithms::Copy(result.GetBegin(), result.GetEnd(), context.GetOutput());
         }
-
-    private:
-        T m_Base = 10;
-
-        bool m_AlwaysAddSign = false;
-        bool m_AddPrefix = false;
-        bool m_AddLeadingZeroes = false;
     };
 
     template<>
     class Formatter<char, char>
     {
     public:
-        inline void Parse(const ParseContext& context)
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(char character, const FormatContext<Iter>& context)
         {
-            StringView specs = context.GetFormatSpecs();
-            for (char spec : specs)
+            StringView specs = context.GetFormatSpecifications();
+            if (specs.Contains('I') || specs.Contains('i'))
             {
-                m_AsInteger = ((spec == 'i') || (spec == 'I')) ? true :
-                              ((spec == 'c') || (spec == 'C')) ? false :
-                                                                 m_AsInteger;
+                using IntType = std::conditional_t<
+                    std::is_signed_v<char>,
+                    signed char,
+                    unsigned char>;
+
+                return Formatter<IntType, char>::Format(
+                    static_cast<IntType>(character),
+                    context);
+            }
+            else
+            {
+                auto iter = context.GetOutput();
+
+                *iter++ = character;
+                return iter;
             }
         }
-
-        template<WritableIterator<char> Iter>
-        [[nodiscard]]
-        inline Iter Format(char ch, const FormatContext<Iter>& context)
-        {
-            if (m_AsInteger)
-            {
-                ParseContext parseContext(m_AsInteger ? "i" : "");
-
-                m_Formatter.Parse(parseContext);
-                return m_Formatter.Format(static_cast<IntType>(ch), context);
-            }
-
-            return Algorithms::CopyN(&ch, 1, context.GetOutput());
-        }
-
-    private:
-        template<bool Signed>
-        struct IntegerTypeHelper { using Type = signed char; };
-
-        template<>
-        struct IntegerTypeHelper<false> { using Type = unsigned char; };
-
-    private:
-        using IntType = typename IntegerTypeHelper<std::is_signed_v<char>>::Type;
-
-    private:
-        bool m_AsInteger = false;
-        Formatter<IntType, char> m_Formatter;
     };
 
-    template<std::floating_point T>
-    class Formatter<T, char>
+    template<std::floating_point Float>
+    class Formatter<Float, char>
     {
     public:
-        inline void Parse(const ParseContext& /* context */)
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(Float floatNum, const FormatContext<Iter>& context)
         {
-        }
-
-        template<WritableIterator<char> Iter>
-        [[nodiscard]]
-        inline Iter Format(T floatingPoint, const FormatContext<Iter>& context)
-        {
-            long double value = static_cast<long double>(floatingPoint);
-            Usize count = static_cast<Usize>(std::snprintf(nullptr, 0, "%Lf", value) - 1);
+            auto value = static_cast<long double>(floatNum);
+            auto count = static_cast<Usize>(std::snprintf(nullptr, 0, "%Lf", value) - 1);
 
             String str(count, '\0');
             std::snprintf(str.Data(), count, "%Lf", value);
 
             return Algorithms::Copy(str.GetBegin(), str.GetEnd(), context.GetOutput());
         }
-
-    private:
-        T m_Base;
     };
 
     template<typename T>
     class Formatter<T*, char>
     {
     public:
-        inline void Parse(const ParseContext& /* context */)
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(T* pointer, const FormatContext<Iter>& context)
         {
-            StringView specs = "0#X";
-            m_Formatter.Parse(ParseContext(specs));
-        }
+            auto pointerInt = *reinterpret_cast<Uintptr*>(&pointer);
+            FormatContext<Iter> modifiedContext("0#x", context.GetOutput());
 
-        template<WritableIterator<char> Iter>
-        [[nodiscard]]
-        inline Iter Format(T* value, const FormatContext<Iter>& context)
-        {
-            Uintptr ptr;
-            std::memcpy(&ptr, &value, sizeof(void*));
-
-            return m_Formatter.Format(ptr, context);
+            return Formatter<Uintptr, char>::Format(pointerInt, modifiedContext);
         }
 
     private:
@@ -276,15 +224,10 @@ namespace Kitsune
     class Formatter<StringView, char>
     {
     public:
-        inline void Parse(const ParseContext& /* context */)
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(StringView string, const FormatContext<Iter>& context)
         {
-        }
-
-        template<WritableIterator<char> Iter>
-        [[nodiscard]]
-        inline Iter Format(const StringView str, const FormatContext<Iter>& context)
-        {
-            return Algorithms::Copy(str.GetBegin(), str.GetEnd(),
+            return Algorithms::Copy(string.GetBegin(), string.GetEnd(),
                                     context.GetOutput());
         }
     };

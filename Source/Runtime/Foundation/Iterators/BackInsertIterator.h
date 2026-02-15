@@ -16,6 +16,9 @@ namespace Kitsune
             };
     }
 
+    // An output iterator used for pushing elements into a container. The assignment
+    // operator appends to the back of the kept container using the `PushBack()`
+    // member functions. The increment and dereference operators are no-ops.
     template<Details::BackInsertable Container>
     class BackInsertIterator
     {
@@ -38,10 +41,20 @@ namespace Kitsune
         }
 
     public:
-        inline BackInsertIterator& operator++()   { return *this; }
-        inline BackInsertIterator operator++(int) { return *this; }
+        inline BackInsertIterator& operator++()
+        {
+            return *this;
+        }
 
-        inline BackInsertIterator& operator*() { return *this; }
+        inline BackInsertIterator operator++(int)
+        {
+            return *this;
+        }
+
+        inline BackInsertIterator& operator*()
+        {
+            return *this;
+        }
 
     public:
         inline Container* GetContainer() const { return m_Container; }

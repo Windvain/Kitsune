@@ -1,6 +1,6 @@
 #include "Application/Windows/WindowsWindow.h"
 
-#include "Foundation/String/UnicodeConversion.h"
+// #include "Foundation/String/UnicodeConversion.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
@@ -13,7 +13,7 @@ namespace Kitsune
         DWORD windowStyles = GetWindowStyles();
         DWORD exWindowStyles = GetExtendedWindowStyles();
 
-        RECT adjustedRect = { position.x, position.y, position.x + size.x, position.y + size.y };
+        RECT adjustedRect = { position.X, position.Y, position.X + size.X, position.Y + size.Y };
         ::AdjustWindowRectEx(&adjustedRect, windowStyles, false, exWindowStyles);
 
         m_WindowHandle = ::CreateWindowExW(GetExtendedWindowStyles(),
@@ -74,11 +74,12 @@ namespace Kitsune
 
     String WindowsWindow::GetTitle() const
     {
-        int length = GetWindowTextLengthW(m_WindowHandle);
-        WideString wideTitle(length, '\0');
+        return "";
+        // int length = GetWindowTextLengthW(m_WindowHandle);
+        // WideString wideTitle(length, '\0');
 
-        ::GetWindowTextW(m_WindowHandle, wideTitle.Data(), static_cast<int>(wideTitle.Size() + 1));
-        return Unicode::ConvertString<wchar_t, char>(wideTitle);
+        // ::GetWindowTextW(m_WindowHandle, wideTitle.Data(), static_cast<int>(wideTitle.Size() + 1));
+        // return Unicode::ConvertString<wchar_t, char>(wideTitle);
     }
 
     void WindowsWindow::SetSize(const Vector2<Uint32>& size)
@@ -89,7 +90,7 @@ namespace Kitsune
         DWORD style = ::GetWindowLongPtrW(m_WindowHandle, GWL_STYLE);
         DWORD exStyle = ::GetWindowLongPtrW(m_WindowHandle, GWL_EXSTYLE);
 
-        RECT rect = { 0, 0, static_cast<LONG>(size.x), static_cast<LONG>(size.y) };
+        RECT rect = { 0, 0, static_cast<LONG>(size.X), static_cast<LONG>(size.Y) };
         ::AdjustWindowRectEx(&rect, style, false, exStyle);
 
         ::SetWindowPos(m_WindowHandle, nullptr, 0, 0,
@@ -107,7 +108,7 @@ namespace Kitsune
         DWORD exStyle = ::GetWindowLongPtrW(m_WindowHandle, GWL_EXSTYLE);
 
         auto size = static_cast<Vector2<LONG>>(GetSize());
-        RECT rect = { position.x, position.y, size.x, size.y };
+        RECT rect = { position.X, position.Y, size.X, size.Y };
 
         ::AdjustWindowRectEx(&rect, style, false, exStyle);
         ::SetWindowPos(m_WindowHandle, nullptr, rect.left, rect.top, 0, 0, SWP_NOSIZE);
@@ -115,8 +116,9 @@ namespace Kitsune
 
     void WindowsWindow::SetTitle(const StringView title)
     {
-        WideString wideTitle = Unicode::ConvertString<char, wchar_t>(title);
-        ::SetWindowTextW(m_WindowHandle, wideTitle.Raw());
+    KITSUNE_UNUSED(title);
+        // WideString wideTitle = Unicode::ConvertString<char, wchar_t>(title);
+        // ::SetWindowTextW(m_WindowHandle, wideTitle.Raw());
     }
 
     void WindowsWindow::Fullscreen()

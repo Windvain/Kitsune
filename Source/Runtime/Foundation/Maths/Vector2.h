@@ -17,16 +17,32 @@ namespace Kitsune
     class VectorBase<T, 2>
     {
     public:
-        inline VectorBase() : x(T()), y(T()) { /* ... */ }
+        inline VectorBase()
+            : X(T()), Y(T())
+        {
+        }
 
-        inline explicit VectorBase(const T& val)            : x(val),    y(val)    { /* ... */ }
-        inline VectorBase(const T& paramX, const T& paramY) : x(paramX), y(paramY) { /* ... */ }
+        inline explicit VectorBase(const T& value)
+            : X(value), Y(value)
+        {
+        }
+
+        inline VectorBase(const T& paramX, const T& paramY)
+            : X(paramX), Y(paramY)
+        {
+        }
 
         template<typename U>
-        inline VectorBase(const VectorBase<U, 2>& vec) : x(vec.x), y(vec.y) { /* ... */ }
+        inline VectorBase(const VectorBase<U, 2>& vector)
+            : X(vector.X), Y(vector.Y)
+        {
+        }
 
         template<typename U>
-        inline VectorBase(VectorBase<U, 2>&& vec) : x(Move(vec.x)), y(Move(vec.y)) { /* ... */ }
+        inline VectorBase(VectorBase<U, 2>&& vector)
+            : X(Move(vector.X)), Y(Move(vector.Y))
+        {
+        }
 
         inline VectorBase(const VectorBase&) = default;
         inline VectorBase(VectorBase&&) = default;
@@ -38,41 +54,115 @@ namespace Kitsune
         inline VectorBase& operator=(VectorBase&&) = default;
 
         template<typename U>
-        inline VectorBase& operator=(const VectorBase<U, 2>& vec)
+        inline VectorBase& operator=(const VectorBase<U, 2>& vector)
         {
-            x = vec.x;
-            y = vec.y;
+            X = vector.X;
+            Y = vector.Y;
+
             return *this;
         }
 
         template<typename U>
-        inline VectorBase& operator=(VectorBase<U, 2>&& vec)
+        inline VectorBase& operator=(VectorBase<U, 2>&& vector)
         {
-            x = Move(vec.x);
-            y = Move(vec.y);
+            X = Move(vector.X);
+            Y = Move(vector.Y);
+
             return *this;
         }
 
-        inline T& operator[](Index index)             { return Data[index]; }
+    public:
+        inline T& operator[](Index index) { return Data[index]; }
         inline const T& operator[](Index index) const { return Data[index]; }
 
-        inline VectorBase operator-() { return VectorBase(-x, -y); }
+        inline VectorBase operator-()
+        {
+            return VectorBase(-X, -Y);
+        }
 
-        inline VectorBase& operator+=(const VectorBase& vec)  { x += vec.x; y += vec.y; return *this; }
-        inline VectorBase& operator-=(const VectorBase& vec)  { x -= vec.x; y -= vec.y; return *this; }
-        inline VectorBase& operator*=(const VectorBase& vec)  { x *= vec.x; y *= vec.y; return *this; }
-        inline VectorBase& operator/=(const VectorBase& vec)  { x /= vec.x; y /= vec.y; return *this; }
+        inline VectorBase& operator+=(const VectorBase& vector)
+        {
+            X += vector.X;
+            Y += vector.Y;
 
-        inline VectorBase& operator*=(const T& scalar)  { x *= scalar; y *= scalar; return *this; }
-        inline VectorBase& operator/=(const T& scalar)  { x /= scalar; y /= scalar; return *this; }
+            return *this;
+        }
 
-        inline VectorBase operator+(const VectorBase& vec) const { auto copy = *this; return (copy += vec); }
-        inline VectorBase operator-(const VectorBase& vec) const { auto copy = *this; return (copy -= vec); }
-        inline VectorBase operator*(const VectorBase& vec) const { auto copy = *this; return (copy *= vec); }
-        inline VectorBase operator/(const VectorBase& vec) const { auto copy = *this; return (copy /= vec); }
+        inline VectorBase& operator-=(const VectorBase& vector)
+        {
+            X -= vector.X;
+            Y -= vector.Y;
 
-        inline VectorBase operator*(const T& scalar) const { auto copy = *this; return (copy *= scalar); }
-        inline VectorBase operator/(const T& scalar) const { auto copy = *this; return (copy /= scalar); }
+            return *this;
+        }
+
+        inline VectorBase& operator*=(const VectorBase& vector)
+        {
+            X *= vector.X;
+            Y *= vector.Y;
+
+            return *this;
+        }
+
+        inline VectorBase& operator/=(const VectorBase& vector)
+        {
+            X /= vector.X;
+            Y /= vector.Y;
+
+            return *this;
+        }
+
+        inline VectorBase& operator*=(const T& scalar)
+        {
+            X *= scalar;
+            Y *= scalar;
+
+            return *this;
+        }
+
+        inline VectorBase& operator/=(const T& scalar)
+        {
+            X /= scalar;
+            Y /= scalar;
+
+            return *this;
+        }
+
+        inline VectorBase operator+(const VectorBase& vector) const
+        {
+            VectorBase copy = *this;
+            return (copy += vector);
+        }
+
+        inline VectorBase operator-(const VectorBase& vector) const
+        {
+            VectorBase copy = *this;
+            return (copy -= vector);
+        }
+
+        inline VectorBase operator*(const VectorBase& vector) const
+        {
+            VectorBase copy = *this;
+            return (copy *= vector);
+        }
+
+        inline VectorBase operator/(const VectorBase& vector) const
+        {
+            VectorBase copy = *this;
+            return (copy /= vector);
+        }
+
+        inline VectorBase operator*(const T& scalar) const
+        {
+            VectorBase copy = *this;
+            return (copy *= scalar);
+        }
+
+        inline VectorBase operator/(const T& scalar) const
+        {
+            VectorBase copy = *this;
+            return (copy /= scalar);
+        }
 
     public:
         // Should not be called by engine/client code.
@@ -86,27 +176,27 @@ namespace Kitsune
     public:
         union
         {
-            struct { T x; T y; };
+            struct { T X; T Y; };
             T Data[2];
         };
     };
 
     template<typename T>
-    VectorBase<T, 2> operator*(const T& scalar, const VectorBase<T, 2>& vec)
+    inline VectorBase<T, 2> operator*(const T& scalar, const VectorBase<T, 2>& vector)
     {
-        return (vec * scalar);
+        return (vector * scalar);
     }
 
     template<typename T>
-    VectorBase<T, 2> operator/(const T& scalar, const VectorBase<T, 2>& vec)
+    inline VectorBase<T, 2> operator/(const T& scalar, const VectorBase<T, 2>& vector)
     {
-        return (VectorBase<T, 2>(scalar) /= vec);
+        return (VectorBase<T, 2>(scalar) /= vector);
     }
 
     template<typename T, typename U>
-    bool operator==(const VectorBase<T, 2>& vec1, const VectorBase<U, 2>& vec2)
+    inline bool operator==(const VectorBase<T, 2>& vector1, const VectorBase<U, 2>& vector2)
     {
-        return ((vec1.x == vec2.x) && (vec1.y == vec2.y));
+        return ((vector1.X == vector2.X) && (vector1.Y == vector2.Y));
     }
 
     template<typename T>

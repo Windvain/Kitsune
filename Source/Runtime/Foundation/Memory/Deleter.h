@@ -5,10 +5,15 @@
 
 namespace Kitsune
 {
+    // Specifies a state(less) type which can be used to delete an object of type
+    // `T::ValueType`.
     template<typename T>
     concept Deleter =
         std::default_initializable<T> &&
         std::copy_constructible<T> &&
+
+        std::is_copy_assignable_v<T> &&
+        std::is_move_assignable_v<T> &&
 
         requires (T deleter)
         {
@@ -16,6 +21,8 @@ namespace Kitsune
             deleter(std::declval<typename T::ValueType*>());
         };
 
+    // The default deleter used for object management in smart pointers, if none
+    // were specified.
     template<typename T>
     class DefaultDeleter
     {
@@ -26,7 +33,7 @@ namespace Kitsune
         DefaultDeleter(const DefaultDeleter&) = default;
 
         template<typename U>
-        DefaultDeleter(const DefaultDeleter<U>&)
+        inline DefaultDeleter(const DefaultDeleter<U>&)
             requires (std::is_convertible_v<U*, T*>)
         {
         }
@@ -35,10 +42,12 @@ namespace Kitsune
         DefaultDeleter& operator=(const DefaultDeleter&) = default;
 
     public:
-        void operator()(ValueType* ptr)
+        inline void operator()(ValueType* pointer)
         {
             if constexpr (!std::is_void_v<ValueType>)
-                Memory::Delete(ptr);
+                Memory::Delete(pointer);
+
+            KITSUNE_UNUSED(pointer);
         }
     };
 }

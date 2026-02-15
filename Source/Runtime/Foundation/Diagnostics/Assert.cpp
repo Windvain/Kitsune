@@ -7,30 +7,36 @@
 #include "Foundation/Logging/GlobalLog.h"
 
 #include "Foundation/Diagnostics/MessageBox.h"
-#include "Launch/DefaultEngineLoop.h"
+#include "Launch/EngineLoop.h"
 
 namespace Kitsune::Details
 {
-    constexpr int MessageBoxAbortId = 1;
-    constexpr int MessageBoxIgnoreId = 2;
+    static const int MessageBoxAbortId = 1;
+    static const int MessageBoxIgnoreId = 2;
 
-    inline void FallbackLogAssertionMessage(const char* expression, const char* message,
-                                            const SourceLocation& loc)
+    inline void FallbackLogAssertionMessage(const char* expression,
+                                            const char* message,
+                                            const SourceLocation& location)
     {
         // The global logger might not have been set just yet, so just print the
         // assertion message into stdout.
         std::printf("Assertion `%s` has failed.\n"
                     "`%s` [In function %s, file %s:%" PRIu32 "]\n",
-                    expression, message, loc.FunctionName(), loc.FileName(), loc.Line());
+                    expression, message,
+                    location.FunctionName().Data(),
+                    location.FileName().Data(),
+                    location.Line());
     }
 
-    MessageBoxButtonId ShowAssertMessageBox(const char* expression, const char* message,
-                                            const SourceLocation& loc)
+    MessageBoxButtonId ShowAssertMessageBox(const char* expression,
+                                            const char* message,
+                                            const SourceLocation& location)
     {
         String description = Format(
             "Assertion failed!\n\nFile: {0}\nLine: {1}\nFunction: {2}\n\n"
             "Expression: {3}\nMessage: {4}",
-            loc.FileName(), loc.Line(), loc.FunctionName(), expression, message);
+            location.FileName(), location.Line(), location.FunctionName(),
+            expression, message);
 
         MessageBoxSpecifications msgBoxSpecs;
         msgBoxSpecs.Title = "Kitsune Engine";
@@ -49,23 +55,25 @@ namespace Kitsune::Details
     }
 
     bool HandleAssertionFailure(const char* expression, const char* message,
-                                SourceLocation loc)
+                                SourceLocation location)
     {
         if (expression == nullptr) expression = "";
         if (message == nullptr)    message = "";
 
-        auto* engineLoop = DefaultEngineLoop::GetInstance();
-        if (!engineLoop || (engineLoop->GetLoggers().Size() == 0))
-            FallbackLogAssertionMessage(expression, message, loc);
+        auto* engineLoop = EngineLoop::GetInstance();
+        if (!engineLoop || (engineLoop->GetLoggers().IsEmpty()))
+            FallbackLogAssertionMessage(expression, message, location);
         else
         {
-            KITSUNE_LOG_FORMAT_LEVEL_("ENGINE", LogSeverity::Fatal,
-                                      "Assertion `{0}` has failed.\n"
-                                      "`{1}`",
-                                      Move(loc),
-                                      expression, message);
+            KITSUNE_LOG_FORMAT_LEVEL_(
+                "Engine",
+                LogSeverity::Fatal,
+
+                "Assertion `{0}` has failed.\n`{1}`",
+                location,
+                expression, message);
         }
 
-        return (ShowAssertMessageBox(expression, message, loc) == MessageBoxAbortId);
+        return (ShowAssertMessageBox(expression, message, location) == MessageBoxAbortId);
     }
 }

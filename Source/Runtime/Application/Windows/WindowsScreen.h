@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Windows.h>
-#include "Application/IScreen.h"
+#include "Application/Screen.h"
 
 namespace Kitsune
 {
-    class WindowsScreen : public IScreen
+    class WindowsScreen : public Screen
     {
     public:
         WindowsScreen(const DISPLAY_DEVICEW& adapterDevice, const DISPLAY_DEVICEW& monitorDevice);
@@ -16,9 +16,7 @@ namespace Kitsune
         [[nodiscard]] Vector2<Int32> GetPosition() const override;
 
         [[nodiscard]] Uint32 GetDotsPerInch() const override;
-        [[nodiscard]] ScreenOrientation GetOrientation() const override;
-
-        [[nodiscard]] float GetRefreshRate() const override;
+        [[nodiscard]] Fraction<Uint32> GetRefreshRate() const override;
 
     public:
         void SetOrientation(ScreenOrientation orientation) override;

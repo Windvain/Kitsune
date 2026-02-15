@@ -9,10 +9,13 @@
 
 namespace Kitsune::Algorithms
 {
-    template<ForwardIterator InputIt, ForwardIterator OutputIt>
-    inline OutputIt UninitializedCopy(InputIt begin, InputIt end, OutputIt outBegin)
+    // Copies the elements in the range `[begin, end]` into the uninitialized memory
+    // range which starts at the iterator `outBegin`. Returns an iterator pointing
+    // to the element one past the last copied element.
+    template<ForwardIterator Iter, ForwardIterator OutIter>
+    inline OutIter UninitializedCopy(Iter begin, Iter end, OutIter outBegin)
     {
-        InputIt it = begin;
+        Iter it = begin;
         try
         {
             for (; it != end; ++it, ++outBegin)
@@ -27,10 +30,13 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator InputIt, typename Sz, ForwardIterator OutputIt>
-    inline OutputIt UninitializedCopyN(InputIt begin, Sz n, OutputIt outBegin)
+    // Copies the elements in the range `[begin, begin + n]` into the uninitialized
+    // memory range starting with `outBegin`. Returns an iterator pointing to the
+    // element one past the last copied element.
+    template<ForwardIterator Iter, typename Size, ForwardIterator OutIter>
+    inline OutIter UninitializedCopyN(Iter begin, Size n, OutIter outBegin)
     {
-        InputIt it = begin;
+        Iter it = begin;
         try
         {
             for (; n > 0; ++it, --n, ++outBegin)
@@ -45,10 +51,13 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator InputIt, ForwardIterator OutputIt>
-    inline OutputIt UninitializedMove(InputIt begin, InputIt end, OutputIt outBegin)
+    // Moves the elements in the range `[begin, end]` into the uninitialized memory
+    // range starting with `outBegin`. Returns an iterator pointing to the element
+    // one past the last copied element.
+    template<ForwardIterator Iter, ForwardIterator OutIter>
+    inline OutIter UninitializedMove(Iter begin, Iter end, OutIter outBegin)
     {
-        InputIt it = begin;
+        Iter it = begin;
         try
         {
             for (; it != end; ++it, ++outBegin)
@@ -63,10 +72,13 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator InputIt, typename Sz, ForwardIterator OutputIt>
-    inline OutputIt UninitializedMoveN(InputIt begin, Sz n, OutputIt outBegin)
+    // Copies the elements in the range `[begin, begin + n]` into the uninitialized
+    // memory range starting with `outBegin`. Returns an iterator pointing to the
+    // element one past the last copied element.
+    template<ForwardIterator Iter, typename Size, ForwardIterator OutIter>
+    inline OutIter UninitializedMoveN(Iter begin, Size n, OutIter outBegin)
     {
-        InputIt it = begin;
+        Iter it = begin;
         try
         {
             for (; n > 0; ++it, --n, ++outBegin)
@@ -81,6 +93,8 @@ namespace Kitsune::Algorithms
         }
     }
 
+    // Fills the uninitialized memory range `[begin, end]` with the value `value`.
+    // Returns an iterator pointing to the element one past the last copied element.
     template<ForwardIterator It, typename T>
     inline void UninitializedFill(It begin, It end, const T& value)
     {
@@ -97,8 +111,10 @@ namespace Kitsune::Algorithms
         }
     }
 
-    template<ForwardIterator It, typename Sz, typename T>
-    inline It UninitializedFillN(It begin, Sz n, const T& value)
+    // Fills the uninitialized memory range `[begin, begin + n]` with the value `value`.
+    // Returns an iterator pointing to the element one past the last copied element.
+    template<ForwardIterator It, typename Size, typename T>
+    inline It UninitializedFillN(It begin, Size n, const T& value)
     {
         It it = begin;
         try

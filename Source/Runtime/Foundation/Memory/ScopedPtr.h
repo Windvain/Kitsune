@@ -14,6 +14,7 @@
 
 namespace Kitsune
 {
+    // Smart pointer for managing an object that only has one owner.
     template<typename T, Deleter Del = DefaultDeleter<T>>
     class ScopedPtr
     {
@@ -23,35 +24,49 @@ namespace Kitsune
 
         using DeleterType = Del;
 
+        static_assert(!std::is_reference_v<T>,
+                      "The type of the pointer must be a valid type. "
+                      "A reference type cannot be pointed to and therefore is not valid.");
+
         static_assert(std::is_convertible_v<T*, typename Del::ValueType*>,
-            "The deleter used was invalid.");
+                      "The specified deleter cannot be used to delete an object of "
+                      "type T, because T* is not implicitly convertible to a pointer "
+                      "to the deleter's value type.");
 
     public:
-        inline ScopedPtr() : m_Pointer() { /* ... */ }
-        inline ScopedPtr(std::nullptr_t) : m_Pointer() { /* ... */ }
-
-        inline explicit ScopedPtr(T* ptr) : m_Pointer(ptr) { /* ... */ }
-        inline ScopedPtr(T* ptr, const Del& del)
-            : m_Pointer(ptr), m_Deleter(del)
+        inline ScopedPtr()
+            : m_Pointer()
         {
         }
 
-        inline ScopedPtr(T* ptr, Del&& del)
-            : m_Pointer(ptr), m_Deleter(Move(del))
+        inline ScopedPtr(std::nullptr_t)
+            : m_Pointer()
         {
         }
 
-        inline ScopedPtr(ScopedPtr&& ptr)
-            : m_Pointer(ptr.Release()),
-              m_Deleter(Move(ptr.GetDeleter()))
+        inline explicit ScopedPtr(T* pointer)
+            : m_Pointer(pointer)
         {
         }
 
-        template<typename U, Deleter UDel>
+        template<typename DeleterRef>
+            requires std::same_as<Del, std::remove_reference_t<DeleterRef>>
+        inline ScopedPtr(T* pointer, DeleterRef&& deleter)
+            : m_Pointer(pointer), m_Deleter(Forward<DeleterRef>(deleter))
+        {
+        }
+
+        inline ScopedPtr(ScopedPtr&& pointer)
+            : m_Pointer(pointer.Release()),
+              m_Deleter(Move(pointer.GetDeleter()))
+        {
+        }
+
+        template<typename U, Deleter OtherDel>
             requires std::is_convertible_v<U*, T*>
-        inline ScopedPtr(ScopedPtr<U, UDel>&& ptr)
-            : m_Pointer(ptr.Release()),
-              m_Deleter(Move(ptr.GetDeleter()))
+        inline ScopedPtr(ScopedPtr<U, OtherDel>&& pointer)
+            : m_Pointer(pointer.Release()),
+              m_Deleter(Move(pointer.GetDeleter()))
         {
         }
 
@@ -62,22 +77,26 @@ namespace Kitsune
         }
 
     public:
-        inline ScopedPtr& operator=(ScopedPtr&& ptr)
+        inline ScopedPtr& operator=(ScopedPtr&& pointer)
         {
-            Reset(ptr.Release());
-            GetDeleter() = Move(ptr.GetDeleter());
+            Reset(pointer.Release());
+            GetDeleter() = Move(pointer.GetDeleter());
 
             return *this;
         }
 
-        ScopedPtr& operator=(std::nullptr_t) { Reset(); return *this; }
+        inline ScopedPtr& operator=(std::nullptr_t)
+        {
+            Reset();
+            return *this;
+        }
 
-        template<typename U, Deleter UDel>
-        inline ScopedPtr& operator=(ScopedPtr<U, UDel>&& ptr)
+        template<typename U, Deleter OtherDel>
+        inline ScopedPtr& operator=(ScopedPtr<U, OtherDel>&& pointer)
             requires std::is_convertible_v<U*, T*>
         {
-            Reset(ptr.Release());
-            GetDeleter() = Move(ptr.GetDeleter());
+            Reset(pointer.Release());
+            GetDeleter() = Move(pointer.GetDeleter());
 
             return *this;
         }
@@ -87,21 +106,36 @@ namespace Kitsune
         ScopedPtr& operator=(const ScopedPtr&) = delete;
 
     public:
-        inline T& operator*() const requires (!std::is_void_v<T>) { return *m_Pointer; }
-        inline T* operator->() const { return m_Pointer; }
+        inline T& operator*() const
+            requires (!std::is_void_v<T>)
+        {
+            return *m_Pointer;
+        }
 
-        inline explicit operator bool() const { return (m_Pointer != nullptr); }
+        inline T* operator->() const
+        {
+            return m_Pointer;
+        }
+
+        inline explicit operator bool() const
+        {
+            return (m_Pointer != nullptr);
+        }
 
     public:
         [[nodiscard]]
-        T* Release() { return Exchange(m_Pointer, nullptr); }
+        inline T* Release()
+        {
+            return Exchange(m_Pointer, nullptr);
+        }
 
-        inline void Reset(T* ptr = PointerType())
+        inline void Reset(T* pointer = PointerType())
         {
             T* old = m_Pointer;
-            m_Pointer = ptr;
+            m_Pointer = pointer;
 
-            if (old) GetDeleter()(old);
+            if (old != nullptr)
+                GetDeleter()(old);
         }
 
         inline void Swap(ScopedPtr& other)
@@ -112,7 +146,10 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline T* Get() const { return m_Pointer; }
+        inline T* Get() const
+        {
+            return m_Pointer;
+        }
 
         [[nodiscard]] inline Del& GetDeleter() { return m_Deleter; }
         [[nodiscard]] inline const Del& GetDeleter() const { return m_Deleter; }
@@ -122,117 +159,107 @@ namespace Kitsune
         KITSUNE_MAYBE_OVERLAPPING Del m_Deleter;
     };
 
+    // Creates an object of type T whose lifetime is managed by the returned
+    // scoped pointer.
     template<typename T, typename... Args>
-    [[nodiscard]] inline ScopedPtr<T> MakeScoped(Args&&... args)
+    [[nodiscard]]
+    inline ScopedPtr<T> MakeScoped(Args&&... args)
     {
         return ScopedPtr(Memory::New<T>(Forward<Args>(args)...));
     }
 
     template<typename T, Deleter Del, typename U, Deleter UDel>
-    inline bool operator==(const ScopedPtr<T, Del>& ptr1, const ScopedPtr<U, UDel>& ptr2)
+    inline bool operator==(const ScopedPtr<T, Del>& pointer1,
+                           const ScopedPtr<U, UDel>& pointer2)
     {
-        return (ptr1.Get() == ptr2.Get());
+        return (pointer1.Get() == pointer2.Get());
     }
 
     template<typename T, Deleter Del, typename U, Deleter UDel>
-    inline bool operator!=(const ScopedPtr<T, Del>& ptr1, const ScopedPtr<U, UDel>& ptr2)
+    inline bool operator>=(const ScopedPtr<T, Del>& pointer1,
+                           const ScopedPtr<U, UDel>& pointer2)
     {
-        return (ptr1.Get() != ptr2.Get());
+        return (pointer1.Get() >= pointer2.Get());
     }
 
     template<typename T, Deleter Del, typename U, Deleter UDel>
-    inline bool operator>=(const ScopedPtr<T, Del>& ptr1, const ScopedPtr<U, UDel>& ptr2)
+    inline bool operator<=(const ScopedPtr<T, Del>& pointer1,
+                           const ScopedPtr<U, UDel>& pointer2)
     {
-        return (ptr1.Get() >= ptr2.Get());
+        return (pointer1.Get() <= pointer2.Get());
     }
 
     template<typename T, Deleter Del, typename U, Deleter UDel>
-    inline bool operator<=(const ScopedPtr<T, Del>& ptr1, const ScopedPtr<U, UDel>& ptr2)
+    inline bool operator>(const ScopedPtr<T, Del>& pointer1,
+                          const ScopedPtr<U, UDel>& pointer2)
     {
-        return (ptr1.Get() <= ptr2.Get());
+        return (pointer1.Get() > pointer2.Get());
     }
 
     template<typename T, Deleter Del, typename U, Deleter UDel>
-    inline bool operator>(const ScopedPtr<T, Del>& ptr1, const ScopedPtr<U, UDel>& ptr2)
+    inline bool operator<(const ScopedPtr<T, Del>& pointer1,
+                          const ScopedPtr<U, UDel>& pointer2)
     {
-        return (ptr1.Get() > ptr2.Get());
-    }
-
-    template<typename T, Deleter Del, typename U, Deleter UDel>
-    inline bool operator<(const ScopedPtr<T, Del>& ptr1, const ScopedPtr<U, UDel>& ptr2)
-    {
-        return (ptr1.Get() < ptr2.Get());
+        return (pointer1.Get() < pointer2.Get());
     }
 
     template<typename T, Deleter Del>
-    inline bool operator==(std::nullptr_t, const ScopedPtr<T, Del>& ptr)
+    inline bool operator==(std::nullptr_t, const ScopedPtr<T, Del>& pointer)
     {
-        return (ptr.Get() == nullptr);
+        return (pointer.Get() == nullptr);
     }
 
     template<typename T, Deleter Del>
-    inline bool operator!=(std::nullptr_t, const ScopedPtr<T, Del>& ptr)
+    inline bool operator>=(std::nullptr_t, const ScopedPtr<T, Del>& pointer)
     {
-        return (ptr.Get() != nullptr);
+        return !(nullptr < pointer);
     }
 
     template<typename T, Deleter Del>
-    inline bool operator>=(std::nullptr_t, const ScopedPtr<T, Del>& ptr)
+    inline bool operator<=(std::nullptr_t, const ScopedPtr<T, Del>& pointer)
     {
-        return !(nullptr < ptr);
+        return !(nullptr > pointer);
     }
 
     template<typename T, Deleter Del>
-    inline bool operator<=(std::nullptr_t, const ScopedPtr<T, Del>& ptr)
+    inline bool operator>(std::nullptr_t, const ScopedPtr<T, Del>& pointer)
     {
-        return !(nullptr > ptr);
+        return (static_cast<T*>(nullptr) > pointer.Get());
     }
 
     template<typename T, Deleter Del>
-    inline bool operator>(std::nullptr_t, const ScopedPtr<T, Del>& ptr)
+    inline bool operator<(std::nullptr_t, const ScopedPtr<T, Del>& pointer)
     {
-        return (static_cast<T*>(nullptr) > ptr.Get());
+        return (static_cast<T*>(nullptr) < pointer.Get());
     }
 
     template<typename T, Deleter Del>
-    inline bool operator<(std::nullptr_t, const ScopedPtr<T, Del>& ptr)
+    inline bool operator==(const ScopedPtr<T, Del>& pointer, std::nullptr_t)
     {
-        return (static_cast<T*>(nullptr) < ptr.Get());
+        return (pointer.Get() == nullptr);
     }
 
     template<typename T, Deleter Del>
-    inline bool operator==(const ScopedPtr<T, Del>& ptr, std::nullptr_t)
+    inline bool operator>=(const ScopedPtr<T, Del>& pointer, std::nullptr_t)
     {
-        return (ptr.Get() == nullptr);
+        return !(pointer < nullptr);
     }
 
     template<typename T, Deleter Del>
-    inline bool operator!=(const ScopedPtr<T, Del>& ptr, std::nullptr_t)
+    inline bool operator<=(const ScopedPtr<T, Del>& pointer, std::nullptr_t)
     {
-        return (ptr.Get() != nullptr);
+        return !(pointer > nullptr);
     }
 
     template<typename T, Deleter Del>
-    inline bool operator>=(const ScopedPtr<T, Del>& ptr, std::nullptr_t)
+    inline bool operator>(const ScopedPtr<T, Del>& pointer, std::nullptr_t)
     {
-        return !(ptr < nullptr);
+        return (pointer.Get() > static_cast<T*>(nullptr));
     }
 
     template<typename T, Deleter Del>
-    inline bool operator<=(const ScopedPtr<T, Del>& ptr, std::nullptr_t)
+    inline bool operator<(const ScopedPtr<T, Del>& pointer, std::nullptr_t)
     {
-        return !(ptr > nullptr);
-    }
-
-    template<typename T, Deleter Del>
-    inline bool operator>(const ScopedPtr<T, Del>& ptr, std::nullptr_t)
-    {
-        return (ptr.Get() > static_cast<T*>(nullptr));
-    }
-
-    template<typename T, Deleter Del>
-    inline bool operator<(const ScopedPtr<T, Del>& ptr, std::nullptr_t)
-    {
-        return (ptr.Get() < static_cast<T*>(nullptr));
+        return (pointer.Get() < static_cast<T*>(nullptr));
     }
 }

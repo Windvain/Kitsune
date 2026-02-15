@@ -1,14 +1,15 @@
 #include "Foundation/Logging/GlobalLog.h"
-#include "Launch/DefaultEngineLoop.h"
+#include "Launch/EngineLoop.h"
 
-namespace Kitsune::Details
+namespace Kitsune
 {
-    void LogGlobal(const StringView loggerName, LogSeverity severity, SourceLocation loc, const StringView str)
+    void Log(const StringView loggerName, const LogSeverity severity,
+             const SourceLocation location, const StringView message)
     {
-        auto* engineLoop = DefaultEngineLoop::GetInstance();
-        for (SharedPtr<ILogger>& logger : engineLoop->GetLoggers())
-        {
-            logger->Log(LogPayload(str, loggerName, loc, severity));
-        }
+        auto* engineLoop = EngineLoop::GetInstance();
+        LogPayload logPayload(message, loggerName, location, severity);
+
+        for (ScopedPtr<Logger>& logger : engineLoop->GetLoggers())
+            logger->Log(logPayload);
     }
 }

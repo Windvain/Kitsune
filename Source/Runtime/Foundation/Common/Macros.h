@@ -2,12 +2,8 @@
 
 #include "Foundation/Common/Predefined.h"
 
-// Helper preprocessor function macros.
 #define KITSUNE_STRINGIFY_HELPER_(x) #x
-#define KITSUNE_STRINGIFY(x)         KITSUNE_STRINGIFY_HELPER_(x)
-
-#define KITSUNE_CONCAT_HELPER_(x, y) x##y
-#define KITSUNE_CONCAT(x, y)         KITSUNE_CONCAT_HELPER_(x, y)
+#define KITSUNE_STRINGIFY(x) KITSUNE_STRINGIFY_HELPER_(x)
 
 // Compile time checks.
 #if defined(__has_builtin)
@@ -30,6 +26,8 @@
     #define KITSUNE_NOINLINE [[clang::noinline]]
 #elif KITSUNE_HAS_GNU_ATTRIBUTE(noinline) && defined(KITSUNE_COMPILER_GCC)
     #define KITSUNE_NOINLINE __attribute__((noinline))
+#elif defined(KITSUNE_COMPILER_MSVC)
+    #define KITSUNE_NOINLINE __declspec(noinline)
 #else
     #define KITSUNE_NOINLINE
 #endif
@@ -74,13 +72,6 @@
     #define KITSUNE_UNREACHABLE()
 #endif
 
-// Compile time string literal conversions.
-#if defined(KITSUNE_OS_WINDOWS)
-    #define KITSUNE_NATIVE_TEXT(text) L##text
-#else
-    #define KITSUNE_NATIVE_TEXT(text) text
-#endif
-
 // Compiler-specific warning disabling/enabling.
 #if defined(KITSUNE_COMPILER_MSVC)
     #define KITSUNE_PUSH_COMPILER_WARNINGS() __pragma(warning(push))
@@ -108,13 +99,5 @@
 #define KITSUNE_SIGN(x) (((x) == 0) ? 0 : (((x) > 0) ? 1 : -1))
 
 // Miscellaneous macros.
-#if defined(KITSUNE_COMPILER_GCC) || defined(KITSUNE_COMPILER_CLANG)
-    #define KITSUNE_CURRENT_FUNCTION __PRETTY_FUNCTION__
-#elif defined(KITSUNE_COMPILER_MSVC)
-    #define KITSUNE_CURRENT_FUNCTION __FUNCSIG__
-#else
-    #define KITSUNE_CURRENT_FUNCTION __func__
-#endif
-
 #define KITSUNE_UNUSED(x) ((void)x)
 #define KITSUNE_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

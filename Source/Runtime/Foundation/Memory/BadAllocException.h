@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Foundation/Diagnostics/IException.h"
+#include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
 {
-    class BadAllocException : public IException
+    // Thrown when an allocation request failed.
+    class BadAllocException : public Exception
     {
     public:
         inline BadAllocException()
-            : IException("BadAllocException", "An allocation request failed")
+            : Exception("BadAllocException", "An allocation request failed.")
         {
         }
     };

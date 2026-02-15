@@ -32,6 +32,10 @@ namespace Kitsune
         Array<MessageBoxButton> Buttons;
     };
 
+    // Shows a platform-specific native message box with the specifications passed
+    // in. If `pressed` is not a null pointer, this function will write the ID
+    // of the button pressed by the user into `pressed`.
+    // Returns true if the message box was successfully shown, else returns false.
     bool ShowMessageBox(const MessageBoxSpecifications& specs,
                         MessageBoxButtonId* pressed = nullptr);
 }
