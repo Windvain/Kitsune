@@ -5,6 +5,7 @@
 
 namespace Kitsune
 {
+    // A stream class that outputs to the console window, if one exists.
     class ConsoleOutputStream : public OutputStream<char>
     {
     public:

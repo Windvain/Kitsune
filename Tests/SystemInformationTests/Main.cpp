@@ -37,10 +37,17 @@ public:
         KITSUNE_INFO_FORMAT("Battery Percentage: {0}%", batteryInfo.ChargePercentage);
 
         KITSUNE_INFO("");
-        KITSUNE_INFO_FORMAT("Total Physical Memory: {0} KB", statusInfo.TotalPhysicalMemory);
-        KITSUNE_INFO_FORMAT("Available Physical Memory: {0} KB", statusInfo.AvailablePhysicalMemory);
-        KITSUNE_INFO_FORMAT("Total Virtual Memory: {0} KB", statusInfo.TotalVirtualMemory);
-        KITSUNE_INFO_FORMAT("Available Virtual Memory: {0} KB", statusInfo.AvailableVirtualMemory);
+        KITSUNE_INFO_FORMAT("Total Physical Memory: {0} KB",
+                            statusInfo.TotalPhysicalMemory);
+
+        KITSUNE_INFO_FORMAT("Available Physical Memory: {0} KB",
+                            statusInfo.AvailablePhysicalMemory);
+
+        KITSUNE_INFO_FORMAT("Total Virtual Memory: {0} KB",
+                            statusInfo.TotalVirtualMemory);
+
+        KITSUNE_INFO_FORMAT("Available Virtual Memory: {0} KB",
+                            statusInfo.AvailableVirtualMemory);
     }
 };
 
