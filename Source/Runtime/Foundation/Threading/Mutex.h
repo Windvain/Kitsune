@@ -5,6 +5,8 @@
 
 namespace Kitsune
 {
+    // A multithreading primitive for synchronizing access to a shared resource or
+    // a function.
     class Mutex : public NonCopyable
     {
     public:

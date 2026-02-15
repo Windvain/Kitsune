@@ -4,6 +4,9 @@
 
 namespace Kitsune
 {
+    // An output iterator which is used for writing elements into a stream. The
+    // assignment operator writes to the kept output stream using the `Write()`
+    // member function. The increment and dereference operators are no-ops.
     template<typename T>
     class WriteStreamIterator
     {
@@ -26,13 +29,26 @@ namespace Kitsune
         }
 
     public:
-        inline WriteStreamIterator& operator++()   { return *this; }
-        inline WriteStreamIterator operator++(int) { return *this; }
+        inline WriteStreamIterator& operator++()
+        {
+            return *this;
+        }
 
-        inline WriteStreamIterator& operator*() { return *this; }
+        inline WriteStreamIterator operator++(int)
+        {
+            return *this;
+        }
+
+        inline WriteStreamIterator& operator*()
+        {
+            return *this;
+        }
 
     public:
-        inline OutputStream<T>* GetStream() const { return m_Stream; }
+        inline OutputStream<T>* GetStream() const
+        {
+            return m_Stream;
+        }
 
     private:
         OutputStream<T>* m_Stream = nullptr;

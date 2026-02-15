@@ -14,6 +14,7 @@ namespace Kitsune
         };
     }
 
+    // Swaps the values of the objects `lhs` and `rhs`.
     template<typename T>
         requires (!Details::HasSwapMemberFunction<T>)
     inline void Swap(T& lhs, T& rhs)
@@ -23,6 +24,7 @@ namespace Kitsune
         rhs = Move(tmp);
     }
 
+    // Swaps the values of the objects `lhs` and `rhs`.
     template<typename T>
         requires Details::HasSwapMemberFunction<T>
     inline void Swap(T& lhs, T& rhs)
@@ -30,9 +32,10 @@ namespace Kitsune
         lhs.Swap(rhs);
     }
 
-    template<ForwardIterator It1, ForwardIterator It2>
-    inline void IteratorSwap(It1 it1, It2 it2)
+    // Swaps the values pointed to by the iterators `iter1` and `iter2`.
+    template<ForwardIterator Iter1, ForwardIterator Iter2>
+    inline void IteratorSwap(Iter1 iter1, Iter2 iter2)
     {
-        Swap(*it1, *it2);
+        Swap(*iter1, *iter2);
     }
 }

@@ -4,6 +4,7 @@
 
 namespace Kitsune
 {
+    // Thrown when a general operating system level error happens.
     class SystemException : public Exception
     {
     public:

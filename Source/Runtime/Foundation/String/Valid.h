@@ -14,6 +14,8 @@ namespace Kitsune
                          typename IteratorTraits<Iter>::ValueType>;
     }
 
+    // Returns true if the range `[begin, end]` is valid in the specified text
+    // encoding `Encoding`.
     template<TextEncoding Encoding,
              Details::ForwardIteratorToChars<Encoding> Iter>
     inline bool IsValidEncoding(Iter begin, Iter end)

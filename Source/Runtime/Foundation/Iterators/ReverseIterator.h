@@ -9,6 +9,8 @@
 
 namespace Kitsune
 {
+    // An iterator that reverses the direction of the given iterator. The iterator
+    // type must satisfy the `BidirectionalIterator` concept.
     template<BidirectionalIterator Iter>
     class ReverseIterator
     {

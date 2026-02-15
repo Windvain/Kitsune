@@ -5,6 +5,8 @@
 
 namespace Kitsune
 {
+    // An abstract class to a memory API, for example to the C runtime library, or
+    // to 3rd party libraries, like jemalloc or mimalloc.
     class MemoryApi : public NonCopyable
     {
     public:

@@ -11,6 +11,8 @@
 
 namespace Kitsune
 {
+    // Transcodes a string encoded in `InEncoding` into a string encoded
+    // with `OutEncoding`.
     template<TextEncoding InEncoding, TextEncoding OutEncoding>
     inline auto TranscodeString(
         BasicStringView<typename InEncoding::CodeunitType> string)
@@ -33,36 +35,42 @@ namespace Kitsune
         return outputString;
     }
 
+    // Transcodes a string from UTF-8 to UTF-16.
     template<Utf8Character Char8, Utf16Character Char16>
     inline auto Utf8ToUtf16(BasicStringView<Char8> string)
     {
         return TranscodeString<Utf8Encoding<Char8>, Utf16Encoding<Char16>>(string);
     }
 
+    // Transcodes a string from UTF-8 to UTF-32.
     template<Utf8Character Char8, Utf32Character Char32>
     inline auto Utf8ToUtf32(BasicStringView<Char8> string)
     {
         return TranscodeString<Utf8Encoding<Char8>, Utf32Encoding<Char32>>(string);
     }
 
+    // Transcodes a string from UTF-16 to UTF-8.
     template<Utf16Character Char16, Utf8Character Char8>
     inline auto Utf16ToUtf8(BasicStringView<Char16> string)
     {
         return TranscodeString<Utf16Encoding<Char16>, Utf8Encoding<Char8>>(string);
     }
 
+    // Transcodes a string from UTF-16 to UTF-32.
     template<Utf16Character Char16, Utf32Character Char32>
     inline auto Utf16ToUtf32(BasicStringView<Char16> string)
     {
         return TranscodeString<Utf16Encoding<Char16>, Utf32Encoding<Char32>>(string);
     }
 
+    // Transcodes a string from UTF-32 to UTF-8.
     template<Utf32Character Char32, Utf8Character Char8>
     inline auto Utf32ToUtf8(BasicStringView<Char32> string)
     {
         return TranscodeString<Utf32Encoding<Char32>, Utf8Encoding<Char8>>(string);
     }
 
+    // Transcodes a string from UTF-32 to UTF-16.
     template<Utf32Character Char32, Utf16Character Char16>
     inline auto Utf32ToUtf16(BasicStringView<Char32> string)
     {

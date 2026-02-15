@@ -7,7 +7,6 @@
 #include "Foundation/Diagnostics/Assert.h"
 
 #include "Foundation/String/TranscodePresets.h"
-
 #include "Foundation/Diagnostics/SystemException.h"
 
 #if defined(KITSUNE_ARCH_X86)

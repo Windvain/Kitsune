@@ -81,7 +81,9 @@ namespace Kitsune
     }
 
     template<Invocable<IWbemClassObject*, VARIANT&> Func>
-    static void EnumerateWmiObject(const ComPtr<IEnumWbemClassObject>& enumerator, Func func)
+    static void EnumerateWmiObject(
+        const ComPtr<IEnumWbemClassObject>& enumerator,
+        Func func)
     {
         ULONG objectCount = 0;
         ComPtr<IWbemClassObject> classObject;

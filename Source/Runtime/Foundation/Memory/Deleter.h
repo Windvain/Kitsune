@@ -5,6 +5,8 @@
 
 namespace Kitsune
 {
+    // Specifies a state(less) type which can be used to delete an object of type
+    // `T::ValueType`.
     template<typename T>
     concept Deleter =
         std::default_initializable<T> &&
@@ -19,6 +21,8 @@ namespace Kitsune
             deleter(std::declval<typename T::ValueType*>());
         };
 
+    // The default deleter used for object management in smart pointers, if none
+    // were specified.
     template<typename T>
     class DefaultDeleter
     {

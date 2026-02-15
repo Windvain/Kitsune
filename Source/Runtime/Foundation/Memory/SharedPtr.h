@@ -151,6 +151,7 @@ namespace Kitsune
     template<typename T, ThreadSafety Mode>
     class WeakPtr;
 
+    // A smart pointer that shares ownership of a single resource.
     template<typename T, ThreadSafety Mode = ThreadSafety::ThreadSafe>
     class SharedPtr
     {
@@ -526,6 +527,7 @@ namespace Kitsune
         return (pointer.Get() < static_cast<T*>(nullptr));
     }
 
+    // A smart pointer that holds a non-owning reference to a resource.
     template<typename T, ThreadSafety Mode = ThreadSafety::ThreadSafe>
     class WeakPtr
     {

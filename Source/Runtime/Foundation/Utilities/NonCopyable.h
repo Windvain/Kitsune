@@ -2,6 +2,7 @@
 
 namespace Kitsune
 {
+    // Inherited by a class to make that class non-copyable.
     class NonCopyable
     {
     public:

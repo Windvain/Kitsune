@@ -35,7 +35,8 @@ namespace Kitsune
         return features;
     }
 
-    StringView SystemInformation::TranslateX86VendorString(const StringView manufacturer)
+    StringView SystemInformation::TranslateX86VendorString(
+        const StringView manufacturer)
     {
         if (manufacturer == "GenuineIntel")      return "Intel";
         else if (manufacturer == "AuthenticAMD") return "AMD";

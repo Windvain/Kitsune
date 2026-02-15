@@ -7,9 +7,11 @@
 
 namespace Kitsune
 {
+    // Formats the string `formatString` with the specified arguments and outputs
+    // it into `outputIter`.
     template<OutputIterator<const char&> OutputIter, typename... Args>
-    inline OutputIter FormatTo(
-        OutputIter outputIter, StringView formatString, Args&&... args)
+    inline OutputIter FormatTo(OutputIter outputIter, StringView formatString,
+                               Args&&... args)
     {
         FormatArgumentPack<sizeof...(Args), OutputIter> argumentPack = {
             Forward<Args>(args)...
@@ -17,8 +19,8 @@ namespace Kitsune
 
         while (!formatString.IsEmpty())
         {
-            auto [newFormatString, newOutputIter] =
-                DefaultFormatScanner::Format(argumentPack, formatString, outputIter);
+            auto [newFormatString, newOutputIter] = DefaultFormatScanner::Format(
+                argumentPack, formatString, outputIter);
 
             formatString = newFormatString;
             outputIter = newOutputIter;
@@ -27,6 +29,8 @@ namespace Kitsune
         return outputIter;
     }
 
+    // Formats the string `formatString` with the specified arguments and returns
+    // the output as a string.
     template<typename... Args>
     [[nodiscard]]
     inline String Format(const StringView formatString, Args&&... args)

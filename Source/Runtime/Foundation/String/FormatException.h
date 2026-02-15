@@ -4,6 +4,7 @@
 
 namespace Kitsune
 {
+    // Thrown when an error has happened during the formatting of a string.
     class FormatException : public Exception
     {
     public:

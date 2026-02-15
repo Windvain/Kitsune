@@ -29,7 +29,12 @@ namespace Kitsune
         return CpuIdResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
 #else
         unsigned int cpuInfo[4];
-        __get_cpuid_count(eax, ecx, cpuInfo, cpuInfo + 1, cpuInfo + 2, cpuInfo + 3);
+        __get_cpuid_count(
+            eax, ecx,
+            cpuInfo,
+            cpuInfo + 1,
+            cpuInfo + 2,
+            cpuInfo + 3);
 
         return CpuIdResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
 #endif

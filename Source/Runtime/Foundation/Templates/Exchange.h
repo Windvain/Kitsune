@@ -5,13 +5,15 @@
 
 namespace Kitsune
 {
+    // Replaces the value of the object `value` with a new value `newValue` and
+    // returns the old value of the object.
     template<typename T, typename U = T>
     [[nodiscard]]
-    inline T Exchange(T& val, U&& newValue)
+    inline T Exchange(T& value, U&& newValue)
     {
-        T tmp = Move(val);
-        val = Forward<U>(newValue);
+        T temp = Move(value);
+        value = Forward<U>(newValue);
 
-        return tmp;
+        return temp;
     }
 }

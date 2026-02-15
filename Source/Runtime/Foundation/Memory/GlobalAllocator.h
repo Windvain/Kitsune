@@ -5,6 +5,8 @@
 
 namespace Kitsune
 {
+    // The default allocator used for allocations/deallocations in containers
+    // and smart pointers, if none was specified.
     class GlobalAllocator
     {
     public:

@@ -4,6 +4,8 @@
 
 namespace Kitsune
 {
+    // Thrown when an attempt to access an out of range index was made.
+    // (read from/written to)
     class OutOfRangeException : public Exception
     {
     public:

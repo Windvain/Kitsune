@@ -4,6 +4,7 @@
 
 namespace Kitsune
 {
+    // Thrown when an allocation request failed.
     class BadAllocException : public Exception
     {
     public:

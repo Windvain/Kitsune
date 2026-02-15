@@ -22,8 +22,8 @@ namespace Kitsune
                         MessageBoxButtonId* pressed)
     {
         // As of now, Windows will always load versions <6.0, which doesn't have
-        // TaskDialogIndirect(). Applications will have to use an application manifest
-        // to load the correct version.
+        // TaskDialogIndirect(). Applications will have to use an application
+        // manifest to load the correct version.
         HMODULE comctl32 = ::LoadLibraryW(L"comctl32.dll");
         if (comctl32 == nullptr)
             return ShowFallbackMessageBox(specs, pressed);
@@ -86,7 +86,8 @@ namespace Kitsune
         }
 
         int internalPressed;
-        HRESULT result = taskDialogIndirect(&config, &internalPressed, nullptr, nullptr);
+        HRESULT result = taskDialogIndirect(&config, &internalPressed, nullptr,
+                                            nullptr);
 
         ::FreeLibrary(comctl32);
 
@@ -94,9 +95,9 @@ namespace Kitsune
             return false;
 
         // HACK: IDCANCEL, IDABORT, and all other predefined IDs cause unintended
-        // consequences. Offset the button ID internally to avoid this issue. Why
-        // IDCONTINUE, you might ask?
-        // Because it has the largest value out of all of the predefined button IDs.
+        // consequences. Offset the button ID internally to avoid this issue.
+        // IDCONTINUE is used as the offset because it has the largest value out
+        // of all of the predefined button IDs.
         //
         // If no buttons were specified, then the message box automatically adds
         // an Ok button.

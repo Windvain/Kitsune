@@ -4,6 +4,7 @@
 
 namespace Kitsune
 {
+    // Thrown when one or more invalid arguments were passed into a function.
     class InvalidArgumentException : public Exception
     {
     public:

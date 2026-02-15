@@ -255,7 +255,7 @@ namespace Kitsune
         }
 
     public:
-        // Keep this public access, we need it for aggregate initialization.
+        // Keep this publicly accessible, we need it for aggregate initialization.
         BasicFormatArgument<Char, OutputIter> m_Arguments[ArgCount];
     };
 
