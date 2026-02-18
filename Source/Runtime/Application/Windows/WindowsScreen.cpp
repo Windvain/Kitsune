@@ -1,38 +1,54 @@
 #include "Application/Windows/WindowsScreen.h"
-#include <cwchar>
 
-#include <Windows.h>
-#include <shellscalingapi.h>        // Even though we're dynamically loading Shcore.dll, we still need the MONITOR_DPI_TYPE struct for
-                                    // GetDpiForMonitor's function signature.
-
-#include "Application/Screen.h"
-
-#include "Foundation/Maths/Vector2.h"
+#include <ShellScalingApi.h>
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
 {
-    WindowsScreen::WindowsScreen(const DISPLAY_DEVICEW& adapterDevice, const DISPLAY_DEVICEW& monitorDevice)
-        : m_AdapterDevice(adapterDevice), m_MonitorDevice(monitorDevice)
+    WindowsScreen::WindowsScreen(const WideStringView deviceName)
+        : m_DeviceName(deviceName), m_MonitorHandle(GetMonitorHandle(deviceName))
     {
-        // No way of getting an HMONITOR from a DISPLAY_DEVICE directly, we have to enumerate through
-        // all the monitors connected and check for the monitor with the correct name.
-        MonitorEnumProcData data{ .MonitorHandle = nullptr, .Name = adapterDevice.DeviceName };
-        ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure, reinterpret_cast<LPARAM>(&data));
-
-        m_MonitorHandle = data.MonitorHandle;
     }
 
     Vector2<Uint32> WindowsScreen::GetSize() const
     {
-        DEVMODEW deviceMode = GetDeviceMode();
+        DEVMODEW deviceMode;
+        if (!GetDeviceMode(&deviceMode))
+            return Vector2<Uint32>();
+
         return { deviceMode.dmPelsWidth, deviceMode.dmPelsHeight };
     }
 
     Vector2<Int32> WindowsScreen::GetPosition() const
     {
-        DEVMODEW deviceMode = GetDeviceMode();
+        DEVMODEW deviceMode;
+        if (!GetDeviceMode(&deviceMode))
+            return Vector2<Int32>();
+
         return { deviceMode.dmPosition.x, deviceMode.dmPosition.y };
+    }
+
+    Uint32 WindowsScreen::GetRefreshRate() const
+    {
+        DEVMODEW deviceMode;
+        if (!GetDeviceMode(&deviceMode))
+            return 60;
+
+        DWORD refreshRate = deviceMode.dmDisplayFrequency;
+
+        // When you call the EnumDisplaySettings function, the dmDisplayFrequency
+        // member may return with the value 0 or 1. These values represent the
+        // display hardware's default refresh rate.
+        //
+        // https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-devmodea#members
+        if ((refreshRate == 0) || (refreshRate == 1))
+        {
+            // 60Hz seems like a safe option here, I'm not writing WMI
+            // code specifically for this.
+            return 60;
+        }
+
+        return deviceMode.dmDisplayFrequency;
     }
 
     Uint32 WindowsScreen::GetDotsPerInch() const
@@ -41,8 +57,11 @@ namespace Kitsune
         if (shcore == nullptr)
             return USER_DEFAULT_SCREEN_DPI;
 
-        using GetDpiForMonitorFunction = HRESULT(*)(HMONITOR, MONITOR_DPI_TYPE, UINT*, UINT*);
-        auto getDpiForMonitor = (GetDpiForMonitorFunction)(void*)(::GetProcAddress(shcore, "GetDpiForMonitor"));
+        using GetDpiForMonitorFunction = HRESULT (*)(HMONITOR, MONITOR_DPI_TYPE,
+                                                     UINT*, UINT*);
+
+        auto getDpiForMonitor = (GetDpiForMonitorFunction)(void*)(
+            ::GetProcAddress(shcore, "GetDpiForMonitor"));
 
         if (getDpiForMonitor == nullptr)
         {
@@ -51,64 +70,128 @@ namespace Kitsune
         }
 
         // The values of *dpiX and *dpiY are identical.
-        // You only need to record one of the values to determine the DPI and respond appropriately.
+        // You only need to record one of the values to determine the DPI and
+        // respond appropriately.
+        //
         // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getdpiformonitor
         UINT dpiX, _dpiY;
-        if (FAILED(getDpiForMonitor(m_MonitorHandle, MDT_EFFECTIVE_DPI, &dpiX, &_dpiY)))
+        if (getDpiForMonitor(m_MonitorHandle, MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
             dpiX = USER_DEFAULT_SCREEN_DPI;
 
         ::FreeLibrary(shcore);
         return dpiX;
     }
 
-    Fraction<Uint32> WindowsScreen::GetRefreshRate() const
+    ScreenOrientation WindowsScreen::GetOrientation() const
     {
-        DEVMODEW deviceMode = GetDeviceMode();
-        DWORD refreshRate = deviceMode.dmDisplayFrequency;
+        DEVMODEW deviceMode;
+        if (!GetDeviceMode(&deviceMode))
+            return ScreenOrientation::Default;
 
-        // "When you call the EnumDisplaySettings function, the dmDisplayFrequency member
-        // may return with the value 0 or 1. These values represent the display hardware's default
-        // refresh rate."
-        // https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-devmodea#members
-        if ((refreshRate == 0) || (refreshRate == 1))
+        switch (deviceMode.dmDisplayOrientation)
         {
-            // Yeah, I'm not writing WMI code just for this.
-            return Fraction<Uint32>();
+        case DMDO_90:  return ScreenOrientation::Rotated90;
+        case DMDO_180: return ScreenOrientation::Rotated180;
+        case DMDO_270: return ScreenOrientation::Rotated270;
+        case DMDO_DEFAULT:
+            return ScreenOrientation::Default;
         }
 
-        return Fraction<Uint32>(1.0f, deviceMode.dmDisplayFrequency);
+        // Get compiler to shut up.
+        KITSUNE_UNREACHABLE();
     }
 
-    void WindowsScreen::SetOrientation(ScreenOrientation orientation)
-    {
-        // Do nothing.
-        KITSUNE_UNUSED(orientation);
-    }
-
-    DEVMODEW WindowsScreen::GetDeviceMode() const
+    bool WindowsScreen::SetSize(const Vector2<Uint32>& size)
     {
         DEVMODEW deviceMode;
         deviceMode.dmSize = sizeof(deviceMode);
         deviceMode.dmDriverExtra = 0;
 
-        if (!::EnumDisplaySettingsExW(m_AdapterDevice.DeviceName, ENUM_CURRENT_SETTINGS, &deviceMode, 0))
-            throw SystemException("Failed to retrieve the adapter device's display settings.");
+        deviceMode.dmPelsWidth = size.X;
+        deviceMode.dmPelsHeight = size.Y;
+        deviceMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 
-        return deviceMode;
+        return SetDeviceMode(&deviceMode);
     }
 
-    BOOL WindowsScreen::MonitorEnumProcedure(HMONITOR monitor, HDC /* device */, LPRECT /* rect */, LPARAM lparam)
+    bool WindowsScreen::SetOrientation(ScreenOrientation orientation)
     {
-        auto& data = *reinterpret_cast<MonitorEnumProcData*>(lparam);
+        DWORD windowsOrientation;
+        switch (orientation)
+        {
+        case ScreenOrientation::Default:
+            windowsOrientation = DMDO_DEFAULT;
+            break;
+        case ScreenOrientation::Rotated90:
+            windowsOrientation = DMDO_90;
+            break;
+        case ScreenOrientation::Rotated180:
+            windowsOrientation = DMDO_180;
+            break;
+        case ScreenOrientation::Rotated270:
+            windowsOrientation = DMDO_270;
+            break;
+        }
+
+        DEVMODEW deviceMode;
+        deviceMode.dmSize = sizeof(deviceMode);
+        deviceMode.dmDriverExtra = 0;
+
+        deviceMode.dmDisplayOrientation = windowsOrientation;
+        deviceMode.dmFields = DM_DISPLAYORIENTATION;
+
+        return SetDeviceMode(&deviceMode);
+    }
+
+    bool WindowsScreen::GetDeviceMode(DEVMODEW* deviceMode) const
+    {
+        ZeroMemory(deviceMode, sizeof(DEVMODEW));
+        deviceMode->dmSize = sizeof(DEVMODEW);
+        deviceMode->dmDriverExtra = 0;
+
+        return ::EnumDisplaySettingsExW(m_DeviceName.Raw(), ENUM_CURRENT_SETTINGS,
+                                        deviceMode, 0);
+    }
+
+    bool WindowsScreen::SetDeviceMode(DEVMODEW* deviceMode)
+    {
+        LONG result = ::ChangeDisplaySettingsExW(m_DeviceName.Raw(), deviceMode,
+                                                 nullptr, CDS_RESET, nullptr);
+
+        return ((result == DISP_CHANGE_SUCCESSFUL) || (result == DISP_CHANGE_RESTART));
+    }
+
+    HMONITOR WindowsScreen::GetMonitorHandle(const WideStringView deviceName)
+    {
+        // There is currently no way of getting an HMONITOR from a DISPLAY_DEVICE
+        // directly, so we have to enumerate through all the connected monitors
+        // and check for a monitor with the correct name.
+        MonitorEnumProcData data;
+        data.MonitorHandle = nullptr;
+        data.DeviceName = deviceName;
+
+        ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure,
+                              reinterpret_cast<LPARAM>(&data));
+
+        if (data.MonitorHandle == nullptr)
+            throw SystemException("Failed to obtain a handle to a monitor.");
+
+        return data.MonitorHandle;
+    }
+
+    BOOL WindowsScreen::MonitorEnumProcedure(HMONITOR monitor, HDC /* device */,
+                                             LPRECT /* rect */, LPARAM lparam)
+    {
+        auto* data = reinterpret_cast<MonitorEnumProcData*>(lparam);
         MONITORINFOEXW monitorInfo;
 
         monitorInfo.cbSize = sizeof(MONITORINFOEXW);
-        if (!::GetMonitorInfoW(monitor, &monitorInfo))
+        if (::GetMonitorInfoW(monitor, &monitorInfo) == 0)
             return TRUE;
 
-        if (std::wcscmp(monitorInfo.szDevice, data.Name) == 0)
+        if (monitorInfo.szDevice == data->DeviceName)
         {
-            data.MonitorHandle = monitor;
+            data->MonitorHandle = monitor;
             return FALSE;
         }
 

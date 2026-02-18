@@ -33,6 +33,9 @@ namespace Kitsune
             "For the source code, visit https://github.com/Windvain/Kitsune",
             GetEngineVersion());
 
+        DisplayManagerSpecifications displayManagerSpecs;
+        m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
+
         KITSUNE_ENGINE_INFO_FORMAT_(
             "Initializing application \"{0}\"",
             argv[0]);
@@ -48,6 +51,7 @@ namespace Kitsune
     {
         while (!m_ExitRequested)
         {
+            m_DisplayManager->Update();
             m_Application->OnUpdate();
         }
     }
@@ -55,6 +59,7 @@ namespace Kitsune
     int EngineLoop::Shutdown()
     {
         Memory::Delete(m_Application);
+        DisplayManager::Shutdown();
 
         m_Loggers.Clear();
         return m_ExitCode;

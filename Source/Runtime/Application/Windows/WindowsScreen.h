@@ -1,45 +1,48 @@
 #pragma once
 
 #include <Windows.h>
+
 #include "Application/Screen.h"
+#include "Foundation/String/String.h"
 
 namespace Kitsune
 {
     class WindowsScreen : public Screen
     {
     public:
-        WindowsScreen(const DISPLAY_DEVICEW& adapterDevice, const DISPLAY_DEVICEW& monitorDevice);
+        WindowsScreen(const WideStringView deviceName);
         ~WindowsScreen() = default;
 
     public:
-        [[nodiscard]] Vector2<Uint32> GetSize() const override;
-        [[nodiscard]] Vector2<Int32> GetPosition() const override;
+        [[nodiscard]] Vector2<Uint32> GetSize() const;
+        [[nodiscard]] Vector2<Int32> GetPosition() const;
 
-        [[nodiscard]] Uint32 GetDotsPerInch() const override;
-        [[nodiscard]] Fraction<Uint32> GetRefreshRate() const override;
+        [[nodiscard]] Uint32 GetRefreshRate() const;
+        [[nodiscard]] Uint32 GetDotsPerInch() const;
+
+        [[nodiscard]]
+        ScreenOrientation GetOrientation() const;
 
     public:
-        void SetOrientation(ScreenOrientation orientation) override;
-
-    public:
-        const wchar_t* GetDeviceId() const { return m_MonitorDevice.DeviceID; }
+        bool SetSize(const Vector2<Uint32>& size);
+        bool SetOrientation(ScreenOrientation orientation);
 
     private:
-        DEVMODEW GetDeviceMode() const;
-        static BOOL MonitorEnumProcedure(HMONITOR monitor, HDC device, LPRECT rect, LPARAM lparam);
-
-        // Used for getting data from the monitor enumeration procedure. Look at
-        // the WindowsScreen() constructor for more information.
         struct MonitorEnumProcData
         {
             HMONITOR MonitorHandle;
-            const wchar_t* Name;
+            WideStringView DeviceName;
         };
 
-    private:
-        DISPLAY_DEVICEW m_AdapterDevice;
-        DISPLAY_DEVICEW m_MonitorDevice;
+        static HMONITOR GetMonitorHandle(const WideStringView deviceName);
+        static CALLBACK BOOL MonitorEnumProcedure(HMONITOR monitor, HDC device,
+                                                  LPRECT rect, LPARAM lparam);
 
+        bool GetDeviceMode(DEVMODEW* deviceMode) const;
+        bool SetDeviceMode(DEVMODEW* deviceMode);
+
+    private:
+        WideString m_DeviceName;
         HMONITOR m_MonitorHandle;
     };
 }

@@ -10,6 +10,7 @@
 #include "Foundation/Diagnostics/Backtrace.h"
 
 #include "Application/Application.h"
+#include "Application/DisplayManager.h"
 #include "Application/CommandLineArguments.h"
 
 namespace Kitsune
@@ -102,6 +103,7 @@ namespace Kitsune
         Backtrace m_ExceptionBacktrace;
         Mutex m_ExceptionMutex;
 
+        DisplayManager* m_DisplayManager;
         Application* m_Application;
     };
 }

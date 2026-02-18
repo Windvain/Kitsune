@@ -1,10 +1,6 @@
 #pragma once
 
 #include <Windows.h>
-
-#include "Foundation/Memory/SharedPtr.h"
-#include "Foundation/Containers/Array.h"
-
 #include "Application/DisplayManager.h"
 
 namespace Kitsune
@@ -18,28 +14,26 @@ namespace Kitsune
     public:
         void Update() override;
 
-        SharedPtr<Screen> GetPrimaryScreen() const override;
         Array<SharedPtr<Screen>> GetScreens() const override;
-
-    public:
-        SharedPtr<Window> MakeWindow(const WindowSpecifications& specs) override;
+        SharedPtr<Screen> GetPrimaryScreen() const override;
 
     private:
-        // Wrap the nested for loops in our own enumeration function, saves time writing code..
-        using EnumerateMonitorsProc = bool (*)(const DISPLAY_DEVICEW&, const DISPLAY_DEVICEW&, void* data);
-        static void EnumerateMonitors(EnumerateMonitorsProc procedure, void* data);
+        template<Invocable<const DISPLAY_DEVICEW&> Func>
+        inline static void EnumerateMonitors(Func function)
+        {
+            DISPLAY_DEVICEW adapterDevice;
+            adapterDevice.cb = sizeof(adapterDevice);
 
-    private:
-        static bool PrimaryEnumMonitorsProc(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor,
-                                            void* untypedData);
+            for (DWORD adapterIndex = 0; /* ... */; ++adapterIndex)
+            {
+                if (!::EnumDisplayDevicesW(nullptr, adapterIndex, &adapterDevice, 0))
+                    break;
 
-        static bool RetrieveEnumMonitorsProc(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor,
-                                             void* untypedData);
+                if (!(adapterDevice.StateFlags & DISPLAY_DEVICE_ACTIVE))
+                    continue;
 
-    private:
-        static LRESULT WindowProcedure(HWND windowHandle, UINT message, WPARAM wparam, LPARAM lparam);
-
-    private:
-        static constexpr const wchar_t* s_WindowClassName = L"KitsuneWindowClass";
+                function(adapterDevice);
+            }
+        }
     };
 }

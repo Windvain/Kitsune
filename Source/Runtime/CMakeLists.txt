@@ -5,7 +5,6 @@ set(FILES
     "Application/DisplayManager.cpp"
     "Application/DisplayManager.h"
     "Application/Screen.h"
-    "Application/Window.h"
 
     "Foundation/Algorithms/Advance.h"
     "Foundation/Algorithms/Copy.h"
@@ -147,8 +146,6 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Application/Windows/WindowsDisplayManager.h"
         "Application/Windows/WindowsScreen.cpp"
         "Application/Windows/WindowsScreen.h"
-        "Application/Windows/WindowsWindow.cpp"
-        "Application/Windows/WindowsWindow.h"
 
         "Foundation/Windows/WindowsConsoleStream.cpp"
         "Foundation/Windows/WindowsDebuggerAttached.cpp"
