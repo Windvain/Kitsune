@@ -27,6 +27,12 @@ namespace Kitsune
         void SetSize(const Vector2<Uint32>& size);
         void SetOrientation(ScreenOrientation orientation);
 
+    public:
+        inline WideStringView GetDeviceName() const
+        {
+            return m_DeviceName;
+        }
+
     private:
         struct MonitorEnumProcData
         {
@@ -34,15 +40,15 @@ namespace Kitsune
             WideStringView DeviceName;
         };
 
-        static HMONITOR GetMonitorHandle(const WideStringView deviceName);
-        static CALLBACK BOOL MonitorEnumProcedure(HMONITOR monitor, HDC device,
+        static BOOL CALLBACK MonitorEnumProcedure(HMONITOR monitor, HDC device,
                                                   LPRECT rect, LPARAM lparam);
+
+        HMONITOR GetMonitorHandle() const;
 
         bool GetDeviceMode(DEVMODEW* deviceMode) const;
         bool SetDeviceMode(DEVMODEW* deviceMode);
 
     private:
         WideString m_DeviceName;
-        HMONITOR m_MonitorHandle;
     };
 }

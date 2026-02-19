@@ -1,12 +1,13 @@
 #include "Application/Windows/WindowsDisplayManager.h"
 
-#include "Foundation/Memory/Memory.h"
-#include "Application/Windows/WindowsScreen.h"
+#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/String/TranscodePresets.h"
 
 namespace Kitsune
 {
     WindowsDisplayManager::WindowsDisplayManager()
     {
+        UpdateScreenList();
     }
 
     WindowsDisplayManager::~WindowsDisplayManager()
@@ -15,44 +16,73 @@ namespace Kitsune
 
     void WindowsDisplayManager::Update()
     {
+        UpdateScreenList();
     }
 
-    Array<SharedPtr<Screen>> WindowsDisplayManager::GetScreens() const
+    void WindowsDisplayManager::UpdateScreenList()
     {
-        Array<SharedPtr<Screen>> screens;
-        EnumerateMonitors([&screens](const DISPLAY_DEVICEW& device)
-        {
-            screens.PushBack(MakeShared<WindowsScreen>(device.DeviceName));
-        });
+        DISPLAY_DEVICEW device;
+        device.cb = sizeof(DISPLAY_DEVICEW);
 
-        return screens;
-    }
+        Usize prevConnected = m_Screens.Size();
+        Array<ScopedPtr<WindowsScreen>> connectedScreens(prevConnected);
 
-    SharedPtr<Screen> WindowsDisplayManager::GetPrimaryScreen() const
-    {
-        SharedPtr<Screen> primaryScreen;
-        EnumerateMonitors([&primaryScreen](const DISPLAY_DEVICEW& device)
+        for (DWORD index = 0; /* ... */; ++index)
         {
-            for (DWORD index = 0; /* ... */; ++index)
+            if (!::EnumDisplayDevicesW(nullptr, index, &device, 0))
+                break;
+
+            if (!(device.StateFlags & DISPLAY_DEVICE_ACTIVE))
+                continue;
+
+            auto predicate = [&](const ScopedPtr<WindowsScreen>& screen) -> bool
             {
-                DISPLAY_DEVICEW monitorDevice;
-                monitorDevice.cb = sizeof(monitorDevice);
+                return (screen->GetDeviceName() == device.DeviceName);
+            };
 
-                if (!::EnumDisplayDevicesW(device.DeviceName, index, &monitorDevice, 0))
-                {
-                    break;
-                }
+            auto iter = Algorithms::FindIf(m_Screens.GetBegin(), m_Screens.GetEnd(),
+                                           predicate);
 
-                if (monitorDevice.StateFlags & (DISPLAY_DEVICE_PRIMARY_DEVICE |
-                                                DISPLAY_DEVICE_ACTIVE))
-                {
-                    primaryScreen = MakeShared<WindowsScreen>(device.DeviceName);
-                    break;
-                }
+            if (iter == m_Screens.GetEnd())
+                connectedScreens.PushBack(MakeScoped<WindowsScreen>(device.DeviceName));
+            else
+            {
+                // TODO: Insert should be done without preserving order, a.k.a
+                //       add an InsertUnsorted() function.
+                if (device.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+                    connectedScreens.Insert(connectedScreens.GetBegin(), Move(*iter));
+                else
+                    connectedScreens.PushBack(Move(*iter));
+
+                m_Screens.Remove(iter);
             }
-        });
+        }
 
-        return primaryScreen;
+        bool displayDisconnected = !m_Screens.IsEmpty();
+        bool displayConnected = (prevConnected != connectedScreens.Size());
+
+        Swap(m_Screens, connectedScreens);
+
+        // We don't really care whether the display was disconnected or connected,
+        // but it's good to know.
+        if (displayDisconnected || displayConnected)
+            OnScreenEvent();
+    }
+
+    void WindowsDisplayManager::OnScreenEvent()
+    {
+        KITSUNE_ENGINE_INFO_("A display has been connected/disconnected!");
+        for (Index index = 0; index < m_Screens.Size(); ++index)
+        {
+            ScopedPtr<WindowsScreen>& screen = m_Screens[index];
+            Vector2<Uint32> screenSize = screen->GetSize();
+
+            KITSUNE_ENGINE_INFO_FORMAT_(
+                "Screen #{0}: {1} ({2}x{3}@{4}Hz, {5} DPI)",
+                index, Utf16ToUtf8<wchar_t, char>(screen->GetDeviceName()),
+                screenSize.X, screenSize.Y,
+                screen->GetRefreshRate(), screen->GetDotsPerInch());
+        }
     }
 
     DisplayManager* DisplayManager::Initialize(const DisplayManagerSpecifications& specs)

@@ -7,7 +7,7 @@
 namespace Kitsune
 {
     WindowsScreen::WindowsScreen(const WideStringView deviceName)
-        : m_DeviceName(deviceName), m_MonitorHandle(GetMonitorHandle(deviceName))
+        : m_DeviceName(deviceName)
     {
     }
 
@@ -85,7 +85,7 @@ namespace Kitsune
         //
         // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getdpiformonitor
         UINT dpiX, _dpiY;
-        if (getDpiForMonitor(m_MonitorHandle, MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
+        if (getDpiForMonitor(GetMonitorHandle(), MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
         {
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get DPI of screen {0}.", this);
             dpiX = USER_DEFAULT_SCREEN_DPI;
@@ -148,6 +148,8 @@ namespace Kitsune
         case ScreenOrientation::Rotated270:
             windowsOrientation = DMDO_270;
             break;
+        default:
+            KITSUNE_UNREACHABLE();
         }
 
         DEVMODEW deviceMode;
@@ -179,14 +181,14 @@ namespace Kitsune
         return ((result == DISP_CHANGE_SUCCESSFUL) || (result == DISP_CHANGE_RESTART));
     }
 
-    HMONITOR WindowsScreen::GetMonitorHandle(const WideStringView deviceName)
+    HMONITOR WindowsScreen::GetMonitorHandle() const
     {
         // There is currently no way of getting an HMONITOR from a DISPLAY_DEVICE
         // directly, so we have to enumerate through all the connected monitors
         // and check for a monitor with the correct name.
         MonitorEnumProcData data;
         data.MonitorHandle = nullptr;
-        data.DeviceName = deviceName;
+        data.DeviceName = m_DeviceName;
 
         ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure,
                               reinterpret_cast<LPARAM>(&data));

@@ -1,7 +1,10 @@
 #pragma once
 
-#include <Windows.h>
+#include "Foundation/Memory/ScopedPtr.h"
+#include "Foundation/Containers/Array.h"
+
 #include "Application/DisplayManager.h"
+#include "Application/Windows/WindowsScreen.h"
 
 namespace Kitsune
 {
@@ -14,26 +17,11 @@ namespace Kitsune
     public:
         void Update() override;
 
-        Array<SharedPtr<Screen>> GetScreens() const override;
-        SharedPtr<Screen> GetPrimaryScreen() const override;
+    public:
+        void UpdateScreenList();
+        void OnScreenEvent();
 
     private:
-        template<Invocable<const DISPLAY_DEVICEW&> Func>
-        inline static void EnumerateMonitors(Func function)
-        {
-            DISPLAY_DEVICEW adapterDevice;
-            adapterDevice.cb = sizeof(adapterDevice);
-
-            for (DWORD adapterIndex = 0; /* ... */; ++adapterIndex)
-            {
-                if (!::EnumDisplayDevicesW(nullptr, adapterIndex, &adapterDevice, 0))
-                    break;
-
-                if (!(adapterDevice.StateFlags & DISPLAY_DEVICE_ACTIVE))
-                    continue;
-
-                function(adapterDevice);
-            }
-        }
+        Array<ScopedPtr<WindowsScreen>> m_Screens;
     };
 }

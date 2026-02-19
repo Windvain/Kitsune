@@ -1,9 +1,5 @@
 #pragma once
 
-#include "Foundation/Memory/SharedPtr.h"
-#include "Foundation/Containers/Array.h"
-
-#include "Application/Screen.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
@@ -22,12 +18,6 @@ namespace Kitsune
 
     public:
         virtual void Update() = 0;
-
-        [[nodiscard]]
-        virtual Array<SharedPtr<Screen>> GetScreens() const = 0;
-
-        [[nodiscard]]
-        virtual SharedPtr<Screen> GetPrimaryScreen() const = 0;
 
     public:
         static DisplayManager* Initialize(const DisplayManagerSpecifications& specs);
