@@ -1,7 +1,7 @@
-#include "Foundation/Memory/Memory.h"
-#include <cstdio>
-
 #include "Launch/EngineLoop.h"
+#include "Foundation/Memory/Memory.h"
+
+#include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune
@@ -53,17 +53,18 @@ namespace Kitsune
             const auto* engineException = dynamic_cast<const Exception*>(&exception);
             if (engineException != nullptr)
             {
-                std::printf("Program crashed due to %s exception.\nDescription: %s\n\n",
-                            engineException->GetName(), engineException->GetDescription());
+                KITSUNE_ENGINE_FATAL_FORMAT_(
+                    "Program crashed due to {0} exception.\nDescription: {1}\n\n",
+                    engineException->GetName(), engineException->GetDescription());
             }
             else
             {
-                std::printf("Program crashed due to a std::exception (%s).\n\n",
-                            exception.what());
+                KITSUNE_ENGINE_FATAL_FORMAT_(
+                    "Program crashed due to a std::exception (0).\n\n",
+                    exception.what());
             }
 
-            String backtrace = Format("{0}", engineLoop.GetExceptionBacktrace());
-            std::puts(backtrace.Raw());
+            KITSUNE_ENGINE_FATAL_FORMAT_("{0}", engineLoop.GetExceptionBacktrace());
         }
 
         int exitCode = engineLoop.Shutdown();

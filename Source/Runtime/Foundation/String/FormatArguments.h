@@ -220,7 +220,7 @@ namespace Kitsune
             double Double;
             long double LongDouble;
 
-            void* Pointer;
+            const volatile void* Pointer;
             BasicStringView<Char> String;
             CustomTypeHandle Custom;
         } m_SharedData = { 0 };

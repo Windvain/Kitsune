@@ -24,8 +24,8 @@ namespace Kitsune
         ScreenOrientation GetOrientation() const;
 
     public:
-        bool SetSize(const Vector2<Uint32>& size);
-        bool SetOrientation(ScreenOrientation orientation);
+        void SetSize(const Vector2<Uint32>& size);
+        void SetOrientation(ScreenOrientation orientation);
 
     private:
         struct MonitorEnumProcData

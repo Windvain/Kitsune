@@ -1,6 +1,7 @@
 #include "Application/Windows/WindowsScreen.h"
-
 #include <ShellScalingApi.h>
+
+#include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
@@ -14,7 +15,10 @@ namespace Kitsune
     {
         DEVMODEW deviceMode;
         if (!GetDeviceMode(&deviceMode))
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get size of screen {0}.", this);
             return Vector2<Uint32>();
+        }
 
         return { deviceMode.dmPelsWidth, deviceMode.dmPelsHeight };
     }
@@ -23,7 +27,10 @@ namespace Kitsune
     {
         DEVMODEW deviceMode;
         if (!GetDeviceMode(&deviceMode))
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get position of screen {0}.", this);
             return Vector2<Int32>();
+        }
 
         return { deviceMode.dmPosition.x, deviceMode.dmPosition.y };
     }
@@ -32,7 +39,10 @@ namespace Kitsune
     {
         DEVMODEW deviceMode;
         if (!GetDeviceMode(&deviceMode))
-            return 60;
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get refresh rate of screen {0}.", this);
+            return 0;
+        }
 
         DWORD refreshRate = deviceMode.dmDisplayFrequency;
 
@@ -76,7 +86,10 @@ namespace Kitsune
         // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getdpiformonitor
         UINT dpiX, _dpiY;
         if (getDpiForMonitor(m_MonitorHandle, MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get DPI of screen {0}.", this);
             dpiX = USER_DEFAULT_SCREEN_DPI;
+        }
 
         ::FreeLibrary(shcore);
         return dpiX;
@@ -86,7 +99,10 @@ namespace Kitsune
     {
         DEVMODEW deviceMode;
         if (!GetDeviceMode(&deviceMode))
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get orientation of screen {0}.", this);
             return ScreenOrientation::Default;
+        }
 
         switch (deviceMode.dmDisplayOrientation)
         {
@@ -101,7 +117,7 @@ namespace Kitsune
         KITSUNE_UNREACHABLE();
     }
 
-    bool WindowsScreen::SetSize(const Vector2<Uint32>& size)
+    void WindowsScreen::SetSize(const Vector2<Uint32>& size)
     {
         DEVMODEW deviceMode;
         deviceMode.dmSize = sizeof(deviceMode);
@@ -111,10 +127,11 @@ namespace Kitsune
         deviceMode.dmPelsHeight = size.Y;
         deviceMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 
-        return SetDeviceMode(&deviceMode);
+        if (!SetDeviceMode(&deviceMode))
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set screen {0} size.", this);
     }
 
-    bool WindowsScreen::SetOrientation(ScreenOrientation orientation)
+    void WindowsScreen::SetOrientation(ScreenOrientation orientation)
     {
         DWORD windowsOrientation;
         switch (orientation)
@@ -140,7 +157,8 @@ namespace Kitsune
         deviceMode.dmDisplayOrientation = windowsOrientation;
         deviceMode.dmFields = DM_DISPLAYORIENTATION;
 
-        return SetDeviceMode(&deviceMode);
+        if (!SetDeviceMode(&deviceMode))
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set screen {0} orientation.", this);
     }
 
     bool WindowsScreen::GetDeviceMode(DEVMODEW* deviceMode) const
@@ -174,7 +192,10 @@ namespace Kitsune
                               reinterpret_cast<LPARAM>(&data));
 
         if (data.MonitorHandle == nullptr)
-            throw SystemException("Failed to obtain a handle to a monitor.");
+        {
+            throw SystemException("Failed to obtain a handle to a monitor from "
+                                  "its device name.");
+        }
 
         return data.MonitorHandle;
     }

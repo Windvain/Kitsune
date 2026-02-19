@@ -36,9 +36,14 @@ namespace Kitsune
         DisplayManagerSpecifications displayManagerSpecs;
         m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
 
+        // Just in case I remove the condition that the application needs a minimum
+        // of one argument.
+        KITSUNE_ASSERT(m_CommandLineArguments.GetCount() > 0,
+                       "Application should have at least one command line argument.");
+
         KITSUNE_ENGINE_INFO_FORMAT_(
             "Initializing application \"{0}\"",
-            argv[0]);
+            m_CommandLineArguments[0]);
 
         m_Application = CreateApplication(m_CommandLineArguments);
         if (m_Application == nullptr)

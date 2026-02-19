@@ -51,7 +51,7 @@ namespace Kitsune
         }
 
     public:
-        virtual bool SetSize(const Vector2<Uint32>& size) = 0;
-        virtual bool SetOrientation(ScreenOrientation orientation) = 0;
+        virtual void SetSize(const Vector2<Uint32>& size) = 0;
+        virtual void SetOrientation(ScreenOrientation orientation) = 0;
     };
 }
