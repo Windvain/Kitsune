@@ -186,6 +186,9 @@ namespace Kitsune
         // There is currently no way of getting an HMONITOR from a DISPLAY_DEVICE
         // directly, so we have to enumerate through all the connected monitors
         // and check for a monitor with the correct name.
+        //
+        // GetMonitorHandle() is not cached here because all monitor handles are
+        // invalidated as soon as a new display device is connected/disconnected.
         MonitorEnumProcData data;
         data.MonitorHandle = nullptr;
         data.DeviceName = m_DeviceName;

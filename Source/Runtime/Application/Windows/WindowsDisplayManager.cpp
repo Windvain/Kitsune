@@ -65,7 +65,7 @@ namespace Kitsune
 
         // We don't really care whether the display was disconnected or connected,
         // but it's good to know.
-        if (displayDisconnected || displayConnected)
+        if (displayConnected || displayDisconnected)
             OnScreenEvent();
     }
 
@@ -83,22 +83,5 @@ namespace Kitsune
                 screenSize.X, screenSize.Y,
                 screen->GetRefreshRate(), screen->GetDotsPerInch());
         }
-    }
-
-    DisplayManager* DisplayManager::Initialize(const DisplayManagerSpecifications& specs)
-    {
-        KITSUNE_UNUSED(specs);
-
-        if (s_Instance != nullptr)
-            return s_Instance;
-
-        s_Instance = Memory::New<WindowsDisplayManager>();
-        return s_Instance;
-    }
-
-    void DisplayManager::Shutdown()
-    {
-        Memory::Delete(s_Instance);
-        s_Instance = nullptr;
     }
 }

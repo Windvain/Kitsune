@@ -27,46 +27,37 @@ namespace Kitsune
 #if !defined(KITSUNE_BUILD_PRODUCTION)
         RegisterLogger<ConsoleLogger>();
 #endif
-
         KITSUNE_ENGINE_INFO_FORMAT_(
             "Initializing Kitsune Engine {0}. "
             "For the source code, visit https://github.com/Windvain/Kitsune",
             GetEngineVersion());
 
-        DisplayManagerSpecifications displayManagerSpecs;
-        m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
-
         // Just in case I remove the condition that the application needs a minimum
         // of one argument.
         KITSUNE_ASSERT(m_CommandLineArguments.GetCount() > 0,
-                       "Application should have at least one command line argument.");
-
-        KITSUNE_ENGINE_INFO_FORMAT_(
-            "Initializing application \"{0}\"",
-            m_CommandLineArguments[0]);
+                       "Application should be supplied with at least one command "
+                       "line argument.");
 
         m_Application = CreateApplication(m_CommandLineArguments);
         if (m_Application == nullptr)
             return;
 
-        KITSUNE_ENGINE_INFO_("Successfully initialized the engine loop.");
+        KITSUNE_ENGINE_INFO_("The application has been successfully initialized.");
     }
 
     void EngineLoop::Run()
     {
         while (!m_ExitRequested)
         {
-            m_DisplayManager->Update();
-            m_Application->OnUpdate();
+            m_Application->Update();
         }
     }
 
     int EngineLoop::Shutdown()
     {
         Memory::Delete(m_Application);
-        DisplayManager::Shutdown();
-
         m_Loggers.Clear();
+
         return m_ExitCode;
     }
 }

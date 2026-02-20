@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Foundation/Maths/Vector2.h"
 #include "Foundation/String/String.h"
 
-#include "Foundation/Utilities/NonCopyable.h"
+#include "Application/DisplayManager.h"
 #include "Application/CommandLineArguments.h"
 
 KITSUNE_PUSH_COMPILER_WARNINGS()
@@ -21,21 +20,31 @@ namespace Kitsune
         String Description;
 
         String Version;
+        bool Headless = false;
     };
 
     class Application : public NonCopyable
     {
     public:
         Application(const ApplicationSpecifications& specs);
-        virtual ~Application() { /* ... */ }
+        virtual ~Application();
 
     public:
         virtual void OnUpdate() { /* ... */ }
 
     public:
+        void Update();
+
+    public:
         [[nodiscard]] inline String GetName()        const { return m_Name; }
         [[nodiscard]] inline String GetDescription() const { return m_Description; }
         [[nodiscard]] inline String GetVersion()     const { return m_Version; }
+
+    public:
+        inline static Application* GetInstance()
+        {
+            return s_Instance;
+        }
 
     private:
         static Application* s_Instance;
@@ -44,6 +53,8 @@ namespace Kitsune
         String m_Name;
         String m_Description;
         String m_Version;
+
+        DisplayManager* m_DisplayManager;
     };
 
     // Should be defined in client code.

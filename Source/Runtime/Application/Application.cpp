@@ -1,5 +1,5 @@
 #include "Application/Application.h"
-#include "Foundation/Diagnostics/Assert.h"
+#include "Foundation/Logging/GlobalLog.h"
 
 namespace Kitsune
 {
@@ -10,8 +10,26 @@ namespace Kitsune
           m_Version(specs.Version)
     {
         if (s_Instance)
+        {
+            KITSUNE_ENGINE_ERROR_("An application has already been instanced.");
             return;
+        }
 
+        DisplayManagerSpecifications displayManagerSpecs;
+        displayManagerSpecs.Headless = specs.Headless;
+
+        m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
         s_Instance = this;
+    }
+
+    Application::~Application()
+    {
+        DisplayManager::Shutdown();
+    }
+
+    void Application::Update()
+    {
+        m_DisplayManager->Update();
+        OnUpdate();
     }
 }

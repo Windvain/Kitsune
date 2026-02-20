@@ -20,8 +20,7 @@ namespace Kitsune
         [[nodiscard]] Uint32 GetRefreshRate() const;
         [[nodiscard]] Uint32 GetDotsPerInch() const;
 
-        [[nodiscard]]
-        ScreenOrientation GetOrientation() const;
+        [[nodiscard]] ScreenOrientation GetOrientation() const;
 
     public:
         void SetSize(const Vector2<Uint32>& size);

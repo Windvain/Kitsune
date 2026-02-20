@@ -1,4 +1,7 @@
 set(FILES
+    "Application/Null/NullDisplayManager.h"
+    "Application/Null/NullScreen.h"
+
     "Application/Application.cpp"
     "Application/Application.h"
     "Application/CommandLineArguments.h"

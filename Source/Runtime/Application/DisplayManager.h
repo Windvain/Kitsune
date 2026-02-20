@@ -6,6 +6,7 @@ namespace Kitsune
 {
     struct DisplayManagerSpecifications
     {
+        bool Headless = false;
     };
 
     class DisplayManager : public NonCopyable
