@@ -23,12 +23,19 @@ namespace Kitsune
             KITSUNE_ENGINE_INFO_("DisplayManagerSpecifications::Headless was set to true, "
                                  "the engine will construct a NULL display manager.");
 
-            s_Instance = Memory::New<NullDisplayManager>();
+            auto screen = MakeScoped<NullScreen>(
+                Vector2<Uint32>(1920, 1080),        // Size in pixels
+                Vector2<Int32>(),                   // Virtual position
+                60,                                 // Refresh rate in Hertz
+                96,                                 // DPI
+                ScreenOrientation::Default          // Screen orientation
+            );
+
+            s_Instance = Memory::New<NullDisplayManager>(Move(screen));
         }
         else
         {
 #if defined(KITSUNE_OS_WINDOWS)
-            KITSUNE_ENGINE_INFO_("Constructing the Windows display manager.");
             s_Instance = Memory::New<WindowsDisplayManager>();
 #else
             KITSUNE_ENGINE_ERROR_(
@@ -44,8 +51,6 @@ namespace Kitsune
 
     void DisplayManager::Shutdown()
     {
-        KITSUNE_ENGINE_INFO_("The display manager is being shut down.");
-
         Memory::Delete(s_Instance);
         s_Instance = nullptr;
     }

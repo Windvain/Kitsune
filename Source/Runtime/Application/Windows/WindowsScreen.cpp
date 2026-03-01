@@ -63,35 +63,18 @@ namespace Kitsune
 
     Uint32 WindowsScreen::GetDotsPerInch() const
     {
-        HMODULE shcore = ::LoadLibraryW(L"Shcore.dll");
-        if (shcore == nullptr)
-            return USER_DEFAULT_SCREEN_DPI;
-
-        using GetDpiForMonitorFunction = HRESULT (*)(HMONITOR, MONITOR_DPI_TYPE,
-                                                     UINT*, UINT*);
-
-        auto getDpiForMonitor = (GetDpiForMonitorFunction)(void*)(
-            ::GetProcAddress(shcore, "GetDpiForMonitor"));
-
-        if (getDpiForMonitor == nullptr)
-        {
-            ::FreeLibrary(shcore);
-            return USER_DEFAULT_SCREEN_DPI;
-        }
-
         // The values of *dpiX and *dpiY are identical.
         // You only need to record one of the values to determine the DPI and
         // respond appropriately.
         //
         // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getdpiformonitor
         UINT dpiX, _dpiY;
-        if (getDpiForMonitor(GetMonitorHandle(), MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
+        if (::GetDpiForMonitor(GetMonitorHandle(), MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
         {
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get DPI of screen {0}.", this);
             dpiX = USER_DEFAULT_SCREEN_DPI;
         }
 
-        ::FreeLibrary(shcore);
         return dpiX;
     }
 
@@ -198,8 +181,12 @@ namespace Kitsune
 
         if (data.MonitorHandle == nullptr)
         {
-            throw SystemException("Failed to obtain a handle to a monitor from "
-                                  "its device name.");
+            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to obtain a handle to a monitor from "
+                                         "its device name. The monitor {0} might have been "
+                                         "disconnected.",
+                                         this);
+
+            return nullptr;
         }
 
         return data.MonitorHandle;

@@ -21,6 +21,12 @@ namespace Kitsune
 
         String Version;
         bool Headless = false;
+
+        Vector2<Uint32> ViewportSize = { 1280, 720 };
+        Vector2<Int32> WindowPosition;
+
+        WindowMode WindowMode;
+        WindowFlags WindowFlags;
     };
 
     class Application : public NonCopyable
@@ -54,6 +60,7 @@ namespace Kitsune
         String m_Description;
         String m_Version;
 
+        WindowHandle m_PrimaryWindow;
         DisplayManager* m_DisplayManager;
     };
 

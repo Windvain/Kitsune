@@ -5,6 +5,7 @@
 
 #include "Application/DisplayManager.h"
 #include "Application/Windows/WindowsScreen.h"
+#include "Application/Windows/WindowsWindow.h"
 
 namespace Kitsune
 {
@@ -17,11 +18,24 @@ namespace Kitsune
     public:
         void Update() override;
 
+        ScreenHandle GetPrimaryScreen() const override;
+        Array<ScreenHandle> GetScreens() const override;
+
+    public:
+        WindowHandle MakeWindow(const WindowSpecifications& specs) override;
+        void DestroyWindow(WindowHandle window) override;
+
+        WindowHandle GetPrimaryWindow() const override;
+
     public:
         void UpdateScreenList();
         void OnScreenEvent();
 
     private:
+        static constexpr const wchar_t* s_WindowClassName = L"Kitsune Engine Window";
+
+    private:
         Array<ScopedPtr<WindowsScreen>> m_Screens;
+        Array<ScopedPtr<WindowsWindow>> m_Windows;
     };
 }
