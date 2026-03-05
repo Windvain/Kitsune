@@ -21,6 +21,13 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
+        inline String GetName() const override
+        {
+            return "NullScreen";
+        }
+
+    public:
+        [[nodiscard]]
         inline Vector2<Uint32> GetSize() const override
         {
             return m_Size;

@@ -38,21 +38,17 @@ namespace Kitsune
     public:
         inline WindowHandle MakeWindow(const WindowSpecifications& specs) override
         {
-            m_Windows.PushBack(MakeScoped<NullWindow>(specs.Size, specs.Position, specs.Title,
-                                                      specs.Mode, specs.Flags));
+            m_Windows.PushBack(
+                MakeScoped<NullWindow>(
+                    specs.Size, specs.Position,
+                    specs.Title, specs.Mode, specs.Flags));
 
             return m_Windows.Back().Get();
         }
 
         inline void DestroyWindow(WindowHandle handle) override
         {
-            auto iter = Algorithms::FindIf(
-                m_Windows.GetBegin(), m_Windows.GetEnd(),
-                [&](const ScopedPtr<NullWindow>& window) -> bool
-                {
-                    return (window.Get() == handle);
-                });
-
+            auto iter = Algorithms::Find(m_Windows.GetBegin(), m_Windows.GetEnd(), handle);
             if (iter == m_Windows.GetEnd())
             {
                 throw SystemException("Tried to destroy a window which was not created by "

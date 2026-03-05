@@ -2,13 +2,18 @@
 #include <ShellScalingApi.h>
 
 #include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Diagnostics/SystemException.h"
+#include "Foundation/String/TranscodePresets.h"
 
 namespace Kitsune
 {
     WindowsScreen::WindowsScreen(const WideStringView deviceName)
         : m_DeviceName(deviceName)
     {
+    }
+
+    String WindowsScreen::GetName() const
+    {
+        return Utf16ToUtf8<wchar_t, char>(m_DeviceName);
     }
 
     Vector2<Uint32> WindowsScreen::GetSize() const

@@ -237,6 +237,17 @@ namespace Kitsune
 
     void WindowsWindow::SetMode(WindowMode mode)
     {
+        bool resizeDisabled = (bool)(m_Flags & WindowFlags::ResizeDisabled);
+        if (resizeDisabled && (mode != WindowMode::Windowed) && (mode != WindowMode::Minimized))
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_(
+                "Tried to set the mode of a non-resizable window {0} to a mode other than "
+                "WindowMode::Windowed or WindowMode::Minimized.",
+                this);
+
+            return;
+        }
+
         if (!IsVisible())
         {
             KITSUNE_ENGINE_ERROR_FORMAT_(
@@ -293,22 +304,14 @@ namespace Kitsune
         {
             // Thank you Raymond!
             // https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353
-            RECT monitorRect;
-            if ((m_Flags & WindowFlags::FullscreenPrimary) != WindowFlags::FullscreenPrimary)
-                monitorRect = GetEntireVirtualScreenRect();
-            else
+            HMONITOR monitor = ::MonitorFromWindow(m_Handle, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO monitorInfo;
+
+            monitorInfo.cbSize = sizeof(MONITORINFO);
+            if (!::GetMonitorInfoW(monitor, &monitorInfo))
             {
-                HMONITOR monitor = ::MonitorFromWindow(m_Handle, MONITOR_DEFAULTTONEAREST);
-                MONITORINFO monitorInfo;
-
-                monitorInfo.cbSize = sizeof(MONITORINFO);
-                if (!::GetMonitorInfoW(monitor, &monitorInfo))
-                {
-                    KITSUNE_ENGINE_ERROR_("Failed to get the closest monitor's info.");
-                    return;
-                }
-
-                monitorRect = monitorInfo.rcMonitor;
+                KITSUNE_ENGINE_ERROR_("Failed to get the closest monitor's info.");
+                return;
             }
 
             if (!::GetWindowPlacement(m_Handle, &m_PreviousPlacement))
@@ -321,16 +324,17 @@ namespace Kitsune
             ::SetWindowLongPtrW(m_Handle, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
 
             BOOL success = ::SetWindowPos(m_Handle, HWND_TOP,
-                                          monitorRect.left,
-                                          monitorRect.top,
-                                          monitorRect.right - monitorRect.left,
-                                          monitorRect.bottom - monitorRect.top,
+                                          monitorInfo.rcMonitor.left,
+                                          monitorInfo.rcMonitor.top,
+                                          monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+                                          monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
                                           SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 
             if (!success)
             {
-                KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set the position and size of window {0}.",
-                                             this);
+                KITSUNE_ENGINE_ERROR_FORMAT_(
+                    "Failed to set the position and size of window {0}.",
+                    this);
             }
 
             m_Fullscreen = true;
@@ -343,53 +347,6 @@ namespace Kitsune
     {
         DWORD showFlags = visible ? SW_SHOW : SW_HIDE;
         KITSUNE_UNUSED(::ShowWindow(m_Handle, showFlags));
-    }
-
-    RECT WindowsWindow::GetEntireVirtualScreenRect() const
-    {
-        using GetSystemMetricsForDpiFunc = int (*)(int, UINT);
-        GetSystemMetricsForDpiFunc getSystemMetricsForDpi;
-
-#if defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
-        HMODULE user32 = ::GetModuleHandleW(L"user32.dll");
-        if (user32 == nullptr)
-            KITSUNE_ENGINE_ERROR_("Failed to get a handle to User32.dll.");
-
-        getSystemMetricsForDpi = (GetSystemMetricsForDpiFunc)(void*)(
-            ::GetProcAddress(user32, "GetSystemMetricsForDpi"));
-
-        if (getSystemMetricsForDpi == nullptr)
-        {
-            KITSUNE_ENGINE_ERROR_("Failed to retrieve GetSystemMetricsForDpi() "
-                                  "from User32.dll. This might be because your Windows "
-                                  "installation is too old.");
-
-            getSystemMetricsForDpi = [](int index, UINT /* dpi */) -> int
-            {
-                return ::GetSystemMetrics(index);
-            };
-        }
-#else
-        getSystemMetricsForDpi = ::GetSystemMetricsForDpi;
-#endif
-
-        UINT dpi = WindowsWindow::GetDpiForWindow(m_Handle);
-        Vector2<LONG> position = {
-            getSystemMetricsForDpi(SM_XVIRTUALSCREEN, dpi),
-            getSystemMetricsForDpi(SM_YVIRTUALSCREEN, dpi)
-        };
-
-        Vector2<LONG> size = {
-            getSystemMetricsForDpi(SM_CXVIRTUALSCREEN, dpi),
-            getSystemMetricsForDpi(SM_CYVIRTUALSCREEN, dpi)
-        };
-
-        return {
-            position.X,
-            position.Y,
-            position.X + size.X,
-            position.Y + size.Y
-        };
     }
 
     DWORD WindowsWindow::GetWindowStyles(WindowFlags flags)

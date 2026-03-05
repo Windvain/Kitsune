@@ -89,8 +89,8 @@ namespace Kitsune
             if (m_Mode != WindowMode::Windowed)
             {
                 KITSUNE_ENGINE_ERROR_FORMAT_(
-                    "Tried to set the position of a non-restored "
-                    "window {0}.", this);
+                    "Tried to set the position of a non-restored window {0}.",
+                    this);
 
                 return;
             }
@@ -108,7 +108,8 @@ namespace Kitsune
             if (!IsVisible())
             {
                 KITSUNE_ENGINE_ERROR_FORMAT_(
-                    "Tried to set the mode of an invisible window {0}.", this);
+                    "Tried to set the mode of an invisible window {0}.",
+                    this);
 
                 return;
             }

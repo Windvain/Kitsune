@@ -168,6 +168,78 @@ namespace Kitsune
         return ScopedPtr(Memory::New<T>(Forward<Args>(args)...));
     }
 
+    template<typename T, Deleter Del, typename U>
+    inline bool operator==(const ScopedPtr<T, Del>& pointer1, U* pointer2)
+    {
+        return (pointer1.Get() == pointer2);
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator!=(const ScopedPtr<T, Del>& pointer1, U* pointer2)
+    {
+        return (pointer1.Get() != pointer2);
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator>=(const ScopedPtr<T, Del>& pointer1, U* pointer2)
+    {
+        return (pointer1.Get() >= pointer2);
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator<=(const ScopedPtr<T, Del>& pointer1, U* pointer2)
+    {
+        return (pointer1.Get() <= pointer2);
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator>(const ScopedPtr<T, Del>& pointer1, U* pointer2)
+    {
+        return (pointer1.Get() > pointer2);
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator<(const ScopedPtr<T, Del>& pointer1, U* pointer2)
+    {
+        return (pointer1.Get() < pointer2);
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator==(T* pointer1, const ScopedPtr<U, Del>& pointer2)
+    {
+        return (pointer1 == pointer2.Get());
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator!=(T* pointer1, const ScopedPtr<U, Del>& pointer2)
+    {
+        return (pointer1 != pointer2.Get());
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator>=(T* pointer1, const ScopedPtr<U, Del>& pointer2)
+    {
+        return (pointer1 >= pointer2.Get());
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator<=(T* pointer1, const ScopedPtr<U, Del>& pointer2)
+    {
+        return (pointer1 <= pointer2.Get());
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator>(T* pointer1, const ScopedPtr<U, Del>& pointer2)
+    {
+        return (pointer1 > pointer2.Get());
+    }
+
+    template<typename T, Deleter Del, typename U>
+    inline bool operator<(T* pointer1, const ScopedPtr<U, Del>& pointer2)
+    {
+        return (pointer1 < pointer2.Get());
+    }
+
     template<typename T, Deleter Del, typename U, Deleter UDel>
     inline bool operator==(const ScopedPtr<T, Del>& pointer1,
                            const ScopedPtr<U, UDel>& pointer2)

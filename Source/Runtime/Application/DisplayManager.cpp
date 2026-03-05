@@ -36,7 +36,8 @@ namespace Kitsune
         else
         {
 #if defined(KITSUNE_OS_WINDOWS)
-            s_Instance = Memory::New<WindowsDisplayManager>();
+            KITSUNE_ENGINE_INFO_("Creating the Windows implementation of DisplayManager.");
+            s_Instance = Memory::New<WindowsDisplayManager>(L"Kitsune Window");
 #else
             KITSUNE_ENGINE_ERROR_(
                 "Could not find an implementation for DisplayManager. Using the "
@@ -46,6 +47,7 @@ namespace Kitsune
 #endif
         }
 
+        KITSUNE_ENGINE_INFO_("Finished creating the display manager.");
         return s_Instance;
     }
 

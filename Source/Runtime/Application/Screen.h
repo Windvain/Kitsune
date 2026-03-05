@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Foundation/Maths/Vector2.h"
+#include "Foundation/String/Formatter.h"
 
 namespace Kitsune
 {
@@ -15,10 +16,15 @@ namespace Kitsune
         Rotated270
     };
 
+    // An abstract class representing a virtual screen.
     class Screen
     {
     public:
         virtual ~Screen() { /* ... */ }
+
+    public:
+        [[nodiscard]]
+        virtual String GetName() const = 0;
 
     public:
         [[nodiscard]]
@@ -36,6 +42,7 @@ namespace Kitsune
         [[nodiscard]]
         virtual ScreenOrientation GetOrientation() const = 0;
 
+    public:
         [[nodiscard]]
         inline bool IsLandscapeOrientation() const
         {
@@ -54,4 +61,27 @@ namespace Kitsune
         virtual void SetSize(const Vector2<Uint32>& size) = 0;
         virtual void SetOrientation(ScreenOrientation orientation) = 0;
     };
+
+    template<>
+    class Formatter<Screen, char>
+    {
+    public:
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(const Screen& screen, const FormatContext<Iter>& context)
+        {
+            Vector2<Uint32> size = screen.GetSize();
+            auto output = FormatTo(
+                context.GetOutput(),
+                "Screen {0}: \"{1}\" ({2} x {3}, {4} Hz, {5} DPI)",
+                AddressOf(screen),
+                screen.GetName(),
+                size.X, size.Y,
+                screen.GetRefreshRate(),
+                screen.GetDotsPerInch());
+
+            return output;
+        }
+    };
+
+    using ScreenHandle = Screen*;
 }

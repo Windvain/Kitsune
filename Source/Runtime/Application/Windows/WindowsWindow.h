@@ -60,9 +60,13 @@ namespace Kitsune
     public:
         void SetVisibility(bool visible) override;
 
-    private:
-        RECT GetEntireVirtualScreenRect() const;
+    public:
+        inline HWND GetNativeHandle() const
+        {
+            return m_Handle;
+        }
 
+    private:
         static DWORD GetWindowStyles(WindowFlags flags);
         static DWORD GetWindowExStyles();
 

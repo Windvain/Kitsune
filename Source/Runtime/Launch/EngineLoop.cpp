@@ -42,7 +42,7 @@ namespace Kitsune
         if (m_Application == nullptr)
             return;
 
-        KITSUNE_ENGINE_INFO_("The application has been successfully initialized.");
+        KITSUNE_ENGINE_INFO_("Kitsune Engine initialization step run successfully.");
     }
 
     void EngineLoop::Run()

@@ -12,7 +12,7 @@ namespace Kitsune
     class WindowsDisplayManager : public DisplayManager
     {
     public:
-        WindowsDisplayManager();
+        WindowsDisplayManager(const WideStringView className);
         ~WindowsDisplayManager();
 
     public:
@@ -27,15 +27,23 @@ namespace Kitsune
 
         WindowHandle GetPrimaryWindow() const override;
 
-    public:
+    private:
         void UpdateScreenList();
-        void OnScreenEvent();
 
     private:
-        static constexpr const wchar_t* s_WindowClassName = L"Kitsune Engine Window";
+        static LRESULT WindowProc(HWND windowHandle, UINT message, WPARAM wparam,
+                                  LPARAM lparam);
+
+        static LRESULT HandlePreInitWindowEvents(HWND windowHandle, UINT message, WPARAM wparam,
+                                                 LPARAM lparam);
+
+        static LRESULT HandlePostInitWindowEvents(WindowsWindow* window, UINT message,
+                                                  WPARAM wparam, LPARAM lparam);
 
     private:
         Array<ScopedPtr<WindowsScreen>> m_Screens;
         Array<ScopedPtr<WindowsWindow>> m_Windows;
+
+        WideString m_WindowClassName;
     };
 }

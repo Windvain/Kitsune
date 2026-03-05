@@ -14,17 +14,20 @@ namespace Kitsune
         ~WindowsScreen() = default;
 
     public:
-        [[nodiscard]] Vector2<Uint32> GetSize() const;
-        [[nodiscard]] Vector2<Int32> GetPosition() const;
-
-        [[nodiscard]] Uint32 GetRefreshRate() const;
-        [[nodiscard]] Uint32 GetDotsPerInch() const;
-
-        [[nodiscard]] ScreenOrientation GetOrientation() const;
+        [[nodiscard]] String GetName() const override;
 
     public:
-        void SetSize(const Vector2<Uint32>& size);
-        void SetOrientation(ScreenOrientation orientation);
+        [[nodiscard]] Vector2<Uint32> GetSize() const override;
+        [[nodiscard]] Vector2<Int32> GetPosition() const override;
+
+        [[nodiscard]] Uint32 GetRefreshRate() const override;
+        [[nodiscard]] Uint32 GetDotsPerInch() const override;
+
+        [[nodiscard]] ScreenOrientation GetOrientation() const override;
+
+    public:
+        void SetSize(const Vector2<Uint32>& size) override;
+        void SetOrientation(ScreenOrientation orientation) override;
 
     public:
         inline WideStringView GetDeviceName() const
@@ -33,19 +36,20 @@ namespace Kitsune
         }
 
     private:
+        HMONITOR GetMonitorHandle() const;
+
+        bool GetDeviceMode(DEVMODEW* deviceMode) const;
+        bool SetDeviceMode(DEVMODEW* deviceMode);
+
+    private:
         struct MonitorEnumProcData
         {
             HMONITOR MonitorHandle;
             WideStringView DeviceName;
         };
 
-        static BOOL CALLBACK MonitorEnumProcedure(HMONITOR monitor, HDC device,
-                                                  LPRECT rect, LPARAM lparam);
-
-        HMONITOR GetMonitorHandle() const;
-
-        bool GetDeviceMode(DEVMODEW* deviceMode) const;
-        bool SetDeviceMode(DEVMODEW* deviceMode);
+        static BOOL CALLBACK MonitorEnumProcedure(HMONITOR monitor, HDC device, LPRECT rect,
+                                                  LPARAM lparam);
 
     private:
         WideString m_DeviceName;

@@ -418,6 +418,66 @@ TEST(ScopedPtrTests, Comparison)
     EXPECT_FALSE(mid != mid);
     EXPECT_FALSE(larger != larger);
 
+    EXPECT_TRUE(lesser < mid.Get());
+    EXPECT_TRUE(mid < larger.Get());
+    EXPECT_FALSE(larger < mid.Get());
+    EXPECT_FALSE(mid < lesser.Get());
+
+    EXPECT_TRUE(larger > mid.Get());
+    EXPECT_TRUE(mid > lesser.Get());
+    EXPECT_FALSE(mid > larger.Get());
+    EXPECT_FALSE(lesser > mid.Get());
+
+    EXPECT_TRUE(lesser <= mid.Get());
+    EXPECT_TRUE(mid <= mid.Get());
+    EXPECT_TRUE(mid <= larger.Get());
+    EXPECT_FALSE(mid <= lesser.Get());
+    EXPECT_FALSE(larger <= mid.Get());
+
+    EXPECT_TRUE(larger >= mid.Get());
+    EXPECT_TRUE(mid >= mid.Get());
+    EXPECT_TRUE(mid >= lesser.Get());
+    EXPECT_FALSE(lesser >= mid.Get());
+    EXPECT_FALSE(mid >= larger.Get());
+
+    EXPECT_TRUE(lesser == lesser.Get());
+    EXPECT_TRUE(mid == mid.Get());
+    EXPECT_TRUE(larger == larger.Get());
+
+    EXPECT_FALSE(lesser != lesser.Get());
+    EXPECT_FALSE(mid != mid.Get());
+    EXPECT_FALSE(larger != larger.Get());
+
+    EXPECT_TRUE(lesser.Get() < mid);
+    EXPECT_TRUE(mid.Get() < larger);
+    EXPECT_FALSE(larger.Get() < mid);
+    EXPECT_FALSE(mid.Get() < lesser);
+
+    EXPECT_TRUE(larger.Get() > mid);
+    EXPECT_TRUE(mid.Get() > lesser);
+    EXPECT_FALSE(mid.Get() > larger);
+    EXPECT_FALSE(lesser.Get() > mid);
+
+    EXPECT_TRUE(lesser.Get() <= mid);
+    EXPECT_TRUE(mid.Get() <= mid);
+    EXPECT_TRUE(mid.Get() <= larger);
+    EXPECT_FALSE(mid.Get() <= lesser);
+    EXPECT_FALSE(larger.Get() <= mid);
+
+    EXPECT_TRUE(larger.Get() >= mid);
+    EXPECT_TRUE(mid.Get() >= mid);
+    EXPECT_TRUE(mid.Get() >= lesser);
+    EXPECT_FALSE(lesser.Get() >= mid);
+    EXPECT_FALSE(mid.Get() >= larger);
+
+    EXPECT_TRUE(lesser.Get() == lesser);
+    EXPECT_TRUE(mid.Get() == mid);
+    EXPECT_TRUE(larger.Get() == larger);
+
+    EXPECT_FALSE(lesser.Get() != lesser);
+    EXPECT_FALSE(mid.Get() != mid);
+    EXPECT_FALSE(larger.Get() != larger);
+
     (void)lesser.Release();
     (void)mid.Release();
     (void)larger.Release();

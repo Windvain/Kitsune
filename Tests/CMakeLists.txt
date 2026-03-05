@@ -21,6 +21,7 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/ArrayTests.cpp"
     "FoundationTests/BackInsertIteratorTests.cpp"
     "FoundationTests/BacktraceFrameTests.cpp"
+    "FoundationTests/ContainsTests.cpp"
     "FoundationTests/CopyTests.cpp"
     "FoundationTests/CountTests.cpp"
     "FoundationTests/DecodeTests.cpp"

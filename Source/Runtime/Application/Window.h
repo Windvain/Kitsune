@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Foundation/Maths/Vector2.h"
-#include "Foundation/String/String.h"
+#include "Foundation/String/Format.h"
 
 #include "Foundation/Utilities/EnumFlags.h"
 #include "Foundation/Utilities/NonCopyable.h"
@@ -20,14 +20,14 @@ namespace Kitsune
     enum class WindowFlags
     {
         None = 0,
-        FullscreenPrimary = 1 << 0,      //< When fullscreen mode is enabled, the window will only
-                                         //  fill the primary screen.
-        ResizeDisabled = 1 << 1,         //< User input for resizing the window is disabled. Window
-                                         //  size can still be modified programmatically.
+        ResizeDisabled = 1 << 0,         //< User input for resizing the window is disabled. Window
+                                         //  size can still be modified programmatically, but the mode
+                                         //  of the window can only be set to Windowed or Minimized.
     };
 
     KITSUNE_OVERLOAD_FLAGS_OPERATORS(WindowFlags);
 
+    // An abstract class representing a platform-independent implementation of a window.
     class Window : public NonCopyable
     {
     public:
@@ -70,4 +70,28 @@ namespace Kitsune
     public:
         virtual void SetVisibility(bool visible) = 0;
     };
+
+    template<>
+    class Formatter<Window, char>
+    {
+    public:
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(const Window& window, const FormatContext<Iter>& context)
+        {
+            Vector2<Uint32> size = window.GetSize();
+            Vector2<Int32> position = window.GetPosition();
+
+            auto output = FormatTo(
+                context.GetOutput(),
+                "Window {0}: \"{1}\" (Size: {2} x {3}, Position: [{4}, {5}])",
+                AddressOf(window),
+                window.GetTitle(),
+                size.X, size.Y,
+                position.X, position.Y);
+
+            return output;
+        }
+    };
+
+    using WindowHandle = Window*;
 }

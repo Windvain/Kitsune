@@ -7,11 +7,13 @@
 
 namespace Kitsune
 {
+    // Specifies configurations that will be used by the display manager.
     struct DisplayManagerSpecifications
     {
         bool Headless = false;
     };
 
+    // Contains settings used to create a window.
     struct WindowSpecifications
     {
         Vector2<Uint32> Size;
@@ -23,9 +25,7 @@ namespace Kitsune
         WindowFlags Flags = WindowFlags::None;
     };
 
-    using WindowHandle = Window*;
-    using ScreenHandle = Screen*;
-
+    // Manages everything related to input (keyboard, mouse) and windowing.
     class DisplayManager : public NonCopyable
     {
     public:
