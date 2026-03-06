@@ -1,45 +1,49 @@
 #pragma once
 
-#include <Windows.h>
-
-#include "Foundation/Memory/SharedPtr.h"
+#include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Containers/Array.h"
 
 #include "Application/DisplayManager.h"
+#include "Application/Windows/WindowsScreen.h"
+#include "Application/Windows/WindowsWindow.h"
 
 namespace Kitsune
 {
     class WindowsDisplayManager : public DisplayManager
     {
     public:
-        WindowsDisplayManager();
+        WindowsDisplayManager(const WideStringView className);
         ~WindowsDisplayManager();
 
     public:
         void Update() override;
 
-        SharedPtr<Screen> GetPrimaryScreen() const override;
-        Array<SharedPtr<Screen>> GetScreens() const override;
+        ScreenHandle GetPrimaryScreen() const override;
+        Array<ScreenHandle> GetScreens() const override;
 
     public:
-        SharedPtr<Window> MakeWindow(const WindowSpecifications& specs) override;
+        WindowHandle MakeWindow(const WindowSpecifications& specs) override;
+        void DestroyWindow(WindowHandle window) override;
+
+        WindowHandle GetPrimaryWindow() const override;
 
     private:
-        // Wrap the nested for loops in our own enumeration function, saves time writing code..
-        using EnumerateMonitorsProc = bool (*)(const DISPLAY_DEVICEW&, const DISPLAY_DEVICEW&, void* data);
-        static void EnumerateMonitors(EnumerateMonitorsProc procedure, void* data);
+        void UpdateScreenList();
 
     private:
-        static bool PrimaryEnumMonitorsProc(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor,
-                                            void* untypedData);
+        static LRESULT WindowProc(HWND windowHandle, UINT message, WPARAM wparam,
+                                  LPARAM lparam);
 
-        static bool RetrieveEnumMonitorsProc(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor,
-                                             void* untypedData);
+        static LRESULT HandlePreInitWindowEvents(HWND windowHandle, UINT message, WPARAM wparam,
+                                                 LPARAM lparam);
+
+        static LRESULT HandlePostInitWindowEvents(WindowsWindow* window, UINT message,
+                                                  WPARAM wparam, LPARAM lparam);
 
     private:
-        static LRESULT WindowProcedure(HWND windowHandle, UINT message, WPARAM wparam, LPARAM lparam);
+        Array<ScopedPtr<WindowsScreen>> m_Screens;
+        Array<ScopedPtr<WindowsWindow>> m_Windows;
 
-    private:
-        static constexpr const wchar_t* s_WindowClassName = L"KitsuneWindowClass";
+        WideString m_WindowClassName;
     };
 }

@@ -1,77 +1,87 @@
 #pragma once
 
 #include <Windows.h>
-
 #include "Application/Window.h"
-#include "Application/DisplayManager.h"
 
 namespace Kitsune
 {
     class WindowsWindow : public Window
     {
     public:
-        WindowsWindow(const wchar_t* className,
-                      const Vector2<int>& size, const Vector2<int>& position,
-                      const wchar_t* title, WindowFlags flags);
+        WindowsWindow(const WideStringView className,
+                      const Vector2<int>& size,
+                      const Vector2<int>& position,
+                      const WideStringView title,
+                      WindowMode mode,
+                      WindowFlags flags);
 
         ~WindowsWindow();
 
     public:
-        [[nodiscard]] Vector2<Uint32> GetSize() const override;
-        [[nodiscard]] Vector2<Int32> GetPosition() const override;
+        [[nodiscard]]
+        Vector2<Uint32> GetSize() const override;
 
-        [[nodiscard]] String GetTitle() const override;
+        [[nodiscard]]
+        Vector2<Int32> GetPosition() const override;
 
-        [[nodiscard]] Vector2<Uint32> GetSizeWithDecorations() const override;
-        [[nodiscard]] Vector2<Int32> GetPositionWithDecorations() const override;
+        [[nodiscard]]
+        Vector2<Uint32> GetSizeWithDecorations() const override;
+
+        [[nodiscard]]
+        Vector2<Int32> GetPositionWithDecorations() const override;
+
+    public:
+        [[nodiscard]]
+        String GetTitle() const override;
+
+        [[nodiscard]]
+        WindowMode GetMode() const override;
+
+        [[nodiscard]]
+        inline WindowFlags GetFlags() const override
+        {
+            return m_Flags;
+        }
+
+    public:
+        [[nodiscard]]
+        bool IsVisible() const override
+        {
+            return ::IsWindowVisible(m_Handle);
+        }
 
     public:
         void SetSize(const Vector2<Uint32>& size) override;
         void SetPosition(const Vector2<Int32>& position) override;
 
         void SetTitle(const StringView title) override;
+        void SetMode(WindowMode mode) override;
 
-        [[nodiscard]]
-        inline bool IsResizable() const override
+    public:
+        void SetVisibility(bool visible) override;
+
+    public:
+        inline HWND GetNativeHandle() const
         {
-            return ((m_WindowFlags & WindowFlags::FixedSize) == WindowFlags::None);
+            return m_Handle;
         }
 
-    public:
-        void Maximize() override;
-        void Minimize() override;
-
-        void Fullscreen() override;
-        void Restore() override;
-
-        inline void Show() override { ::ShowWindow(m_WindowHandle, SW_SHOW); }
-        inline void Hide() override { ::ShowWindow(m_WindowHandle, SW_HIDE); }
-
-    public:
-        [[nodiscard]] inline bool IsMaximized() const override { return ::IsZoomed(m_WindowHandle); }
-        [[nodiscard]] inline bool IsMinimized() const override { return ::IsIconic(m_WindowHandle); }
-
-        [[nodiscard]] inline bool IsShown()      const override { return ::IsWindowVisible(m_WindowHandle); }
-        [[nodiscard]] inline bool IsFullscreen() const override { return m_Fullscreen; }
-
-        [[nodiscard]]
-        inline bool IsWindowed() const override
-        {
-            return (!IsMaximized() && !IsMinimized() && !IsFullscreen());
-        }
-
-    public:
-        inline HWND GetNativeHandle() const { return m_WindowHandle; }
+    private:
+        static DWORD GetWindowStyles(WindowFlags flags);
+        static DWORD GetWindowExStyles();
 
     private:
-        DWORD GetWindowStyles() const;
-        DWORD GetExtendedWindowStyles() const;
+        static BOOL AdjustWindowRectExForDpi(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
+                                             DWORD dwExStyle, UINT dpi);
+
+        static UINT GetDpiForWindow(HWND hwnd);
 
     private:
-        HWND m_WindowHandle;
-        WindowFlags m_WindowFlags;
+        HWND m_Handle;
+        WindowFlags m_Flags;
 
-        bool m_Fullscreen;
-        WINDOWPLACEMENT m_PrevPlacement;
+        // Fullscreen-specific variables.
+        bool m_Fullscreen = false;
+        WINDOWPLACEMENT m_PreviousPlacement;
     };
 }

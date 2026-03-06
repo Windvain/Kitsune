@@ -1,42 +1,48 @@
 #include "Application/Windows/WindowsDisplayManager.h"
 
-// #include "Launch/DefaultEngineLoop.h"
-// #include "Foundation/String/UnicodeConversion.h"
-
+#include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Diagnostics/Assert.h"
-#include "Foundation/Diagnostics/SystemException.h"
 
-#include "Application/Windows/WindowsScreen.h"
-#include "Application/Windows/WindowsWindow.h"
+#include "Foundation/Algorithms/Contains.h"
+#include "Foundation/String/TranscodePresets.h"
+#include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
 {
-    WindowsDisplayManager::WindowsDisplayManager()
+    WindowsDisplayManager::WindowsDisplayManager(const WideStringView className)
+        : m_WindowClassName(className)
     {
         WNDCLASSEXW windowClass;
+        HANDLE cursorImage = ::LoadImage(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0,
+                                         LR_DEFAULTSIZE | LR_SHARED);
+
         windowClass.cbSize = sizeof(windowClass);
         windowClass.style = CS_HREDRAW | CS_VREDRAW;
 
-        windowClass.lpfnWndProc = WindowProcedure;
+        windowClass.lpfnWndProc = WindowsDisplayManager::WindowProc;
         windowClass.cbClsExtra = 0;
         windowClass.cbWndExtra = 0;
 
         windowClass.hInstance = nullptr;
         windowClass.hIcon = nullptr;
         windowClass.hIconSm = nullptr;
-        windowClass.hCursor = nullptr;
         windowClass.hbrBackground = nullptr;
+        windowClass.hCursor = reinterpret_cast<HCURSOR>(cursorImage);
 
         windowClass.lpszMenuName = nullptr;
-        windowClass.lpszClassName = s_WindowClassName;
+        windowClass.lpszClassName = m_WindowClassName.Raw();
 
         if (!::RegisterClassExW(&windowClass))
             throw SystemException("Failed to register the window class.");
+
+        // Engine code might try to read screen data before the first frame,
+        // so update just in case.
+        UpdateScreenList();
     }
 
     WindowsDisplayManager::~WindowsDisplayManager()
     {
-        KITSUNE_VERIFY(::UnregisterClassW(s_WindowClassName, nullptr),
+        KITSUNE_VERIFY(::UnregisterClassW(m_WindowClassName.Raw(), nullptr),
                        "Failed to unregister the window class.");
     }
 
@@ -48,136 +54,156 @@ namespace Kitsune
             ::TranslateMessage(&message);
             ::DispatchMessageW(&message);
         }
+
+        UpdateScreenList();
     }
 
-    SharedPtr<Screen> WindowsDisplayManager::GetPrimaryScreen() const
+    ScreenHandle WindowsDisplayManager::GetPrimaryScreen() const
     {
-        SharedPtr<WindowsScreen> primaryScreen;
-        EnumerateMonitors(PrimaryEnumMonitorsProc, &primaryScreen);
+        if (m_Screens.IsEmpty())
+            return nullptr;
 
-        return primaryScreen;
+        return m_Screens[0].Get();
     }
 
-    Array<SharedPtr<Screen>> WindowsDisplayManager::GetScreens() const
+    Array<ScreenHandle> WindowsDisplayManager::GetScreens() const
     {
-        Array<SharedPtr<Screen>> screens;
-        EnumerateMonitors(RetrieveEnumMonitorsProc, &screens);
+        Array<ScreenHandle> screenHandles;
+        for (const ScopedPtr<WindowsScreen>& screen : m_Screens)
+            screenHandles.PushBack(screen.Get());
 
-        return screens;
+        return screenHandles;
     }
 
-    SharedPtr<Window> WindowsDisplayManager::MakeWindow(const WindowSpecifications& specs)
+    WindowHandle WindowsDisplayManager::MakeWindow(const WindowSpecifications& specs)
     {
-        WideString wideTitle = L""; //Unicode::ConvertString<char, wchar_t>(specs.Title);
-        Vector2<Int32> position = specs.Position;
+        m_Windows.PushBack(
+            MakeScoped<WindowsWindow>(
+                m_WindowClassName,
+                specs.Size,
+                specs.Position,
+                Utf8ToUtf16<char, wchar_t>(specs.Title),
+                specs.Mode,
+                specs.Flags));
 
-        if (specs.PositionHint == WindowPositionHint::PrimaryScreenCenter)
+        KITSUNE_ENGINE_INFO_("Created a window with a WindowsDisplayManager, details:");
+        KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Window&>(*m_Windows.Back()));
+
+        return m_Windows.Back().Get();
+    }
+
+    void WindowsDisplayManager::DestroyWindow(WindowHandle window)
+    {
+        auto iter = Algorithms::Find(m_Windows.GetBegin(), m_Windows.GetEnd(), window);
+        if (iter == m_Windows.GetEnd())
         {
-            SharedPtr<Screen> primaryScreen = GetPrimaryScreen();
-            position = primaryScreen->GetPosition() + ((primaryScreen->GetSize() - specs.Size) / 2);
+            throw SystemException("Failed to destroy a window, because the window handle "
+                                  "specified was not created by MakeWindow().");
         }
 
-        return MakeShared<WindowsWindow>(s_WindowClassName, specs.Size, position, wideTitle.Raw(), specs.Flags);
+        KITSUNE_ENGINE_INFO_FORMAT_("Destroying a Windows window with the handle value {0}.",
+                                    window);
+
+        m_Windows.Remove(iter);
     }
 
-    void WindowsDisplayManager::EnumerateMonitors(EnumerateMonitorsProc procedure, void* data)
+    WindowHandle WindowsDisplayManager::GetPrimaryWindow() const
     {
-        for (DWORD adapterIndex = 0; /* ... */; ++adapterIndex)
+        if (m_Windows.IsEmpty())
         {
-            DISPLAY_DEVICEW adapterDevice;
-            adapterDevice.cb = sizeof(adapterDevice);
+            KITSUNE_ENGINE_ERROR_("Could not retrieve a primary window, because no windows "
+                                  "have been instantiated.");
 
-            if (!::EnumDisplayDevicesW(nullptr, adapterIndex, &adapterDevice, 0))
+            return nullptr;
+        }
+
+        return m_Windows[0].Get();
+    }
+
+    void WindowsDisplayManager::UpdateScreenList()
+    {
+        DISPLAY_DEVICEW device;
+        device.cb = sizeof(DISPLAY_DEVICEW);
+
+        Usize prevConnected = m_Screens.Size();
+        Array<ScopedPtr<WindowsScreen>> connectedScreens(prevConnected);
+
+        for (DWORD index = 0; /* ... */; ++index)
+        {
+            if (!::EnumDisplayDevicesW(nullptr, index, &device, 0))
                 break;
 
-            if (!(adapterDevice.StateFlags & DISPLAY_DEVICE_ACTIVE))
+            if (!(device.StateFlags & DISPLAY_DEVICE_ACTIVE))
                 continue;
 
-            for (DWORD monitorIndex = 0; /* ... */; ++monitorIndex)
+            auto predicate = [&device](const ScopedPtr<WindowsScreen>& screen) -> bool
             {
-                DISPLAY_DEVICEW monitorDevice;
-                monitorDevice.cb = sizeof(monitorDevice);
+                return (screen->GetDeviceName() == device.DeviceName);
+            };
 
-                if (!::EnumDisplayDevicesW(adapterDevice.DeviceName, monitorIndex, &monitorDevice, 0))
-                    break;
+            auto iter = Algorithms::FindIf(m_Screens.GetBegin(), m_Screens.GetEnd(), predicate);
+            if (iter == m_Screens.GetEnd())
+            {
+                connectedScreens.PushBack(MakeScoped<WindowsScreen>(device.DeviceName));
 
-                if (!procedure(adapterDevice, monitorDevice, data))
-                    break;
+                KITSUNE_ENGINE_INFO_("A screen has been connected, details:");
+                KITSUNE_ENGINE_INFO_FORMAT_(
+                    "\t{0}",
+                    dynamic_cast<const Screen&>(*connectedScreens.Back()));
+            }
+            else
+            {
+                // TODO: Insert should be done without preserving order, a.k.a
+                //       add an InsertUnsorted() function.
+                if (device.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+                    connectedScreens.Insert(connectedScreens.GetBegin(), Move(*iter));
+                else
+                    connectedScreens.PushBack(Move(*iter));
+
+                m_Screens.Remove(iter);
             }
         }
-    }
 
-    bool WindowsDisplayManager::PrimaryEnumMonitorsProc(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor,
-                                                        void* untypedData)
-    {
-        auto* primaryScreen = static_cast<SharedPtr<WindowsScreen>*>(untypedData);
-        if (monitor.StateFlags & (DISPLAY_DEVICE_PRIMARY_DEVICE | DISPLAY_DEVICE_ACTIVE))
+        for (ScopedPtr<WindowsScreen>& disconnected : m_Screens)
         {
-            *primaryScreen = MakeShared<WindowsScreen>(adapter, monitor);
-            return false;
+             KITSUNE_ENGINE_INFO_("A screen has been disconnected, details:");
+             KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Screen&>(*disconnected));
         }
 
-        return true;
+        Swap(m_Screens, connectedScreens);
     }
 
-    bool WindowsDisplayManager::RetrieveEnumMonitorsProc(const DISPLAY_DEVICEW& adapter, const DISPLAY_DEVICEW& monitor,
-                                                         void* untypedData)
+    LRESULT WindowsDisplayManager::WindowProc(HWND windowHandle, UINT message, WPARAM wparam,
+                                              LPARAM lparam)
     {
-        auto* screens = static_cast<Array<SharedPtr<Screen>>*>(untypedData);
-        if (monitor.StateFlags & DISPLAY_DEVICE_ACTIVE)
-            screens->PushBack(MakeShared<WindowsScreen>(adapter, monitor));
+        // Make sure that the window has been properly initialized before checking for events.
+        // There might be unexpected consequences otherwise.
+        LONG_PTR windowPointer = ::GetWindowLongPtrW(windowHandle, GWLP_USERDATA);
+        auto* displayManager = dynamic_cast<WindowsDisplayManager*>(DisplayManager::GetInstance());
 
-        return true;
+        if (!windowPointer || !displayManager)
+            return HandlePreInitWindowEvents(windowHandle, message, wparam, lparam);
+
+        auto window = reinterpret_cast<WindowsWindow*>(windowPointer);
+        auto& windowArray = displayManager->m_Windows;
+
+        if (!Algorithms::Contains(windowArray.GetBegin(), windowArray.GetEnd(), window))
+            return HandlePreInitWindowEvents(windowHandle, message, wparam, lparam);
+
+        // Window has already been created (an HWND exists) and has been recorded in the
+        // window array.
+        return HandlePostInitWindowEvents(window, message, wparam, lparam);
     }
 
-    LRESULT WindowsDisplayManager::WindowProcedure(HWND windowHandle, UINT message, WPARAM wparam, LPARAM lparam)
+    LRESULT WindowsDisplayManager::HandlePreInitWindowEvents(HWND windowHandle, UINT message,
+                                                             WPARAM wparam, LPARAM lparam)
     {
-        (void)windowHandle;
-        (void)message;
-        (void)wparam;
-        (void)lparam;
-        // All events in the window procedure are dispatched immediately.
-        // This is due to the Win32 API blocking the main thread from running until the event
-        // is finished.
-        /*
-        DefaultEngineLoop* engineLoop = DefaultEngineLoop::GetInstance();
-        if (engineLoop->GetApplication() == nullptr)
-            return ::DefWindowProcW(windowHandle, message, wparam, lparam);
-
-        WindowsDisplayManager* dispManager = dynamic_cast<WindowsDisplayManager*>(DisplayManager::GetInstance());
-        KITSUNE_ASSERT(dispManager != nullptr, "The display maanger instance is not a windows display manager?");
-
-        switch (message)
-        {
-        case WM_CLOSE:
-        {
-            break;
-        }
-        case WM_DESTROY:
-        {
-            break;
-        }
-        case WM_SIZE:
-        {
-            Vector2<Uint32> newSize(LOWORD(lparam), HIWORD(lparam));
-            engineLoop->GetApplication()->OnViewportResize(newSize);
-
-            break;
-        }
-        default:
-            return DefWindowProcW(windowHandle, message, wparam, lparam);
-        }
-*/
-        return 0;
+        return DefWindowProcW(windowHandle, message, wparam, lparam);
     }
 
-    DisplayManager* DisplayManager::Create()
+    LRESULT WindowsDisplayManager::HandlePostInitWindowEvents(WindowsWindow* window, UINT message,
+                                                              WPARAM wparam, LPARAM lparam)
     {
-        return Memory::New<WindowsDisplayManager>();
-    }
-
-    void DisplayManager::Destroy()
-    {
-        Memory::Delete(GetInstance());
+        return DefWindowProcW(window->GetNativeHandle(), message, wparam, lparam);
     }
 }

@@ -29,6 +29,10 @@ namespace Kitsune::Testing
         }
 
     public:
+        Iter begin() { return GetBegin(); }
+        Iter end()   { return GetEnd(); }
+
+    public:
         ValueType m_Array[S] = { /* ... */ };
     };
 

@@ -1,4 +1,8 @@
 set(FILES
+    "Application/Null/NullDisplayManager.h"
+    "Application/Null/NullScreen.h"
+    "Application/Null/NullWindow.h"
+
     "Application/Application.cpp"
     "Application/Application.h"
     "Application/CommandLineArguments.h"
@@ -283,5 +287,8 @@ set_target_properties(KitsuneEngine PROPERTIES FOLDER "Engine")
 target_compile_options(KitsuneEngine PRIVATE ${COMPILER_OPTIONS})
 target_compile_definitions(KitsuneEngine PRIVATE ${COMPILER_DEFS})
 
-target_link_libraries(KitsuneEngine PRIVATE ${LINKED_LIBRARIES})
 target_include_directories(KitsuneEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(KitsuneEngine PRIVATE
+    ${LINKED_LIBRARIES}
+    "SHcore.lib"                    # DPI support, e.g. GetDpiForMonitor.
+)

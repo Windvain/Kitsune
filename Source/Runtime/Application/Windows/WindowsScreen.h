@@ -1,45 +1,57 @@
 #pragma once
 
 #include <Windows.h>
+
 #include "Application/Screen.h"
+#include "Foundation/String/String.h"
 
 namespace Kitsune
 {
     class WindowsScreen : public Screen
     {
     public:
-        WindowsScreen(const DISPLAY_DEVICEW& adapterDevice, const DISPLAY_DEVICEW& monitorDevice);
+        WindowsScreen(const WideStringView deviceName);
         ~WindowsScreen() = default;
+
+    public:
+        [[nodiscard]] String GetName() const override;
 
     public:
         [[nodiscard]] Vector2<Uint32> GetSize() const override;
         [[nodiscard]] Vector2<Int32> GetPosition() const override;
 
+        [[nodiscard]] Uint32 GetRefreshRate() const override;
         [[nodiscard]] Uint32 GetDotsPerInch() const override;
-        [[nodiscard]] Fraction<Uint32> GetRefreshRate() const override;
+
+        [[nodiscard]] ScreenOrientation GetOrientation() const override;
 
     public:
+        void SetSize(const Vector2<Uint32>& size) override;
         void SetOrientation(ScreenOrientation orientation) override;
 
     public:
-        const wchar_t* GetDeviceId() const { return m_MonitorDevice.DeviceID; }
+        inline WideStringView GetDeviceName() const
+        {
+            return m_DeviceName;
+        }
 
     private:
-        DEVMODEW GetDeviceMode() const;
-        static BOOL MonitorEnumProcedure(HMONITOR monitor, HDC device, LPRECT rect, LPARAM lparam);
+        HMONITOR GetMonitorHandle() const;
 
-        // Used for getting data from the monitor enumeration procedure. Look at
-        // the WindowsScreen() constructor for more information.
+        bool GetDeviceMode(DEVMODEW* deviceMode) const;
+        bool SetDeviceMode(DEVMODEW* deviceMode);
+
+    private:
         struct MonitorEnumProcData
         {
             HMONITOR MonitorHandle;
-            const wchar_t* Name;
+            WideStringView DeviceName;
         };
 
-    private:
-        DISPLAY_DEVICEW m_AdapterDevice;
-        DISPLAY_DEVICEW m_MonitorDevice;
+        static BOOL CALLBACK MonitorEnumProcedure(HMONITOR monitor, HDC device, LPRECT rect,
+                                                  LPARAM lparam);
 
-        HMONITOR m_MonitorHandle;
+    private:
+        WideString m_DeviceName;
     };
 }

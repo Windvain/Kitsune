@@ -1,72 +1,57 @@
 #pragma once
 
-#include "Application/Screen.h"
 #include "Application/Window.h"
+#include "Application/Screen.h"
 
-#include "Foundation/Memory/SharedPtr.h"
 #include "Foundation/Containers/Array.h"
-
-#include "Foundation/Utilities/EnumFlags.h"
-#include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    // Used in WindowSpecifications.
-    enum class WindowPositionHint
+    // Specifies configurations that will be used by the display manager.
+    struct DisplayManagerSpecifications
     {
-        UsePosition,            //< Use the position argument.
-        PrimaryScreenCenter     //< Ignores the position argument and spawns the window
-                                //  in the center of the primary screen.
+        bool Headless = false;
     };
 
-    // Used in WindowSpecifications.
-    enum class WindowFlags
-    {
-        None = 0,               //< None.
-        FixedSize = 1 << 0      //< The window cannot be resized.
-    };
-
-    KITSUNE_OVERLOAD_FLAGS_OPERATORS(WindowFlags);
-
-    // Defines the window creation settings.
-    // - The window position hint controls whether the `Position` member variable will be used.
-    //   - WindowPositionHint::UsePosition: Sets the window's top-left position to `Position`.
-    //   - WindowPositionHint::PrimaryScreenCenter: Puts the window in the center of the primary screen.
-    //     The `Position` member variable is ignored.
+    // Contains settings used to create a window.
     struct WindowSpecifications
     {
         Vector2<Uint32> Size;
+        Vector2<Int32> Position;
+
         String Title;
 
-        Vector2<Int32> Position;
-        WindowPositionHint PositionHint = WindowPositionHint::UsePosition;
-
-        WindowFlags Flags;
+        WindowMode Mode = WindowMode::Windowed;
+        WindowFlags Flags = WindowFlags::None;
     };
 
-    // Encapsulates a platform's implementation of a display server.
-    // For example: Desktop Window Manager (DWM) on Windows, and X11 & Wayland on Linux.
+    // Manages everything related to input (keyboard, mouse) and windowing.
     class DisplayManager : public NonCopyable
     {
     public:
-        DisplayManager();
-        virtual ~DisplayManager();
+        virtual ~DisplayManager()
+        {
+        }
 
     public:
         virtual void Update() = 0;
 
-        [[nodiscard]] virtual SharedPtr<Screen> GetPrimaryScreen() const = 0;
-        [[nodiscard]] virtual Array<SharedPtr<Screen>> GetScreens() const = 0;
+        // These handles are only valid for the frame when the retrieval functions were called.
+        // Do not cache these values.
+        virtual ScreenHandle GetPrimaryScreen() const = 0;
+        virtual Array<ScreenHandle> GetScreens() const = 0;
 
     public:
-        // Can't use CreateWindow() here, because.. Windows.
-        virtual SharedPtr<Window> MakeWindow(const WindowSpecifications& specs) = 0;
+        virtual WindowHandle MakeWindow(const WindowSpecifications& specs) = 0;
+        virtual void DestroyWindow(WindowHandle window) = 0;
+
+        virtual WindowHandle GetPrimaryWindow() const = 0;
 
     public:
-        // Implemented by the platform-specific implementation.
-        // These functions should never be called by engine code.
-        static DisplayManager* Create();
-        static void Destroy();
+        // These functions (i.e. Initialize() and Shutdown()) should not be called by
+        // client code. They are only meant for usage in the engine initialization code.
+        static DisplayManager* Initialize(const DisplayManagerSpecifications& specs);
+        static void Shutdown();
 
     public:
         [[nodiscard]]

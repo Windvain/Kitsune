@@ -7,8 +7,10 @@ namespace Kitsune
              const SourceLocation location, const StringView message)
     {
         auto* engineLoop = EngineLoop::GetInstance();
-        LogPayload logPayload(message, loggerName, location, severity);
+        if (!engineLoop)
+            return;
 
+        LogPayload logPayload(message, loggerName, location, severity);
         for (ScopedPtr<Logger>& logger : engineLoop->GetLoggers())
             logger->Log(logPayload);
     }

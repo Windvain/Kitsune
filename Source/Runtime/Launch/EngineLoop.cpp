@@ -27,36 +27,37 @@ namespace Kitsune
 #if !defined(KITSUNE_BUILD_PRODUCTION)
         RegisterLogger<ConsoleLogger>();
 #endif
-
         KITSUNE_ENGINE_INFO_FORMAT_(
             "Initializing Kitsune Engine {0}. "
             "For the source code, visit https://github.com/Windvain/Kitsune",
             GetEngineVersion());
 
-        KITSUNE_ENGINE_INFO_FORMAT_(
-            "Initializing application \"{0}\"",
-            argv[0]);
+        // Just in case I remove the condition that the application needs a minimum
+        // of one argument.
+        KITSUNE_ASSERT(m_CommandLineArguments.GetCount() > 0,
+                       "Application should be supplied with at least one command "
+                       "line argument.");
 
         m_Application = CreateApplication(m_CommandLineArguments);
         if (m_Application == nullptr)
             return;
 
-        KITSUNE_ENGINE_INFO_("Successfully initialized the engine loop.");
+        KITSUNE_ENGINE_INFO_("Kitsune Engine initialization step run successfully.");
     }
 
     void EngineLoop::Run()
     {
         while (!m_ExitRequested)
         {
-            m_Application->OnUpdate();
+            m_Application->Update();
         }
     }
 
     int EngineLoop::Shutdown()
     {
         Memory::Delete(m_Application);
-
         m_Loggers.Clear();
+
         return m_ExitCode;
     }
 }

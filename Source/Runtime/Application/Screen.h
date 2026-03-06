@@ -1,43 +1,87 @@
 #pragma once
 
-#include "Foundation/Common/Types.h"
-#include "Foundation/Utilities/NonCopyable.h"
-
 #include "Foundation/Maths/Vector2.h"
-#include "Foundation/Maths/Fraction.h"
+#include "Foundation/String/Formatter.h"
 
 namespace Kitsune
 {
+    // The screen's orientation.
+    // Note: Setting a screen's orientation to 90° twice doesn't make the screen
+    //       rotate 180°, a.k.a screen rotations don't stack.
     enum class ScreenOrientation
     {
-        Landscape,
-        Portrait
+        Default,
+        Rotated90,
+        Rotated180,
+        Rotated270
     };
 
-    // Represents a display screen.
-    // - GetOrientation() simply compares the width and height of the screen to determine orientation
-    //   on desktop platforms. An application cannot check whether the screen is upside-down or not.
-    // - SetOrientation() doesn't do anything on desktop platforms.
-    class Screen : public NonCopyable
+    // An abstract class representing a virtual screen.
+    class Screen
     {
     public:
         virtual ~Screen() { /* ... */ }
 
     public:
-        [[nodiscard]] virtual Vector2<Uint32> GetSize() const = 0;
-        [[nodiscard]] virtual Vector2<Int32> GetPosition() const = 0;
+        [[nodiscard]]
+        virtual String GetName() const = 0;
 
-        [[nodiscard]] virtual Uint32 GetDotsPerInch() const = 0;
-        [[nodiscard]] virtual Fraction<Uint32> GetRefreshRate() const = 0;
+    public:
+        [[nodiscard]]
+        virtual Vector2<Uint32> GetSize() const = 0;
 
         [[nodiscard]]
-        inline virtual ScreenOrientation GetOrientation() const
+        virtual Vector2<Int32> GetPosition() const = 0;
+
+        [[nodiscard]]
+        virtual Uint32 GetRefreshRate() const = 0;
+
+        [[nodiscard]]
+        virtual Uint32 GetDotsPerInch() const = 0;
+
+        [[nodiscard]]
+        virtual ScreenOrientation GetOrientation() const = 0;
+
+    public:
+        [[nodiscard]]
+        inline bool IsLandscapeOrientation() const
         {
             Vector2<Uint32> size = GetSize();
-            return (size.X < size.Y) ? ScreenOrientation::Portrait : ScreenOrientation::Landscape;
+            return (size.X >= size.Y);
+        }
+
+        [[nodiscard]]
+        inline bool IsPortraitOrientation() const
+        {
+            Vector2<Uint32> size = GetSize();
+            return (size.X <= size.Y);
         }
 
     public:
+        virtual void SetSize(const Vector2<Uint32>& size) = 0;
         virtual void SetOrientation(ScreenOrientation orientation) = 0;
     };
+
+    template<>
+    class Formatter<Screen, char>
+    {
+    public:
+        template<OutputIterator<const char&> Iter>
+        inline static Iter Format(const Screen& screen, const FormatContext<Iter>& context)
+        {
+            Vector2<Uint32> size = screen.GetSize();
+            auto output = FormatTo(
+                context.GetOutput(),
+                "Screen {0}: \"{1}\" ({2} x {3}, {4} Hz, {5} DPI)",
+                AddressOf(screen),
+                screen.GetName(),
+                size.X, size.Y,
+                screen.GetRefreshRate(),
+                screen.GetDotsPerInch());
+
+            return output;
+        }
+    };
+
+    using ScreenHandle = Screen*;
 }

@@ -1,12 +1,11 @@
 #pragma once
 
 #include "Foundation/Logging/Logger.h"
+#include "Foundation/Threading/Mutex.h"
+
+#include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Containers/Array.h"
 
-#include "Foundation/Threading/Mutex.h"
-#include "Foundation/Memory/ScopedPtr.h"
-
-#include "Foundation/Utilities/NonCopyable.h"
 #include "Foundation/Diagnostics/Backtrace.h"
 
 #include "Application/Application.h"
@@ -27,28 +26,10 @@ namespace Kitsune
         int Shutdown();
 
     public:
-        template<std::derived_from<Logger> LoggerT, typename... Args>
-        inline void RegisterLogger(Args&&... args)
-        {
-            m_Loggers.PushBack(MakeScoped<LoggerT>(Forward<Args>(args)...));
-        }
-
         void Exit(int exitCode);
         [[noreturn]] void ForceExit(int exitCode);
 
     public:
-        [[nodiscard]]
-        inline Array<ScopedPtr<Logger>>& GetLoggers()
-        {
-            return m_Loggers;
-        }
-
-        [[nodiscard]]
-        inline const Array<ScopedPtr<Logger>>& GetLoggers() const
-        {
-            return m_Loggers;
-        }
-
         [[nodiscard]]
         inline const Backtrace& GetExceptionBacktrace() const
         {
@@ -59,6 +40,25 @@ namespace Kitsune
         inline const CommandLineArguments& GetCommandLineArguments() const
         {
             return m_CommandLineArguments;
+        }
+
+    public:
+        template<std::derived_from<Logger> LoggerT, typename... Args>
+        inline void RegisterLogger(Args&&... args)
+        {
+            m_Loggers.PushBack(MakeScoped<LoggerT>(Forward<Args>(args)...));
+        }
+
+        [[nodiscard]]
+        inline Array<ScopedPtr<Logger>>& GetLoggers()
+        {
+            return m_Loggers;
+        }
+
+        [[nodiscard]]
+        inline const Array<ScopedPtr<Logger>>& GetLoggers() const
+        {
+            return m_Loggers;
         }
 
     public:
@@ -93,8 +93,8 @@ namespace Kitsune
         friend class Exception;
 
     public:
-        Array<ScopedPtr<Logger>> m_Loggers;
         CommandLineArguments m_CommandLineArguments;
+        Array<ScopedPtr<Logger>> m_Loggers;
 
         Int32 m_ExitCode = 0;
         bool m_ExitRequested = false;
