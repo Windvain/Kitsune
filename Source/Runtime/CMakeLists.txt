@@ -203,6 +203,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "/permissive"                 # Enable standards conformance.
 
         "/wd4244"                     # Disable "conversion from "type1" to "type2"  possible loss of data".
+
+        "/external:anglebrackets"     # Treat files included with angle brackets as external files.
+        "/external:W0"                # Ignore external file warnings & errors.
     )
 
     list(APPEND COMPILER_OPTIONS

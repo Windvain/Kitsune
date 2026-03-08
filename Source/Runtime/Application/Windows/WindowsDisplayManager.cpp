@@ -166,8 +166,10 @@ namespace Kitsune
 
         for (ScopedPtr<WindowsScreen>& disconnected : m_Screens)
         {
-             KITSUNE_ENGINE_INFO_("A screen has been disconnected, details:");
-             KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Screen&>(*disconnected));
+            KITSUNE_UNUSED(disconnected);
+
+            KITSUNE_ENGINE_INFO_("A screen has been disconnected, details:");
+            KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Screen&>(*disconnected));
         }
 
         Swap(m_Screens, connectedScreens);

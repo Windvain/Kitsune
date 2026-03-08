@@ -10,6 +10,10 @@
 #include "Foundation/String/FormatArguments.h"
 #include "Foundation/String/FormatException.h"
 
+KITSUNE_PUSH_COMPILER_WARNINGS()
+KITSUNE_IGNORE_MSVC_WARNING(4702)           // Unreachable code. No idea why this happens so I'm just
+                                            // going to ignore this. Seems to be a false alarm.
+
 namespace Kitsune
 {
     template<Character Char, OutputIterator<const Char&> OutputIter>
@@ -63,7 +67,7 @@ namespace Kitsune
                 if (!isDoubleBrace)
                 {
                     StringView formatArguments(leftBrace + 1, rightBrace);
-                    outputIter = HandleFormatting(arguments, formatArguments, outputIter);
+                    outputIter = HandleFormatting_(arguments, formatArguments, outputIter);
 
                     formatString.RemovePrefix(formatArguments.Size() + 2);
                 }
@@ -87,7 +91,7 @@ namespace Kitsune
 
     private:
         template<OutputIterator<const CharType&> OutputIter, Usize ArgCount>
-        inline static OutputIter HandleFormatting(
+        inline static OutputIter HandleFormatting_(
             const FormatArgumentPack<ArgCount, OutputIter>& arguments,
             StringView formatArguments,
             OutputIter outputIter)
@@ -116,3 +120,5 @@ namespace Kitsune
         }
     };
 }
+
+KITSUNE_POP_COMPILER_WARNINGS()

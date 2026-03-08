@@ -28,8 +28,8 @@ namespace Kitsune
     #define KITSUNE_LOG_FORMAT_LEVEL_(loggerName, severity, message, source, ...) \
         ::Kitsune::LogFormat(loggerName, severity, source, message, __VA_ARGS__)
 #else
-    #define KITSUNE_LOG_LEVEL_(loggerName, severity, message, source)
-    #define KITSUNE_LOG_FORMAT_LEVEL_(loggerName, severity, message, source, ...)
+    #define KITSUNE_LOG_LEVEL_(loggerName, severity, message, source)             ((void)0)
+    #define KITSUNE_LOG_FORMAT_LEVEL_(loggerName, severity, message, source, ...) ((void)0)
 #endif
 
 #define KITSUNE_TRACE(message) KITSUNE_TRACE_NAMED("User", message)
