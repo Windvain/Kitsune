@@ -36,16 +36,23 @@ namespace Kitsune
     public:
         virtual void Update() = 0;
 
+    public:
         // These handles are only valid for the frame when the retrieval functions were called.
         // Do not cache these values.
+        [[nodiscard]]
         virtual ScreenHandle GetPrimaryScreen() const = 0;
+
+        [[nodiscard]]
         virtual Array<ScreenHandle> GetScreens() const = 0;
 
     public:
+        [[nodiscard]]
         virtual WindowHandle MakeWindow(const WindowSpecifications& specs) = 0;
-        virtual void DestroyWindow(WindowHandle window) = 0;
 
+        [[nodiscard]]
         virtual WindowHandle GetPrimaryWindow() const = 0;
+
+        virtual void DestroyWindow(WindowHandle window) = 0;
 
     public:
         // These functions (i.e. Initialize() and Shutdown()) should not be called by

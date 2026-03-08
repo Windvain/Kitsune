@@ -35,3 +35,15 @@ TEST(ContainsTests, ContainsRange)
     EXPECT_FALSE(Algorithms::Contains(container.GetBegin(), container.GetEnd(),
                                       range2.GetBegin(), range2.GetEnd()));
 }
+
+TEST(ContainsTests, ContainsIf)
+{
+    ForwardTestContainer<int, 5> container = { 2, 12, 565, 23, 675 };
+    EXPECT_TRUE(Algorithms::ContainsIf(
+        container.GetBegin(), container.GetEnd(),
+        [](int x) -> bool { return x == 2; }));
+
+    EXPECT_FALSE(Algorithms::ContainsIf(
+        container.GetBegin(), container.GetEnd(),
+        [](int x) -> bool { return x == 19; }));
+}
