@@ -53,6 +53,9 @@ namespace Kitsune
 
     void DisplayManager::Shutdown()
     {
+        if (s_Instance == nullptr)
+            return;
+
         Memory::Delete(s_Instance);
         s_Instance = nullptr;
     }

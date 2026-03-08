@@ -21,3 +21,9 @@ option(
     "Always show the terminal even in Production builds."
     FALSE
 )
+
+option(
+    KITSUNE_BUILD_VULKAN_BACKEND
+    "Builds the Vulkan rendering backend."
+    TRUE
+)

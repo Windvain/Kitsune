@@ -126,11 +126,25 @@ set(FILES
     "Launch/EngineLoop.cpp"
     "Launch/EngineLoop.h"
     "Launch/UniversalMain.cpp"
+
+    "Rendering/GraphicsDevice.h"
 )
 
 set(COMPILER_OPTIONS "")
 set(COMPILER_DEFS "")
 set(LINKED_LIBRARIES "")
+
+if (KITSUNE_BUILD_VULKAN_BACKEND)
+    list(APPEND FILES
+        "Rendering/Vulkan/VulkanGraphicsDevice.cpp"
+        "Rendering/Vulkan/VulkanGraphicsDevice.h"
+    )
+
+    find_package(Vulkan REQUIRED)
+
+    list(APPEND COMPILER_DEFS "KITSUNE_HAS_VULKAN_BACKEND=1")
+    list(APPEND LINKED_LIBRARIES Vulkan::Vulkan)
+endif()
 
 # Can't make these any shorter, because.. CMake...
 macro(append_if_backtrace_supported var value)
