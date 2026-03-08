@@ -4,6 +4,7 @@
 #include "TestContainer.h"
 
 #include "Foundation/Algorithms/Copy.h"
+#include "Foundation/String/StringView.h"
 
 #include "Foundation/String/Utf8Encoding.h"
 #include "Foundation/String/Utf16Encoding.h"
@@ -24,7 +25,7 @@ protected:
     ~ValidStringTests() { /* ... */ }
 
 protected:
-    const CodeunitType* GetValidText() const
+    BasicStringView<CodeunitType> GetValidText() const
     {
         if constexpr (std::is_same_v<CodeunitType, char>)
             return "🦐💩ÿ";
@@ -36,12 +37,12 @@ protected:
             return U"🦐💩🐼🐾👾🐼🐾🤬🦐🙈";
     }
 
-    const CodeunitType* GetInvalidText() const
+    BasicStringView<CodeunitType> GetInvalidText() const
     {
         if constexpr (std::is_same_v<CodeunitType, char>)
             return "🦐💩\x82";
         else if constexpr (std::is_same_v<CodeunitType, char8_t>)
-            return u8"🦐💩\x82";
+            return reinterpret_cast<const char8_t*>("🦐💩\x82");
         else if constexpr (std::is_same_v<CodeunitType, char16_t>)
             return u"🦐💩ÿ\xD872🐾👾";
         else if constexpr (std::is_same_v<CodeunitType, char32_t>)
@@ -64,10 +65,9 @@ TYPED_TEST(ValidStringTests, Valid)
     using Codeunit = typename TestFixture::CodeunitType;
 
     ForwardTestContainer<Codeunit, 11> container;
-    const auto* validText = this->GetValidText();
+    auto validText = this->GetValidText();
 
-    Algorithms::Copy(validText, validText + 11, container.GetBegin());
-
+    Algorithms::Copy(validText.GetBegin(), validText.GetEnd(), container.GetBegin());
     EXPECT_TRUE(IsValidEncoding<Encoding>(container.GetBegin(), container.GetEnd()));
 }
 
@@ -77,9 +77,9 @@ TYPED_TEST(ValidStringTests, Invalid)
     using Codeunit = typename TestFixture::CodeunitType;
 
     ForwardTestContainer<Codeunit, 11> container;
-    const auto* validText = this->GetInvalidText();
+    auto validText = this->GetInvalidText();
 
-    Algorithms::Copy(validText, validText + 11, container.GetBegin());
+    Algorithms::Copy(validText.GetBegin(), validText.GetEnd(), container.GetBegin());
 
     EXPECT_FALSE(IsValidEncoding<Encoding>(container.GetBegin(), container.GetEnd()));
 }

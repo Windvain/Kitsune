@@ -37,9 +37,9 @@ protected:
     BasicStringView<T> GetInvalidString()
     {
         if constexpr (std::is_same_v<T, char>)
-            return "\xD8\x00\xDB\x7F🦐💩";
+            return "\xD8\x04\xDB\x7F🦐💩";
         else /* std:is_same_v<T, char8_t> */
-            return u8"\xD8\x00\xDB\x7F🦐💩";
+            return reinterpret_cast<const char8_t*>("\xD8\x04\xDB\x7F🦐💩");
     }
 
     Array<CodepointType> GetSmileyFaceAndRandomCodepoints()
