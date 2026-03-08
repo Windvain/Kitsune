@@ -314,6 +314,8 @@ TEST(ScopedPtrTests, Release)
 
     EXPECT_EQ(pointer.Release(), rawPointer);
     EXPECT_EQ(pointer.Get(), nullptr);
+
+    Memory::Delete(rawPointer);
 }
 
 TEST(ScopedPtrTests, Reset)

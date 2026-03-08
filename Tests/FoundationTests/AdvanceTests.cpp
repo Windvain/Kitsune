@@ -34,7 +34,7 @@ TYPED_TEST(AdvanceTests, Advance)
     IteratorType iterator(rawPointer);
 
     Algorithms::Advance(iterator, 5);
-    rawPointer += 5;
 
-    EXPECT_EQ(iterator.Pointer(), rawPointer);
+    EXPECT_EQ(iterator.Pointer(), rawPointer + 5);
+    delete rawPointer;
 }

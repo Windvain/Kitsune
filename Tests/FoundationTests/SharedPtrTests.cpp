@@ -886,12 +886,9 @@ TEST(WeakPtrTests, SwapAlgorithm)
 
 TEST(SharedPtrTests, StaticPointerCast)
 {
-    void* rawPointer = Memory::Allocate(16);
-
-    SharedPtr<void> voidPointer = SharedPtr<void>(rawPointer);
-    ASSERT_EQ(voidPointer.Get(), rawPointer);
-
+    SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
     SharedPtr<int> intPointer = StaticPointerCast<int>(voidPointer);
+
     EXPECT_EQ((void*)intPointer.Get(), voidPointer.Get());
 
     EXPECT_EQ(intPointer.GetCount(), 2);
@@ -900,10 +897,8 @@ TEST(SharedPtrTests, StaticPointerCast)
 
 TEST(SharedPtrTests, MoveStaticPointerCast)
 {
-    void* rawPointer = Memory::Allocate(16);
-
-    SharedPtr<void> voidPointer = SharedPtr<void>(rawPointer);
-    ASSERT_EQ(voidPointer.Get(), rawPointer);
+    SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
+    void* rawPointer = voidPointer.Get();
 
     SharedPtr<int> intPointer = StaticPointerCast<int>(Move(voidPointer));
     EXPECT_EQ((void*)intPointer.Get(), rawPointer);
