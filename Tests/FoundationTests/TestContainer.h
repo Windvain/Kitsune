@@ -40,9 +40,52 @@ namespace Kitsune::Testing
     using ForwardTestContainer = TestContainer<ForwardIterator<T>, S>;
 
     template<typename T, std::size_t S>
-    using BidirectionalTestContainer =
-        TestContainer<BidirectionalIterator<T>, S>;
+    using BidirectionalTestContainer = TestContainer<BidirectionalIterator<T>, S>;
 
     template<typename T, std::size_t S>
     using RandomAccessTestContainer = TestContainer<RandomAccessIterator<T>, S>;
+
+    template<Iterator Iter, std::size_t S>
+    class NonOwningTestContainer
+    {
+    public:
+        using ValueType = typename Kitsune::IteratorTraits<Iter>::ValueType;
+
+    public:
+        NonOwningTestContainer(ValueType* array)
+            : m_Array(array)
+        {
+        }
+
+    public:
+        Iter GetBegin() { return Iter(m_Array); }
+        Iter GetEnd()   { return Iter(m_Array + S); }
+
+    public:
+        ValueType& operator[](std::size_t index)
+        {
+            return m_Array[index];
+        }
+
+        const ValueType& operator[](std::size_t index) const
+        {
+            return m_Array[index];
+        }
+
+    public:
+        Iter begin() { return GetBegin(); }
+        Iter end()   { return GetEnd(); }
+
+    public:
+        ValueType* m_Array;
+    };
+
+    template<typename T, std::size_t S>
+    using ForwardNonOwningTestContainer = NonOwningTestContainer<ForwardIterator<T>, S>;
+
+    template<typename T, std::size_t S>
+    using BidirectionalNonOwningTestContainer = NonOwningTestContainer<BidirectionalIterator<T>, S>;
+
+    template<typename T, std::size_t S>
+    using RandomAccessNonOwningTestContainer = NonOwningTestContainer<RandomAccessIterator<T>, S>;
 }

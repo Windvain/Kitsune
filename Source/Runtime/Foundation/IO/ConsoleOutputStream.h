@@ -20,7 +20,7 @@ namespace Kitsune
         void Flush() override;
 
     private:
-        void ThreadUnsafeFlush();
+        void ThreadUnsafeFlush_();
 
     private:
         static constexpr Usize s_BufferSize = 128;

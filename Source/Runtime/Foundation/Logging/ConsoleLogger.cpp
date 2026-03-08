@@ -9,12 +9,12 @@ namespace Kitsune
     void ConsoleLogger::Log(const LogPayload& payload)
     {
         FormatTo(WriteStreamIterator<char>(m_Stream), "{0}{1}{2}: {3}\x1B[0m\n",
-                 MakeTimeHeader(), MakeSeverityHeader(payload.Severity),
-                 MakeLoggerNameHeader(payload.LoggerName),
+                 MakeTimeHeader_(), MakeSeverityHeader_(payload.Severity),
+                 MakeLoggerNameHeader_(payload.LoggerName),
                  payload.Message);
     }
 
-    String ConsoleLogger::MakeTimeHeader()
+    String ConsoleLogger::MakeTimeHeader_()
     {
         std::time_t time;
         std::time(&time);
@@ -28,7 +28,7 @@ namespace Kitsune
             timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
     }
 
-    String ConsoleLogger::MakeSeverityHeader(const LogSeverity severity)
+    String ConsoleLogger::MakeSeverityHeader_(const LogSeverity severity)
     {
         StringView severityString;
         StringView severityColor;
@@ -69,7 +69,7 @@ namespace Kitsune
             severityColor, severityString);
     }
 
-    String ConsoleLogger::MakeLoggerNameHeader(const StringView loggerName)
+    String ConsoleLogger::MakeLoggerNameHeader_(const StringView loggerName)
     {
         if (loggerName.IsEmpty())
             return "";

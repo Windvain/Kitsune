@@ -13,6 +13,7 @@ KITSUNE_IGNORE_CLANG_WARNING(-Wnested-anon-types)
 
 namespace Kitsune
 {
+    // A 2-dimensional mathematical vector class.
     template<typename T>
     class VectorBase<T, 2>
     {

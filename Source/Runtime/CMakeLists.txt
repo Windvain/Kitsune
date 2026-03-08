@@ -12,6 +12,7 @@ set(FILES
     "Application/Window.h"
 
     "Foundation/Algorithms/Advance.h"
+    "Foundation/Algorithms/Contains.h"
     "Foundation/Algorithms/Copy.h"
     "Foundation/Algorithms/Count.h"
     "Foundation/Algorithms/Destroy.h"
@@ -69,7 +70,6 @@ set(FILES
     "Foundation/Logging/LogPayload.h"
     "Foundation/Logging/WriteStreamIterator.h"
 
-    "Foundation/Maths/Fraction.h"
     "Foundation/Maths/Vector2.h"
     "Foundation/Maths/VectorBase.h"
 
@@ -159,7 +159,6 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"
-        "Foundation/Windows/WindowsSystemInformation.cpp"
 
         "Launch/Windows/WindowsEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
@@ -204,6 +203,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "/permissive"                 # Enable standards conformance.
 
         "/wd4244"                     # Disable "conversion from "type1" to "type2"  possible loss of data".
+
+        "/external:anglebrackets"     # Treat files included with angle brackets as external files.
+        "/external:W0"                # Ignore external file warnings & errors.
     )
 
     list(APPEND COMPILER_OPTIONS

@@ -148,7 +148,7 @@ namespace Kitsune
 
         inline ~BasicString()
         {
-            Clear();
+            Reset();
         }
 
     public:
@@ -158,7 +158,7 @@ namespace Kitsune
                 return *this;
 
             if (m_Allocator != string.GetAllocator())
-                Clear();
+                Reset();
 
             m_Allocator = string.GetAllocator();
             return operator=(BasicStringView<T>(string.Raw(), string.Size()));
@@ -169,7 +169,7 @@ namespace Kitsune
             if (this == &string)
                 return *this;
 
-            Clear();
+            Reset();
             m_Allocator = Move(string.GetAllocator());
 
             m_Size = string.Size();

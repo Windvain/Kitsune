@@ -15,15 +15,15 @@ namespace Kitsune
     namespace Details
     {
         template<ThreadSafety Mode>
-        class ReferenceCountBase
+        class ReferenceCountBase_
         {
         public:
-            inline ReferenceCountBase(Int32 sharedCount = 1, Int32 weakCount = 1)
+            inline ReferenceCountBase_(Int32 sharedCount = 1, Int32 weakCount = 1)
                 : m_SharedCount(sharedCount), m_WeakCount(weakCount)
             {
             }
 
-            virtual ~ReferenceCountBase() { /* ... */ }
+            virtual ~ReferenceCountBase_() { /* ... */ }
 
         public:
             virtual void DeleteValue() = 0;
@@ -62,7 +62,7 @@ namespace Kitsune
 
             inline void ReleaseOwnership()
             {
-                if (Decrement(&m_SharedCount) == 0)
+                if (DecrementValue_(&m_SharedCount) == 0)
                     DeleteValue();
 
                 ReleaseWeakOwnership();
@@ -70,12 +70,12 @@ namespace Kitsune
 
             inline void ReleaseWeakOwnership()
             {
-                if (Decrement(&m_WeakCount) == 0)
+                if (DecrementValue_(&m_WeakCount) == 0)
                     DeleteReferenceCount();
             }
 
         private:
-            inline Int32 Decrement(Int32* pointer)
+            inline static Int32 DecrementValue_(Int32* pointer)
             {
                 if constexpr (Mode == ThreadSafety::NotThreadSafe)
                     return (--*pointer);
@@ -89,11 +89,11 @@ namespace Kitsune
         };
 
         template<typename T, ThreadSafety Mode, Deleter Del, Allocator Alloc>
-        class TypedReferenceCount : public ReferenceCountBase<Mode>
+        class TypedReferenceCount_ : public ReferenceCountBase_<Mode>
         {
         public:
             template<typename DelRef>
-            inline TypedReferenceCount(T* pointer, DelRef&& deleter,
+            inline TypedReferenceCount_(T* pointer, DelRef&& deleter,
                                        const Alloc& allocator)
                 : m_Pointer(pointer),
                   m_Deleter(Forward<DelRef>(deleter)),
@@ -112,7 +112,7 @@ namespace Kitsune
             {
                 Alloc alloc = Move(m_Allocator);
 
-                this->~TypedReferenceCount();
+                this->~TypedReferenceCount_();
                 alloc.Free(this, sizeof(*this));
             }
 
@@ -124,25 +124,25 @@ namespace Kitsune
         };
 
         template<typename To, typename From>
-        concept StaticPointerCastable = requires
+        concept StaticPointerCastable_ = requires
         {
             static_cast<To*>(std::declval<From*>());
         };
 
         template<typename To, typename From>
-        concept DynamicPointerCastable = requires
+        concept DynamicPointerCastable_ = requires
         {
             dynamic_cast<To*>(std::declval<From*>());
         };
 
         template<typename To, typename From>
-        concept ConstPointerCastable = requires
+        concept ConstPointerCastable_ = requires
         {
             const_cast<To*>(std::declval<From*>());
         };
 
         template<typename To, typename From>
-        concept ReinterpretPointerCastable = requires
+        concept ReinterpretPointerCastable_ = requires
         {
             reinterpret_cast<To*>(std::declval<From*>());
         };
@@ -200,7 +200,7 @@ namespace Kitsune
         inline SharedPtr(U* pointer, Del deleter, const Alloc& allocator)
             : m_Pointer(pointer)
         {
-            using InternalDataType = Details::TypedReferenceCount<
+            using InternalDataType = Details::TypedReferenceCount_<
                 U, Mode,
                 std::remove_reference_t<Del>,
                 Alloc>;
@@ -306,26 +306,26 @@ namespace Kitsune
     public:
         inline SharedPtr& operator=(const SharedPtr& pointer)
         {
-            return InternalAssign(pointer);
+            return InternalAssign_(pointer);
         }
 
         inline SharedPtr& operator=(SharedPtr&& pointer)
         {
-            return InternalAssign(Move(pointer));
+            return InternalAssign_(Move(pointer));
         }
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
         inline SharedPtr& operator=(const SharedPtr<U, Mode>& pointer)
         {
-            return InternalAssign(pointer);
+            return InternalAssign_(pointer);
         }
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
         inline SharedPtr& operator=(SharedPtr<U, Mode>&& pointer)
         {
-            return InternalAssign(Move(pointer));
+            return InternalAssign_(Move(pointer));
         }
 
         template<typename U, Deleter Del>
@@ -380,7 +380,7 @@ namespace Kitsune
 
     private:
         template<typename U>
-        inline SharedPtr& InternalAssign(const SharedPtr<U, Mode>& pointer)
+        inline SharedPtr& InternalAssign_(const SharedPtr<U, Mode>& pointer)
         {
             if (m_Pointer != pointer.m_Pointer)
                 SharedPtr(pointer).Swap(*this);
@@ -389,7 +389,7 @@ namespace Kitsune
         }
 
         template<typename U>
-        inline SharedPtr& InternalAssign(SharedPtr<U, Mode>&& pointer)
+        inline SharedPtr& InternalAssign_(SharedPtr<U, Mode>&& pointer)
         {
             if (m_Pointer != pointer.m_Pointer)
                 SharedPtr(Move(pointer)).Swap(*this);
@@ -403,7 +403,7 @@ namespace Kitsune
 
     private:
         T* m_Pointer;
-        Details::ReferenceCountBase<Mode>* m_Data;
+        Details::ReferenceCountBase_<Mode>* m_Data;
     };
 
     template<typename T, typename... Args>
@@ -586,24 +586,24 @@ namespace Kitsune
     public:
         inline WeakPtr& operator=(const WeakPtr& pointer)
         {
-            return InternalAssign(pointer);
+            return InternalAssign_(pointer);
         }
 
         inline WeakPtr& operator=(WeakPtr&& pointer)
         {
-            return InternalAssign(Move(pointer));
+            return InternalAssign_(Move(pointer));
         }
 
         template<typename U>
         inline WeakPtr& operator=(const WeakPtr<U, Mode>& pointer)
         {
-            return InternalAssign(pointer);
+            return InternalAssign_(pointer);
         }
 
         template<typename U>
         inline WeakPtr& operator=(WeakPtr<U, Mode>&& pointer)
         {
-            return InternalAssign(Move(pointer));
+            return InternalAssign_(Move(pointer));
         }
 
         template<typename U>
@@ -654,7 +654,7 @@ namespace Kitsune
 
     private:
         template<typename U>
-        inline WeakPtr& InternalAssign(const WeakPtr<U, Mode>& pointer)
+        inline WeakPtr& InternalAssign_(const WeakPtr<U, Mode>& pointer)
         {
             if (m_Pointer != pointer.m_Pointer)
                 WeakPtr(pointer).Swap(*this);
@@ -663,7 +663,7 @@ namespace Kitsune
         }
 
         template<typename U>
-        inline WeakPtr& InternalAssign(WeakPtr<U, Mode>&& pointer)
+        inline WeakPtr& InternalAssign_(WeakPtr<U, Mode>&& pointer)
         {
             if (m_Pointer != pointer.m_Pointer)
                 WeakPtr(Move(pointer)).Swap(*this);
@@ -677,11 +677,11 @@ namespace Kitsune
 
     private:
         T* m_Pointer;
-        Details::ReferenceCountBase<Mode>* m_Data;
+        Details::ReferenceCountBase_<Mode>* m_Data;
     };
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::StaticPointerCastable<T, U>
+        requires Details::StaticPointerCastable_<T, U>
     SharedPtr<T, Mode> StaticPointerCast(const SharedPtr<U, Mode>& pointer)
     {
         auto castPointer = static_cast<T*>(pointer.Get());
@@ -689,7 +689,7 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::StaticPointerCastable<T, U>
+        requires Details::StaticPointerCastable_<T, U>
     SharedPtr<T, Mode> StaticPointerCast(SharedPtr<U, Mode>&& pointer)
     {
         auto castPointer = static_cast<T*>(pointer.Get());
@@ -697,7 +697,7 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::DynamicPointerCastable<T, U>
+        requires Details::DynamicPointerCastable_<T, U>
     SharedPtr<T, Mode> DynamicPointerCast(const SharedPtr<U, Mode>& pointer)
     {
         auto* castPointer = dynamic_cast<T*>(pointer.Get());
@@ -705,7 +705,7 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::DynamicPointerCastable<T, U>
+        requires Details::DynamicPointerCastable_<T, U>
     SharedPtr<T, Mode> DynamicPointerCast(SharedPtr<U, Mode>&& pointer)
     {
         auto* castPointer = dynamic_cast<T*>(pointer.Get());
@@ -713,7 +713,7 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::ConstPointerCastable<T, U>
+        requires Details::ConstPointerCastable_<T, U>
     SharedPtr<T, Mode> ConstPointerCast(const SharedPtr<U, Mode>& pointer)
     {
         auto* castPointer = const_cast<T*>(pointer.Get());
@@ -721,7 +721,7 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::ConstPointerCastable<T, U>
+        requires Details::ConstPointerCastable_<T, U>
     SharedPtr<T, Mode> ConstPointerCast(SharedPtr<U, Mode>&& pointer)
     {
         auto* castPointer = const_cast<T*>(pointer.Get());
@@ -729,7 +729,7 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::ReinterpretPointerCastable<T, U>
+        requires Details::ReinterpretPointerCastable_<T, U>
     SharedPtr<T, Mode> ReinterpretPointerCast(const SharedPtr<U, Mode>& pointer)
     {
         auto* castPointer = reinterpret_cast<T*>(pointer.Get());
@@ -737,7 +737,7 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U>
-        requires Details::ReinterpretPointerCastable<T, U>
+        requires Details::ReinterpretPointerCastable_<T, U>
     SharedPtr<T, Mode> ReinterpretPointerCast(SharedPtr<U, Mode>&& pointer)
     {
         auto* castPointer = reinterpret_cast<T*>(pointer.Get());

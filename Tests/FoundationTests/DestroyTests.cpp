@@ -5,6 +5,8 @@
 
 #include "TestContainer.h"
 
+using namespace Kitsune;
+
 namespace
 {
     class MyDestroyObject
@@ -20,12 +22,6 @@ namespace
         }
 
     public:
-        static MyDestroyObject* AllocateObject()
-        {
-            return (MyDestroyObject*)(std::malloc(sizeof(MyDestroyObject)));
-        }
-
-    public:
         MOCK_METHOD(void, OnDestroy, ());
     };
 }
@@ -35,36 +31,30 @@ using namespace Kitsune::Testing;
 
 TEST(DestroyTests, Destroy)
 {
-    ForwardTestContainer<MyDestroyObject*, 5> container = { /* ... */ };
+    ForwardNonOwningTestContainer<MyDestroyObject, 5> container(
+        (MyDestroyObject*)std::malloc(sizeof(MyDestroyObject) * 5));
 
     for (int i = 0; i < 5; ++i)
     {
-        container[i] = MyDestroyObject::AllocateObject();
-        std::construct_at(container[i]);
-
-        EXPECT_CALL(*container[i], OnDestroy());
+        std::construct_at(container.m_Array + i);
+        EXPECT_CALL(container[i], OnDestroy());
     }
 
     Algorithms::Destroy(container.GetBegin(), container.GetEnd());
-
-    for (std::size_t i = 0; i < 5; ++i)
-        std::free(container[i]);
+    std::free(container.m_Array);
 }
 
 TEST(DestroyTests, DestroyN)
 {
-    ForwardTestContainer<MyDestroyObject*, 5> container = { /* ... */ };
+    ForwardNonOwningTestContainer<MyDestroyObject, 5> container(
+        (MyDestroyObject*)std::malloc(sizeof(MyDestroyObject) * 5));
 
     for (int i = 0; i < 5; ++i)
     {
-        container[i] = MyDestroyObject::AllocateObject();
-        std::construct_at(container[i]);
-
-        EXPECT_CALL(*container[i], OnDestroy());
+        std::construct_at(container.m_Array + i);
+        EXPECT_CALL(container[i], OnDestroy());
     }
 
     Algorithms::DestroyN(container.GetBegin(), 5);
-
-    for (std::size_t i = 0; i < 5; ++i)
-        std::free(container[i]);
+    std::free(container.m_Array);
 }

@@ -5,21 +5,18 @@
 
 namespace Kitsune
 {
-    namespace Details
-    {
-        template<typename T>
-        concept BackInsertable =
-            Container<T> &&
-            requires (T container)
-            {
-                container.PushBack(typename T::ValueType());
-            };
-    }
+    template<typename T>
+    concept BackInsertableContainer =
+        Container<T> &&
+        requires (T container)
+        {
+            container.PushBack(typename T::ValueType());
+        };
 
     // An output iterator used for pushing elements into a container. The assignment
     // operator appends to the back of the kept container using the `PushBack()`
     // member functions. The increment and dereference operators are no-ops.
-    template<Details::BackInsertable Container>
+    template<BackInsertableContainer Container>
     class BackInsertIterator
     {
     public:

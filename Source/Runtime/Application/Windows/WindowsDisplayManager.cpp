@@ -19,7 +19,7 @@ namespace Kitsune
         windowClass.cbSize = sizeof(windowClass);
         windowClass.style = CS_HREDRAW | CS_VREDRAW;
 
-        windowClass.lpfnWndProc = WindowsDisplayManager::WindowProc;
+        windowClass.lpfnWndProc = WindowsDisplayManager::WindowProc_;
         windowClass.cbClsExtra = 0;
         windowClass.cbWndExtra = 0;
 
@@ -37,7 +37,7 @@ namespace Kitsune
 
         // Engine code might try to read screen data before the first frame,
         // so update just in case.
-        UpdateScreenList();
+        UpdateScreenList_();
     }
 
     WindowsDisplayManager::~WindowsDisplayManager()
@@ -55,7 +55,7 @@ namespace Kitsune
             ::DispatchMessageW(&message);
         }
 
-        UpdateScreenList();
+        UpdateScreenList_();
     }
 
     ScreenHandle WindowsDisplayManager::GetPrimaryScreen() const
@@ -120,7 +120,7 @@ namespace Kitsune
         return m_Windows[0].Get();
     }
 
-    void WindowsDisplayManager::UpdateScreenList()
+    void WindowsDisplayManager::UpdateScreenList_()
     {
         DISPLAY_DEVICEW device;
         device.cb = sizeof(DISPLAY_DEVICEW);
@@ -166,15 +166,17 @@ namespace Kitsune
 
         for (ScopedPtr<WindowsScreen>& disconnected : m_Screens)
         {
-             KITSUNE_ENGINE_INFO_("A screen has been disconnected, details:");
-             KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Screen&>(*disconnected));
+            KITSUNE_UNUSED(disconnected);
+
+            KITSUNE_ENGINE_INFO_("A screen has been disconnected, details:");
+            KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Screen&>(*disconnected));
         }
 
         Swap(m_Screens, connectedScreens);
     }
 
-    LRESULT WindowsDisplayManager::WindowProc(HWND windowHandle, UINT message, WPARAM wparam,
-                                              LPARAM lparam)
+    LRESULT WindowsDisplayManager::WindowProc_(HWND windowHandle, UINT message, WPARAM wparam,
+                                               LPARAM lparam)
     {
         // Make sure that the window has been properly initialized before checking for events.
         // There might be unexpected consequences otherwise.
@@ -182,27 +184,27 @@ namespace Kitsune
         auto* displayManager = dynamic_cast<WindowsDisplayManager*>(DisplayManager::GetInstance());
 
         if (!windowPointer || !displayManager)
-            return HandlePreInitWindowEvents(windowHandle, message, wparam, lparam);
+            return HandlePreInitWindowEvents_(windowHandle, message, wparam, lparam);
 
         auto window = reinterpret_cast<WindowsWindow*>(windowPointer);
         auto& windowArray = displayManager->m_Windows;
 
         if (!Algorithms::Contains(windowArray.GetBegin(), windowArray.GetEnd(), window))
-            return HandlePreInitWindowEvents(windowHandle, message, wparam, lparam);
+            return HandlePreInitWindowEvents_(windowHandle, message, wparam, lparam);
 
         // Window has already been created (an HWND exists) and has been recorded in the
         // window array.
-        return HandlePostInitWindowEvents(window, message, wparam, lparam);
+        return HandlePostInitWindowEvents_(window, message, wparam, lparam);
     }
 
-    LRESULT WindowsDisplayManager::HandlePreInitWindowEvents(HWND windowHandle, UINT message,
-                                                             WPARAM wparam, LPARAM lparam)
+    LRESULT WindowsDisplayManager::HandlePreInitWindowEvents_(HWND windowHandle, UINT message,
+                                                              WPARAM wparam, LPARAM lparam)
     {
         return DefWindowProcW(windowHandle, message, wparam, lparam);
     }
 
-    LRESULT WindowsDisplayManager::HandlePostInitWindowEvents(WindowsWindow* window, UINT message,
-                                                              WPARAM wparam, LPARAM lparam)
+    LRESULT WindowsDisplayManager::HandlePostInitWindowEvents_(WindowsWindow* window, UINT message,
+                                                               WPARAM wparam, LPARAM lparam)
     {
         return DefWindowProcW(window->GetNativeHandle(), message, wparam, lparam);
     }

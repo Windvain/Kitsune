@@ -13,6 +13,14 @@ link_libraries(
 
     KitsuneEngine
 )
+# MSVC corrupts UTF-8 strings if /utf-8 is not specified.
+# It first encodes the string as UTF-8, then encodes it again in Windows-1252.
+#
+# Thanks, Microsoft.
+# https://stackoverflow.com/questions/59046071/c-u8-literal-unexpected-encoding-on-windows
+if (MSVC)
+    add_compile_options("/utf-8")
+endif()
 
 # ========== FoundationTests ========================================]
 add_executable(FoundationTests ${TEST_EXE_TYPE}

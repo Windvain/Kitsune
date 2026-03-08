@@ -5,19 +5,9 @@
 
 namespace Kitsune
 {
-    namespace Details
-    {
-        template<typename Iter, typename Encoding>
-        concept ForwardIteratorToChars =
-            ForwardIterator<Iter> &&
-            std::same_as<typename Encoding::CodeunitType,
-                         typename IteratorTraits<Iter>::ValueType>;
-    }
-
     // Returns true if the range `[begin, end]` is valid in the specified text
     // encoding `Encoding`.
-    template<TextEncoding Encoding,
-             Details::ForwardIteratorToChars<Encoding> Iter>
+    template<TextEncoding Encoding, ForwardIterator Iter>
     inline bool IsValidEncoding(Iter begin, Iter end)
     {
         typename Encoding::CodepointType codepoint;

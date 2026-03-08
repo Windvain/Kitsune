@@ -5,9 +5,12 @@
 
 namespace Kitsune
 {
+    // Logs the specified message along with additional information with the globally
+    // registered loggers.
     void Log(const StringView loggerName, const LogSeverity severity,
              const SourceLocation location, const StringView message);
 
+    // Same thing as `Log`, but uses format strings instead.
     template<typename... Args>
     inline void LogFormat(const StringView loggerName, const LogSeverity severity,
                           const SourceLocation location, const StringView message,
@@ -25,11 +28,10 @@ namespace Kitsune
     #define KITSUNE_LOG_FORMAT_LEVEL_(loggerName, severity, message, source, ...) \
         ::Kitsune::LogFormat(loggerName, severity, source, message, __VA_ARGS__)
 #else
-    #define KITSUNE_LOG_LEVEL_(loggerName, severity, message, source)
-    #define KITSUNE_LOG_FORMAT_LEVEL_(loggerName, severity, message, source, ...)
+    #define KITSUNE_LOG_LEVEL_(loggerName, severity, message, source)             ((void)0)
+    #define KITSUNE_LOG_FORMAT_LEVEL_(loggerName, severity, message, source, ...) ((void)0)
 #endif
 
-// For use in client code.
 #define KITSUNE_TRACE(message) KITSUNE_TRACE_NAMED("User", message)
 #define KITSUNE_INFO(message)  KITSUNE_INFO_NAMED( "User", message)
 #define KITSUNE_WARN(message)  KITSUNE_WARN_NAMED( "User", message)
@@ -54,7 +56,6 @@ namespace Kitsune
 #define KITSUNE_ERROR_FORMAT_NAMED(loggerName, message, ...) KITSUNE_LOG_FORMAT_LEVEL_(loggerName, ::Kitsune::LogSeverity::Error,   message, SourceLocation(), __VA_ARGS__)
 #define KITSUNE_FATAL_FORMAT_NAMED(loggerName, message, ...) KITSUNE_LOG_FORMAT_LEVEL_(loggerName, ::Kitsune::LogSeverity::Fatal,   message, SourceLocation(), __VA_ARGS__)
 
-// For use in engine code.
 #define KITSUNE_ENGINE_TRACE_(message) KITSUNE_TRACE_NAMED("Kitsune", message)
 #define KITSUNE_ENGINE_INFO_(message)  KITSUNE_INFO_NAMED( "Kitsune", message)
 #define KITSUNE_ENGINE_WARN_(message)  KITSUNE_WARN_NAMED( "Kitsune", message)

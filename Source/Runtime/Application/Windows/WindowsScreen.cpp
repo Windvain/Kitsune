@@ -19,7 +19,7 @@ namespace Kitsune
     Vector2<Uint32> WindowsScreen::GetSize() const
     {
         DEVMODEW deviceMode;
-        if (!GetDeviceMode(&deviceMode))
+        if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get size of screen {0}.", this);
             return Vector2<Uint32>();
@@ -31,7 +31,7 @@ namespace Kitsune
     Vector2<Int32> WindowsScreen::GetPosition() const
     {
         DEVMODEW deviceMode;
-        if (!GetDeviceMode(&deviceMode))
+        if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get position of screen {0}.", this);
             return Vector2<Int32>();
@@ -43,7 +43,7 @@ namespace Kitsune
     Uint32 WindowsScreen::GetRefreshRate() const
     {
         DEVMODEW deviceMode;
-        if (!GetDeviceMode(&deviceMode))
+        if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get refresh rate of screen {0}.", this);
             return 0;
@@ -73,8 +73,8 @@ namespace Kitsune
         // respond appropriately.
         //
         // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getdpiformonitor
-        UINT dpiX, _dpiY;
-        if (::GetDpiForMonitor(GetMonitorHandle(), MDT_EFFECTIVE_DPI, &dpiX, &_dpiY) != S_OK)
+        UINT dpiX, dpiY_;
+        if (::GetDpiForMonitor(GetMonitorHandle_(), MDT_EFFECTIVE_DPI, &dpiX, &dpiY_) != S_OK)
         {
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get DPI of screen {0}.", this);
             dpiX = USER_DEFAULT_SCREEN_DPI;
@@ -86,7 +86,7 @@ namespace Kitsune
     ScreenOrientation WindowsScreen::GetOrientation() const
     {
         DEVMODEW deviceMode;
-        if (!GetDeviceMode(&deviceMode))
+        if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get orientation of screen {0}.", this);
             return ScreenOrientation::Default;
@@ -115,7 +115,7 @@ namespace Kitsune
         deviceMode.dmPelsHeight = size.Y;
         deviceMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 
-        if (!SetDeviceMode(&deviceMode))
+        if (!SetDeviceMode_(&deviceMode))
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set screen {0} size.", this);
     }
 
@@ -147,11 +147,11 @@ namespace Kitsune
         deviceMode.dmDisplayOrientation = windowsOrientation;
         deviceMode.dmFields = DM_DISPLAYORIENTATION;
 
-        if (!SetDeviceMode(&deviceMode))
+        if (!SetDeviceMode_(&deviceMode))
             KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set screen {0} orientation.", this);
     }
 
-    bool WindowsScreen::GetDeviceMode(DEVMODEW* deviceMode) const
+    bool WindowsScreen::GetDeviceMode_(DEVMODEW* deviceMode) const
     {
         ZeroMemory(deviceMode, sizeof(DEVMODEW));
         deviceMode->dmSize = sizeof(DEVMODEW);
@@ -161,7 +161,7 @@ namespace Kitsune
                                         deviceMode, 0);
     }
 
-    bool WindowsScreen::SetDeviceMode(DEVMODEW* deviceMode)
+    bool WindowsScreen::SetDeviceMode_(DEVMODEW* deviceMode)
     {
         LONG result = ::ChangeDisplaySettingsExW(m_DeviceName.Raw(), deviceMode,
                                                  nullptr, CDS_RESET, nullptr);
@@ -169,19 +169,19 @@ namespace Kitsune
         return ((result == DISP_CHANGE_SUCCESSFUL) || (result == DISP_CHANGE_RESTART));
     }
 
-    HMONITOR WindowsScreen::GetMonitorHandle() const
+    HMONITOR WindowsScreen::GetMonitorHandle_() const
     {
         // There is currently no way of getting an HMONITOR from a DISPLAY_DEVICE
         // directly, so we have to enumerate through all the connected monitors
         // and check for a monitor with the correct name.
         //
-        // GetMonitorHandle() is not cached here because all monitor handles are
+        // GetMonitorHandle_() is not cached here because all monitor handles are
         // invalidated as soon as a new display device is connected/disconnected.
-        MonitorEnumProcData data;
+        MonitorEnumProcData_ data;
         data.MonitorHandle = nullptr;
         data.DeviceName = m_DeviceName;
 
-        ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure,
+        ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure_,
                               reinterpret_cast<LPARAM>(&data));
 
         if (data.MonitorHandle == nullptr)
@@ -197,10 +197,10 @@ namespace Kitsune
         return data.MonitorHandle;
     }
 
-    BOOL WindowsScreen::MonitorEnumProcedure(HMONITOR monitor, HDC /* device */,
-                                             LPRECT /* rect */, LPARAM lparam)
+    BOOL WindowsScreen::MonitorEnumProcedure_(HMONITOR monitor, HDC /* device */,
+                                              LPRECT /* rect */, LPARAM lparam)
     {
-        auto* data = reinterpret_cast<MonitorEnumProcData*>(lparam);
+        auto* data = reinterpret_cast<MonitorEnumProcData_*>(lparam);
         MONITORINFOEXW monitorInfo;
 
         monitorInfo.cbSize = sizeof(MONITORINFOEXW);

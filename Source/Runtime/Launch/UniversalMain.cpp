@@ -32,8 +32,8 @@ namespace Kitsune
     static int UnguardedEngineMain(int argc, char** argv)
     {
         // The memory subsystem is going to be used a lot in engine initialization.
-        MemorySubsystemGuard _initGuard{ /* ... */ };
-        if (!_initGuard.IsInitialized())
+        MemorySubsystemGuard initGuard_{ /* ... */ };
+        if (!initGuard_.IsInitialized())
             return 1;
 
         bool exceptionThrown = false;

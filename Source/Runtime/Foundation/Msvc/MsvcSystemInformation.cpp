@@ -166,7 +166,7 @@ namespace Kitsune
                 cpuInfo.Vendor = Utf16ToUtf8<wchar_t, char>(manufacturer);
 
 #if defined(KITSUNE_ARCH_X86)
-                cpuInfo.Vendor = TranslateX86VendorString(cpuInfo.Vendor);
+                cpuInfo.Vendor = TranslateX86VendorString_(cpuInfo.Vendor);
 #endif
             }
 
@@ -188,7 +188,7 @@ namespace Kitsune
             alreadyRun = true;
         });
 
-        cpuInfo.Features = GetCpuFeatures();
+        cpuInfo.Features = GetCpuFeatures_();
         return cpuInfo;
     }
 

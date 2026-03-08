@@ -8,7 +8,7 @@ namespace Kitsune
     namespace Details
     {
         template<typename T>
-        concept HasSwapMemberFunction = requires (T object)
+        concept HasSwapMemberFunction_ = requires (T object)
         {
             object.Swap(object);
         };
@@ -16,7 +16,7 @@ namespace Kitsune
 
     // Swaps the values of the objects `lhs` and `rhs`.
     template<typename T>
-        requires (!Details::HasSwapMemberFunction<T>)
+        requires (!Details::HasSwapMemberFunction_<T>)
     inline void Swap(T& lhs, T& rhs)
     {
         T tmp = Move(lhs);
@@ -26,7 +26,7 @@ namespace Kitsune
 
     // Swaps the values of the objects `lhs` and `rhs`.
     template<typename T>
-        requires Details::HasSwapMemberFunction<T>
+        requires Details::HasSwapMemberFunction_<T>
     inline void Swap(T& lhs, T& rhs)
     {
         lhs.Swap(rhs);

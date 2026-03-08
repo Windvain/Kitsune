@@ -28,17 +28,17 @@ namespace Kitsune
         WindowHandle GetPrimaryWindow() const override;
 
     private:
-        void UpdateScreenList();
+        void UpdateScreenList_();
 
     private:
-        static LRESULT WindowProc(HWND windowHandle, UINT message, WPARAM wparam,
-                                  LPARAM lparam);
+        static LRESULT WindowProc_(HWND windowHandle, UINT message, WPARAM wparam,
+                                   LPARAM lparam);
 
-        static LRESULT HandlePreInitWindowEvents(HWND windowHandle, UINT message, WPARAM wparam,
-                                                 LPARAM lparam);
+        static LRESULT HandlePreInitWindowEvents_(HWND windowHandle, UINT message, WPARAM wparam,
+                                                  LPARAM lparam);
 
-        static LRESULT HandlePostInitWindowEvents(WindowsWindow* window, UINT message,
-                                                  WPARAM wparam, LPARAM lparam);
+        static LRESULT HandlePostInitWindowEvents_(WindowsWindow* window, UINT message,
+                                                   WPARAM wparam, LPARAM lparam);
 
     private:
         Array<ScopedPtr<WindowsScreen>> m_Screens;

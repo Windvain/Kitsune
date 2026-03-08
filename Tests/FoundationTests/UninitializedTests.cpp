@@ -7,6 +7,7 @@
 #include "TestContainer.h"
 
 using namespace Kitsune;
+using namespace Kitsune::Testing;
 
 namespace
 {
@@ -34,14 +35,20 @@ class UninitializedTests : public testing::Test
 {
 protected:
     template<typename T, Usize S>
-    Testing::ForwardTestContainer<T, S> CreateContainer()
+    ForwardNonOwningTestContainer<T, S> CreateContainer()
     {
-        Testing::ForwardTestContainer<T, S> container;
-        std::memset(reinterpret_cast<void*>(container.m_Array),
-                    0b01010101,
-                    S * sizeof(T));
+        auto* pointer = static_cast<T*>(std::malloc(sizeof(T) * S));
+        if (pointer == nullptr)
+            throw std::bad_alloc();
 
-        return container;
+        std::memset((void*)pointer, 0b01010101, S * sizeof(T));
+        return ForwardNonOwningTestContainer<T, S>(pointer);
+    }
+
+    template<typename T, Usize S>
+    void DestroyContainer(ForwardNonOwningTestContainer<T, S> container)
+    {
+        std::free(container.m_Array);
     }
 };
 
@@ -59,6 +66,9 @@ TEST_F(UninitializedTests, UninitializedCopy)
     EXPECT_GENERAL_STREQ(begin[2].c_str(), "this");
     EXPECT_GENERAL_STREQ(begin[3].c_str(), "is");
     EXPECT_GENERAL_STREQ(begin[4].c_str(), "text");
+
+    std::destroy_n(container.m_Array, 5);
+    this->DestroyContainer(container);
 }
 
 TEST_F(UninitializedTests, UninitializedCopyN)
@@ -75,6 +85,9 @@ TEST_F(UninitializedTests, UninitializedCopyN)
     EXPECT_GENERAL_STREQ(begin[2].c_str(), "this");
     EXPECT_GENERAL_STREQ(begin[3].c_str(), "is");
     EXPECT_GENERAL_STREQ(begin[4].c_str(), "text");
+
+    std::destroy_n(container.m_Array, 5);
+    this->DestroyContainer(container);
 }
 
 TEST_F(UninitializedTests, UninitializedMove)
@@ -94,6 +107,9 @@ TEST_F(UninitializedTests, UninitializedMove)
     EXPECT_EQ(begin[2].Value, 123);
     EXPECT_EQ(begin[3].Value, 340);
     EXPECT_EQ(begin[4].Value, 11);
+
+    std::destroy_n(container.m_Array, 5);
+    this->DestroyContainer(container);
 }
 
 TEST_F(UninitializedTests, UninitializedMoveN)
@@ -113,6 +129,9 @@ TEST_F(UninitializedTests, UninitializedMoveN)
     EXPECT_EQ(begin[2].Value, 123);
     EXPECT_EQ(begin[3].Value, 340);
     EXPECT_EQ(begin[4].Value, 11);
+
+    std::destroy_n(container.m_Array, 5);
+    this->DestroyContainer(container);
 }
 
 TEST_F(UninitializedTests, UninitializedFill)
@@ -123,6 +142,9 @@ TEST_F(UninitializedTests, UninitializedFill)
 
     for (Index index = 0; index < 5; ++index)
         EXPECT_EQ(container[index], "Some string");
+
+    std::destroy_n(container.m_Array, 5);
+    this->DestroyContainer(container);
 }
 
 TEST_F(UninitializedTests, UninitializedFillN)
@@ -135,4 +157,7 @@ TEST_F(UninitializedTests, UninitializedFillN)
 
     for (Index index = 0; index < 5; ++index)
         EXPECT_EQ(container[index], "Some string");
+
+    std::destroy_n(container.m_Array, 5);
+    this->DestroyContainer(container);
 }
