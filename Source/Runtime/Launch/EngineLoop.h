@@ -13,6 +13,7 @@
 
 namespace Kitsune
 {
+    // Contains early engine initialization code.
     class EngineLoop : public NonCopyable
     {
     public:
@@ -75,7 +76,7 @@ namespace Kitsune
             return s_Instance;
         }
 
-    private:
+    public:
         // Should only be called in the Exception class's constructor.
         inline void CaptureExceptionBacktrace()
         {
@@ -90,7 +91,6 @@ namespace Kitsune
 
     private:
         static EngineLoop* s_Instance;
-        friend class Exception;
 
     public:
         CommandLineArguments m_CommandLineArguments;
@@ -102,6 +102,6 @@ namespace Kitsune
         Backtrace m_ExceptionBacktrace;
         Mutex m_ExceptionMutex;
 
-        Application* m_Application;
+        Application* m_Application = nullptr;
     };
 }

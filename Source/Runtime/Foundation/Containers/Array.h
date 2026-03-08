@@ -276,12 +276,12 @@ namespace Kitsune
             if (newCapacity <= Capacity())
                 return;
 
-            ReallocateExact(newCapacity);
+            ReallocateExact_(newCapacity);
         }
 
         inline void ShrinkToFit()
         {
-            ReallocateExact(Size());
+            ReallocateExact_(Size());
         }
 
     public:
@@ -373,7 +373,7 @@ namespace Kitsune
             if (Capacity() < newSize)
             {
                 Index index = pos - GetBegin();
-                Reallocate(newSize);
+                Reallocate_(newSize);
 
                 pos = GetBegin() + index;
             }
@@ -463,7 +463,7 @@ namespace Kitsune
         {
             Usize newSize = Size() + 1;
             if (newSize > Capacity())
-                Reallocate(newSize);
+                Reallocate_(newSize);
 
             Memory::ConstructAt(m_End, Forward<Args>(args)...);
             return *(m_End++);
@@ -487,7 +487,7 @@ namespace Kitsune
         inline ConstIterator end() const { return GetEnd(); }
 
     private:
-        inline void ReallocateExact(Usize newCapacity)
+        inline void ReallocateExact_(Usize newCapacity)
         {
             T* pointer = static_cast<T*>(m_Allocator.Allocate(
                 newCapacity * sizeof(T), alignof(T)));
@@ -504,10 +504,10 @@ namespace Kitsune
             m_StorageEnd = m_Begin + newCapacity;
         }
 
-        inline void Reallocate(Usize newCapacity)
+        inline void Reallocate_(Usize newCapacity)
         {
             Usize adjustedCapacity = s_AllocationFactor * newCapacity;
-            ReallocateExact(adjustedCapacity);
+            ReallocateExact_(adjustedCapacity);
         }
 
     private:

@@ -5,7 +5,7 @@
 
 namespace Kitsune
 {
-    void ConsoleOutputStream::ThreadUnsafeFlush()
+    void ConsoleOutputStream::ThreadUnsafeFlush_()
     {
         HANDLE outputHandle = ::GetStdHandle(STD_OUTPUT_HANDLE);
         if ((outputHandle == nullptr) || (outputHandle == INVALID_HANDLE_VALUE))

@@ -14,7 +14,7 @@ namespace Kitsune
             if ((m_Pointer == (m_Buffer + s_BufferSize)) ||
                 (*data == '\0') || (*data == '\n'))
             {
-                ThreadUnsafeFlush();
+                ThreadUnsafeFlush_();
             }
         }
     }
@@ -22,6 +22,6 @@ namespace Kitsune
     void ConsoleOutputStream::Flush()
     {
         LockGuard guard_(m_Lock);
-        ThreadUnsafeFlush();
+        ThreadUnsafeFlush_();
     }
 }

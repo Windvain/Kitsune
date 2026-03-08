@@ -13,22 +13,23 @@ namespace Kitsune
     namespace Details
     {
         template<typename T>
-        using AddReference = T&;
+        using AddReference_ = T&;
 
         template<typename T>
-        concept CanReference = requires (T val)
+        concept CanReference_ = requires (T val)
         {
-            typename AddReference<T>;
+            typename AddReference_<T>;
         };
     }
 
+    // The base concept of an iterator.
     template<typename It>
     concept Iterator =
         std::default_initializable<It> &&
         std::copyable<It> &&
         requires (It iterator)
         {
-            { *iterator  } -> Details::CanReference;
+            { *iterator  } -> Details::CanReference_;
             { ++iterator } -> std::same_as<It&>;
             { iterator++ } -> std::same_as<It>;
 
@@ -36,6 +37,7 @@ namespace Kitsune
             typename IteratorTraits<It>::DifferenceType;
         };
 
+    // Describes an iterator which provides a mechanism for writing/outputting.
     template<typename It, typename T>
     concept OutputIterator =
         Iterator<It> &&
@@ -44,6 +46,7 @@ namespace Kitsune
             *(iterator++) = Forward<T>(val);
         };
 
+    // Describes an iterator which provides a mechanism for reading data.
     template<typename It>
     concept InputIterator =
         Iterator<It> &&
@@ -52,10 +55,12 @@ namespace Kitsune
             { *iterator } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
         };
 
+    // Describes an `InputIterator` which can be compared with itself.
     template<typename It>
     concept ForwardIterator = InputIterator<It> &&
                               Equatable<const It, const It>;
 
+    // Describes a `ForwardIterator` which can be incremented and decremented.
     template<typename It>
     concept BidirectionalIterator =
         ForwardIterator<It> &&
@@ -65,6 +70,8 @@ namespace Kitsune
             { iterator-- } -> std::same_as<It>;
         };
 
+    // Describes a `BidirectionalIterator` which provides constant time advancement of
+    // the iterator.
     template<typename It>
     concept RandomAccessIterator =
         BidirectionalIterator<It> &&
@@ -79,7 +86,7 @@ namespace Kitsune
             { const_iter - n          } -> std::same_as<It>;
             { const_iter - const_iter } -> std::same_as<decltype(n)>;
 
-            { const_iter[n] } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
+            { const_iter[n] }         -> std::same_as<typename IteratorTraits<It>::ValueType&>;
             { ToAddress(const_iter) } -> std::same_as<typename IteratorTraits<It>::ValueType*>;
         };
 }

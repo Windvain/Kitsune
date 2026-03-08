@@ -84,8 +84,8 @@ namespace Kitsune
             std::memcpy(manufacturerId.Data() + 4, &cpuIdResult.Edx, sizeof(Int32));
             std::memcpy(manufacturerId.Data() + 8, &cpuIdResult.Ecx, sizeof(Int32));
 
-            cpuInfo.Vendor = TranslateX86VendorString(manufacturerId);
-            cpuInfo.Features = GetCpuFeatures();
+            cpuInfo.Vendor = TranslateX86VendorString_(manufacturerId);
+            cpuInfo.Features = GetCpuFeatures_();
         }
 #else
         cpuInfo.Vendor = "<unknown>";

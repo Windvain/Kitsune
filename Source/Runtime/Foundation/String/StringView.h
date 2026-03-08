@@ -36,7 +36,7 @@ namespace Kitsune
         inline BasicStringView(std::nullptr_t) = delete;
 
         inline BasicStringView(const T* string)
-            : m_Pointer(string), m_Size(CalculateStringSize(string))
+            : m_Pointer(string), m_Size(GetStringSize_(string))
         {
         }
 
@@ -258,7 +258,7 @@ namespace Kitsune
         inline Iterator end() const { return GetEnd(); }
 
     private:
-        inline static Usize CalculateStringSize(const T* string)
+        inline static Usize GetStringSize_(const T* string)
         {
             if constexpr (std::is_same_v<T, char>)
                 return std::strlen(string);

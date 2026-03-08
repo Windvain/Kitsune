@@ -84,7 +84,7 @@ namespace Kitsune
         static MemoryStatusInformation GetCurrentMemoryStatus();
 
     private:
-        static CpuFeatures GetCpuFeatures();
-        static StringView TranslateX86VendorString(const StringView manufacturer);
+        static CpuFeatures GetCpuFeatures_();
+        static StringView TranslateX86VendorString_(const StringView manufacturer);
     };
 }

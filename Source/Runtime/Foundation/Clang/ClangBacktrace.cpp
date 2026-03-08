@@ -17,7 +17,7 @@ namespace Kitsune
         Uint32 CurrentDepth;
         Uint32 MaxDepth;
 
-        Array<BacktraceFrame, Details::BacktraceAllocator> BacktraceArray;
+        Array<BacktraceFrame, Details::BacktraceAllocator_> BacktraceArray;
     };
 
     static void BacktraceErrorCallback(void* /* data */,

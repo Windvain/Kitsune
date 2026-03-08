@@ -67,14 +67,14 @@ namespace Kitsune
         }
 
     private:
-        static DWORD GetWindowStyles(WindowFlags flags);
-        static DWORD GetWindowExStyles();
+        static DWORD GetWindowStyles_(WindowFlags flags);
+        static DWORD GetWindowExStyles_();
 
     private:
-        static BOOL AdjustWindowRectExForDpi(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
-                                             DWORD dwExStyle, UINT dpi);
+        static BOOL AdjustWindowRectExForDpi_(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
+                                              DWORD dwExStyle, UINT dpi);
 
-        static UINT GetDpiForWindow(HWND hwnd);
+        static UINT GetDpiForWindow_(HWND hwnd);
 
     private:
         HWND m_Handle;

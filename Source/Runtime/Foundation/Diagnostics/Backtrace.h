@@ -10,7 +10,7 @@ namespace Kitsune
     namespace Details
     {
         // Just in case the backtrace is configured to use a custom memory API.
-        using BacktraceAllocator = GlobalAllocator;
+        using BacktraceAllocator_ = GlobalAllocator;
     }
 
     // Represents a sequence of active functions calls leading up to
@@ -88,7 +88,7 @@ namespace Kitsune
         inline static bool IsSupported();
 
     private:
-        inline Backtrace(Array<BacktraceFrame, Details::BacktraceAllocator>&& backtraceArray)
+        inline Backtrace(Array<BacktraceFrame, Details::BacktraceAllocator_>&& backtraceArray)
             : m_Frames(Move(backtraceArray))
         {
         }
@@ -100,7 +100,7 @@ namespace Kitsune
         inline ConstIterator end() const { return GetEnd(); }
 
     private:
-        Array<BacktraceFrame, Details::BacktraceAllocator> m_Frames;
+        Array<BacktraceFrame, Details::BacktraceAllocator_> m_Frames;
     };
 
     template<>

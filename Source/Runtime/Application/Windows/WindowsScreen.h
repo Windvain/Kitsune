@@ -36,20 +36,20 @@ namespace Kitsune
         }
 
     private:
-        HMONITOR GetMonitorHandle() const;
+        HMONITOR GetMonitorHandle_() const;
 
-        bool GetDeviceMode(DEVMODEW* deviceMode) const;
-        bool SetDeviceMode(DEVMODEW* deviceMode);
+        bool GetDeviceMode_(DEVMODEW* deviceMode) const;
+        bool SetDeviceMode_(DEVMODEW* deviceMode);
 
     private:
-        struct MonitorEnumProcData
+        struct MonitorEnumProcData_
         {
             HMONITOR MonitorHandle;
             WideStringView DeviceName;
         };
 
-        static BOOL CALLBACK MonitorEnumProcedure(HMONITOR monitor, HDC device, LPRECT rect,
-                                                  LPARAM lparam);
+        static BOOL CALLBACK MonitorEnumProcedure_(HMONITOR monitor, HDC device, LPRECT rect,
+                                                   LPARAM lparam);
 
     private:
         WideString m_DeviceName;

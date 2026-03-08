@@ -17,8 +17,8 @@ namespace Kitsune
                                  WindowFlags flags)
         : m_Flags(flags)
     {
-        DWORD styles = GetWindowStyles(flags) | WS_VISIBLE;
-        DWORD exStyles = GetWindowExStyles();
+        DWORD styles = GetWindowStyles_(flags) | WS_VISIBLE;
+        DWORD exStyles = GetWindowExStyles_();
 
         RECT adjustedRect = {
             position.X,
@@ -28,9 +28,9 @@ namespace Kitsune
         };
 
         HMONITOR monitor = ::MonitorFromRect(&adjustedRect, MONITOR_DEFAULTTONEAREST);
-        UINT dpiX, _dpiY;
+        UINT dpiX, dpiY_;
 
-        if (FAILED(::GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &_dpiY)))
+        if (FAILED(::GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY_)))
         {
             KITSUNE_ENGINE_ERROR_("Failed to retrieve DPI for the monitor closest "
                                   "to the soon-to-be created window. Using 96 DPI as a fallback.");
@@ -40,9 +40,9 @@ namespace Kitsune
             dpiX = 96;
         }
 
-        if (!AdjustWindowRectExForDpi(&adjustedRect, styles, false, exStyles, dpiX))
+        if (!AdjustWindowRectExForDpi_(&adjustedRect, styles, false, exStyles, dpiX))
         {
-            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi() failed, are the styles and "
+            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi_() failed, are the styles and "
                                   "extra styles valid?");
         }
 
@@ -182,9 +182,9 @@ namespace Kitsune
         DWORD exStyle = ::GetWindowLongPtrW(m_Handle, GWL_EXSTYLE);
 
         RECT rect = { 0, 0, static_cast<LONG>(size.X), static_cast<LONG>(size.Y) };
-        if (!AdjustWindowRectExForDpi(&rect, style, false, exStyle, GetDpiForWindow(m_Handle)))
+        if (!AdjustWindowRectExForDpi_(&rect, style, false, exStyle, GetDpiForWindow_(m_Handle)))
         {
-            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi() failed, this might be due to "
+            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi_() failed, this might be due to "
                                   "invalid arguments being passed in.");
         }
 
@@ -216,9 +216,9 @@ namespace Kitsune
         auto size = static_cast<Vector2<LONG>>(GetSize());
         RECT rect = { position.X, position.Y, size.X, size.Y };
 
-        if (!AdjustWindowRectExForDpi(&rect, style, false, exStyle, GetDpiForWindow(m_Handle)))
+        if (!AdjustWindowRectExForDpi_(&rect, style, false, exStyle, GetDpiForWindow_(m_Handle)))
         {
-            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi() failed, is this due to "
+            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi_() failed, is this due to "
                                   "invalid arguments?");
         }
 
@@ -261,8 +261,8 @@ namespace Kitsune
         // using the ShowWindow() functions.
         if (m_Fullscreen)
         {
-            ::SetWindowLongPtrW(m_Handle, GWL_STYLE, GetWindowStyles(m_Flags));
-            ::SetWindowLongPtrW(m_Handle, GWL_EXSTYLE, GetWindowExStyles());
+            ::SetWindowLongPtrW(m_Handle, GWL_STYLE, GetWindowStyles_(m_Flags));
+            ::SetWindowLongPtrW(m_Handle, GWL_EXSTYLE, GetWindowExStyles_());
 
             if (!::SetWindowPlacement(m_Handle, &m_PreviousPlacement))
             {
@@ -349,7 +349,7 @@ namespace Kitsune
         KITSUNE_UNUSED(::ShowWindow(m_Handle, showFlags));
     }
 
-    DWORD WindowsWindow::GetWindowStyles(WindowFlags flags)
+    DWORD WindowsWindow::GetWindowStyles_(WindowFlags flags)
     {
         DWORD styles = WS_OVERLAPPEDWINDOW;
         if ((flags & WindowFlags::ResizeDisabled) == WindowFlags::ResizeDisabled)
@@ -358,13 +358,13 @@ namespace Kitsune
         return styles;
     }
 
-    DWORD WindowsWindow::GetWindowExStyles()
+    DWORD WindowsWindow::GetWindowExStyles_()
     {
         return WS_EX_APPWINDOW;
     }
 
-    BOOL WindowsWindow::AdjustWindowRectExForDpi(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
-                                                 DWORD dwExStyle, UINT dpi)
+    BOOL WindowsWindow::AdjustWindowRectExForDpi_(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
+                                                  DWORD dwExStyle, UINT dpi)
     {
 #if defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
         // MinGW doesn't load the DPI-aware functions.
@@ -392,7 +392,7 @@ namespace Kitsune
 #endif
     }
 
-    UINT WindowsWindow::GetDpiForWindow(HWND hwnd)
+    UINT WindowsWindow::GetDpiForWindow_(HWND hwnd)
     {
 #if defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
         // MinGW doesn't load the DPI-aware functions.

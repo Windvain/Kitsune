@@ -18,7 +18,7 @@ namespace Kitsune
         BasicStringView<typename InEncoding::CodeunitType> string)
     {
         BasicString<typename OutEncoding::CodeunitType> outputString;
-        auto [newIterator, _] = Transcode<InEncoding, OutEncoding>(
+        auto [newIterator, newOutIter_] = Transcode<InEncoding, OutEncoding>(
             string.GetBegin(), string.GetEnd(),
             BackInsertIterator<decltype(outputString)>(outputString));
 
