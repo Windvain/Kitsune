@@ -14,7 +14,7 @@ namespace Kitsune
     using Int16 = signed short;
     using Uint16 = unsigned short;
 #else
-    #error Failed to determine a type for Int16 and Uint16.
+    #error Could not determine a suitable type to use for [U]Int16.
 #endif
 
 #if UINT_MAX == 0xffffffff
@@ -27,7 +27,7 @@ namespace Kitsune
     using Int32 = signed short;
     using Uint32 = unsigned short;
 #else
-    #error Failed to determine a type for Int32 and Uint32.
+    #error Could not determine a suitable type to use for [U]Int32.
 #endif
 
 #if ULONG_MAX == 0xffffffffffffffff
@@ -40,7 +40,7 @@ namespace Kitsune
     using Int64 = signed int;
     using Uint64 = unsigned int;
 #else
-    #error Failed to determine a type for Int64 and Uint64.
+    #error Could not determine a suitable type to use for [U]Int64.
 #endif
 
     using Usize = std::size_t;
@@ -56,7 +56,7 @@ namespace Kitsune
     using Intptr = Int32;
     using Uintptr = Uint32;
 #else
-    #error Failed to determine a type for Intptr and Uintptr.
+    #error Could not determine a suitable type to use for [U]Intptr.
 #endif
 
 #if defined(KITSUNE_OS_WINDOWS)

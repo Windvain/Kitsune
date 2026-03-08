@@ -1,6 +1,5 @@
 #pragma once
 
-// Detect target operating system.
 #if defined(_WIN32) || defined(_WIN64)
     #define KITSUNE_OS_WINDOWS 1
     #define KITSUNE_OS_NT_KERNEL 1
@@ -12,29 +11,26 @@
     #endif
 
 #elif defined(__linux__)
-    // There are so many operating systems that use Linux as
-    // their kernel, but this is close enough.
+    // `__linux__` just tells us that the operating system is using the Linux kernel,
+    // not actually what the underlying OS is, so we have to guess what we are actually
+    // going to be run under.
     #if defined(__ANDROID__)
         #define KITSUNE_OS_ANDROID 1
-    #else
+    #else /* Should be GNU/Linux... */
         #define KITSUNE_OS_LINUX 1
     #endif
 
     #define KITSUNE_OS_LINUX_KERNEL 1
 #else
-    #error Failed to determine operating system.
+    #error Kitsune does not support this operating system.
 #endif
 
-// Used for determining other compilers. These compilers define
-// __GNUC__ or __clang__ on some platforms. Don't expect support for these
-// compilers btw.
+// Used for determining the existance of other compilers. Don't and probably will never
+// support ICC.
 #if defined(__INTEL_COMPILER) || defined(__ICC) || defined(_ICL)
     #define KITSUNE_COMPILER_INTEL 1
-#elif defined(__ibmxl__)
-    #define KITSUNE_COMPILER_XLC 1
 #endif
 
-// Detect used compiler.
 #if defined(__GNUC__) && !defined(KITSUNE_COMPILER_INTEL) && \
     !defined(__clang__)
 
@@ -43,21 +39,20 @@
     #define KITSUNE_COMPILER_VERSION_MAJOR __GNUC__
     #define KITSUNE_COMPILER_VERSION_MINOR __GNUC_MINOR__
     #define KITSUNE_COMPILER_VERSION_PATCH __GNUC_PATCHLEVEL__
-
-#elif defined(__clang__) && !defined(KITSUNE_COMPILER_XLC)
+#elif defined(__clang__) && !defined(__ibmxl__)
     #define KITSUNE_COMPILER_CLANG 1
 
     #define KITSUNE_COMPILER_VERSION_MAJOR __clang_major__
     #define KITSUNE_COMPILER_VERSION_MINOR __clang_minor__
     #define KITSUNE_COMPILER_VERSION_PATCH __clang_patchlevel__
 
-    // We previously specified -fno-ms-compatibility, it did absolutely nothing.
-    // Just #undef manually, don't rely on the compiler.
+    // As of writing this, `-fno-ms-compatibility` still doesn't undefine `_MSC_VER`,
+    // Just #undef manually, don't rely on the compiler to undefine these macros
+    // for us.
     #if defined(_MSC_VER) && defined(_MSC_FULL_VER)
         #undef _MSC_VER
         #undef _MSC_FULL_VER
     #endif
-
 #elif defined(_MSC_VER) && !defined(KITSUNE_COMPILER_INTEL) && !defined(__clang__)
     #define KITSUNE_COMPILER_MSVC 1
 
@@ -66,14 +61,14 @@
     #define KITSUNE_COMPILER_VERSION_MINOR ((_MSC_FULL_VER % 10'000'000) / 10'000)
     #define KITSUNE_COMPILER_VERSION_PATCH (_MSC_FULL_VER % 100'000)
 #else
-    #error Failed to determine compiler.
+    #error Kitsune does not support compilation with this compiler.
 #endif
 
+// Defined when the compiler is part of the MinGW toolchain.
 #if defined(__MINGW32__) || defined(__MINGW64__)
     #define KITSUNE_COMPILER_MINGW_TOOLCHAIN 1
 #endif
 
-// Detect target architecture.
 #if defined(__arm__) || defined(_M_ARM)
     #define KITSUNE_ARCH_ARM     1
     #define KITSUNE_ARCH_AARCH32 1
@@ -89,7 +84,11 @@
     #define KITSUNE_ARCH_X86    1
     #define KITSUNE_ARCH_X86_64 1
 #else
-    #error Failed to determine target architecture.
+    #error Kitsune does not support targetting this architecture.
+#endif
+
+#if defined(KITSUNE_ARCH_ARM)
+    #error Kitsune does not support ARM at the moment.
 #endif
 
 #if defined(KITSUNE_ARCH_X86_64) || defined(KITSUNE_ARCH_AARCH64)
@@ -98,22 +97,20 @@
     #define KITSUNE_ARCH_32_BIT 1
 #endif
 
-// Determine pointer size.
+// An approximation of the platform's compiler size. Used only in preprocessor statements,
+// where `sizeof()` statements are not allowed.
 #if defined(UINTPTR_MAX)
     #define KITSUNE_POINTER_SIZE (UINTPTR_MAX / 255 % 255)
 #elif defined(__UINTPTR_MAX__)
     #define KITSUNE_POINTER_SIZE (__UINTPTR_MAX__ / 255 % 255)
-
 #elif defined(KITSUNE_OS_WINDOWS_64BIT) || defined(KITSUNE_ARCH_AARCH64) || \
       defined(KITSUNE_ARCH_X86_64)
     #define KITSUNE_POINTER_MAX_ 0xffffffffffffffff
     #define KITSUNE_POINTER_SIZE (KITSUNE_POINTER_MAX_ / 255 % 255)
-
 #elif defined(KITSUNE_OS_WINDOWS_32BIT) || defined(KITSUNE_ARCH_AARCH32) || \
       defined(KITSUNE_ARCH_X86_32)
     #define KITSUNE_POINTER_MAX_ 0xffffffff
     #define KITSUNE_POINTER_SIZE (KITSUNE_POINTER_MAX_ / 255 % 255)
-
 #else
-    #error Failed to determine pointer size.
+    #error Failed to determine the size of a pointer.
 #endif

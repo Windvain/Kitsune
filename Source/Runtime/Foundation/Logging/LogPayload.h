@@ -5,6 +5,7 @@
 
 namespace Kitsune
 {
+    // The severity of the log message/payload.
     enum class LogSeverity
     {
         Trace,
@@ -14,6 +15,7 @@ namespace Kitsune
         Fatal
     };
 
+    // Contains all information that is needed by a logger about a log request.
     class LogPayload
     {
     public:

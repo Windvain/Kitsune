@@ -2,6 +2,7 @@
 
 #include <type_traits>
 
+// Helper macro for overloading bitwise operators on enum classes.
 #define KITSUNE_OVERLOAD_FLAGS_OPERATORS(Flags)                                  \
     static_assert(std::is_enum_v<Flags> &&                                       \
                   !std::is_convertible_v<Flags, std::underlying_type_t<Flags>>,  \

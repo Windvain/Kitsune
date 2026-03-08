@@ -11,6 +11,7 @@
 
 namespace Kitsune
 {
+    // Container class used to store command-line arguments in a more C++ way.
     class CommandLineArguments
     {
     public:

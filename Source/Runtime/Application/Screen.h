@@ -83,5 +83,6 @@ namespace Kitsune
         }
     };
 
+    // A handle to the `Screen` class. Defined as `Screen*`.
     using ScreenHandle = Screen*;
 }
