@@ -8,6 +8,20 @@ namespace Kitsune
     VkInstance VulkanGraphicsDevice::s_VulkanInstance;
     Usize VulkanGraphicsDevice::s_ReferenceCount = 0;
 
+    VkDebugUtilsMessengerEXT VulkanGraphicsDevice::s_DebugMessenger = VK_NULL_HANDLE;
+
+    static LogSeverity ToLoggingSeverity(VkDebugUtilsMessageSeverityFlagBitsEXT severity)
+    {
+        if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+            return LogSeverity::Error;
+        else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+            return LogSeverity::Warning;
+        else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+            return LogSeverity::Info;
+
+        return LogSeverity::Trace;
+    }
+
     VulkanGraphicsDevice::VulkanGraphicsDevice(const StringView appName)
     {
         Uint32 vulkanVersion;
@@ -235,16 +249,82 @@ namespace Kitsune
         instanceCreateInfo.enabledLayerCount = static_cast<std::uint32_t>(layers.Size());
         instanceCreateInfo.ppEnabledLayerNames = layers.Data();
 
-        KITSUNE_ENGINE_INFO_FORMAT_("Creating the Vulkan instance \"{0}\".",
-                                    appName);
-
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkCreateInstance(&instanceCreateInfo, nullptr, &s_VulkanInstance),
             "Failed to create a Vulkan instance.");
+
+        RegisterDebugCallback_();
+
+        KITSUNE_ENGINE_INFO_FORMAT_("Successfully created the Vulkan instance \"{0}\".",
+                                    appName);
     }
 
     void VulkanGraphicsDevice::DestroyInstance_()
     {
+        if (s_DebugMessenger != VK_NULL_HANDLE)
+            UnregisterDebugCallback_();
+
         ::vkDestroyInstance(s_VulkanInstance, nullptr);
+        KITSUNE_ENGINE_INFO_("Destroyed the Vulkan instance.");
+    }
+
+    void VulkanGraphicsDevice::RegisterDebugCallback_()
+    {
+        VkDebugUtilsMessengerCreateInfoEXT dbgCallbackCreateInfo = { /* ... */ };
+        dbgCallbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        dbgCallbackCreateInfo.pfnUserCallback = &VulkanGraphicsDevice::DebugCallback_;
+        dbgCallbackCreateInfo.pUserData = nullptr;
+
+        dbgCallbackCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+
+        dbgCallbackCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT    |
+                                            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+        auto createMessenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+            ::vkGetInstanceProcAddr(s_VulkanInstance, "vkCreateDebugUtilsMessengerEXT"));
+
+        if (createMessenger == nullptr)
+        {
+            KITSUNE_ENGINE_ERROR_("Failed to load vkCreateDebugUtilsMessengerEXT. The engine will "
+                                  "not register a debug callback for Vulkan.");
+        }
+
+        KITSUNE_VK_THROW_IF_FAIL(
+            createMessenger(s_VulkanInstance, &dbgCallbackCreateInfo, nullptr,
+                            &s_DebugMessenger),
+            "Failed to create the Vulkan debug callback. This is probably "
+            "due to the system being out of memory.");
+
+        KITSUNE_ENGINE_INFO_("Registered the Vulkan debug callback.");
+    }
+
+    void VulkanGraphicsDevice::UnregisterDebugCallback_()
+    {
+        auto destroyMessenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+            ::vkGetInstanceProcAddr(s_VulkanInstance, "vkDestroyDebugUtilsMessengerEXT"));
+
+        if (destroyMessenger == nullptr)
+        {
+            KITSUNE_ENGINE_ERROR_("Could not load vkDestroyDebugUtilsMessengerEXT(). The engine "
+                                  "will not destroy the debug messenger.");
+        }
+
+        destroyMessenger(s_VulkanInstance, s_DebugMessenger, nullptr);
+        KITSUNE_ENGINE_INFO_("Destroyed the Vulkan debug messenger.");
+    }
+
+    VkBool32 VulkanGraphicsDevice::DebugCallback_(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                                                  VkDebugUtilsMessageTypeFlagsEXT type,
+                                                  const VkDebugUtilsMessengerCallbackDataEXT* data,
+                                                  void* userData)
+    {
+        KITSUNE_UNUSED(type);
+        KITSUNE_UNUSED(userData);
+
+        Log("Kitsune", ToLoggingSeverity(severity), SourceLocation(), data->pMessage);
+        return VK_FALSE;
     }
 }

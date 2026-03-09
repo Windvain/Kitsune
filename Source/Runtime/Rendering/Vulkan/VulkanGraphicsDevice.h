@@ -24,9 +24,19 @@ namespace Kitsune
 
         static void DestroyInstance_();
 
+        static void RegisterDebugCallback_();
+        static void UnregisterDebugCallback_();
+
+        static VkBool32 DebugCallback_(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                                       VkDebugUtilsMessageTypeFlagsEXT type,
+                                       const VkDebugUtilsMessengerCallbackDataEXT* data,
+                                       void* userData);
+
     private:
         // There should only be ONE Vulkan instance for the entire app.
         static VkInstance s_VulkanInstance;
         static Usize s_ReferenceCount;
+
+        static VkDebugUtilsMessengerEXT s_DebugMessenger;
     };
 }
