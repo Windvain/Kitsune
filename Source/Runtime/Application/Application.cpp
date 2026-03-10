@@ -32,8 +32,7 @@ namespace Kitsune
         s_Instance = this;
 
         KITSUNE_ENGINE_INFO_FORMAT_(
-            "Application \"{0}\" has been fully initialized. "
-            "Running user code...\n",
+            "Application \"{0}\" has been fully initialized. Running user code...",
             m_Name);
     }
 

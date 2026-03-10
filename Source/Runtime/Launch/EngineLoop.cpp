@@ -55,9 +55,10 @@ namespace Kitsune
 
     int EngineLoop::Shutdown()
     {
-        Memory::Delete(m_Application);
-        m_Loggers.Clear();
+        if (m_Application != nullptr)
+            Memory::Delete(m_Application);
 
+        m_Loggers.Clear();
         return m_ExitCode;
     }
 }
