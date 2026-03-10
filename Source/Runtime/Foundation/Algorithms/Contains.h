@@ -22,4 +22,13 @@ namespace Kitsune::Algorithms
     {
         return (Algorithms::Find(begin, end, rangeBegin, rangeEnd) != end);
     }
+
+    // Returns true if the range `[begin, end]` contains an element that satisfies the
+    // predicate `pred`.
+    template<ForwardIterator Iter,
+             Invocable<typename IteratorTraits<Iter>::ValueType> Pred>
+    inline bool ContainsIf(Iter begin, Iter end, Pred pred)
+    {
+        return (Algorithms::FindIf(begin, end, pred) != end);
+    }
 }
