@@ -8,10 +8,18 @@
 
 namespace Kitsune
 {
+    struct VulkanGpuRequirements
+    {
+        VkDeviceSize Memory = 0;
+        std::uint32_t Vendor = 0;
+    };
+
     class VulkanGraphicsDevice : public GraphicsDevice
     {
     public:
-        VulkanGraphicsDevice(const StringView appName);
+        VulkanGraphicsDevice(const StringView appName,
+                             const VulkanGpuRequirements& requirements);
+
         ~VulkanGraphicsDevice();
 
     private:
@@ -31,6 +39,14 @@ namespace Kitsune
                                        VkDebugUtilsMessageTypeFlagsEXT type,
                                        const VkDebugUtilsMessengerCallbackDataEXT* data,
                                        void* userData);
+
+    private:
+        static VkPhysicalDevice PickSuitablePhysicalDevice_(
+            const VulkanGpuRequirements& requirements);
+
+        static bool IsPhysicalDeviceSuitable_(
+            VkPhysicalDevice physicalDevice,
+            const VulkanGpuRequirements& requirements);
 
     private:
         // There should only be ONE Vulkan instance for the entire app.

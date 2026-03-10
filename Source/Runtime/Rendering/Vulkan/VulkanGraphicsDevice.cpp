@@ -22,21 +22,18 @@ namespace Kitsune
         return LogSeverity::Trace;
     }
 
-    VulkanGraphicsDevice::VulkanGraphicsDevice(const StringView appName)
+    VulkanGraphicsDevice::VulkanGraphicsDevice(
+        const StringView appName,
+        const VulkanGpuRequirements& requirements)
     {
-        Uint32 vulkanVersion;
-        if (::vkEnumerateInstanceVersion(&vulkanVersion) != VK_SUCCESS)
-        {
-            throw SystemException(
-                "Failed to retrieve the instance-level version supported by the "
-                "implementation. This shouldn't happen..?");
-        }
-
         Array<const char*> requestedExtensions = GetRequestedExtensions_();
         Array<const char*> requestedLayers = GetRequestedLayers_();
 
         if (s_ReferenceCount == 0)
             CreateInstance_(appName, requestedExtensions, requestedLayers);
+
+        VkPhysicalDevice physicalDevice = PickSuitablePhysicalDevice_(requirements);
+        (void)physicalDevice;       // TEMP: Shush!
 
         ++s_ReferenceCount;
     }
@@ -68,24 +65,17 @@ namespace Kitsune
 
         {
             std::uint32_t extensionCount;
-            VkResult result;
+            KITSUNE_VK_THROW_IF_FAIL(
+                ::vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr),
+                "Failed to enumerate over the list of supported extensions.");
 
-            result = ::vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-            if (result != VK_SUCCESS)
-            {
-                throw SystemException(
-                    "Failed to enumerate over the list of supported extensions.");
-            }
+            Array<VkExtensionProperties> extensionProperties(extensionCount,
+                                                             VkExtensionProperties());
 
-            Array<VkExtensionProperties> extensionProperties(extensionCount, VkExtensionProperties());
-            result = ::vkEnumerateInstanceExtensionProperties(
-                nullptr, &extensionCount, extensionProperties.Data());
-
-            if (result != VK_SUCCESS)
-            {
-                throw SystemException(
-                    "Failed to enumerate over the list of supported extensions.");
-            }
+            KITSUNE_VK_THROW_IF_FAIL(
+                ::vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+                                                         extensionProperties.Data()),
+                "Failed to enumerate over the list of supported extensions.");
 
             bool hasUnsupportedExtensions = false;
             for (const char* extensionName : extensions)
@@ -122,12 +112,8 @@ namespace Kitsune
 
             if (hasUnsupportedExtensions)
             {
-                KITSUNE_ENGINE_ERROR_(
-                    "The implementation does not support one or more of the engine's "
-                    "requested extensions.");
-
                 throw SystemException("Implementation does not support one or more of the "
-                                      "requested extension.");
+                                      "requested extensions.");
             }
         }
 
@@ -218,8 +204,7 @@ namespace Kitsune
                     "layer to be requested or updating your implementation to support "
                     "the missing layer(s).");
 
-                throw SystemException("Implementation does not support one or more of the "
-                                      "requested layers.");
+                return { /* ... */ };
             }
         }
 
@@ -253,7 +238,9 @@ namespace Kitsune
             ::vkCreateInstance(&instanceCreateInfo, nullptr, &s_VulkanInstance),
             "Failed to create a Vulkan instance.");
 
+#if !defined(KITSUNE_BUILD_PRODUCTION)
         RegisterDebugCallback_();
+#endif
 
         KITSUNE_ENGINE_INFO_FORMAT_("Successfully created the Vulkan instance \"{0}\".",
                                     appName);
@@ -261,8 +248,15 @@ namespace Kitsune
 
     void VulkanGraphicsDevice::DestroyInstance_()
     {
+        KITSUNE_ASSERT(
+            s_VulkanInstance != VK_NULL_HANDLE,
+            "Attempted to destroy a VkInstance which had not been initialized or has already been "
+            "destroyed.");
+
+#if !defined(KITSUNE_BUILD_PRODUCTION)
         if (s_DebugMessenger != VK_NULL_HANDLE)
             UnregisterDebugCallback_();
+#endif
 
         ::vkDestroyInstance(s_VulkanInstance, nullptr);
         KITSUNE_ENGINE_INFO_("Destroyed the Vulkan instance.");
@@ -290,6 +284,8 @@ namespace Kitsune
         {
             KITSUNE_ENGINE_ERROR_("Failed to load vkCreateDebugUtilsMessengerEXT. The engine will "
                                   "not register a debug callback for Vulkan.");
+
+            return;
         }
 
         KITSUNE_VK_THROW_IF_FAIL(
@@ -310,6 +306,8 @@ namespace Kitsune
         {
             KITSUNE_ENGINE_ERROR_("Could not load vkDestroyDebugUtilsMessengerEXT(). The engine "
                                   "will not destroy the debug messenger.");
+
+            return;
         }
 
         destroyMessenger(s_VulkanInstance, s_DebugMessenger, nullptr);
@@ -326,5 +324,88 @@ namespace Kitsune
 
         Log("Kitsune", ToLoggingSeverity(severity), SourceLocation(), data->pMessage);
         return VK_FALSE;
+    }
+
+    VkPhysicalDevice VulkanGraphicsDevice::PickSuitablePhysicalDevice_(
+        const VulkanGpuRequirements& requirements)
+    {
+        std::uint32_t deviceCount;
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkEnumeratePhysicalDevices(s_VulkanInstance, &deviceCount, nullptr),
+            "Failed to enumerate through the GPU(s) on the system.");
+
+        Array<VkPhysicalDevice> physicalDevices(deviceCount, VkPhysicalDevice());
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkEnumeratePhysicalDevices(s_VulkanInstance, &deviceCount, physicalDevices.Data()),
+            "Failed to enumerate through the GPU(s) on the system.");
+
+        if (physicalDevices.IsEmpty())
+        {
+            throw SystemException("Could not find any physical devices which support Vulkan. "
+                                  "Either upgrade to a GPU which supports Vulkan, or use a "
+                                  "different rendering backend.");
+        }
+
+        auto iter = Algorithms::FindIf(
+            physicalDevices.GetBegin(), physicalDevices.GetEnd(),
+            [&](VkPhysicalDevice physicalDevice) -> bool
+            {
+                return VulkanGraphicsDevice::IsPhysicalDeviceSuitable_(
+                    physicalDevice,
+                    requirements);
+            });
+
+        if (iter == physicalDevices.GetEnd())
+        {
+            throw SystemException("Could not find a physical device which suits the specified "
+                                  "description.");
+        }
+
+        return *iter;
+    }
+
+    bool VulkanGraphicsDevice::IsPhysicalDeviceSuitable_(
+        VkPhysicalDevice physicalDevice,
+        const VulkanGpuRequirements& requirements)
+    {
+#pragma region GeneralRequirements
+        VkPhysicalDeviceProperties properties;
+        ::vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+        KITSUNE_ENGINE_INFO_FORMAT_("Checking physical device \"{0}\"", properties.deviceName);
+
+        if ((requirements.Vendor != 0) && (requirements.Vendor != properties.vendorID))
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_(
+                "\tVendor PCI ID: {0:#x}, requested {1:#x} - FAIL",
+                properties.vendorID, requirements.Vendor);
+
+            return false;
+        }
+
+        KITSUNE_ENGINE_INFO_FORMAT_("\tVendor PCI ID: {0:#x} - OK", properties.vendorID);
+#pragma endregion
+
+#pragma region MemoryRequirements
+        VkPhysicalDeviceMemoryProperties memoryProperties;
+        ::vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+
+        float gpuMemoryGiB = 0;
+        for (std::uint32_t i = 0; i < memoryProperties.memoryHeapCount; ++i)
+            gpuMemoryGiB += float(memoryProperties.memoryHeaps[i].size) / 1'073'741'824;
+
+        if (gpuMemoryGiB < requirements.Memory)
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT_("\tTotal Memory: {0} GiB, requested {1} GiB - FAIL",
+                                         gpuMemoryGiB, requirements.Memory);
+
+            return false;
+        }
+
+        KITSUNE_ENGINE_INFO_FORMAT_("\tTotal Memory: {0} GiB - OK", gpuMemoryGiB);
+#pragma endregion
+
+        KITSUNE_ENGINE_INFO_FORMAT_("\"{0}\" meets all GPU requirements.", properties.deviceName);
+        return true;
     }
 }
