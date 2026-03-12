@@ -3,6 +3,8 @@
 #include "Foundation/Algorithms/Find.h"
 #include "Foundation/Logging/GlobalLog.h"
 
+#include "Foundation/Diagnostics/Assert.h"
+
 namespace Kitsune
 {
     VkInstance VulkanGraphicsDevice::s_VulkanInstance;
@@ -33,15 +35,39 @@ namespace Kitsune
             CreateInstance_(appName, requestedExtensions, requestedLayers);
 
         VkPhysicalDevice physicalDevice = PickSuitablePhysicalDevice_(requirements);
-        (void)physicalDevice;       // TEMP: Shush!
+        Array<VkDeviceQueueCreateInfo> queueCreateInfoArray = GetQueueCreateInfo_(physicalDevice);
+
+        // Finally creating a device! Gosh.
+        VkDeviceCreateInfo deviceCreateInfo = { /* ... */ };
+        deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        deviceCreateInfo.queueCreateInfoCount = queueCreateInfoArray.Size();
+        deviceCreateInfo.pQueueCreateInfos = queueCreateInfoArray.Data();
+        deviceCreateInfo.pEnabledFeatures = &requirements.Features;
+
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &m_Device),
+            "Failed to create a Vulkan logical device.");
+
+        for (const VkDeviceQueueCreateInfo& queueCreateInfo : queueCreateInfoArray)
+        {
+            VkQueue queue;
+            ::vkGetDeviceQueue(m_Device, queueCreateInfo.queueFamilyIndex, 0, &queue);
+
+            m_Queues.PushBack(queue);
+        }
 
         ++s_ReferenceCount;
     }
 
     VulkanGraphicsDevice::~VulkanGraphicsDevice()
     {
+        KITSUNE_ASSERT(
+            m_Device != VK_NULL_HANDLE,
+            "Tried to destroy a logical device which had not been initialized.");
+
         --s_ReferenceCount;
 
+        ::vkDestroyDevice(m_Device, nullptr);
         if (s_ReferenceCount == 0)
             DestroyInstance_();
     }
@@ -407,5 +433,49 @@ namespace Kitsune
 
         KITSUNE_ENGINE_INFO_FORMAT_("\"{0}\" meets all GPU requirements.", properties.deviceName);
         return true;
+    }
+
+    Array<VkDeviceQueueCreateInfo> VulkanGraphicsDevice::GetQueueCreateInfo_(
+        VkPhysicalDevice physicalDevice)
+    {
+        std::uint32_t queueFamilyCount = 0;
+        ::vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+        Array<VkQueueFamilyProperties> properties(queueFamilyCount, VkQueueFamilyProperties());
+        ::vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, properties.Data());
+
+        Array<VkDeviceQueueCreateInfo> createInfoArray;
+        std::uint32_t queueFamilyIndex = 0;
+
+        KITSUNE_ENGINE_INFO_("Getting physical device queues:");
+        for (const VkQueueFamilyProperties& queueProperty : properties)
+        {
+            const VkQueueFlags requestedFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+            const float queuePriority = 1.0f;
+
+            std::string flagString = string_VkQueueFlags(queueProperty.queueFlags);
+            bool queueSuitable = ((queueProperty.queueFlags & requestedFlags) != 0);
+
+            KITSUNE_UNUSED(flagString);
+            KITSUNE_ENGINE_INFO_FORMAT_(
+                "\tQueue #{0}: {1} - {2}",
+                queueFamilyIndex, flagString.c_str(),
+                queueSuitable ? "OK" : "FAIL");
+
+            if (!queueSuitable)
+                continue;
+
+            VkDeviceQueueCreateInfo createInfo = { /* ... */ };
+            createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            createInfo.queueFamilyIndex = queueFamilyIndex;
+            createInfo.queueCount = 1;
+            createInfo.pQueuePriorities = &queuePriority;
+
+            createInfoArray.PushBack(createInfo);
+            ++queueFamilyIndex;
+        }
+
+        KITSUNE_ENGINE_INFO_FORMAT_("Found {0} suitable queues.", createInfoArray.Size());
+        return createInfoArray;
     }
 }

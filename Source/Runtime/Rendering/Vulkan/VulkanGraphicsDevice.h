@@ -12,6 +12,8 @@ namespace Kitsune
     {
         VkDeviceSize Memory = 0;
         std::uint32_t Vendor = 0;
+
+        VkPhysicalDeviceFeatures Features = { /* ... */ };
     };
 
     class VulkanGraphicsDevice : public GraphicsDevice
@@ -49,10 +51,18 @@ namespace Kitsune
             const VulkanGpuRequirements& requirements);
 
     private:
+        static Array<VkDeviceQueueCreateInfo> GetQueueCreateInfo_(
+            VkPhysicalDevice physicalDevice);
+
+    private:
         // There should only be ONE Vulkan instance for the entire app.
         static VkInstance s_VulkanInstance;
         static Usize s_ReferenceCount;
 
         static VkDebugUtilsMessengerEXT s_DebugMessenger;
+
+    private:
+        VkDevice m_Device = VK_NULL_HANDLE;
+        Array<VkQueue> m_Queues;
     };
 }
