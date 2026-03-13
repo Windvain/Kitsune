@@ -41,8 +41,20 @@ namespace Kitsune
 
         m_Data = static_cast<ExceptionData*>(pointer);
 
-        Memory::ConstructAt(static_cast<ExceptionData*>(m_Data), name, description);
-        EngineLoop::GetInstance()->CaptureExceptionBacktrace();
+        try
+        {
+            // BasicString<T, Alloc> constructors can throw if the allocator
+            // fails to allocate memory.
+            Memory::ConstructAt(m_Data, name, description);
+        }
+        catch (...)
+        {
+            Memory::Free(m_Data, sizeof(ExceptionData));
+        }
+
+        EngineLoop* engineLoop = EngineLoop::GetInstance();
+        if (engineLoop != nullptr)
+            engineLoop->CaptureExceptionBacktrace();
     }
 
     Exception::~Exception() noexcept
