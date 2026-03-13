@@ -2,14 +2,16 @@
 #include <ctime>        // TODO: Replace this with our own functions.
 
 #include "Foundation/String/Format.h"
-#include "Foundation/Logging/WriteStreamIterator.h"
+#include "Foundation/IO/WriteStreamIterator.h"
 
 namespace Kitsune
 {
     void ConsoleLogger::Log(const LogPayload& payload)
     {
-        FormatTo(WriteStreamIterator<char>(m_Stream), "{0}{1}{2}: {3}\x1B[0m\n",
-                 MakeTimeHeader_(), MakeSeverityHeader_(payload.Severity),
+        FormatTo(WriteStreamIterator<char>(m_Stream),
+                 "{0}{1}{2}: {3}\x1B[0m\n",
+                 MakeTimeHeader_(),
+                 MakeSeverityHeader_(payload.Severity),
                  MakeLoggerNameHeader_(payload.LoggerName),
                  payload.Message);
     }

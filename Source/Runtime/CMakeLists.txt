@@ -55,6 +55,7 @@ set(FILES
     "Foundation/IO/ConsoleOutputStream.cpp"
     "Foundation/IO/ConsoleOutputStream.h"
     "Foundation/IO/Stream.h"
+    "Foundation/IO/WriteStreamIterator.h"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
@@ -68,7 +69,6 @@ set(FILES
     "Foundation/Logging/GlobalLog.h"
     "Foundation/Logging/Logger.h"
     "Foundation/Logging/LogPayload.h"
-    "Foundation/Logging/WriteStreamIterator.h"
 
     "Foundation/Maths/Vector2.h"
     "Foundation/Maths/VectorBase.h"

@@ -21,6 +21,7 @@ namespace Kitsune
 
     private:
         void ThreadUnsafeFlush_();
+        static void WriteToConsole_(const char* begin, const char* end);
 
     private:
         static constexpr Usize s_BufferSize = 128;
