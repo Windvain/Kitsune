@@ -384,11 +384,11 @@ namespace Kitsune
 
             for (; sourceShift != ReverseIterator(pos); ++sourceShift, ++destShift)
             {
-                Memory::ConstructAt(AddressOf(*destShift), Move(*sourceShift));
+                Memory::ConstructAt<T>(AddressOf(*destShift), Move(*sourceShift));
                 Memory::DestroyAt(AddressOf(*sourceShift));
             }
 
-            Memory::ConstructAt(AddressOf(*pos), Forward<Args>(args)...);
+            Memory::ConstructAt<T>(AddressOf(*pos), Forward<Args>(args)...);
 
             ++m_End;
             return pos;
@@ -415,7 +415,7 @@ namespace Kitsune
 
             for (auto it = end; it != GetEnd(); ++it, ++begin)
             {
-                Memory::ConstructAt(begin, Move(*it));
+                Memory::ConstructAt<T>(begin, Move(*it));
                 Memory::DestroyAt(it);
             }
 
@@ -465,7 +465,7 @@ namespace Kitsune
             if (newSize > Capacity())
                 Reallocate_(newSize);
 
-            Memory::ConstructAt(m_End, Forward<Args>(args)...);
+            Memory::ConstructAt<T>(m_End, Forward<Args>(args)...);
             return *(m_End++);
         }
 

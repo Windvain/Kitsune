@@ -45,7 +45,7 @@ namespace Kitsune
         {
             // BasicString<T, Alloc> constructors can throw if the allocator
             // fails to allocate memory.
-            Memory::ConstructAt(m_Data, name, description);
+            Memory::ConstructAt<ExceptionData>(m_Data, name, description);
         }
         catch (...)
         {

@@ -211,8 +211,8 @@ namespace Kitsune
                 auto* data = internalAllocator.Allocate(
                     sizeof(InternalDataType), alignof(InternalDataType));
 
-                m_Data = Memory::ConstructAt(
-                    static_cast<InternalDataType*>(data),
+                m_Data = Memory::ConstructAt<InternalDataType>(
+                    data,
                     pointer,
                     Forward<Del>(deleter),
                     Move(internalAllocator));

@@ -15,17 +15,20 @@ namespace Kitsune::Algorithms
     template<ForwardIterator Iter, ForwardIterator OutIter>
     inline OutIter UninitializedCopy(Iter begin, Iter end, OutIter outBegin)
     {
-        Iter it = begin;
+        Iter iter = begin;
         try
         {
-            for (; it != end; ++it, ++outBegin)
-                Memory::ConstructAt(AddressOf(*outBegin), *it);
+            for (; iter != end; ++iter, ++outBegin)
+            {
+                Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
+                    AddressOf(*outBegin), *iter);
+            }
 
             return outBegin;
         }
         catch (...)
         {
-            Algorithms::Destroy(begin, it);
+            Algorithms::Destroy(begin, iter);
             throw;
         }
     }
@@ -36,17 +39,20 @@ namespace Kitsune::Algorithms
     template<ForwardIterator Iter, typename Size, ForwardIterator OutIter>
     inline OutIter UninitializedCopyN(Iter begin, Size n, OutIter outBegin)
     {
-        Iter it = begin;
+        Iter iter = begin;
         try
         {
-            for (; n > 0; ++it, --n, ++outBegin)
-                Memory::ConstructAt(AddressOf(*outBegin), *it);
+            for (; n > 0; ++iter, --n, ++outBegin)
+            {
+                Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
+                    AddressOf(*outBegin), *iter);
+            }
 
             return outBegin;
         }
         catch (...)
         {
-            Algorithms::Destroy(begin, it);
+            Algorithms::Destroy(begin, iter);
             throw;
         }
     }
@@ -57,17 +63,20 @@ namespace Kitsune::Algorithms
     template<ForwardIterator Iter, ForwardIterator OutIter>
     inline OutIter UninitializedMove(Iter begin, Iter end, OutIter outBegin)
     {
-        Iter it = begin;
+        Iter iter = begin;
         try
         {
-            for (; it != end; ++it, ++outBegin)
-                Memory::ConstructAt(AddressOf(*outBegin), Move(*it));
+            for (; iter != end; ++iter, ++outBegin)
+            {
+                Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
+                    AddressOf(*outBegin), Move(*iter));
+            }
 
             return outBegin;
         }
         catch (...)
         {
-            Algorithms::Destroy(begin, it);
+            Algorithms::Destroy(begin, iter);
             throw;
         }
     }
@@ -78,55 +87,64 @@ namespace Kitsune::Algorithms
     template<ForwardIterator Iter, typename Size, ForwardIterator OutIter>
     inline OutIter UninitializedMoveN(Iter begin, Size n, OutIter outBegin)
     {
-        Iter it = begin;
+        Iter iter = begin;
         try
         {
-            for (; n > 0; ++it, --n, ++outBegin)
-                Memory::ConstructAt(AddressOf(*outBegin), Move(*it));
+            for (; n > 0; ++iter, --n, ++outBegin)
+            {
+                Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
+                    AddressOf(*outBegin), Move(*iter));
+            }
 
             return outBegin;
         }
         catch (...)
         {
-            Algorithms::Destroy(begin, it);
+            Algorithms::Destroy(begin, iter);
             throw;
         }
     }
 
     // Fills the uninitialized memory range `[begin, end]` with the value `value`.
     // Returns an iterator pointing to the element one past the last copied element.
-    template<ForwardIterator It, typename T>
-    inline void UninitializedFill(It begin, It end, const T& value)
+    template<ForwardIterator Iter, typename T>
+    inline void UninitializedFill(Iter begin, Iter end, const T& value)
     {
-        It it = begin;
+        Iter iter = begin;
         try
         {
-            for (; it != end; ++it)
-                Memory::ConstructAt(AddressOf(*it), value);
+            for (; iter != end; ++iter)
+            {
+                Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
+                    AddressOf(*iter), value);
+            }
         }
         catch (...)
         {
-            Algorithms::Destroy(begin, it);
+            Algorithms::Destroy(begin, iter);
             throw;
         }
     }
 
     // Fills the uninitialized memory range `[begin, begin + n]` with the value `value`.
     // Returns an iterator pointing to the element one past the last copied element.
-    template<ForwardIterator It, typename Size, typename T>
-    inline It UninitializedFillN(It begin, Size n, const T& value)
+    template<ForwardIterator Iter, typename Size, typename T>
+    inline Iter UninitializedFillN(Iter begin, Size n, const T& value)
     {
-        It it = begin;
+        Iter iter = begin;
         try
         {
-            for (; n > 0; --n, ++it)
-                Memory::ConstructAt(AddressOf(*it), value);
+            for (; n > 0; --n, ++iter)
+            {
+                Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
+                    AddressOf(*iter), value);
+            }
 
-            return it;
+            return iter;
         }
         catch (...)
         {
-            Algorithms::Destroy(begin, it);
+            Algorithms::Destroy(begin, iter);
             throw;
         }
     }
