@@ -118,7 +118,7 @@ set(FILES
     "Foundation/Utilities/BadCallException.h"
     "Foundation/Utilities/CpuId.h"
     "Foundation/Utilities/EnumFlags.h"
-    "Foundation/Utilities/Function.h"
+    "Foundation/Utilities/Functor.h"
     "Foundation/Utilities/NonCopyable.h"
     "Foundation/Utilities/SystemInformation.cpp"
     "Foundation/Utilities/SystemInformation.h"

@@ -40,6 +40,7 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/FillTests.cpp"
     "FoundationTests/FindTests.cpp"
     "FoundationTests/ForEachTests.cpp"
+    "FoundationTests/FunctorTests.cpp"
     "FoundationTests/Main.cpp"
     "FoundationTests/MoveTests.cpp"
     "FoundationTests/ReplaceTests.cpp"
