@@ -127,7 +127,8 @@ set(FILES
     "Launch/EngineLoop.h"
     "Launch/UniversalMain.cpp"
 
-    "Rendering/GraphicsDevice.h"
+    "RenderingCore/RenderingContext.h"
+    "RenderingCore/RenderingDevice.h"
 )
 
 set(COMPILER_OPTIONS "")
@@ -136,8 +137,11 @@ set(LINKED_LIBRARIES "")
 
 if (KITSUNE_BUILD_VULKAN_BACKEND)
     list(APPEND FILES
-        "Rendering/Vulkan/VulkanGraphicsDevice.cpp"
-        "Rendering/Vulkan/VulkanGraphicsDevice.h"
+        "RenderingCore/Vulkan/VulkanHeader.h"
+        "RenderingCore/Vulkan/VulkanRenderingContext.cpp"
+        "RenderingCore/Vulkan/VulkanRenderingContext.h"
+        "RenderingCore/Vulkan/VulkanRenderingDevice.cpp"
+        "RenderingCore/Vulkan/VulkanRenderingDevice.h"
     )
 
     find_package(Vulkan REQUIRED)
