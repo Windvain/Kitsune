@@ -28,6 +28,7 @@ set(FILES
     "Foundation/Algorithms/Uninitialized.h"
 
     "Foundation/Common/Macros.h"
+    "Foundation/Common/Policies.cpp"
     "Foundation/Common/Predefined.h"
     "Foundation/Common/Types.h"
 

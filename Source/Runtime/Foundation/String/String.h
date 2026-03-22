@@ -22,17 +22,6 @@ namespace Kitsune
                       "BasicString<T> assumes that the element type being "
                       "passed to it is a trivial type.");
 
-        // std::initializer_list is usually implemented as a pair of pointers or
-        // as a pointer and size pair. This assertion should not fail with the
-        // commonly used compilers.
-        static_assert(ForwardIterator<typename std::initializer_list<T>::iterator>,
-                      "std::initializer_list iterators do not satisfy "
-                      "ForwardIterator.");
-
-        static_assert(ForwardIterator<typename std::initializer_list<T>::const_iterator>,
-                      "std::initializer_list iterators do not satisfy "
-                      "ForwardIterator.");
-
     public:
         using ValueType = T;
         using AllocatorType = Alloc;
