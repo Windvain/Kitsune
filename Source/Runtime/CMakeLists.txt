@@ -40,6 +40,7 @@ set(FILES
 
     "Foundation/Containers/Array.h"
     "Foundation/Containers/Pair.h"
+    "Foundation/Containers/Set.h"
 
     "Foundation/Diagnostics/Assert.cpp"
     "Foundation/Diagnostics/Assert.h"
@@ -118,6 +119,7 @@ set(FILES
     "Foundation/Threading/ThreadSafety.h"
 
     "Foundation/Utilities/BadCallException.h"
+    "Foundation/Utilities/Comparators.h"
     "Foundation/Utilities/CpuId.h"
     "Foundation/Utilities/EnumFlags.h"
     "Foundation/Utilities/Functor.h"
