@@ -38,6 +38,7 @@ set(FILES
     "Foundation/Concepts/Swappable.h"
 
     "Foundation/Containers/Array.h"
+    "Foundation/Containers/Pair.h"
 
     "Foundation/Diagnostics/Assert.cpp"
     "Foundation/Diagnostics/Assert.h"
