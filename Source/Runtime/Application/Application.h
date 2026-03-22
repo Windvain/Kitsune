@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Application/Window.h"
 #include "Foundation/String/String.h"
 
 #include "Application/DisplayManager.h"
@@ -23,10 +24,10 @@ namespace Kitsune
         bool Headless = false;
 
         Vector2<Uint32> ViewportSize = { 1280, 720 };
-        Vector2<Int32> WindowPosition;
+        Vector2<Int32> WindowPosition = { 0, 0 };
 
-        WindowMode WindowMode;
-        WindowFlags WindowFlags;
+        WindowMode WindowMode = WindowMode::Windowed;
+        WindowFlags WindowFlags = WindowFlags::None;
     };
 
     class Application : public NonCopyable

@@ -1,11 +1,12 @@
 #include "Application/Windows/WindowsDisplayManager.h"
+#include "Foundation/Algorithms/Contains.h"
 
 #include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Diagnostics/Assert.h"
-
-#include "Foundation/Algorithms/Contains.h"
 #include "Foundation/String/TranscodePresets.h"
+
+#include "Foundation/Diagnostics/Assert.h"
 #include "Foundation/Diagnostics/SystemException.h"
+#include "Foundation/Diagnostics/InvalidArgumentException.h"
 
 namespace Kitsune
 {
@@ -97,8 +98,9 @@ namespace Kitsune
         auto iter = Algorithms::Find(m_Windows.GetBegin(), m_Windows.GetEnd(), window);
         if (iter == m_Windows.GetEnd())
         {
-            throw SystemException("Failed to destroy a window, because the window handle "
-                                  "specified was not created by MakeWindow().");
+            throw InvalidArgumentException(
+                "Failed to destroy a window, because the window handle "
+                "specified was not created by MakeWindow().");
         }
 
         KITSUNE_ENGINE_INFO_FORMAT_("Destroying a Windows window with the handle value {0}.",
