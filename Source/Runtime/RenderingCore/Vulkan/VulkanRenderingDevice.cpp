@@ -1,6 +1,7 @@
 #include "RenderingCore/Vulkan/VulkanRenderingDevice.h"
-
 #include "Foundation/Logging/GlobalLog.h"
+
+#include "Foundation/Containers/Set.h"
 #include "Foundation/Diagnostics/Assert.h"
 
 namespace Kitsune
@@ -21,6 +22,10 @@ namespace Kitsune
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &m_Device),
             "Failed to create a Vulkan logical device.");
+
+        ::vkGetDeviceQueue(m_Device, queueCreateInfos[0].queueFamilyIndex, 0, &m_GraphicsQueue);
+        ::vkGetDeviceQueue(m_Device, queueCreateInfos[1].queueFamilyIndex, 0, &m_ComputeQueue);
+        ::vkGetDeviceQueue(m_Device, queueCreateInfos[2].queueFamilyIndex, 0, &m_TransferQueue);
     }
 
     VulkanRenderingDevice::~VulkanRenderingDevice()
@@ -36,46 +41,64 @@ namespace Kitsune
         VkPhysicalDevice physicalDevice)
     {
         std::uint32_t queueFamilyCount = 0;
-        ::vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        Array<VkQueueFamilyProperties> queueFamilyProperties;
 
-        Array<VkQueueFamilyProperties> properties(queueFamilyCount, VkQueueFamilyProperties());
+        ::vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        queueFamilyProperties.Resize(queueFamilyCount);
+
         ::vkGetPhysicalDeviceQueueFamilyProperties(
-            physicalDevice, &queueFamilyCount, properties.Data());
+            physicalDevice, &queueFamilyCount, queueFamilyProperties.Data());
+
+        Set<std::uint32_t> indices;
+        const VkQueueFlags queuesToFind[3] = {
+            VK_QUEUE_GRAPHICS_BIT,
+            VK_QUEUE_COMPUTE_BIT,
+            VK_QUEUE_TRANSFER_BIT
+        };
 
         Array<VkDeviceQueueCreateInfo> createInfoArray;
-        std::uint32_t queueFamilyIndex = 0;
+        static const float queuePriorities[] = { 1.0f };
 
-        KITSUNE_ENGINE_INFO_("Retrieving all usable queues from physical device:");
-        for (const VkQueueFamilyProperties& queueProperty : properties)
+        for (VkQueueFlags flags : queuesToFind)
         {
-            const float queuePriority = 1.0f;
-            const VkQueueFlags requestedFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT |
-                                                VK_QUEUE_TRANSFER_BIT;
+            std::uint32_t currentIndex = 0;
+            for (; currentIndex < queueFamilyCount; ++currentIndex)
+            {
+                const auto& properties = queueFamilyProperties[currentIndex];
+                if (!(properties.queueFlags & flags))
+                    continue;
 
-            if ((queueProperty.queueFlags & requestedFlags) == 0)
-                continue;
+                auto [iter_, result] = indices.Insert(currentIndex);
+                if (result)
+                {
+                    VkDeviceQueueCreateInfo queueCreateInfo = { /* ... */ };
+                    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                    queueCreateInfo.queueFamilyIndex = currentIndex;
+                    queueCreateInfo.queueCount = 1;
+                    queueCreateInfo.pQueuePriorities = queuePriorities;
 
-            std::string queueFlagsStr = string_VkQueueFlags(queueProperty.queueFlags);
+                    createInfoArray.PushBack(queueCreateInfo);
+                    break;
+                }
+            }
 
-            KITSUNE_UNUSED(queueFlagsStr);
+            std::string flagsString = string_VkQueueFlags(
+                queueFamilyProperties[currentIndex].queueFlags);
+
             KITSUNE_ENGINE_INFO_FORMAT_(
-                "\tQueue #{0}: {1}",
-                queueFamilyIndex, queueFlagsStr.c_str());
-
-            VkDeviceQueueCreateInfo createInfo = { /* ... */ };
-            createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            createInfo.queueFamilyIndex = queueFamilyIndex;
-            createInfo.queueCount = 1;
-            createInfo.pQueuePriorities = &queuePriority;
-
-            createInfoArray.PushBack(createInfo);
-            ++queueFamilyIndex;
+                "Found device queue family #{0} for {1} queue: {2}",
+                currentIndex,
+                string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(flags)),
+                flagsString.c_str());
         }
 
-        if (createInfoArray.IsEmpty())
-            throw SystemException("Could not find any suitable Vulkan queues.");
+        if (createInfoArray.Size() != 3)
+        {
+            throw SystemException(
+                "Could not find three unique queue families for the Graphics, Compute, "
+                "and Transfer queues.");
+        }
 
-        KITSUNE_ENGINE_INFO_FORMAT_("Found {0} suitable queues.", createInfoArray.Size());
         return createInfoArray;
     }
 }

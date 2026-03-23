@@ -76,11 +76,13 @@ namespace Kitsune
 
 #pragma region Physical Device Enumeration
         std::uint32_t physicalDeviceCount;
+        Array<VkPhysicalDevice> physicalDevices;
+
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkEnumeratePhysicalDevices(m_Instance, &physicalDeviceCount, nullptr),
             "Failed to enumerate over the physical devices on the system.");
 
-        Array<VkPhysicalDevice> physicalDevices(physicalDeviceCount, VkPhysicalDevice());
+        physicalDevices.Resize(physicalDeviceCount);
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkEnumeratePhysicalDevices(m_Instance, &physicalDeviceCount, physicalDevices.Data()),
             "Failed to enumerate over the physical devices on the system.");
@@ -218,13 +220,13 @@ namespace Kitsune
     void VulkanRenderingContext::VerifyExtensions_(const Array<const char*>& extensions)
     {
         std::uint32_t extensionCount;
+        Array<VkExtensionProperties> extensionProperties;
+
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr),
             "Failed to enumerate over the list of supported extensions.");
 
-        Array<VkExtensionProperties> extensionProperties(extensionCount,
-                                                            VkExtensionProperties());
-
+        extensionProperties.Resize(extensionCount);
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
                                                         extensionProperties.Data()),
@@ -248,11 +250,14 @@ namespace Kitsune
     void VulkanRenderingContext::VerifyLayers_(const Array<const char*>& layers)
     {
         std::uint32_t layerCount;
+        Array<VkLayerProperties> layerProperties;
+
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkEnumerateInstanceLayerProperties(&layerCount, nullptr),
             "Failed to enumerate over the instance's layers.");
 
-        Array<VkLayerProperties> layerProperties(layerCount, VkLayerProperties());
+        layerProperties.Resize(layerCount);
+
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.Data()),
             "Failed to enumerate over the instance's layers.");;

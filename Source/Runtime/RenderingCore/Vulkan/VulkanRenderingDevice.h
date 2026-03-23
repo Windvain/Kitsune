@@ -28,5 +28,9 @@ namespace Kitsune
     private:
         VkDevice m_Device;
         RenderingDeviceInformation m_Information;
+
+        VkQueue m_GraphicsQueue;
+        VkQueue m_ComputeQueue;
+        VkQueue m_TransferQueue;
     };
 }
