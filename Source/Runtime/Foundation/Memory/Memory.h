@@ -44,10 +44,9 @@ namespace Kitsune
     public:
         template<typename T, typename... Args>
             requires std::is_constructible_v<T, Args...>
-        inline static T* ConstructAt(T* pointer, Args&&... args)
+        inline static T* ConstructAt(void* pointer, Args&&... args)
         {
-            new (static_cast<void*>(pointer)) T(Forward<Args>(args)...);
-            return pointer;
+            return new (pointer) T(Forward<Args>(args)...);
         }
 
         template<typename T>
@@ -61,11 +60,11 @@ namespace Kitsune
         [[nodiscard]]
         inline static T* New(Args&&... args)
         {
-            T* pointer = static_cast<T*>(s_MemoryApi->TryNew(sizeof(T), alignof(T)));
+            void* pointer = s_MemoryApi->TryNew(sizeof(T), alignof(T));
             if (pointer == nullptr)
                 throw BadAllocException();
 
-            return ConstructAt(pointer, Forward<Args>(args)...);
+            return ConstructAt<T>(pointer, Forward<Args>(args)...);
         }
 
         template<typename T>

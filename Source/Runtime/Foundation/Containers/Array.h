@@ -25,16 +25,6 @@ namespace Kitsune
     template<typename T, Allocator Alloc = GlobalAllocator>
     class Array
     {
-    private:
-        // std::initializer_list is usually implemented as a pair of pointers or as a pointer
-        // and size pair.
-        // This assertion should not fail with the commonly used compilers.
-        static_assert(ForwardIterator<typename std::initializer_list<T>::iterator>,
-                      "std::initializer_list iterators do not satisfy ForwardIterator.");
-
-        static_assert(ForwardIterator<typename std::initializer_list<T>::const_iterator>,
-                      "std::initializer_list iterators do not satisfy ForwardIterator.");
-
     public:
         using ValueType = T;
         using AllocatorType = Alloc;
@@ -284,6 +274,27 @@ namespace Kitsune
             ReallocateExact_(Size());
         }
 
+        inline void Resize(Usize count)
+        {
+            Resize(count, T());
+        }
+
+        inline void Resize(Usize count, const T& value)
+        {
+            if (Size() == count)
+                return;
+
+            if (Size() < count)
+                Insert(m_End, count - Size(), value);
+            else
+            {
+                Usize difference = Size() - count;
+
+                Algorithms::DestroyN(GetReverseBegin(), difference);
+                m_End -= difference;
+            }
+        }
+
     public:
         inline void Swap(Array& array)
         {
@@ -384,11 +395,11 @@ namespace Kitsune
 
             for (; sourceShift != ReverseIterator(pos); ++sourceShift, ++destShift)
             {
-                Memory::ConstructAt(AddressOf(*destShift), Move(*sourceShift));
+                Memory::ConstructAt<T>(AddressOf(*destShift), Move(*sourceShift));
                 Memory::DestroyAt(AddressOf(*sourceShift));
             }
 
-            Memory::ConstructAt(AddressOf(*pos), Forward<Args>(args)...);
+            Memory::ConstructAt<T>(AddressOf(*pos), Forward<Args>(args)...);
 
             ++m_End;
             return pos;
@@ -415,7 +426,7 @@ namespace Kitsune
 
             for (auto it = end; it != GetEnd(); ++it, ++begin)
             {
-                Memory::ConstructAt(begin, Move(*it));
+                Memory::ConstructAt<T>(begin, Move(*it));
                 Memory::DestroyAt(it);
             }
 
@@ -465,7 +476,7 @@ namespace Kitsune
             if (newSize > Capacity())
                 Reallocate_(newSize);
 
-            Memory::ConstructAt(m_End, Forward<Args>(args)...);
+            Memory::ConstructAt<T>(m_End, Forward<Args>(args)...);
             return *(m_End++);
         }
 

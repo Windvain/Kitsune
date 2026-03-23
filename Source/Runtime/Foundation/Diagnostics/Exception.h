@@ -4,6 +4,11 @@
 
 namespace Kitsune
 {
+    namespace Details
+    {
+        class ExceptionData;
+    }
+
     // The engine's own class for an exception. Practically the same as a regular
     // std::exception, but with additional information such as the exception name
     // and description.
@@ -28,7 +33,6 @@ namespace Kitsune
         }
 
     private:
-        const char* m_Name;
-        const char* m_Description;
+        Details::ExceptionData* m_Data;
     };
 }

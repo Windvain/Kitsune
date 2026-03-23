@@ -376,6 +376,42 @@ TEST(ArrayTests, ShrinkToFit)
         EXPECT_EQ(array[i], vector[i]);
 }
 
+TEST(ArrayTests, Resize)
+{
+    Array<int> array = { 938, 123, 12, 499, 72 };
+    array.Resize(array.Size());     // No-op
+
+    int expected1[5] = { 938, 123, 12, 499, 72 };
+    EXPECT_EQ(array.Size(), 5);
+
+    for (Index i = 0; i < array.Size(); ++i)
+        EXPECT_EQ(array.Data()[i], expected1[i]);
+
+    array.Resize(3);    // Truncates array.
+
+    int expected2[3] = { 938, 123, 12 };
+    EXPECT_EQ(array.Size(), 3);
+
+    for (Index i = 0; i < array.Size(); ++i)
+        EXPECT_EQ(array.Data()[i], expected2[i]);
+
+    array.Resize(6);    // Extends array.
+
+    int expected3[6] = { 938, 123, 12, 0, 0, 0 };
+    EXPECT_EQ(array.Size(), 6);
+
+    for (Index i = 0; i < array.Size(); ++i)
+        EXPECT_EQ(array.Data()[i], expected3[i]);
+
+    array.Resize(8, int(9));        // Extends array with int(9).
+
+    int expected4[8] = { 938, 123, 12, 0, 0, 0, 9, 9 };
+    EXPECT_EQ(array.Size(), 8);
+
+    for (Index i = 0; i < array.Size(); ++i)
+        EXPECT_EQ(array.Data()[i], expected4[i]);
+}
+
 TEST(ArrayTests, Clear)
 {
     Array<int> array = { 32, 654, 123, 32, 983, 435 };

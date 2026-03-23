@@ -28,6 +28,7 @@ set(FILES
     "Foundation/Algorithms/Uninitialized.h"
 
     "Foundation/Common/Macros.h"
+    "Foundation/Common/Policies.cpp"
     "Foundation/Common/Predefined.h"
     "Foundation/Common/Types.h"
 
@@ -38,6 +39,8 @@ set(FILES
     "Foundation/Concepts/Swappable.h"
 
     "Foundation/Containers/Array.h"
+    "Foundation/Containers/Pair.h"
+    "Foundation/Containers/Set.h"
 
     "Foundation/Diagnostics/Assert.cpp"
     "Foundation/Diagnostics/Assert.h"
@@ -55,6 +58,7 @@ set(FILES
     "Foundation/IO/ConsoleOutputStream.cpp"
     "Foundation/IO/ConsoleOutputStream.h"
     "Foundation/IO/Stream.h"
+    "Foundation/IO/WriteStreamIterator.h"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
@@ -68,7 +72,6 @@ set(FILES
     "Foundation/Logging/GlobalLog.h"
     "Foundation/Logging/Logger.h"
     "Foundation/Logging/LogPayload.h"
-    "Foundation/Logging/WriteStreamIterator.h"
 
     "Foundation/Maths/Vector2.h"
     "Foundation/Maths/VectorBase.h"
@@ -116,9 +119,10 @@ set(FILES
     "Foundation/Threading/ThreadSafety.h"
 
     "Foundation/Utilities/BadCallException.h"
+    "Foundation/Utilities/Comparators.h"
     "Foundation/Utilities/CpuId.h"
     "Foundation/Utilities/EnumFlags.h"
-    "Foundation/Utilities/Function.h"
+    "Foundation/Utilities/Functor.h"
     "Foundation/Utilities/NonCopyable.h"
     "Foundation/Utilities/SystemInformation.cpp"
     "Foundation/Utilities/SystemInformation.h"
