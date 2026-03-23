@@ -274,6 +274,27 @@ namespace Kitsune
             ReallocateExact_(Size());
         }
 
+        inline void Resize(Usize count)
+        {
+            Resize(count, T());
+        }
+
+        inline void Resize(Usize count, const T& value)
+        {
+            if (Size() == count)
+                return;
+
+            if (Size() < count)
+                Insert(m_End, count - Size(), value);
+            else
+            {
+                Usize difference = Size() - count;
+
+                Algorithms::DestroyN(GetReverseBegin(), difference);
+                m_End -= difference;
+            }
+        }
+
     public:
         inline void Swap(Array& array)
         {

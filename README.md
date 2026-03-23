@@ -31,7 +31,8 @@ Run the following command with this repository as your current working directory
 \
 For Visual Studio 2026:
 ```bash
-$ cmake --preset "Visual Studio 2026"
+$ cd <path to Kitsune>
+$ cmake -S . -B build/ --preset "Visual Studio 2026"
 ...
 -- Configuring done (18.8s)
 -- Generating done (0.2s)
@@ -40,7 +41,8 @@ $ cmake --preset "Visual Studio 2026"
 
 Or alternatively for MinGW-w64 with Clang:
 ```bash
-$ cmake --preset "Clang MinGW" -DCMAKE_BUILD_TYPE="<your build type>"
+$ cd <path to Kitsune>
+$ cmake -S . -B build/ --preset "Clang MinGW"
 ...
 -- Configuring done (2.7s)
 -- Generating done (0.2s)
@@ -53,7 +55,7 @@ Visual Studio 2026 users can use this command:
 ```bash
 $ cmake --build build/ --preset "Visual Studio 2026 - <your build type>"
 ```
-Or with MinGW-Clang:
+Or with MinGW-w64 and Clang:
 ```bash
 $ cmake --build build/ --preset "Clang MinGW - <your build type>"
 ```
