@@ -6,11 +6,15 @@
 
 #include "Foundation/Diagnostics/Assert.h"
 #include "Foundation/Diagnostics/SystemException.h"
-#include "Foundation/Diagnostics/InvalidArgumentException.h"
+
+#if defined(KITSUNE_HAS_VULKAN_BACKEND)
+    #include "RenderingCore/Vulkan/VulkanRenderingContext.h"
+#endif
 
 namespace Kitsune
 {
-    WindowsDisplayManager::WindowsDisplayManager(const WideStringView className)
+    WindowsDisplayManager::WindowsDisplayManager(const DisplayManagerSpecifications& specs,
+                                                 const WideStringView className)
         : m_WindowClassName(className)
     {
         WNDCLASSEXW windowClass;
@@ -39,10 +43,52 @@ namespace Kitsune
         // Engine code might try to read screen data before the first frame,
         // so update just in case.
         UpdateScreenList_();
+
+        // Create the RenderingContext first.
+        switch (specs.Backend)
+        {
+        case RenderingBackend::Vulkan:
+        {
+#if defined(KITSUNE_HAS_VULKAN_BACKEND)
+            m_RenderingContext = Memory::New<VulkanRenderingContext>();
+#endif
+            break;
+        }
+        }
+
+        if (m_RenderingContext == nullptr)
+        {
+            KITSUNE_ENGINE_ERROR_(
+                "The engine was built with no valid rendering backend, or a valid rendering "
+                "backend was not picked. The rendering subsystem will not be initialized.");
+        }
+
+        // Then the window.
+        const WindowSpecifications& primaryWindowSpecs = specs.PrimaryWindowSpecs;
+        m_PrimaryWindow = Memory::New<WindowsWindow>(
+            className,
+            primaryWindowSpecs.Size,
+            primaryWindowSpecs.Position,
+            Utf8ToUtf16<char, wchar_t>(primaryWindowSpecs.Title),
+            primaryWindowSpecs.Mode,
+            primaryWindowSpecs.Flags);
+
+        m_RenderingDevice = m_RenderingContext->CreateRenderingDevice(
+            Uint32(0),
+            m_PrimaryWindow);
     }
 
     WindowsDisplayManager::~WindowsDisplayManager()
     {
+        KITSUNE_ASSERT(
+            m_PrimaryWindow != nullptr,
+            "The primary window has not been created.");
+
+        if (m_RenderingContext != nullptr)
+            m_RenderingContext->DestroyRenderingDevice(m_RenderingDevice);
+
+        Memory::Delete(m_PrimaryWindow);
+
         KITSUNE_VERIFY(::UnregisterClassW(m_WindowClassName.Raw(), nullptr),
                        "Failed to unregister the window class.");
     }
@@ -76,50 +122,9 @@ namespace Kitsune
         return screenHandles;
     }
 
-    WindowHandle WindowsDisplayManager::MakeWindow(const WindowSpecifications& specs)
-    {
-        m_Windows.PushBack(
-            MakeScoped<WindowsWindow>(
-                m_WindowClassName,
-                specs.Size,
-                specs.Position,
-                Utf8ToUtf16<char, wchar_t>(specs.Title),
-                specs.Mode,
-                specs.Flags));
-
-        KITSUNE_ENGINE_INFO_("Created a window with a WindowsDisplayManager, details:");
-        KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Window&>(*m_Windows.Back()));
-
-        return m_Windows.Back().Get();
-    }
-
-    void WindowsDisplayManager::DestroyWindow(WindowHandle window)
-    {
-        auto iter = Algorithms::Find(m_Windows.GetBegin(), m_Windows.GetEnd(), window);
-        if (iter == m_Windows.GetEnd())
-        {
-            throw InvalidArgumentException(
-                "Failed to destroy a window, because the window handle "
-                "specified was not created by MakeWindow().");
-        }
-
-        KITSUNE_ENGINE_INFO_FORMAT_("Destroying a Windows window with the handle value {0}.",
-                                    window);
-
-        m_Windows.Remove(iter);
-    }
-
     WindowHandle WindowsDisplayManager::GetPrimaryWindow() const
     {
-        if (m_Windows.IsEmpty())
-        {
-            KITSUNE_ENGINE_ERROR_("Could not retrieve a primary window, because no windows "
-                                  "have been instantiated.");
-
-            return nullptr;
-        }
-
-        return m_Windows[0].Get();
+        return m_PrimaryWindow;
     }
 
     void WindowsDisplayManager::UpdateScreenList_()
@@ -189,13 +194,11 @@ namespace Kitsune
             return HandlePreInitWindowEvents_(windowHandle, message, wparam, lparam);
 
         auto window = reinterpret_cast<WindowsWindow*>(windowPointer);
-        auto& windowArray = displayManager->m_Windows;
-
-        if (!Algorithms::Contains(windowArray.GetBegin(), windowArray.GetEnd(), window))
+        if (displayManager->m_PrimaryWindow == nullptr)
             return HandlePreInitWindowEvents_(windowHandle, message, wparam, lparam);
 
-        // Window has already been created (an HWND exists) and has been recorded in the
-        // window array.
+        // Window has already been created (an HWND exists) and has been kept in the
+        // display manager.
         return HandlePostInitWindowEvents_(window, message, wparam, lparam);
     }
 

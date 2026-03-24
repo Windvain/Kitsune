@@ -21,7 +21,6 @@ namespace Kitsune
     struct RenderingDeviceInformation
     {
         String Name;
-        Uint32 Index;
 
         RenderingDeviceType Type;
         RenderingDeviceFeatures Features;

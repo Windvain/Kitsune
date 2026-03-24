@@ -55,6 +55,8 @@ namespace Kitsune
 
     int EngineLoop::Shutdown()
     {
+        KITSUNE_ENGINE_INFO_("Kitsune Engine shutting down, goodbye!");
+
         if (m_Application != nullptr)
             Memory::Delete(m_Application);
 

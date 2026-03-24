@@ -1,26 +1,27 @@
 #pragma once
 
-#include "Foundation/String/String.h"
+#include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Containers/Array.h"
 
-#include "RenderingCore/RenderingContext.h"
 #include "RenderingCore/RenderingDevice.h"
+#include "RenderingCore/RenderingContext.h"
 
 #include "RenderingCore/Vulkan/VulkanHeader.h"
-#include "RenderingCore/Vulkan/VulkanRenderingDevice.h"
 
 namespace Kitsune
 {
+    class VulkanRenderingDevice;
+
     class VulkanRenderingContext : public RenderingContext
     {
     public:
-        VulkanRenderingContext(const StringView applicationName);
+        VulkanRenderingContext();
         ~VulkanRenderingContext();
 
     public:
-        Array<RenderingDeviceInformation> GetAvailableDevicesInformation() const override;
+        RenderingDevice* CreateRenderingDevice(Uint32 deviceIndex,
+                                               WindowHandle surface) override;
 
-        RenderingDevice* CreateRenderingDevice(Uint32 deviceIndex) override;
         void DestroyRenderingDevice(RenderingDevice* device) override;
 
     private:
@@ -28,8 +29,8 @@ namespace Kitsune
         static Array<const char*> GetRequestedLayers_();
 
         // Throws if the specified extensions/layers is not supported.
-        static void VerifyExtensions_(const Array<const char*>& extensions);
-        static void VerifyLayers_(const Array<const char*>& layers);
+        static void VerifyExtensionsSupport_(const Array<const char*>& extensions);
+        static void VerifyLayersSupport_(const Array<const char*>& layers);
 
     private:
         void RegisterDebugCallback_();
@@ -42,10 +43,6 @@ namespace Kitsune
                                        void* userData);
 
     private:
-        Array<const char*> m_Extensions;
-        Array<const char*> m_Layers;
-
-        String m_ApplicationName;
         VkInstance m_Instance = VK_NULL_HANDLE;
 
         PFN_vkCreateDebugUtilsMessengerEXT m_CreateDebugMessenger;
@@ -53,8 +50,6 @@ namespace Kitsune
         VkDebugUtilsMessengerEXT m_DebugMessenger;
 
         Array<VkPhysicalDevice> m_PhysicalDevices;
-        Array<RenderingDeviceInformation> m_PhysicalDevicesInfo;
-
-        Array<VulkanRenderingDevice*> m_RenderingDevices;
+        Array<ScopedPtr<VulkanRenderingDevice>> m_RenderingDevices;
     };
 }

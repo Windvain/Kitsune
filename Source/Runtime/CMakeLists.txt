@@ -73,6 +73,7 @@ set(FILES
     "Foundation/Logging/Logger.h"
     "Foundation/Logging/LogPayload.h"
 
+    "Foundation/Maths/Clamp.h"
     "Foundation/Maths/Vector2.h"
     "Foundation/Maths/VectorBase.h"
 
@@ -185,6 +186,12 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Launch/Windows/WindowsEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
     )
+
+    if (KITSUNE_BUILD_VULKAN_BACKEND)
+        list(APPEND FILES
+            "RenderingCore/Vulkan/Windows/WindowsVulkanRenderingDevice.cpp"
+        )
+    endif()
 
     list(APPEND COMPILER_DEFS
         # Enable the usage of "wide" functions in the Win32 API.

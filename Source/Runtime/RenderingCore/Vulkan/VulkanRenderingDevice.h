@@ -1,36 +1,68 @@
 #pragma once
 
+#include "Application/Window.h"
+#include "Foundation/Containers/Array.h"
+
 #include "RenderingCore/RenderingDevice.h"
 #include "RenderingCore/Vulkan/VulkanHeader.h"
 
-#include "Foundation/Containers/Array.h"
-
 namespace Kitsune
 {
+    class VulkanRenderingContext;
+
+    struct VulkanSwapChain
+    {
+        VkSwapchainKHR Handle;
+        VkSurfaceFormatKHR SurfaceFormat;
+        VkExtent2D Extents;
+
+        Array<VkImageView> ImageViews;
+    };
+
     class VulkanRenderingDevice : public RenderingDevice
     {
     public:
-        VulkanRenderingDevice(VkPhysicalDevice physicalDevice,
-                              const RenderingDeviceInformation& information);
+        VulkanRenderingDevice(VkInstance instance,
+                              VkPhysicalDevice physicalDevice,
+                              WindowHandle windowHandle);
 
         ~VulkanRenderingDevice();
 
     public:
-        inline RenderingDeviceInformation GetInformation() const override
-        {
-            return m_Information;
-        }
+        RenderingDeviceInformation GetInformation() const override;
 
     private:
-        static Array<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfo_(
-            VkPhysicalDevice physicalDevice);
+        // Will call the platform-specific creation functions, for example
+        // vkCreateWin32SurfaceKHR() and vkCreateXcbSurfaceKHR()
+        void InitializePlatformSurface_(WindowHandle windowHandle);
 
     private:
+        Array<const char*> GetRequestedExtensions_() const;
+        void VerifyExtensionsSupport_(const Array<const char*>& extensions);
+
+        Array<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfo_(VkPhysicalDevice physicalDevice) const;
+
+        VkSurfaceFormatKHR GetSwapchainSurfaceFormat_() const;
+        VkPresentModeKHR GetSwapchainPresentMode_() const;
+
+        std::uint32_t GetSwapchainMinimumImageCount_(const VkSurfaceCapabilitiesKHR& capabilities) const;
+        VkExtent2D GetSwapchainExtents(const VkSurfaceCapabilitiesKHR& capabilities,
+                                       WindowHandle windowHandle) const;
+
+        void InitializeSwapchain_(WindowHandle windowHandle);
+        void DestroySwapchain_();
+
+    private:
+        VkInstance m_Instance;
+        VkPhysicalDevice m_PhysicalDevice;
+
         VkDevice m_Device;
-        RenderingDeviceInformation m_Information;
+        VkSurfaceKHR m_Surface;
 
         VkQueue m_GraphicsQueue;
         VkQueue m_ComputeQueue;
         VkQueue m_TransferQueue;
+
+        VulkanSwapChain m_SwapChain;
     };
 }

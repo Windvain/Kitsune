@@ -31,13 +31,13 @@ namespace Kitsune
                 ScreenOrientation::Default          // Screen orientation
             );
 
-            s_Instance = Memory::New<NullDisplayManager>(Move(screen));
+            s_Instance = Memory::New<NullDisplayManager>(Move(screen), specs);
         }
         else
         {
 #if defined(KITSUNE_OS_WINDOWS)
             KITSUNE_ENGINE_INFO_("Creating the Windows implementation of DisplayManager.");
-            s_Instance = Memory::New<WindowsDisplayManager>(L"Kitsune Window");
+            s_Instance = Memory::New<WindowsDisplayManager>(L"Kitsune Window", specs);
 #else
             KITSUNE_ENGINE_ERROR_(
                 "Could not find an implementation for DisplayManager. Using the "

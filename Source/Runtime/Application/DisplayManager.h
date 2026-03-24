@@ -7,10 +7,9 @@
 
 namespace Kitsune
 {
-    // Specifies configurations that will be used by the display manager.
-    struct DisplayManagerSpecifications
+    enum class RenderingBackend
     {
-        bool Headless = false;
+        Vulkan
     };
 
     // Contains settings used to create a window.
@@ -23,6 +22,15 @@ namespace Kitsune
 
         WindowMode Mode = WindowMode::Windowed;
         WindowFlags Flags = WindowFlags::None;
+    };
+
+    // Specifies configurations that will be used by the display manager.
+    struct DisplayManagerSpecifications
+    {
+        bool Headless = false;
+
+        WindowSpecifications PrimaryWindowSpecs;
+        RenderingBackend Backend = RenderingBackend::Vulkan;
     };
 
     // Manages everything related to input (keyboard, mouse) and windowing.
@@ -47,12 +55,7 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        virtual WindowHandle MakeWindow(const WindowSpecifications& specs) = 0;
-
-        [[nodiscard]]
         virtual WindowHandle GetPrimaryWindow() const = 0;
-
-        virtual void DestroyWindow(WindowHandle window) = 0;
 
     public:
         // These functions (i.e. Initialize() and Shutdown()) should not be called by

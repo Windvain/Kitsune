@@ -61,7 +61,6 @@ namespace Kitsune
         String m_Description;
         String m_Version;
 
-        WindowHandle m_PrimaryWindow;
         DisplayManager* m_DisplayManager;
     };
 

@@ -7,12 +7,17 @@
 #include "Application/Windows/WindowsScreen.h"
 #include "Application/Windows/WindowsWindow.h"
 
+#include "RenderingCore/RenderingDevice.h"
+#include "RenderingCore/RenderingContext.h"
+
 namespace Kitsune
 {
     class WindowsDisplayManager : public DisplayManager
     {
     public:
-        WindowsDisplayManager(const WideStringView className);
+        WindowsDisplayManager(const DisplayManagerSpecifications& specs,
+                              const WideStringView className);
+
         ~WindowsDisplayManager();
 
     public:
@@ -22,9 +27,6 @@ namespace Kitsune
         Array<ScreenHandle> GetScreens() const override;
 
     public:
-        WindowHandle MakeWindow(const WindowSpecifications& specs) override;
-        void DestroyWindow(WindowHandle window) override;
-
         WindowHandle GetPrimaryWindow() const override;
 
     private:
@@ -42,8 +44,11 @@ namespace Kitsune
 
     private:
         Array<ScopedPtr<WindowsScreen>> m_Screens;
-        Array<ScopedPtr<WindowsWindow>> m_Windows;
+        WindowsWindow* m_PrimaryWindow;
 
         WideString m_WindowClassName;
+
+        RenderingContext* m_RenderingContext = nullptr;
+        RenderingDevice* m_RenderingDevice = nullptr;
     };
 }

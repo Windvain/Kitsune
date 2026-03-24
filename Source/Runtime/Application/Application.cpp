@@ -15,11 +15,6 @@ namespace Kitsune
             return;
         }
 
-        DisplayManagerSpecifications displayManagerSpecs;
-        displayManagerSpecs.Headless = specs.Headless;
-
-        m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
-
         WindowSpecifications windowSpecs;
         windowSpecs.Size = specs.ViewportSize;
         windowSpecs.Position = specs.WindowPosition;
@@ -28,7 +23,12 @@ namespace Kitsune
         windowSpecs.Mode = specs.WindowMode;
         windowSpecs.Flags = specs.WindowFlags;
 
-        m_PrimaryWindow = m_DisplayManager->MakeWindow(windowSpecs);
+        DisplayManagerSpecifications displayManagerSpecs;
+        displayManagerSpecs.Headless = specs.Headless;
+        displayManagerSpecs.PrimaryWindowSpecs = windowSpecs;
+        displayManagerSpecs.Backend = RenderingBackend::Vulkan;
+
+        m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
         s_Instance = this;
 
         KITSUNE_ENGINE_INFO_FORMAT_(
@@ -38,9 +38,7 @@ namespace Kitsune
 
     Application::~Application()
     {
-        m_DisplayManager->DestroyWindow(m_PrimaryWindow);
         DisplayManager::Shutdown();
-
         m_DisplayManager = nullptr;
     }
 

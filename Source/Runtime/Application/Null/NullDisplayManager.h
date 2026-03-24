@@ -13,8 +13,10 @@ namespace Kitsune
     class NullDisplayManager : public DisplayManager
     {
     public:
-        inline NullDisplayManager(ScopedPtr<NullScreen>&& screen)
-            : m_PrimaryScreen(Move(screen))
+        inline NullDisplayManager(ScopedPtr<NullScreen>&& screen,
+                                  const DisplayManagerSpecifications& specs)
+            : m_PrimaryScreen(Move(screen)),
+              m_PrimaryWindow(CreateNullWindow_(specs.PrimaryWindowSpecs))
         {
         }
 
@@ -36,38 +38,25 @@ namespace Kitsune
         }
 
     public:
-        inline WindowHandle MakeWindow(const WindowSpecifications& specs) override
-        {
-            m_Windows.PushBack(
-                MakeScoped<NullWindow>(
-                    specs.Size, specs.Position,
-                    specs.Title, specs.Mode, specs.Flags));
-
-            return m_Windows.Back().Get();
-        }
-
-        inline void DestroyWindow(WindowHandle handle) override
-        {
-            auto iter = Algorithms::Find(m_Windows.GetBegin(), m_Windows.GetEnd(), handle);
-            if (iter == m_Windows.GetEnd())
-            {
-                throw SystemException("Tried to destroy a window which was not created by "
-                                      "this display manager.");
-            }
-
-            m_Windows.Remove(iter);
-        }
-
         inline WindowHandle GetPrimaryWindow() const override
         {
-            if (m_Windows.IsEmpty())
-                return nullptr;
+            return m_PrimaryWindow.Get();
+        }
 
-            return m_Windows[0].Get();
+    private:
+        inline static ScopedPtr<NullWindow> CreateNullWindow_(
+            const WindowSpecifications& specs)
+        {
+            return MakeScoped<NullWindow>(
+                specs.Size,
+                specs.Position,
+                specs.Title,
+                specs.Mode,
+                specs.Flags);
         }
 
     private:
         ScopedPtr<NullScreen> m_PrimaryScreen;
-        Array<ScopedPtr<NullWindow>> m_Windows;
+        ScopedPtr<NullWindow> m_PrimaryWindow;
     };
 }

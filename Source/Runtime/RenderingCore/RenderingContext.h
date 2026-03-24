@@ -2,7 +2,7 @@
 
 #include "RenderingCore/RenderingDevice.h"
 
-#include "Foundation/Containers/Array.h"
+#include "Application/Window.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
@@ -14,10 +14,8 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        virtual Array<RenderingDeviceInformation> GetAvailableDevicesInformation() const = 0;
-
-        [[nodiscard]]
-        virtual RenderingDevice* CreateRenderingDevice(Uint32 deviceIndex) = 0;
+        virtual RenderingDevice* CreateRenderingDevice(
+            Uint32 deviceIndex, WindowHandle windowHandle) = 0;
 
         virtual void DestroyRenderingDevice(RenderingDevice* device) = 0;
     };

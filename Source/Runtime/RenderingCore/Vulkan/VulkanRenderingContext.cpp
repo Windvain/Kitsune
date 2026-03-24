@@ -1,5 +1,5 @@
 #include "RenderingCore/Vulkan/VulkanRenderingContext.h"
-#include "RenderingCore/RenderingDevice.h"
+#include "RenderingCore/Vulkan/VulkanRenderingDevice.h"
 
 #include "Foundation/Logging/GlobalLog.h"
 #include "Foundation/Algorithms/Contains.h"
@@ -22,22 +22,16 @@ namespace Kitsune
         return LogSeverity::Trace;
     }
 
-    VulkanRenderingContext::VulkanRenderingContext(const StringView applicationName)
-        : m_ApplicationName(applicationName)
+    VulkanRenderingContext::VulkanRenderingContext()
     {
-        KITSUNE_ENGINE_INFO_FORMAT_(
-            "Creating a Vulkan rendering context with the application name \"{0}\".",
-            m_ApplicationName);
+        KITSUNE_ENGINE_INFO_("Creating a Vulkan rendering context...");
 
 #pragma region Instance Creation
         Array<const char*> extensions = GetRequestedExtensions_();
         Array<const char*> layers = GetRequestedLayers_();
 
-        VerifyExtensions_(extensions);
-        VerifyLayers_(layers);
-
-        m_Extensions = extensions;
-        m_Layers = layers;
+        VerifyExtensionsSupport_(extensions);
+        VerifyLayersSupport_(layers);
 
         KITSUNE_ENGINE_INFO_FORMAT_(
             "Instance-level extensions requested: {0}", extensions.Size());
@@ -51,7 +45,7 @@ namespace Kitsune
 
         VkApplicationInfo applicationInfo = { /* ... */ };
         applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        applicationInfo.pApplicationName = m_ApplicationName.Raw();
+        applicationInfo.pApplicationName = "Kitsune Engine Application";
         applicationInfo.pEngineName = "Kitsune Engine";
         applicationInfo.apiVersion = VK_API_VERSION_1_4;
 
@@ -59,11 +53,11 @@ namespace Kitsune
         instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         instanceCreateInfo.pApplicationInfo = &applicationInfo;
 
-        instanceCreateInfo.enabledExtensionCount = static_cast<std::uint32_t>(m_Extensions.Size());
-        instanceCreateInfo.ppEnabledExtensionNames = m_Extensions.Data();
+        instanceCreateInfo.enabledExtensionCount = static_cast<std::uint32_t>(extensions.Size());
+        instanceCreateInfo.ppEnabledExtensionNames = extensions.Data();
 
-        instanceCreateInfo.enabledLayerCount = static_cast<std::uint32_t>(m_Layers.Size());
-        instanceCreateInfo.ppEnabledLayerNames = m_Layers.Data();
+        instanceCreateInfo.enabledLayerCount = static_cast<std::uint32_t>(layers.Size());
+        instanceCreateInfo.ppEnabledLayerNames = layers.Data();
 
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkCreateInstance(&instanceCreateInfo, nullptr, &m_Instance),
@@ -82,48 +76,15 @@ namespace Kitsune
             ::vkEnumeratePhysicalDevices(m_Instance, &physicalDeviceCount, nullptr),
             "Failed to enumerate over the physical devices on the system.");
 
+        if (physicalDeviceCount == 0)
+            throw SystemException("Could not find a physical device which supports Vulkan.");
+
         physicalDevices.Resize(physicalDeviceCount);
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkEnumeratePhysicalDevices(m_Instance, &physicalDeviceCount, physicalDevices.Data()),
             "Failed to enumerate over the physical devices on the system.");
 
         m_PhysicalDevices = physicalDevices;
-
-        for (Uint32 i = 0; i < m_PhysicalDevices.Size(); ++i)
-        {
-            VkPhysicalDevice physicalDevice = m_PhysicalDevices[i];
-            VkPhysicalDeviceProperties deviceProperties;
-
-            ::vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-
-            RenderingDeviceInformation deviceInfo;
-            deviceInfo.Index = i;
-            deviceInfo.Name = deviceProperties.deviceName;
-
-            switch (deviceProperties.deviceType)
-            {
-            case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-                deviceInfo.Type = RenderingDeviceType::Integrated;
-                break;
-
-            case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-                deviceInfo.Type = RenderingDeviceType::Discrete;
-                break;
-
-            case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-                deviceInfo.Type = RenderingDeviceType::Virtual;
-                break;
-
-            case VK_PHYSICAL_DEVICE_TYPE_CPU:
-            case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-            default:        // VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM
-                deviceInfo.Type = RenderingDeviceType::Other;
-                break;
-            }
-
-            m_PhysicalDevicesInfo.PushBack(deviceInfo);
-        }
-
 #pragma endregion
 
         KITSUNE_ENGINE_INFO_("Successfully created the Vulkan rendering context.");
@@ -136,6 +97,13 @@ namespace Kitsune
             "Attempted to destroy a VkInstance which had not been initialized or has already "
             "been destroyed.");
 
+        if (!m_RenderingDevices.IsEmpty())
+        {
+            KITSUNE_ENGINE_ERROR_(
+                "One or more rendering devices have not been deleted, a memory leak or "
+                "resource leak might occur.");
+        }
+
 #if !defined(KITSUNE_BUILD_PRODUCTION)
         if (m_DebugMessenger != VK_NULL_HANDLE)
             UnregisterDebugCallback_();
@@ -143,47 +111,46 @@ namespace Kitsune
 
         ::vkDestroyInstance(m_Instance, nullptr);
 
-        KITSUNE_ENGINE_INFO_FORMAT_(
-            "Destroyed the Vulkan rendering context with application name \"{0}\".",
-            m_ApplicationName);
+        KITSUNE_ENGINE_INFO_("Destroyed the Vulkan rendering context.");
     }
 
-    Array<RenderingDeviceInformation> VulkanRenderingContext::GetAvailableDevicesInformation() const
+    RenderingDevice* VulkanRenderingContext::CreateRenderingDevice(
+        Uint32 deviceIndex,
+        WindowHandle windowHandle)
     {
-        return m_PhysicalDevicesInfo;
-    }
+        VkPhysicalDevice physicalDevice = m_PhysicalDevices[deviceIndex];
+        VkPhysicalDeviceProperties properties;
 
-    RenderingDevice* VulkanRenderingContext::CreateRenderingDevice(Uint32 deviceIndex)
-    {
+        ::vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
         KITSUNE_ENGINE_INFO_FORMAT_(
-            "Creating a RenderingDevice with physical device index #{0}.",
-            deviceIndex);
+            "Creating a RenderingDevice with physical device index #{0}. ({1})",
+            deviceIndex, properties.deviceName);
 
-        VulkanRenderingDevice* renderingDevice = Memory::New<VulkanRenderingDevice>(
-            m_PhysicalDevices[deviceIndex],
-            m_PhysicalDevicesInfo[deviceIndex]);
-
-        m_RenderingDevices.PushBack(renderingDevice);
+        m_RenderingDevices.PushBack(
+            MakeScoped<VulkanRenderingDevice>(
+                m_Instance,
+                m_PhysicalDevices[deviceIndex],
+                windowHandle));
 
         KITSUNE_ENGINE_INFO_("The rendering device has been created.");
-        return renderingDevice;
+        return m_RenderingDevices.Back().Get();
     }
 
     void VulkanRenderingContext::DestroyRenderingDevice(RenderingDevice* device)
     {
-        auto iter = Algorithms::Find(m_RenderingDevices.GetBegin(), m_RenderingDevices.GetEnd(),
-                                     device);
+        auto iter = Algorithms::Find(
+            m_RenderingDevices.GetBegin(), m_RenderingDevices.GetEnd(),
+            device);
 
         if (iter == m_RenderingDevices.GetEnd())
         {
-            throw InvalidArgumentException("Failed to destroy the rendering device. The "
-                                           "device specified was not created by "
-                                           "this RenderingContext.");
+            throw InvalidArgumentException(
+                "Failed to destroy the rendering device. The device specified was not "
+                "created by this RenderingContext.");
         }
 
-        Memory::Delete(device);
         m_RenderingDevices.Remove(iter);
-
         KITSUNE_ENGINE_INFO_FORMAT_("Destroyed the RenderingDevice at {0}.", device);
     }
 
@@ -217,7 +184,7 @@ namespace Kitsune
         return layers;
     }
 
-    void VulkanRenderingContext::VerifyExtensions_(const Array<const char*>& extensions)
+    void VulkanRenderingContext::VerifyExtensionsSupport_(const Array<const char*>& extensions)
     {
         std::uint32_t extensionCount;
         Array<VkExtensionProperties> extensionProperties;
@@ -247,7 +214,7 @@ namespace Kitsune
         }
     }
 
-    void VulkanRenderingContext::VerifyLayers_(const Array<const char*>& layers)
+    void VulkanRenderingContext::VerifyLayersSupport_(const Array<const char*>& layers)
     {
         std::uint32_t layerCount;
         Array<VkLayerProperties> layerProperties;
