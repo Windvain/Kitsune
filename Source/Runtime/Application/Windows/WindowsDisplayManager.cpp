@@ -17,6 +17,10 @@ namespace Kitsune
                                                  const WideStringView className)
         : m_WindowClassName(className)
     {
+        KITSUNE_ENGINE_INFO(
+            WindowsDisplayManager,
+            "Creating the Windows implementation of DisplayManager.");
+
         WNDCLASSEXW windowClass;
         HANDLE cursorImage = ::LoadImage(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0,
                                          LR_DEFAULTSIZE | LR_SHARED);
@@ -58,9 +62,10 @@ namespace Kitsune
 
         if (m_RenderingContext == nullptr)
         {
-            KITSUNE_ENGINE_ERROR_(
-                "The engine was built with no valid rendering backend, or a valid rendering "
-                "backend was not picked. The rendering subsystem will not be initialized.");
+            throw SystemException(
+                "The engine was built with no valid rendering backend, or a "
+                "valid rendering backend was not picked. The rendering subsystem "
+                "will not be initialized.");
         }
 
         // Then the window.
@@ -152,11 +157,6 @@ namespace Kitsune
             if (iter == m_Screens.GetEnd())
             {
                 connectedScreens.PushBack(MakeScoped<WindowsScreen>(device.DeviceName));
-
-                KITSUNE_ENGINE_INFO_("A screen has been connected, details:");
-                KITSUNE_ENGINE_INFO_FORMAT_(
-                    "\t{0}",
-                    dynamic_cast<const Screen&>(*connectedScreens.Back()));
             }
             else
             {
@@ -174,9 +174,6 @@ namespace Kitsune
         for (ScopedPtr<WindowsScreen>& disconnected : m_Screens)
         {
             KITSUNE_UNUSED(disconnected);
-
-            KITSUNE_ENGINE_INFO_("A screen has been disconnected, details:");
-            KITSUNE_ENGINE_INFO_FORMAT_("\t{0}", dynamic_cast<const Screen&>(*disconnected));
         }
 
         Swap(m_Screens, connectedScreens);

@@ -32,8 +32,10 @@ namespace Kitsune
 
         if (FAILED(::GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY_)))
         {
-            KITSUNE_ENGINE_ERROR_("Failed to retrieve DPI for the monitor closest "
-                                  "to the soon-to-be created window. Using 96 DPI as a fallback.");
+            KITSUNE_ENGINE_ERROR(
+                WindowsDisplayManager,
+                "Failed to retrieve DPI for the monitor closest "
+                "to the soon-to-be created window. Using 96 DPI as a fallback.");
 
             // As to why only the X value is used but not the Y value,
             // check WindowsScreen.cpp.
@@ -42,8 +44,9 @@ namespace Kitsune
 
         if (!AdjustWindowRectExForDpi_(&adjustedRect, styles, false, exStyles, dpiX))
         {
-            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi_() failed, are the styles and "
-                                  "extra styles valid?");
+            throw SystemException(
+                "AdjustWindowRectExForDpi_() failed, are the styles and "
+                "extra styles valid?");
         }
 
         m_Handle = ::CreateWindowExW(
@@ -76,8 +79,9 @@ namespace Kitsune
         RECT rect;
         if (!::GetClientRect(m_Handle, &rect))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to retrieve the client area of "
-                                         "window {0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to retrieve the client area of window {0}.", this);
 
             return Vector2<Uint32>();
         }
@@ -93,8 +97,9 @@ namespace Kitsune
         POINT clientPos = { 0, 0 };
         if (!::ClientToScreen(m_Handle, &clientPos))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to retrieve the position of window "
-                                         "{0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to retrieve the position of window {0}.", this);
 
             return Vector2<Int32>();
         }
@@ -110,8 +115,9 @@ namespace Kitsune
         RECT windowRect = { 0, 0, 0, 0 };
         if (!::GetWindowRect(m_Handle, &windowRect))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to retrieve the size of window {0}.",
-                                         this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to retrieve the size of window {0}.", this);
 
             return Vector2<Uint32>();
         }
@@ -127,8 +133,10 @@ namespace Kitsune
         RECT windowRect = { 0, 0, 0, 0 };
         if (!::GetWindowRect(m_Handle, &windowRect))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to retrieve the position of window {0}.",
-                                         this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to retrieve the position of window {0}.",
+                this);
 
             return Vector2<Uint32>();
         }
@@ -149,7 +157,10 @@ namespace Kitsune
 
         if (acquiredLength == 0)
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to retrieve the title of window {0}", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to retrieve the title of window {0}", this);
+
             return "";
         }
 
@@ -172,8 +183,9 @@ namespace Kitsune
     {
         if (GetMode() != WindowMode::Windowed)
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Tried to set the size of a non-restored "
-                                         "window {0}", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Tried to set the size of a non-restored window {0}", this);
 
             return;
         }
@@ -184,8 +196,10 @@ namespace Kitsune
         RECT rect = { 0, 0, static_cast<LONG>(size.X), static_cast<LONG>(size.Y) };
         if (!AdjustWindowRectExForDpi_(&rect, style, false, exStyle, GetDpiForWindow_(m_Handle)))
         {
-            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi_() failed, this might be due to "
-                                  "invalid arguments being passed in.");
+            KITSUNE_ENGINE_ERROR(
+                WindowsDisplayManager,
+                "AdjustWindowRectExForDpi_() failed, this might be due to "
+                "invalid arguments being passed in.");
         }
 
         BOOL success = ::SetWindowPos(
@@ -197,15 +211,21 @@ namespace Kitsune
             SWP_NOMOVE);
 
         if (!success)
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set the size of window {0}.", this);
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to set the size of window {0}.", this);
+        }
     }
 
     void WindowsWindow::SetPosition(const Vector2<Int32>& position)
     {
         if (GetMode() != WindowMode::Windowed)
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Tried to set the position of a non-restored "
-                                         "window {0}", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Tried to set the position of a non-restored "
+                "window {0}", this);
 
             return;
         }
@@ -218,12 +238,18 @@ namespace Kitsune
 
         if (!AdjustWindowRectExForDpi_(&rect, style, false, exStyle, GetDpiForWindow_(m_Handle)))
         {
-            KITSUNE_ENGINE_ERROR_("AdjustWindowRectExForDpi_() failed, is this due to "
-                                  "invalid arguments?");
+            KITSUNE_ENGINE_ERROR(
+                WindowsDisplayManager,
+                "AdjustWindowRectExForDpi_() failed, is this due to "
+                "invalid arguments?");
         }
 
         if (!::SetWindowPos(m_Handle, nullptr, rect.left, rect.top, 0, 0, SWP_NOSIZE))
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set the position of window {0}.", this);
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to set the position of window {0}.", this);
+        }
     }
 
     void WindowsWindow::SetTitle(const StringView title)
@@ -231,7 +257,9 @@ namespace Kitsune
         WideString wideTitle = Utf8ToUtf16<char, wchar_t>(title);
         if (!::SetWindowTextW(m_Handle, wideTitle.Raw()))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set the title of window {0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to set the title of window {0}.", this);
         }
     }
 
@@ -240,7 +268,8 @@ namespace Kitsune
         bool resizeDisabled = (bool)(m_Flags & WindowFlags::ResizeDisabled);
         if (resizeDisabled && (mode != WindowMode::Windowed) && (mode != WindowMode::Minimized))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_(
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
                 "Tried to set the mode of a non-resizable window {0} to a mode other than "
                 "WindowMode::Windowed or WindowMode::Minimized.",
                 this);
@@ -250,7 +279,8 @@ namespace Kitsune
 
         if (!IsVisible())
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_(
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
                 "Tried to set the mode of an invisible window {0}. "
                 "Make the window visible with SetVisibility() before "
                 "calling this function!",
@@ -266,8 +296,10 @@ namespace Kitsune
 
             if (!::SetWindowPlacement(m_Handle, &m_PreviousPlacement))
             {
-                KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set the placement of window "
-                                             "{0}.", this);
+                KITSUNE_ENGINE_ERROR_FORMAT(
+                    WindowsDisplayManager,
+                    "Failed to set the placement of window "
+                    "{0}.", this);
             }
 
             BOOL success =  ::SetWindowPos(m_Handle, nullptr, 0, 0, 0, 0,
@@ -276,8 +308,10 @@ namespace Kitsune
 
             if (!success)
             {
-                KITSUNE_ENGINE_ERROR_FORMAT_("Failed to update window {0} via SetWindowPos().",
-                                             this);
+                KITSUNE_ENGINE_ERROR_FORMAT(
+                    WindowsDisplayManager,
+                    "Failed to update window {0} via SetWindowPos().",
+                    this);
             }
 
             m_Fullscreen = false;
@@ -310,13 +344,19 @@ namespace Kitsune
             monitorInfo.cbSize = sizeof(MONITORINFO);
             if (!::GetMonitorInfoW(monitor, &monitorInfo))
             {
-                KITSUNE_ENGINE_ERROR_("Failed to get the closest monitor's info.");
+                KITSUNE_ENGINE_ERROR(
+                    WindowsDisplayManager,
+                    "Failed to get the closest monitor's info.");
+
                 return;
             }
 
             if (!::GetWindowPlacement(m_Handle, &m_PreviousPlacement))
             {
-                KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get placement of window {0}.", this);
+                KITSUNE_ENGINE_ERROR_FORMAT(
+                    WindowsDisplayManager,
+                    "Failed to get placement of window {0}.", this);
+
                 return;
             }
 
@@ -332,7 +372,8 @@ namespace Kitsune
 
             if (!success)
             {
-                KITSUNE_ENGINE_ERROR_FORMAT_(
+                KITSUNE_ENGINE_ERROR_FORMAT(
+                    WindowsDisplayManager,
                     "Failed to set the position and size of window {0}.",
                     this);
             }
@@ -372,16 +413,22 @@ namespace Kitsune
 
         HMODULE user32 = ::GetModuleHandleW(L"user32.dll");
         if (user32 == nullptr)
-            KITSUNE_ENGINE_ERROR_("Failed to get a handle to User32.dll.");
+        {
+            KITSUNE_ENGINE_ERROR(
+                WindowsDisplayManager,
+                "Failed to get a handle to User32.dll.");
+        }
 
         auto function = (FunctionSignature)(void*)(::GetProcAddress(
             user32, "AdjustWindowRectExForDpi"));
 
         if (function == nullptr)
         {
-            KITSUNE_ENGINE_ERROR_("Failed to retrieve AdjustWindowRectExForDpi() from "
-                                  "User32.dll. This might be because your Windows installation "
-                                  "is too old. Falling back to AdjustWindowRectEx.");
+            KITSUNE_ENGINE_ERROR(
+                WindowsDisplayManager,
+                "Failed to retrieve AdjustWindowRectExForDpi() from "
+                "User32.dll. This might be because your Windows installation "
+                "is too old. Falling back to AdjustWindowRectEx.");
 
             return ::AdjustWindowRectEx(lpRect, dwStyle, bMenu, dwExStyle);
         }
@@ -400,16 +447,22 @@ namespace Kitsune
 
         HMODULE user32 = ::GetModuleHandleW(L"user32.dll");
         if (user32 == nullptr)
-            KITSUNE_ENGINE_ERROR_("Failed to get a handle to User32.dll.");
+        {
+            KITSUNE_ENGINE_ERROR(
+                WindowsDisplayManager,
+                "Failed to get a handle to User32.dll.");
+        }
 
         auto function = (FunctionSignature)(void*)(::GetProcAddress(
             user32, "GetDpiForWindow"));
 
         if (function == nullptr)
         {
-            KITSUNE_ENGINE_ERROR_("Failed to retrieve GetDpiForWindow() from "
-                                  "User32.dll. This might be because your Windows installation "
-                                  "is too old. Falling back to 96 DPI.");
+            KITSUNE_ENGINE_ERROR(
+                WindowsDisplayManager,
+                "Failed to retrieve GetDpiForWindow() from "
+                "User32.dll. This might be because your Windows installation "
+                "is too old. Falling back to 96 DPI.");
 
             return 96;
         }

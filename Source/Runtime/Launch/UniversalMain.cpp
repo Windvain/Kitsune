@@ -53,22 +53,27 @@ namespace Kitsune
             const auto* engineException = dynamic_cast<const Exception*>(&exception);
             if (engineException != nullptr)
             {
-                KITSUNE_ENGINE_FATAL_FORMAT_(
+                KITSUNE_ENGINE_FATAL_FORMAT(
+                    Launch,
                     "Program crashed due to {0} exception.",
                     engineException->GetName());
 
-                KITSUNE_ENGINE_FATAL_FORMAT_(
+                KITSUNE_ENGINE_FATAL_FORMAT(
+                    Launch,
                     "Description: {0}",
                     engineException->GetDescription());
             }
             else
             {
-                KITSUNE_ENGINE_FATAL_FORMAT_(
+                KITSUNE_ENGINE_FATAL_FORMAT(
+                    Launch,
                     "Program crashed due to a std::exception ({0}).",
                     exception.what());
             }
 
-            KITSUNE_ENGINE_FATAL_FORMAT_("\n{0}", engineLoop.GetExceptionBacktrace());
+            KITSUNE_ENGINE_FATAL_FORMAT(
+                Launch,
+                "\n{0}", engineLoop.GetExceptionBacktrace());
         }
 
         int exitCode = engineLoop.Shutdown();

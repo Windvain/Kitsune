@@ -21,7 +21,10 @@ namespace Kitsune
         DEVMODEW deviceMode;
         if (!GetDeviceMode_(&deviceMode))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get size of screen {0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to get size of screen {0}.", this);
+
             return Vector2<Uint32>();
         }
 
@@ -33,7 +36,10 @@ namespace Kitsune
         DEVMODEW deviceMode;
         if (!GetDeviceMode_(&deviceMode))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get position of screen {0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to get position of screen {0}.", this);
+
             return Vector2<Int32>();
         }
 
@@ -45,7 +51,10 @@ namespace Kitsune
         DEVMODEW deviceMode;
         if (!GetDeviceMode_(&deviceMode))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get refresh rate of screen {0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to get refresh rate of screen {0}.", this);
+
             return 0;
         }
 
@@ -76,7 +85,10 @@ namespace Kitsune
         UINT dpiX, dpiY_;
         if (::GetDpiForMonitor(GetMonitorHandle_(), MDT_EFFECTIVE_DPI, &dpiX, &dpiY_) != S_OK)
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get DPI of screen {0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to get DPI of screen {0}.", this);
+
             dpiX = USER_DEFAULT_SCREEN_DPI;
         }
 
@@ -88,7 +100,10 @@ namespace Kitsune
         DEVMODEW deviceMode;
         if (!GetDeviceMode_(&deviceMode))
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to get orientation of screen {0}.", this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to get orientation of screen {0}.", this);
+
             return ScreenOrientation::Default;
         }
 
@@ -116,7 +131,11 @@ namespace Kitsune
         deviceMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 
         if (!SetDeviceMode_(&deviceMode))
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set screen {0} size.", this);
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to set screen {0} size.", this);
+        }
     }
 
     void WindowsScreen::SetOrientation(ScreenOrientation orientation)
@@ -148,7 +167,11 @@ namespace Kitsune
         deviceMode.dmFields = DM_DISPLAYORIENTATION;
 
         if (!SetDeviceMode_(&deviceMode))
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to set screen {0} orientation.", this);
+        {
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to set screen {0} orientation.", this);
+        }
     }
 
     bool WindowsScreen::GetDeviceMode_(DEVMODEW* deviceMode) const
@@ -186,10 +209,11 @@ namespace Kitsune
 
         if (data.MonitorHandle == nullptr)
         {
-            KITSUNE_ENGINE_ERROR_FORMAT_("Failed to obtain a handle to a monitor from "
-                                         "its device name. The monitor {0} might have been "
-                                         "disconnected.",
-                                         this);
+            KITSUNE_ENGINE_ERROR_FORMAT(
+                WindowsDisplayManager,
+                "Failed to obtain a handle to a monitor from its device name. The "
+                "monitor {0} might have been disconnected.",
+                this);
 
             return nullptr;
         }

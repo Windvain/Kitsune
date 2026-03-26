@@ -2,6 +2,7 @@
 
 #include "Foundation/Common/Predefined.h"
 #include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Diagnostics/LogicException.h"
 
 #include "Application/Null/NullDisplayManager.h"
 
@@ -16,12 +17,17 @@ namespace Kitsune
     DisplayManager* DisplayManager::Initialize(const DisplayManagerSpecifications& specs)
     {
         if (s_Instance != nullptr)
-            return s_Instance;
+        {
+            throw LogicException(
+                "An instance of DisplayManager has already been created.");
+        }
 
         if (specs.Headless)
         {
-            KITSUNE_ENGINE_INFO_("DisplayManagerSpecifications::Headless was set to true, "
-                                 "the engine will construct a NULL display manager.");
+            KITSUNE_ENGINE_INFO(
+                DisplayManager,
+                "DisplayManagerSpecifications::Headless was set to true, "
+                "the engine will construct a NULL display manager.");
 
             auto screen = MakeScoped<NullScreen>(
                 Vector2<Uint32>(1920, 1080),        // Size in pixels
@@ -36,10 +42,10 @@ namespace Kitsune
         else
         {
 #if defined(KITSUNE_OS_WINDOWS)
-            KITSUNE_ENGINE_INFO_("Creating the Windows implementation of DisplayManager.");
-            s_Instance = Memory::New<WindowsDisplayManager>(L"Kitsune Window", specs);
+            s_Instance = Memory::New<WindowsDisplayManager>(specs, L"Kitsune Window");
 #else
-            KITSUNE_ENGINE_ERROR_(
+            KITSUNE_ENGINE_ERROR(
+                DisplayManager,
                 "Could not find an implementation for DisplayManager. Using the "
                 "NULL implementation instead.");
 
@@ -47,7 +53,6 @@ namespace Kitsune
 #endif
         }
 
-        KITSUNE_ENGINE_INFO_("Finished creating the display manager.");
         return s_Instance;
     }
 

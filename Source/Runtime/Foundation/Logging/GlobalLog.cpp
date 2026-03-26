@@ -3,11 +3,11 @@
 
 namespace Kitsune
 {
-    void Log(const StringView loggerName, const LogSeverity severity,
-             const SourceLocation location, const StringView message)
+    void Log(StringView loggerName, LogSeverity severity,
+             const SourceLocation& location, StringView message)
     {
         auto* engineLoop = EngineLoop::GetInstance();
-        if (!engineLoop)
+        if (engineLoop == nullptr)
             return;
 
         LogPayload logPayload(message, loggerName, location, severity);

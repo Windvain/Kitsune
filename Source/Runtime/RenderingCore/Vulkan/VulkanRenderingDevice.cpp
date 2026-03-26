@@ -180,7 +180,8 @@ namespace Kitsune
             std::string flagsString = string_VkQueueFlags(
                 queueFamilyProperties[currentIndex].queueFlags);
 
-            KITSUNE_ENGINE_INFO_FORMAT_(
+            KITSUNE_ENGINE_INFO_FORMAT(
+                VulkanRendering,
                 "Found device queue family #{0} for {1} queue: {2}",
                 currentIndex,
                 string_VkQueueFlagBits(static_cast<VkQueueFlagBits>(flags)),
@@ -325,14 +326,24 @@ namespace Kitsune
         VkExtent2D extents = GetSwapchainExtents(surfaceCapabilities, windowHandle);
         std::uint32_t minImageCount = GetSwapchainMinimumImageCount_(surfaceCapabilities);
 
-        KITSUNE_ENGINE_INFO_("Creating a swap chain, details:");
-        KITSUNE_ENGINE_INFO_FORMAT_("\t-> Surface format: {0}, {1}",
+        KITSUNE_ENGINE_INFO(VulkanRendering, "Creating a swap chain, details:");
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
+            "\t-> Surface format: {0}, {1}",
             string_VkFormat(surfaceFormat.format),
             string_VkColorSpaceKHR(surfaceFormat.colorSpace));
 
-        KITSUNE_ENGINE_INFO_FORMAT_("\t-> Present mode: {0}", string_VkPresentModeKHR(presentMode));
-        KITSUNE_ENGINE_INFO_FORMAT_("\t-> Minimum image count: {0}", minImageCount);
-        KITSUNE_ENGINE_INFO_FORMAT_("\t-> Extents: ({0}, {1})", extents.width, extents.height);
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
+            "\t-> Present mode: {0}", string_VkPresentModeKHR(presentMode));
+
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
+            "\t-> Minimum image count: {0}", minImageCount);
+
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
+            "\t-> Extents: ({0}, {1})", extents.width, extents.height);
 
         VkSwapchainCreateInfoKHR swapChainCreateInfo = { /* ... */ };
         swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -407,7 +418,9 @@ namespace Kitsune
         }
 #pragma endregion
 
-        KITSUNE_ENGINE_INFO_("Successfully created the main window's swap chain!");
+        KITSUNE_ENGINE_INFO(
+            VulkanRendering,
+            "Successfully created the main window's swap chain!");
     }
 
     void VulkanRenderingDevice::DestroySwapchain_()

@@ -20,7 +20,9 @@ namespace Kitsune
 
     void EngineLoop::ForceExit(int exitCode)
     {
-        KITSUNE_ENGINE_WARN_("ForceExit() was called, forcing the engine to terminate.");
+        KITSUNE_ENGINE_WARN(
+            Launch,
+            "ForceExit() was called, forcing the engine to terminate.");
 
         Exit(exitCode);
         ::TerminateProcess(::GetCurrentProcess(), exitCode);

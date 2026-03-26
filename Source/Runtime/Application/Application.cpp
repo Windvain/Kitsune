@@ -1,5 +1,7 @@
 #include "Application/Application.h"
+
 #include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Diagnostics/LogicException.h"
 
 namespace Kitsune
 {
@@ -10,9 +12,9 @@ namespace Kitsune
           m_Version(specs.Version)
     {
         if (s_Instance)
-        {
-            KITSUNE_ENGINE_ERROR_("An application has already been instanced.");
-            return;
+       {
+            throw LogicException(
+                "An application instance has already been created.");
         }
 
         WindowSpecifications windowSpecs;
@@ -31,7 +33,8 @@ namespace Kitsune
         m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
         s_Instance = this;
 
-        KITSUNE_ENGINE_INFO_FORMAT_(
+        KITSUNE_ENGINE_INFO_FORMAT(
+            Application,
             "Application \"{0}\" has been fully initialized. Running user code...",
             m_Name);
     }

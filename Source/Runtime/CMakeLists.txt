@@ -50,6 +50,7 @@ set(FILES
     "Foundation/Diagnostics/Exception.h"
     "Foundation/Diagnostics/InvalidArgumentException.h"
     "Foundation/Diagnostics/IsDebuggerAttached.h"
+    "Foundation/Diagnostics/LogicException.h"
     "Foundation/Diagnostics/MessageBox.h"
     "Foundation/Diagnostics/OutOfRangeException.h"
     "Foundation/Diagnostics/SourceLocation.h"

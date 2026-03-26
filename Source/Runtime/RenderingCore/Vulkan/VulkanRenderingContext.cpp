@@ -24,7 +24,7 @@ namespace Kitsune
 
     VulkanRenderingContext::VulkanRenderingContext()
     {
-        KITSUNE_ENGINE_INFO_("Creating a Vulkan rendering context...");
+        KITSUNE_ENGINE_INFO(VulkanRendering, "Creating a Vulkan rendering context...");
 
 #pragma region Instance Creation
         Array<const char*> extensions = GetRequestedExtensions_();
@@ -33,15 +33,23 @@ namespace Kitsune
         VerifyExtensionsSupport_(extensions);
         VerifyLayersSupport_(layers);
 
-        KITSUNE_ENGINE_INFO_FORMAT_(
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
             "Instance-level extensions requested: {0}", extensions.Size());
 
         for (const char* extension : extensions)
-            KITSUNE_ENGINE_INFO_FORMAT_("\t-> {0}", extension);
+        {
+            KITSUNE_ENGINE_INFO_FORMAT(
+                VulkanRendering,
+                "\t-> {0}", extension);
+        }
 
-        KITSUNE_ENGINE_INFO_FORMAT_("Layers requested: {0}", layers.Size());
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
+            "Layers requested: {0}", layers.Size());
+
         for (const char* layer : layers)
-            KITSUNE_ENGINE_INFO_FORMAT_("\t-> {0}", layer);
+            KITSUNE_ENGINE_INFO_FORMAT(VulkanRendering, "\t-> {0}", layer);
 
         VkApplicationInfo applicationInfo = { /* ... */ };
         applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -87,7 +95,9 @@ namespace Kitsune
         m_PhysicalDevices = physicalDevices;
 #pragma endregion
 
-        KITSUNE_ENGINE_INFO_("Successfully created the Vulkan rendering context.");
+        KITSUNE_ENGINE_INFO(
+            VulkanRendering,
+            "Successfully created the Vulkan rendering context.");
     }
 
     VulkanRenderingContext::~VulkanRenderingContext()
@@ -99,7 +109,8 @@ namespace Kitsune
 
         if (!m_RenderingDevices.IsEmpty())
         {
-            KITSUNE_ENGINE_ERROR_(
+            KITSUNE_ENGINE_ERROR(
+                VulkanRendering,
                 "One or more rendering devices have not been deleted, a memory leak or "
                 "resource leak might occur.");
         }
@@ -111,7 +122,9 @@ namespace Kitsune
 
         ::vkDestroyInstance(m_Instance, nullptr);
 
-        KITSUNE_ENGINE_INFO_("Destroyed the Vulkan rendering context.");
+        KITSUNE_ENGINE_INFO(
+            VulkanRendering,
+            "Destroyed the Vulkan rendering context.");
     }
 
     RenderingDevice* VulkanRenderingContext::CreateRenderingDevice(
@@ -123,7 +136,8 @@ namespace Kitsune
 
         ::vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 
-        KITSUNE_ENGINE_INFO_FORMAT_(
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
             "Creating a RenderingDevice with physical device index #{0}. ({1})",
             deviceIndex, properties.deviceName);
 
@@ -133,7 +147,10 @@ namespace Kitsune
                 m_PhysicalDevices[deviceIndex],
                 windowHandle));
 
-        KITSUNE_ENGINE_INFO_("The rendering device has been created.");
+        KITSUNE_ENGINE_INFO(
+            VulkanRendering,
+            "The rendering device has been created.");
+
         return m_RenderingDevices.Back().Get();
     }
 
@@ -151,7 +168,9 @@ namespace Kitsune
         }
 
         m_RenderingDevices.Remove(iter);
-        KITSUNE_ENGINE_INFO_FORMAT_("Destroyed the RenderingDevice at {0}.", device);
+        KITSUNE_ENGINE_INFO_FORMAT(
+            VulkanRendering,
+            "Destroyed the RenderingDevice at {0}.", device);
     }
 
     Array<const char*> VulkanRenderingContext::GetRequestedExtensions_()
@@ -260,8 +279,10 @@ namespace Kitsune
 
         if ((m_CreateDebugMessenger == nullptr) || (m_DestroyDebugMessenger == nullptr))
         {
-            KITSUNE_ENGINE_ERROR_("Failed to load one or more of the debug messenger functions. "
-                                  "The engine will not register a debug callback.");
+            KITSUNE_ENGINE_ERROR(
+                VulkanRendering,
+                "Failed to load one or more of the debug messenger functions. "
+                "The engine will not register a debug callback.");
 
             return;
         }
@@ -291,7 +312,9 @@ namespace Kitsune
             "Failed to create the Vulkan debug callback. This is probably "
             "due to the system being out of memory.");
 
-        KITSUNE_ENGINE_INFO_("Registered the Vulkan debug callback.");
+        KITSUNE_ENGINE_INFO(
+            VulkanRendering,
+            "Registered the Vulkan debug callback.");
     }
 
     void VulkanRenderingContext::UnregisterDebugCallback_()
@@ -300,7 +323,9 @@ namespace Kitsune
             return;
 
         m_DestroyDebugMessenger(m_Instance, m_DebugMessenger, nullptr);
-        KITSUNE_ENGINE_INFO_("Destroyed the Vulkan debug messenger.");
+        KITSUNE_ENGINE_INFO(
+            VulkanRendering,
+            "Destroyed the Vulkan debug messenger.");
     }
 
     VkBool32 VulkanRenderingContext::DebugCallback_(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -311,7 +336,10 @@ namespace Kitsune
         KITSUNE_UNUSED(type);
         KITSUNE_UNUSED(userData);
 
-        Log("Kitsune", ToLoggingSeverity(severity), SourceLocation(), data->pMessage);
+        KITSUNE_ENGINE_LOG(
+            VulkanRendering,
+            ToLoggingSeverity(severity), SourceLocation(), data->pMessage);
+
         return VK_FALSE;
     }
 }

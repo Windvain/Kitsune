@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Application/Window.h"
-#include "Foundation/Logging/GlobalLog.h"
 
 namespace Kitsune
 {
@@ -73,13 +72,7 @@ namespace Kitsune
         inline void SetSize(const Vector2<Uint32>& size) override
         {
             if (m_Mode != WindowMode::Windowed)
-            {
-                KITSUNE_ENGINE_ERROR_FORMAT_(
-                    "Tried to resize a non-restored window {0}.",
-                    this);
-
                 return;
-            }
 
             m_Size = size;
         }
@@ -87,13 +80,7 @@ namespace Kitsune
         void SetPosition(const Vector2<Int32>& position) override
         {
             if (m_Mode != WindowMode::Windowed)
-            {
-                KITSUNE_ENGINE_ERROR_FORMAT_(
-                    "Tried to set the position of a non-restored window {0}.",
-                    this);
-
                 return;
-            }
 
             m_Position = position;
         }
@@ -106,13 +93,7 @@ namespace Kitsune
         inline void SetMode(WindowMode mode) override
         {
             if (!IsVisible())
-            {
-                KITSUNE_ENGINE_ERROR_FORMAT_(
-                    "Tried to set the mode of an invisible window {0}.",
-                    this);
-
                 return;
-            }
 
             m_Mode = mode;
         }
