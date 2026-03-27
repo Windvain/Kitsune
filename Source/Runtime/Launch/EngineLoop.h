@@ -5,7 +5,6 @@
 
 #include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Containers/Array.h"
-
 #include "Foundation/Diagnostics/Backtrace.h"
 
 #include "Application/Application.h"
@@ -63,20 +62,6 @@ namespace Kitsune
         }
 
     public:
-        inline String GetEngineVersion()
-        {
-            return KITSUNE_STRINGIFY(KITSUNE_VERSION_MAJOR) "."
-                   KITSUNE_STRINGIFY(KITSUNE_VERSION_MINOR) "."
-                   KITSUNE_STRINGIFY(KITSUNE_VERSION_PATCH);
-        }
-
-    public:
-        inline static EngineLoop* GetInstance()
-        {
-            return s_Instance;
-        }
-
-    public:
         // Should only be called in the Exception class's constructor.
         inline void CaptureExceptionBacktrace()
         {
@@ -87,6 +72,22 @@ namespace Kitsune
 
             m_ExceptionBacktrace = Backtrace::Capture(1);
             m_ExceptionMutex.Release();
+        }
+
+    public:
+        [[nodiscard]]
+        inline static String GetEngineVersion()
+        {
+            return KITSUNE_STRINGIFY(KITSUNE_VERSION_MAJOR) "."
+                   KITSUNE_STRINGIFY(KITSUNE_VERSION_MINOR) "."
+                   KITSUNE_STRINGIFY(KITSUNE_VERSION_PATCH);
+        }
+
+    public:
+        [[nodiscard]]
+        inline static EngineLoop* GetInstance()
+        {
+            return s_Instance;
         }
 
     private:

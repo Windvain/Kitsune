@@ -7,6 +7,7 @@
 
 namespace Kitsune
 {
+    // The API used in the backend for rendering.
     enum class RenderingBackend
     {
         Vulkan
@@ -37,15 +38,14 @@ namespace Kitsune
     class DisplayManager : public NonCopyable
     {
     public:
-        virtual ~DisplayManager()
-        {
-        }
+        virtual ~DisplayManager() = default;
 
     public:
         virtual void Update() = 0;
 
     public:
-        // These handles are only valid for the frame when the retrieval functions were called.
+        // These handles are only valid for the frame when the retrieval
+        // functions were called.
         // Do not cache these values.
         [[nodiscard]]
         virtual ScreenHandle GetPrimaryScreen() const = 0;
@@ -69,6 +69,10 @@ namespace Kitsune
         {
             return s_Instance;
         }
+
+    private:
+        static DisplayManager* CreateNullDisplayManager_(
+            const DisplayManagerSpecifications& specs);
 
     private:
         static DisplayManager* s_Instance;

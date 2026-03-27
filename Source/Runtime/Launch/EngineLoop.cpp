@@ -12,7 +12,10 @@ namespace Kitsune
     EngineLoop::EngineLoop()
     {
         if (s_Instance != nullptr)
-            throw LogicException("An engine loop has already been created.");
+        {
+            throw LogicException(
+                "An instance of the engine loop has already been created.");
+        }
 
         s_Instance = this;
     }
@@ -35,24 +38,22 @@ namespace Kitsune
             "For the source code, visit https://github.com/Windvain/Kitsune",
             GetEngineVersion());
 
-        // Just in case I remove the condition that the application needs a minimum
-        // of one argument.
-        KITSUNE_ASSERT(
-            m_CommandLineArguments.GetCount() > 0,
-            "Application should be supplied with at least one command "
-            "line argument.");
-
         m_Application = CreateApplication(m_CommandLineArguments);
         if (m_Application == nullptr)
             return;
 
         KITSUNE_ENGINE_INFO(
             Launch,
-            "Kitsune Engine initialization step run successfully.");
+            "Kitsune Engine initialization step ran successfully.");
     }
 
     void EngineLoop::Run()
     {
+        KITSUNE_ENGINE_INFO(
+            Launch,
+            "Running the application, application callbacks will start to be called "
+            "from here on!");
+
         while (!m_ExitRequested)
         {
             m_Application->Update();

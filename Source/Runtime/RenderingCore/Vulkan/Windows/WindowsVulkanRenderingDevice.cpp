@@ -1,4 +1,6 @@
 #include "RenderingCore/Vulkan/VulkanRenderingDevice.h"
+
+#include "Foundation/Logging/GlobalLog.h"
 #include "Application/Windows/WindowsWindow.h"
 
 namespace Kitsune
@@ -13,7 +15,13 @@ namespace Kitsune
         surfaceCreateInfo.hwnd = hwnd;
 
         KITSUNE_VK_THROW_IF_FAIL(
-            ::vkCreateWin32SurfaceKHR(m_Instance, &surfaceCreateInfo, nullptr, &m_Surface),
+            ::vkCreateWin32SurfaceKHR(m_Instance, &surfaceCreateInfo, nullptr,
+                                      &m_Surface),
             "Failed to create a Win32 surface from the newly created window.");
+
+        KITSUNE_ENGINE_INFO_FORMAT(
+            Rendering,
+            "Initialized the Vulkan surface with the Win32 window handle {0}.",
+            hwnd);
     }
 }

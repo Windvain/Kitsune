@@ -9,11 +9,14 @@ namespace Kitsune
     public:
         inline NullWindow(const Vector2<Uint32>& size,
                           const Vector2<Int32>& position,
-                          const StringView title,
+                          StringView title,
                           WindowMode mode,
                           WindowFlags flags)
-            : m_Size(size), m_Position(position), m_Title(title),
-              m_Visible(true), m_Mode(mode), m_Flags(flags)
+            : m_Size(size),
+              m_Position(position),
+              m_Title(title),
+              m_Mode(mode),
+              m_Flags(flags)
         {
         }
 
@@ -85,7 +88,7 @@ namespace Kitsune
             m_Position = position;
         }
 
-        inline void SetTitle(const StringView title) override
+        inline void SetTitle(StringView title) override
         {
             m_Title = title;
         }
@@ -109,7 +112,7 @@ namespace Kitsune
         Vector2<Int32> m_Position;
 
         String m_Title;
-        bool m_Visible;
+        bool m_Visible = true;
 
         WindowMode m_Mode;
         WindowFlags m_Flags;

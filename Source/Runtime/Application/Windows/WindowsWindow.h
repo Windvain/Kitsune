@@ -1,28 +1,23 @@
 #pragma once
 
 #include <Windows.h>
+
 #include "Application/Window.h"
+#include "Application/DisplayManager.h"
 
 namespace Kitsune
 {
     class WindowsWindow : public Window
     {
     public:
-        WindowsWindow(const WideStringView className,
-                      const Vector2<int>& size,
-                      const Vector2<int>& position,
-                      const WideStringView title,
-                      WindowMode mode,
-                      WindowFlags flags);
+        WindowsWindow(WideStringView className,
+                      const WindowSpecifications& specs);
 
-        ~WindowsWindow();
+        ~WindowsWindow() override;
 
     public:
-        [[nodiscard]]
-        Vector2<Uint32> GetSize() const override;
-
-        [[nodiscard]]
-        Vector2<Int32> GetPosition() const override;
+        [[nodiscard]] Vector2<Uint32> GetSize() const override;
+        [[nodiscard]] Vector2<Int32> GetPosition() const override;
 
         [[nodiscard]]
         Vector2<Uint32> GetSizeWithDecorations() const override;
@@ -31,11 +26,8 @@ namespace Kitsune
         Vector2<Int32> GetPositionWithDecorations() const override;
 
     public:
-        [[nodiscard]]
-        String GetTitle() const override;
-
-        [[nodiscard]]
-        WindowMode GetMode() const override;
+        [[nodiscard]] String GetTitle() const override;
+        [[nodiscard]] WindowMode GetMode() const override;
 
         [[nodiscard]]
         inline WindowFlags GetFlags() const override
@@ -54,26 +46,32 @@ namespace Kitsune
         void SetSize(const Vector2<Uint32>& size) override;
         void SetPosition(const Vector2<Int32>& position) override;
 
-        void SetTitle(const StringView title) override;
+        void SetTitle(StringView title) override;
         void SetMode(WindowMode mode) override;
 
     public:
         void SetVisibility(bool visible) override;
 
     public:
+        [[nodiscard]]
         inline HWND GetNativeHandle() const
         {
             return m_Handle;
         }
 
     private:
-        static DWORD GetWindowStyles_(WindowFlags flags);
-        static DWORD GetWindowExStyles_();
+        [[nodiscard]] static DWORD CalculateWindowStyles_(WindowFlags flags);
+        [[nodiscard]] static DWORD CalculateWindowExStyles_(WindowFlags flags);
+
+        void EnableFullscreen_();
+        void DisableFullscreen_();
 
     private:
-        static BOOL AdjustWindowRectExForDpi_(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
-                                              DWORD dwExStyle, UINT dpi);
+        static BOOL AdjustWindowRectExForDpi_(
+            LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
+            DWORD dwExStyle, UINT dpi);
 
+        [[nodiscard]]
         static UINT GetDpiForWindow_(HWND hwnd);
 
     private:
@@ -82,6 +80,6 @@ namespace Kitsune
 
         // Fullscreen-specific variables.
         bool m_Fullscreen = false;
-        WINDOWPLACEMENT m_PreviousPlacement;
+        WINDOWPLACEMENT m_PreviousPlacement = { /* ... */ };
     };
 }

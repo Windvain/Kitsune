@@ -6,7 +6,7 @@
 
 namespace Kitsune
 {
-    WindowsScreen::WindowsScreen(const WideStringView deviceName)
+    WindowsScreen::WindowsScreen(WideStringView deviceName)
         : m_DeviceName(deviceName)
     {
     }
@@ -22,10 +22,12 @@ namespace Kitsune
         if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to get size of screen {0}.", this);
+                DisplayManager,
+                "Failed to get the size of \"{0}\". Returning (0, 0) as a "
+                "fallback value.",
+                GetName());
 
-            return Vector2<Uint32>();
+            return { 0, 0 };
         }
 
         return { deviceMode.dmPelsWidth, deviceMode.dmPelsHeight };
@@ -37,10 +39,12 @@ namespace Kitsune
         if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to get position of screen {0}.", this);
+                DisplayManager,
+                "Failed to get the virtual position of \"{0}\". Returning "
+                "(0, 0) as a fallback value.",
+                GetName());
 
-            return Vector2<Int32>();
+            return { 0, 0 };
         }
 
         return { deviceMode.dmPosition.x, deviceMode.dmPosition.y };
@@ -52,19 +56,17 @@ namespace Kitsune
         if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to get refresh rate of screen {0}.", this);
+                DisplayManager,
+                "Failed to get the refresh rate of \"{0}\". Returning 60Hz "
+                "as a fallback.",
+                GetName());
 
-            return 0;
+            return 60;
         }
 
+        // A dmDisplayFrequency value of 0 or 1 represent the display hardware's
+        // default refresh rate.
         DWORD refreshRate = deviceMode.dmDisplayFrequency;
-
-        // When you call the EnumDisplaySettings function, the dmDisplayFrequency
-        // member may return with the value 0 or 1. These values represent the
-        // display hardware's default refresh rate.
-        //
-        // https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-devmodea#members
         if ((refreshRate == 0) || (refreshRate == 1))
         {
             // 60Hz seems like a safe option here, I'm not writing WMI
@@ -78,16 +80,17 @@ namespace Kitsune
     Uint32 WindowsScreen::GetDotsPerInch() const
     {
         // The values of *dpiX and *dpiY are identical.
-        // You only need to record one of the values to determine the DPI and
-        // respond appropriately.
-        //
-        // https://learn.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-getdpiformonitor
         UINT dpiX, dpiY_;
-        if (::GetDpiForMonitor(GetMonitorHandle_(), MDT_EFFECTIVE_DPI, &dpiX, &dpiY_) != S_OK)
+        HRESULT result = ::GetDpiForMonitor(
+            GetMonitorHandle_(), MDT_EFFECTIVE_DPI, &dpiX, &dpiY_);
+
+        if (FAILED(result))
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to get DPI of screen {0}.", this);
+                DisplayManager,
+                "Failed to get the DPI of \"{0}\". Using USER_DEFAULT_SCREEN_DPI "
+                "(96 DPI, 100% scaling) as a fallback value.",
+                GetName());
 
             dpiX = USER_DEFAULT_SCREEN_DPI;
         }
@@ -101,8 +104,10 @@ namespace Kitsune
         if (!GetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to get orientation of screen {0}.", this);
+                DisplayManager,
+                "Failed to get orientation of \"{0}\". Returning "
+                "ScreenOrientation::Default.",
+                GetName());
 
             return ScreenOrientation::Default;
         }
@@ -133,8 +138,10 @@ namespace Kitsune
         if (!SetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to set screen {0} size.", this);
+                DisplayManager,
+                "Failed to set the size of \"{0}\" to ({1}x{2}).",
+                GetName(),
+                size.X, size.Y);
         }
     }
 
@@ -169,8 +176,9 @@ namespace Kitsune
         if (!SetDeviceMode_(&deviceMode))
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to set screen {0} orientation.", this);
+                DisplayManager,
+                "Failed to set the orientation of \"{0}\".",
+                GetName());
         }
     }
 
@@ -180,50 +188,55 @@ namespace Kitsune
         deviceMode->dmSize = sizeof(DEVMODEW);
         deviceMode->dmDriverExtra = 0;
 
-        return ::EnumDisplaySettingsExW(m_DeviceName.Raw(), ENUM_CURRENT_SETTINGS,
-                                        deviceMode, 0);
+        return ::EnumDisplaySettingsExW(
+            m_DeviceName.Raw(), ENUM_CURRENT_SETTINGS, deviceMode, 0);
     }
 
     bool WindowsScreen::SetDeviceMode_(DEVMODEW* deviceMode)
     {
-        LONG result = ::ChangeDisplaySettingsExW(m_DeviceName.Raw(), deviceMode,
-                                                 nullptr, CDS_RESET, nullptr);
+        LONG result = ::ChangeDisplaySettingsExW(
+            m_DeviceName.Raw(), deviceMode, nullptr, CDS_RESET, nullptr);
 
-        return ((result == DISP_CHANGE_SUCCESSFUL) || (result == DISP_CHANGE_RESTART));
+        return ((result == DISP_CHANGE_SUCCESSFUL) ||
+                (result == DISP_CHANGE_RESTART));
     }
 
     HMONITOR WindowsScreen::GetMonitorHandle_() const
     {
-        // There is currently no way of getting an HMONITOR from a DISPLAY_DEVICE
-        // directly, so we have to enumerate through all the connected monitors
-        // and check for a monitor with the correct name.
+        // There is currently no way of getting an HMONITOR from a
+        // DISPLAY_DEVICE directly, so we have to enumerate through all
+        // the connected monitors and check for a monitor with the
+        // correct name.
         //
         // GetMonitorHandle_() is not cached here because all monitor handles are
         // invalidated as soon as a new display device is connected/disconnected.
         MonitorEnumProcData_ data;
-        data.MonitorHandle = nullptr;
         data.DeviceName = m_DeviceName;
 
-        ::EnumDisplayMonitors(nullptr, nullptr, &MonitorEnumProcedure_,
-                              reinterpret_cast<LPARAM>(&data));
+        BOOL result = ::EnumDisplayMonitors(
+            nullptr, nullptr, &MonitorEnumProcedure_,
+            reinterpret_cast<LPARAM>(&data));
 
-        if (data.MonitorHandle == nullptr)
+        if (!result || data.Handle == nullptr)
         {
             KITSUNE_ENGINE_ERROR_FORMAT(
-                WindowsDisplayManager,
-                "Failed to obtain a handle to a monitor from its device name. The "
-                "monitor {0} might have been disconnected.",
+                DisplayManager,
+                "Failed to obtain a handle to a monitor from its device "
+                "name. The monitor {0} might have been disconnected.",
                 this);
 
             return nullptr;
         }
 
-        return data.MonitorHandle;
+        return data.Handle;
     }
 
-    BOOL WindowsScreen::MonitorEnumProcedure_(HMONITOR monitor, HDC /* device */,
-                                              LPRECT /* rect */, LPARAM lparam)
+    BOOL WindowsScreen::MonitorEnumProcedure_(
+        HMONITOR monitor, HDC device, LPRECT rect, LPARAM lparam)
     {
+        KITSUNE_UNUSED(device);
+        KITSUNE_UNUSED(rect);
+
         auto* data = reinterpret_cast<MonitorEnumProcData_*>(lparam);
         MONITORINFOEXW monitorInfo;
 
@@ -233,7 +246,7 @@ namespace Kitsune
 
         if (monitorInfo.szDevice == data->DeviceName)
         {
-            data->MonitorHandle = monitor;
+            data->Handle = monitor;
             return FALSE;
         }
 

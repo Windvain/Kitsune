@@ -16,17 +16,19 @@ namespace Kitsune
     {
     public:
         VulkanRenderingContext();
-        ~VulkanRenderingContext();
+        ~VulkanRenderingContext() override;
 
     public:
-        RenderingDevice* CreateRenderingDevice(Uint32 deviceIndex,
-                                               WindowHandle surface) override;
+        [[nodiscard]]
+        RenderingDevice* CreateRenderingDevice(
+            Uint32 deviceIndex,
+            WindowHandle windowHandle) override;
 
         void DestroyRenderingDevice(RenderingDevice* device) override;
 
     private:
-        static Array<const char*> GetRequestedExtensions_();
-        static Array<const char*> GetRequestedLayers_();
+        [[nodiscard]] static Array<const char*> GetRequestedExtensions_();
+        [[nodiscard]] static Array<const char*> GetRequestedLayers_();
 
         // Throws if the specified extensions/layers is not supported.
         static void VerifyExtensionsSupport_(const Array<const char*>& extensions);
@@ -36,18 +38,25 @@ namespace Kitsune
         void RegisterDebugCallback_();
         void UnregisterDebugCallback_();
 
-        void RetrieveDebugFunctions_();
-        static VkBool32 DebugCallback_(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-                                       VkDebugUtilsMessageTypeFlagsEXT type,
-                                       const VkDebugUtilsMessengerCallbackDataEXT* data,
-                                       void* userData);
+        bool RetrieveDebugFunctions_();
+
+        static VkBool32 DebugCallback_(
+            VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+            VkDebugUtilsMessageTypeFlagsEXT type,
+            const VkDebugUtilsMessengerCallbackDataEXT* data,
+            void* userData);
+
+    private:
+        // These names are simply too long!
+        using CreateDebugMessengerFunc = PFN_vkCreateDebugUtilsMessengerEXT;
+        using DestroyDebugMessengerFunc = PFN_vkDestroyDebugUtilsMessengerEXT;
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
 
-        PFN_vkCreateDebugUtilsMessengerEXT m_CreateDebugMessenger;
-        PFN_vkDestroyDebugUtilsMessengerEXT m_DestroyDebugMessenger;
-        VkDebugUtilsMessengerEXT m_DebugMessenger;
+        CreateDebugMessengerFunc m_CreateDebugMessenger = nullptr;
+        DestroyDebugMessengerFunc m_DestroyDebugMessenger = nullptr;
+        VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 
         Array<VkPhysicalDevice> m_PhysicalDevices;
         Array<ScopedPtr<VulkanRenderingDevice>> m_RenderingDevices;

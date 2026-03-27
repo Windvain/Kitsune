@@ -12,12 +12,15 @@ namespace Kitsune
                           Uint32 refreshRate,
                           Uint32 dpi,
                           ScreenOrientation orientation)
-            : m_Size(size), m_Position(position), m_RefreshRate(refreshRate),
-              m_Dpi(dpi), m_Orientation(orientation)
+            : m_Size(size),
+              m_Position(position),
+              m_RefreshRate(refreshRate),
+              m_Dpi(dpi),
+              m_Orientation(orientation)
         {
         }
 
-        ~NullScreen() = default;
+        ~NullScreen() override = default;
 
     public:
         [[nodiscard]]

@@ -20,27 +20,19 @@ namespace Kitsune
     class Screen
     {
     public:
-        virtual ~Screen() { /* ... */ }
+        virtual ~Screen() = default;
 
     public:
         [[nodiscard]]
         virtual String GetName() const = 0;
 
     public:
-        [[nodiscard]]
-        virtual Vector2<Uint32> GetSize() const = 0;
+        [[nodiscard]] virtual Vector2<Uint32> GetSize() const = 0;
+        [[nodiscard]] virtual Vector2<Int32> GetPosition() const = 0;
 
-        [[nodiscard]]
-        virtual Vector2<Int32> GetPosition() const = 0;
-
-        [[nodiscard]]
-        virtual Uint32 GetRefreshRate() const = 0;
-
-        [[nodiscard]]
-        virtual Uint32 GetDotsPerInch() const = 0;
-
-        [[nodiscard]]
-        virtual ScreenOrientation GetOrientation() const = 0;
+        [[nodiscard]] virtual Uint32 GetRefreshRate() const = 0;
+        [[nodiscard]] virtual Uint32 GetDotsPerInch() const = 0;
+        [[nodiscard]] virtual ScreenOrientation GetOrientation() const = 0;
 
     public:
         [[nodiscard]]
@@ -67,16 +59,20 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(const Screen& screen, const FormatContext<Iter>& context)
+        inline static Iter Format(
+            const Screen& screen,
+            const FormatContext<Iter>& context)
         {
             Vector2<Uint32> size = screen.GetSize();
+            Vector2<Uint32> position = screen.GetPosition();
+
             auto output = FormatTo(
                 context.GetOutput(),
-                "Screen {0}: \"{1}\" ({2} x {3}, {4} Hz, {5} DPI)",
-                AddressOf(screen),
+                "[ Name: \"{0}\", Mode: {1}x{2}@{3}Hz, Position: "
+                "({4}, {5}), DPI: {6} ]",
                 screen.GetName(),
-                size.X, size.Y,
-                screen.GetRefreshRate(),
+                size.X, size.Y, screen.GetRefreshRate(),
+                position.X, position.Y,
                 screen.GetDotsPerInch());
 
             return output;

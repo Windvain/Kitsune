@@ -26,9 +26,10 @@ namespace Kitsune
                               VkPhysicalDevice physicalDevice,
                               WindowHandle windowHandle);
 
-        ~VulkanRenderingDevice();
+        ~VulkanRenderingDevice() override;
 
     public:
+        [[nodiscard]]
         RenderingDeviceInformation GetInformation() const override;
 
     private:
@@ -37,17 +38,24 @@ namespace Kitsune
         void InitializePlatformSurface_(WindowHandle windowHandle);
 
     private:
-        Array<const char*> GetRequestedExtensions_() const;
+        [[nodiscard]] static Array<const char*> GetRequestedExtensions_();
         void VerifyExtensionsSupport_(const Array<const char*>& extensions);
 
-        Array<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfo_(VkPhysicalDevice physicalDevice) const;
+        [[nodiscard]]
+        Array<VkDeviceQueueCreateInfo> GetDeviceQueueCreateInfo_() const;
 
-        VkSurfaceFormatKHR GetSwapchainSurfaceFormat_() const;
-        VkPresentModeKHR GetSwapchainPresentMode_() const;
+    private:
+        [[nodiscard]] VkSurfaceFormatKHR GetSwapchainSurfaceFormat_() const;
+        [[nodiscard]] VkPresentModeKHR GetSwapchainPresentMode_() const;
 
-        std::uint32_t GetSwapchainMinimumImageCount_(const VkSurfaceCapabilitiesKHR& capabilities) const;
-        VkExtent2D GetSwapchainExtents(const VkSurfaceCapabilitiesKHR& capabilities,
-                                       WindowHandle windowHandle) const;
+        [[nodiscard]]
+        static std::uint32_t GetSwapchainMinImageCount_(
+            const VkSurfaceCapabilitiesKHR& capabilities);
+
+        [[nodiscard]]
+        static VkExtent2D GetSwapchainExtents_(
+            const VkSurfaceCapabilitiesKHR& capabilities,
+            WindowHandle windowHandle);
 
         void InitializeSwapchain_(WindowHandle windowHandle);
         void DestroySwapchain_();
@@ -56,12 +64,12 @@ namespace Kitsune
         VkInstance m_Instance;
         VkPhysicalDevice m_PhysicalDevice;
 
-        VkDevice m_Device;
-        VkSurfaceKHR m_Surface;
+        VkDevice m_Device = VK_NULL_HANDLE;
+        VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 
-        VkQueue m_GraphicsQueue;
-        VkQueue m_ComputeQueue;
-        VkQueue m_TransferQueue;
+        VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
+        VkQueue m_ComputeQueue = VK_NULL_HANDLE;
+        VkQueue m_TransferQueue = VK_NULL_HANDLE;
 
         VulkanSwapChain m_SwapChain;
     };

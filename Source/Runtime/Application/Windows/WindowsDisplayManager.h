@@ -15,32 +15,42 @@ namespace Kitsune
     class WindowsDisplayManager : public DisplayManager
     {
     public:
-        WindowsDisplayManager(const DisplayManagerSpecifications& specs,
-                              const WideStringView className);
+        WindowsDisplayManager(
+            WideStringView className,
+            const DisplayManagerSpecifications& specs);
 
-        ~WindowsDisplayManager();
+        ~WindowsDisplayManager() override;
 
     public:
         void Update() override;
 
-        ScreenHandle GetPrimaryScreen() const override;
-        Array<ScreenHandle> GetScreens() const override;
+        [[nodiscard]] ScreenHandle GetPrimaryScreen() const override;
+        [[nodiscard]] Array<ScreenHandle> GetScreens() const override;
 
     public:
-        WindowHandle GetPrimaryWindow() const override;
+        [[nodiscard]] WindowHandle GetPrimaryWindow() const override;
 
     private:
+        void RegisterWindowClass_(WideStringView className);
         void UpdateScreenList_();
 
+        static void OnScreenConnected_(Screen* screen);
+        static void OnScreenDisconnected_(Screen* screen);
+
+        void InitializeRenderingContext_(RenderingBackend backend);
+
     private:
-        static LRESULT WindowProc_(HWND windowHandle, UINT message, WPARAM wparam,
-                                   LPARAM lparam);
+        static LRESULT WindowProcedure_(
+            HWND windowHandle, UINT message, WPARAM wparam,
+            LPARAM lparam);
 
-        static LRESULT HandlePreInitWindowEvents_(HWND windowHandle, UINT message, WPARAM wparam,
-                                                  LPARAM lparam);
+        static LRESULT HandlePreInitWindowEvents_(
+            HWND windowHandle, UINT message, WPARAM wparam,
+            LPARAM lparam);
 
-        static LRESULT HandlePostInitWindowEvents_(WindowsWindow* window, UINT message,
-                                                   WPARAM wparam, LPARAM lparam);
+        static LRESULT HandlePostInitWindowEvents_(
+            WindowsWindow* window, UINT message,
+            WPARAM wparam, LPARAM lparam);
 
     private:
         Array<ScopedPtr<WindowsScreen>> m_Screens;

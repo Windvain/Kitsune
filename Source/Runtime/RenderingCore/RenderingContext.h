@@ -7,15 +7,17 @@
 
 namespace Kitsune
 {
+    // An interface for initializing and destroying rendering devices.
     class RenderingContext : public NonCopyable
     {
     public:
-        virtual ~RenderingContext() { /* ... */ }
+        virtual ~RenderingContext() = default;
 
     public:
         [[nodiscard]]
         virtual RenderingDevice* CreateRenderingDevice(
-            Uint32 deviceIndex, WindowHandle windowHandle) = 0;
+            Uint32 deviceIndex,
+            WindowHandle windowHandle) = 0;
 
         virtual void DestroyRenderingDevice(RenderingDevice* device) = 0;
     };

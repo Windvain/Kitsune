@@ -10,8 +10,8 @@ namespace Kitsune
     class WindowsScreen : public Screen
     {
     public:
-        WindowsScreen(const WideStringView deviceName);
-        ~WindowsScreen() = default;
+        WindowsScreen(WideStringView deviceName);
+        ~WindowsScreen() override = default;
 
     public:
         [[nodiscard]] String GetName() const override;
@@ -30,13 +30,14 @@ namespace Kitsune
         void SetOrientation(ScreenOrientation orientation) override;
 
     public:
+        [[nodiscard]]
         inline WideStringView GetDeviceName() const
         {
             return m_DeviceName;
         }
 
     private:
-        HMONITOR GetMonitorHandle_() const;
+        [[nodiscard]] HMONITOR GetMonitorHandle_() const;
 
         bool GetDeviceMode_(DEVMODEW* deviceMode) const;
         bool SetDeviceMode_(DEVMODEW* deviceMode);
@@ -44,12 +45,13 @@ namespace Kitsune
     private:
         struct MonitorEnumProcData_
         {
-            HMONITOR MonitorHandle;
+            HMONITOR Handle = nullptr;
             WideStringView DeviceName;
         };
 
-        static BOOL CALLBACK MonitorEnumProcedure_(HMONITOR monitor, HDC device, LPRECT rect,
-                                                   LPARAM lparam);
+        static BOOL CALLBACK MonitorEnumProcedure_(
+            HMONITOR monitor, HDC device, LPRECT rect,
+            LPARAM lparam);
 
     private:
         WideString m_DeviceName;

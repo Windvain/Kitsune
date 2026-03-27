@@ -20,6 +20,7 @@ namespace Kitsune
                 Memory::Shutdown();
         }
 
+        [[nodiscard]]
         inline bool IsInitialized() const
         {
             return m_Initialized;
@@ -31,7 +32,8 @@ namespace Kitsune
 
     static int UnguardedEngineMain(int argc, char** argv)
     {
-        // The memory subsystem is going to be used a lot in engine initialization.
+        // The memory subsystem is going to be used a lot in
+        // engine initialization.
         MemorySubsystemGuard initGuard_{ /* ... */ };
         if (!initGuard_.IsInitialized())
             return 1;
@@ -48,32 +50,32 @@ namespace Kitsune
         {
             exceptionThrown = true;
 
-            // Exceptions could be thrown by the standard library (std::exception) or by
-            // game code (Kitsune::Exception).
-            const auto* engineException = dynamic_cast<const Exception*>(&exception);
+            // Exceptions could be thrown by the standard library
+            // (std::exception) or by game code (Kitsune::Exception).
+            const auto* engineException =
+                dynamic_cast<const Exception*>(&exception);
+
             if (engineException != nullptr)
             {
                 KITSUNE_ENGINE_FATAL_FORMAT(
                     Launch,
-                    "Program crashed due to {0} exception.",
-                    engineException->GetName());
-
-                KITSUNE_ENGINE_FATAL_FORMAT(
-                    Launch,
-                    "Description: {0}",
-                    engineException->GetDescription());
+                    "The engine crashed due of a {0}. Description: \"{1}\"",
+                    engineException->GetName(),
+                    engineException->GetDescription());;
             }
             else
             {
                 KITSUNE_ENGINE_FATAL_FORMAT(
                     Launch,
-                    "Program crashed due to a std::exception ({0}).",
+                    "Program crashed due to a standard library exception. "
+                    "({0})",
                     exception.what());
             }
 
             KITSUNE_ENGINE_FATAL_FORMAT(
                 Launch,
-                "\n{0}", engineLoop.GetExceptionBacktrace());
+                "\n{0}",
+                engineLoop.GetExceptionBacktrace());
         }
 
         int exitCode = engineLoop.Shutdown();

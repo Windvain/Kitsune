@@ -30,6 +30,8 @@ namespace Kitsune
         WindowFlags WindowFlags = WindowFlags::None;
     };
 
+    // Inherited by the client application class. Contains callback functions
+    // which is called by the engine.
     class Application : public NonCopyable
     {
     public:
@@ -43,9 +45,23 @@ namespace Kitsune
         void Update();
 
     public:
-        [[nodiscard]] inline String GetName()        const { return m_Name; }
-        [[nodiscard]] inline String GetDescription() const { return m_Description; }
-        [[nodiscard]] inline String GetVersion()     const { return m_Version; }
+        [[nodiscard]]
+        inline String GetName() const
+        {
+            return m_Name;
+        }
+
+        [[nodiscard]]
+        inline String GetDescription() const
+        {
+            return m_Description;
+        }
+
+        [[nodiscard]]
+        inline String GetVersion() const
+        {
+            return m_Version;
+        }
 
     public:
         inline static Application* GetInstance()
@@ -65,7 +81,7 @@ namespace Kitsune
     };
 
     // Should be defined in client code.
-    extern Application* CreateApplication(const CommandLineArguments& cmdLineArgs);
+    extern Application* CreateApplication(const CommandLineArguments& arguments);
 }
 
 KITSUNE_POP_COMPILER_WARNINGS()

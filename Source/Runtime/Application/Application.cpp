@@ -8,11 +8,12 @@ namespace Kitsune
     Application* Application::s_Instance = nullptr;
 
     Application::Application(const ApplicationSpecifications& specs)
-        : m_Name(specs.Name), m_Description(specs.Description),
+        : m_Name(specs.Name),
+          m_Description(specs.Description),
           m_Version(specs.Version)
     {
         if (s_Instance)
-       {
+        {
             throw LogicException(
                 "An application instance has already been created.");
         }
@@ -33,10 +34,9 @@ namespace Kitsune
         m_DisplayManager = DisplayManager::Initialize(displayManagerSpecs);
         s_Instance = this;
 
-        KITSUNE_ENGINE_INFO_FORMAT(
+        KITSUNE_ENGINE_INFO(
             Application,
-            "Application \"{0}\" has been fully initialized. Running user code...",
-            m_Name);
+            "All subsystems have been initialized. Running user code...");
     }
 
     Application::~Application()

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
-#include "Foundation/Diagnostics/Assert.h"
 
 #include "Foundation/Containers/Array.h"
 #include "Foundation/String/StringView.h"
@@ -15,17 +14,22 @@ namespace Kitsune
     class CommandLineArguments
     {
     public:
+        using ValueType = const StringView;
+
         using Iterator = Array<StringView>::ConstIterator;
+        using ConstIterator = Array<StringView>::ConstIterator;
 
     public:
         CommandLineArguments() = default;
         inline CommandLineArguments(int argc, char** argv)
         {
-            // Clients *may* input negative or zero values.
-            // POSIX does specify that `argc` can be 0, but just because it can be inputted
-            // doesn't mean it should be.
-            if (argc == 0)
-                throw InvalidArgumentException("Command line arguments should not be empty.");
+            // POSIX specifies that argc can be set to zero/negative values.
+            if (argc <= 0)
+            {
+                throw InvalidArgumentException(
+                    "CommandLineArguments should be supplied with at "
+                    "least one argument!");
+            }
 
             m_Arguments.Reserve(argc);
 
@@ -46,22 +50,37 @@ namespace Kitsune
     public:
         inline const StringView& operator[](Index index) const
         {
-            if (index >= GetCount())
+            if (index >= Count())
                 throw OutOfRangeException();
 
             return m_Arguments[index];
         }
 
     public:
-        inline Usize GetCount() const { return m_Arguments.Size(); }
+        [[nodiscard]]
+        inline Usize Count() const
+        {
+            return m_Arguments.Size();
+        }
 
     public:
-        inline Iterator GetBegin() const { return m_Arguments.GetBegin(); }
-        inline Iterator GetEnd()   const { return m_Arguments.GetEnd(); }
+        [[nodiscard]]
+        inline Iterator GetBegin() const
+        {
+            return m_Arguments.GetBegin();
+        }
+
+        [[nodiscard]]
+        inline Iterator GetEnd() const
+        {
+            return m_Arguments.GetEnd();
+        }
 
     public:
-        inline Iterator begin() const { return GetBegin(); }
-        inline Iterator end()   const { return GetEnd(); }
+        // Should not be called by engine/client code.
+        // Made public so that the compiler can generate code for range-based for loops.
+        [[nodiscard]] inline Iterator begin() const { return GetBegin(); }
+        [[nodiscard]] inline Iterator end() const { return GetEnd(); }
 
     private:
         Array<StringView> m_Arguments;

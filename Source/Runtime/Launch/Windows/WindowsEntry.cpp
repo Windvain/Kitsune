@@ -23,25 +23,27 @@ namespace Kitsune
 
 static void SetPerMonitorDpiAwareness()
 {
-    using SetThreadDpiAwarenessCtx = DPI_AWARENESS_CONTEXT (*)(DPI_AWARENESS_CONTEXT);
-    SetThreadDpiAwarenessCtx setThreadDpiAwarenessCtx;
+    using SetThreadDpiAwarenessContextFunc =
+        DPI_AWARENESS_CONTEXT (*)(DPI_AWARENESS_CONTEXT);
+
+    SetThreadDpiAwarenessContextFunc setThreadDpiAwarenessContext;
 
 #if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
-    setThreadDpiAwarenessCtx = ::SetThreadDpiAwarenessContext;
+    setThreadDpiAwarenessContext = ::SetThreadDpiAwarenessContext;
 #else
     // MinGW doesn't load the DPI-aware functions.
     HMODULE user32 = ::GetModuleHandleW(L"user32.dll");
     if (user32 == nullptr)
         return;
 
-    setThreadDpiAwarenessCtx = (SetThreadDpiAwarenessCtx)(void*)(
+    setThreadDpiAwarenessContext = (SetThreadDpiAwarenessContextFunc)(void*)(
         ::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
 
-    if (setThreadDpiAwarenessCtx == nullptr)
+    if (setThreadDpiAwarenessContext == nullptr)
         return;
 #endif
 
-    setThreadDpiAwarenessCtx(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    setThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 }
 
 #if defined(KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING)
@@ -51,17 +53,19 @@ static bool TryCreateTerminal()
     if (consoleAllocSuccess == 0)
         return false;
 
-    // Redirect stdout, stderr, and stdin to CONIN$ and CONOUT$, because GetStdHandle()
-    // is not set in Win32 GUI applications (/SUBSYSTEM:WINDOWS).
+    // Redirect stdout, stderr, and stdin to CONIN$ and CONOUT$, because
+    // GetStdHandle() is not set in Win32 GUI applications.
     KITSUNE_UNUSED(std::freopen("CONOUT$", "w", stdout));
     KITSUNE_UNUSED(std::freopen("CONOUT$", "w", stderr));
     KITSUNE_UNUSED(std::freopen("CONIN$", "r", stdin));
 
-    HANDLE conout = ::CreateFileW(L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE,
-                                  nullptr, OPEN_EXISTING, 0, nullptr);
+    HANDLE conout = ::CreateFileW(
+        L"CONOUT$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE,
+        nullptr, OPEN_EXISTING, 0, nullptr);
 
-    HANDLE conin = ::CreateFileW(L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
-                                 nullptr, OPEN_EXISTING, 0, nullptr);
+    HANDLE conin = ::CreateFileW(
+        L"CONIN$", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
+        nullptr, OPEN_EXISTING, 0, nullptr);
 
     ::SetStdHandle(STD_OUTPUT_HANDLE, conout);
     ::SetStdHandle(STD_INPUT_HANDLE, conin);
@@ -74,8 +78,11 @@ static bool TryCreateTerminal()
     ::GetConsoleMode(conout, &outputConsoleMode);
     ::GetConsoleMode(conin, &inputConsoleMode);
 
-    ::SetConsoleMode(conout, outputConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    ::SetConsoleMode(conin, inputConsoleMode | ENABLE_VIRTUAL_TERMINAL_INPUT);
+    outputConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    inputConsoleMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+
+    ::SetConsoleMode(conout, outputConsoleMode);
+    ::SetConsoleMode(conin, inputConsoleMode);
 
     return true;
 }
@@ -92,38 +99,50 @@ static void DestroyTerminal()
 #endif
 
 #if defined(KITSUNE_COMPILER_MSVC)
-static const char* FormatExceptionCode(const DWORD code)
+static const char* FormatExceptionCode(DWORD code)
 {
     switch (code)
     {
-    case EXCEPTION_BREAKPOINT:               return "Breakpoint Triggered";
-    case EXCEPTION_DATATYPE_MISALIGNMENT:    return "Misaligned Data Type";
-    case EXCEPTION_ILLEGAL_INSTRUCTION:      return "Illegal Instruction";
-
-    case EXCEPTION_FLT_DENORMAL_OPERAND:     return "Floating-point Operation on Denormal Number";
-    case EXCEPTION_FLT_DIVIDE_BY_ZERO:       return "Floating-point Division by 0";
-    case EXCEPTION_FLT_INEXACT_RESULT:       return "Floating-point Result Inexact";
-    case EXCEPTION_FLT_OVERFLOW:             return "Floating-point Overflow";
-    case EXCEPTION_FLT_UNDERFLOW:            return "Floating-point Underflow";
-    case EXCEPTION_FLT_STACK_CHECK:          return "Stack Overflow due to Floating-point Operation";
-    case EXCEPTION_FLT_INVALID_OPERATION:    return "Unknown Floating-point Error";
-
-    case EXCEPTION_ACCESS_VIOLATION:         return "Access Violation";
-    case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:    return "Array Bounds Exceeded";
-    case EXCEPTION_IN_PAGE_ERROR:            return "Accessed Non-Present Page";
-
-    case EXCEPTION_INT_DIVIDE_BY_ZERO:       return "Integer Division by 0";
-    case EXCEPTION_INT_OVERFLOW:             return "Integer Overflow";
-
-    case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Non-continuable Exception Occurred";
-    case EXCEPTION_CXX_THROW:                return "C++ Exception";
-
+    case EXCEPTION_BREAKPOINT:
+        return "Breakpoint Triggered";
+    case EXCEPTION_DATATYPE_MISALIGNMENT:
+        return "Misaligned Data Type";
+    case EXCEPTION_ILLEGAL_INSTRUCTION:
+        return "Illegal Instruction";
+    case EXCEPTION_FLT_DENORMAL_OPERAND:
+        return "Floating-point Operation on Denormal Number";
+    case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+        return "Floating-point Division by 0";
+    case EXCEPTION_FLT_INEXACT_RESULT:
+        return "Floating-point Result Inexact";
+    case EXCEPTION_FLT_OVERFLOW:
+        return "Floating-point Overflow";
+    case EXCEPTION_FLT_UNDERFLOW:
+        return "Floating-point Underflow";
+    case EXCEPTION_FLT_STACK_CHECK:
+        return "Stack Overflow due to Floating-point Operation";
+    case EXCEPTION_FLT_INVALID_OPERATION:
+        return "Unknown Floating-point Error";
+    case EXCEPTION_ACCESS_VIOLATION:
+        return "Access Violation";
+    case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+        return "Array Bounds Exceeded";
+    case EXCEPTION_IN_PAGE_ERROR:
+        return "Accessed Non-Present Page";
+    case EXCEPTION_INT_DIVIDE_BY_ZERO:
+        return "Integer Division by 0";
+    case EXCEPTION_INT_OVERFLOW:
+        return "Integer Overflow";
+    case EXCEPTION_NONCONTINUABLE_EXCEPTION:
+        return "Non-continuable Exception Occurred";
+    case EXCEPTION_CXX_THROW:
+        return "C++ Exception";
     default:
         return "Unknown";
     }
 }
 
-static DWORD ProcessSehException(const LPEXCEPTION_POINTERS exceptionInfo)
+static DWORD ProcessSehException(LPEXCEPTION_POINTERS exceptionInfo)
 {
     PEXCEPTION_RECORD record = exceptionInfo->ExceptionRecord;
     DWORD exceptionCode = record->ExceptionCode;
@@ -136,16 +155,18 @@ static DWORD ProcessSehException(const LPEXCEPTION_POINTERS exceptionInfo)
 
     for (DWORD index = 0; index < record->NumberParameters; ++index)
     {
-        void* pointer = reinterpret_cast<void*>(record->ExceptionInformation[index]);
+        void* pointer = reinterpret_cast<void*>(
+            record->ExceptionInformation[index]);
+
         std::printf("Parameter[%lx]: 0x%p\n", index, pointer);
     }
 
     // Certain exceptions have additional information regarding why it was thrown.
-    // https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-exception_record#members/
     if (exceptionCode == EXCEPTION_CXX_THROW)
     {
-        // https://devblogs.microsoft.com/oldnewthing/20100730-00/?p=13273
-        auto* exception = reinterpret_cast<std::exception*>(record->ExceptionInformation[1]);
+        auto* exception = reinterpret_cast<std::exception*>(
+            record->ExceptionInformation[1]);
+
         std::printf("\nC++ exception name: %s\n", exception->what());
     }
     else if ((exceptionCode == EXCEPTION_ACCESS_VIOLATION) ||
@@ -177,22 +198,30 @@ static DWORD ProcessSehException(const LPEXCEPTION_POINTERS exceptionInfo)
             reinterpret_cast<void*>(record->ExceptionInformation[1]));
     }
 
-    return EXCEPTION_CONTINUE_SEARCH;       // Continue finding exception filters.
+    return EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
 
 #if defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
 int main()
 #else
-int WINAPI WinMain(HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
-                   LPSTR /* lpCmdLine */, int /* nShowCmd */)
+int WINAPI WinMain(
+    HINSTANCE hInstance, HINSTANCE hPrevInstance,
+    LPSTR lpCmdLine, int nShowCmd)
 #endif
 {
+#if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
+    KITSUNE_UNUSED(hInstance);
+    KITSUNE_UNUSED(hPrevInstance);
+    KITSUNE_UNUSED(lpCmdLine);
+    KITSUNE_UNUSED(nShowCmd);
+#endif
+
     int returnValue = EXIT_SUCCESS;
 
     // MinGW doesn't define the <crtdbg.h> header functions.
-    // Enables debug heap allocations (ALLOC_MEM_DF) and automatically dump memory leaks
-    // when the program exits (LEAK_CHECK_DF).
+    // Enables debug heap allocations (ALLOC_MEM_DF) and automatically dump
+    // memory leaks when the program exits (LEAK_CHECK_DF).
 #if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN) && defined(KITSUNE_BUILD_DEBUG)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
@@ -208,8 +237,7 @@ int WINAPI WinMain(HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
         returnValue = Kitsune::UniversalMain(__argc, __argv);
     else
     {
-        // Only MSVC has support for SEH (Structured Exception Handling) exceptions.
-        //
+        // Only MSVC has support for SEH exceptions.
 #if defined(KITSUNE_COMPILER_MSVC)
         __try
 #endif
@@ -223,8 +251,7 @@ int WINAPI WinMain(HINSTANCE /* hInstance */, HINSTANCE /* hPrevInstance */,
         }
 #endif
 
-        // Makes debugging much easier. Gives me a chance to look at the backtrace that the
-        // program produces.
+        // Makes debugging much easier, removed in production code.
 #if !defined(KITSUNE_BUILD_PRODUCTION)
         if (returnValue != 0)
             ::Sleep(INFINITE);
