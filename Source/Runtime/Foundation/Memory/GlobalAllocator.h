@@ -10,11 +10,13 @@ namespace Kitsune
     class GlobalAllocator
     {
     public:
+        [[nodiscard]]
         KITSUNE_FORCEINLINE void* Allocate(Usize bytes)
         {
             return Memory::Allocate(bytes);
         }
 
+        [[nodiscard]]
         KITSUNE_FORCEINLINE void* Allocate(Usize bytes, Usize alignment)
         {
             return Memory::Allocate(bytes, alignment);

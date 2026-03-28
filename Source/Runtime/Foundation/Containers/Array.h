@@ -522,7 +522,7 @@ namespace Kitsune
         }
 
     private:
-        static constexpr float s_AllocationFactor = 1.5f;
+        static constexpr Usize s_AllocationFactor = 2;
 
     private:
         T *m_Begin, *m_End, *m_StorageEnd;

@@ -18,19 +18,20 @@ namespace Kitsune
 
     void* CMallocApi::TryAllocate(Usize bytes, Usize alignment)
     {
-        KITSUNE_ASSERT(bytes != 0,
-                       "Cannot allocate zero bytes of memory. "
-                       "This should have been prevented in the Memory class.");
+        KITSUNE_ASSERT(
+            bytes != 0,
+            "Cannot allocate zero bytes of memory. "
+            "This should have been prevented in the Memory class.");
 
-        KITSUNE_ASSERT((alignment & (alignment - 1)) == 0,
-                       "Alignment has to be a power of two. This should have been "
-                       "checked in the Memory class before sending a request for "
-                       "memory to MemoryApi.");
+        KITSUNE_ASSERT(
+            (alignment & (alignment - 1)) == 0,
+            "Alignment has to be a power of two. This should have been "
+            "checked in the Memory class before sending a request for "
+            "memory to MemoryApi.");
 
         alignment = KITSUNE_MAX(alignment, s_DefaultAlignment);
 
         // MSVC doesn't support the aligned_alloc function.
-        // https://learn.microsoft.com/en-us/cpp/standard-library/cstdlib?view=msvc-170#remarks-6
 #if defined(KITSUNE_OS_WINDOWS)
         return ::_aligned_malloc(bytes, alignment);
 #else
@@ -38,11 +39,13 @@ namespace Kitsune
 #endif
     }
 
-    void CMallocApi::Free(void* pointer, Usize /* bytes */)
+    void CMallocApi::Free(void* pointer, Usize bytes)
     {
-        KITSUNE_ASSERT(pointer != nullptr,
-                       "Pointer should not be a null pointer. "
-                       "This should have been checked in the Memory class.");
+        KITSUNE_UNUSED(bytes);
+        KITSUNE_ASSERT(
+            pointer != nullptr,
+            "Pointer should not be a null pointer. "
+            "This should have been checked in the Memory class.");
 
 #if defined(KITSUNE_OS_WINDOWS)
         ::_aligned_free(pointer);

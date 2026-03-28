@@ -2,6 +2,7 @@
 
 #include <initializer_list>
 #include "Foundation/Containers/Pair.h"
+#include "Foundation/Concepts/Invocable.h"
 
 #include "Foundation/Templates/Exchange.h"
 #include "Foundation/Utilities/Comparators.h"
@@ -122,9 +123,10 @@ namespace Kitsune
         }
     }
 
-    template<typename T,
-             typename Compare = LessFunctor<T>,
-             Allocator Alloc = GlobalAllocator>
+    template<
+        typename T,
+        InvocableReturn<bool, const T&, const T&> Compare = LessFunctor<T>,
+        Allocator Alloc = GlobalAllocator>
     class Set
     {
     private:
@@ -338,9 +340,11 @@ namespace Kitsune
         inline NodeType* CreateNode_(Args&&... args)
         {
             void* pointer = m_Allocator.Allocate(sizeof(NodeType), alignof(NodeType));
+            T value{ Forward<Args>(args)... };
+
             return Memory::ConstructAt<NodeType>(
                 pointer,
-                T(Forward<Args>(args)...),
+                Move(value),
                 Details::SetNodeColor::Red);
         }
 

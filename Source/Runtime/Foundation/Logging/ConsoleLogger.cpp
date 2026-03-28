@@ -30,7 +30,7 @@ namespace Kitsune
             timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
     }
 
-    String ConsoleLogger::MakeSeverityHeader_(const LogSeverity severity)
+    String ConsoleLogger::MakeSeverityHeader_(LogSeverity severity)
     {
         StringView severityString;
         StringView severityColor;
@@ -71,7 +71,7 @@ namespace Kitsune
             severityColor, severityString);
     }
 
-    String ConsoleLogger::MakeLoggerNameHeader_(const StringView loggerName)
+    String ConsoleLogger::MakeLoggerNameHeader_(StringView loggerName)
     {
         if (loggerName.IsEmpty())
             return "";

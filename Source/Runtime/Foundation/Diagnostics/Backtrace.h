@@ -7,30 +7,27 @@
 
 namespace Kitsune
 {
-    namespace Details
-    {
-        // Just in case the backtrace is configured to use a custom memory API.
-        using BacktraceAllocator_ = GlobalAllocator;
-    }
-
     // Represents a sequence of active functions calls leading up to
     // the call which creates this class (Backtrace::Capture()).
     class Backtrace
     {
     public:
-        using ValueType = BacktraceFrame;
+        using ValueType = const BacktraceFrame;
+        using AllocatorType = GlobalAllocator;
 
-        using Iterator = const ValueType*;
-        using ConstIterator = Iterator;
+        using ContainerType = Array<BacktraceFrame, AllocatorType>;
 
-        using ReverseIterator = Kitsune::ReverseIterator<ConstIterator>;
+        using Iterator = ValueType*;
+        using ConstIterator = const ValueType*;
+
+        using ReverseIterator = Kitsune::ReverseIterator<Iterator>;
         using ReverseConstIterator = Kitsune::ReverseIterator<ConstIterator>;
 
     public:
         inline Backtrace() = default;
 
     public:
-        inline const BacktraceFrame& operator[](const Index index)
+        inline const BacktraceFrame& operator[](Index index) const
         {
             if (index >= m_Frames.Size())
                 throw OutOfRangeException();
@@ -52,8 +49,17 @@ namespace Kitsune
         }
 
     public:
-        [[nodiscard]] inline ConstIterator GetBegin() const { return m_Frames.GetBegin(); }
-        [[nodiscard]] inline ConstIterator GetEnd() const { return m_Frames.GetEnd(); }
+        [[nodiscard]]
+        inline ConstIterator GetBegin() const
+        {
+            return m_Frames.GetBegin();
+        }
+
+        [[nodiscard]]
+        inline ConstIterator GetEnd() const
+        {
+            return m_Frames.GetEnd();
+        }
 
         [[nodiscard]]
         inline ReverseConstIterator GetReverseBegin() const
@@ -68,67 +74,81 @@ namespace Kitsune
         }
 
     public:
-        inline void Swap(Backtrace& stackTrace)
+        inline void Swap(Backtrace& backtrace)
         {
-            m_Frames.Swap(stackTrace.m_Frames);
+            m_Frames.Swap(backtrace.m_Frames);
         }
 
     public:
-        inline bool operator==(const Backtrace& stackTrace) const
+        inline bool operator==(const Backtrace& backtrace) const
         {
-            return (m_Frames == stackTrace.m_Frames);
+            return (m_Frames == backtrace.m_Frames);
         }
 
     public:
         [[nodiscard]]
-        static Backtrace Capture(Uint32 skipCount = 0,
-                                 Uint32 maxDepth = Uint32(-1)) noexcept;
+        static Backtrace Capture(
+            Uint32 skipCount = 0, Uint32 maxDepth = Uint32(-1)) noexcept;
 
         [[nodiscard]]
-        inline static bool IsSupported();
+        inline static bool IsSupported()
+        {
+#if defined(KITSUNE_SUPPORTS_BACKTRACES)
+            return true;
+#else
+            return false;
+#endif
+        }
 
     private:
-        inline Backtrace(Array<BacktraceFrame, Details::BacktraceAllocator_>&& backtraceArray)
-            : m_Frames(Move(backtraceArray))
+        inline explicit Backtrace(ContainerType&& frames)
+            : m_Frames(Move(frames))
         {
         }
 
     public:
         // Should not be called by engine/client code.
-        // Made public so that the compiler can generate code for range-based for loops.
-        inline ConstIterator begin() const { return GetBegin(); }
-        inline ConstIterator end() const { return GetEnd(); }
+        // Made public so that the compiler can generate code for
+        // range-based for loops.
+        [[nodiscard]] inline ConstIterator begin() const { return GetBegin(); }
+        [[nodiscard]] inline ConstIterator end() const { return GetEnd(); }
 
     private:
-        Array<BacktraceFrame, Details::BacktraceAllocator_> m_Frames;
+        ContainerType m_Frames;
     };
+
+    static_assert(
+        Container<Backtrace>,
+        "Backtrace doesn't satisfy the requirements of a Container.");
 
     template<>
     class Formatter<Backtrace, char>
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(const Backtrace& backtrace,
-                                  const FormatContext<Iter>& context)
+        inline static Iter Format(
+            const Backtrace& backtrace,
+            const FormatContext<Iter>& context)
         {
             auto output = context.GetOutput();
             output = FormatTo(output, "Stack backtrace:\n");
 
             if (backtrace.IsEmpty())
             {
-                output = FormatTo(output, "<empty stacktrace>");
+                output = FormatTo(output, "<empty backtrace>");
                 return output;
             }
 
             Index index = 1;
             for (const BacktraceFrame& frame : backtrace)
             {
-                //     0: 0xBADF00D - bar::foo()
-                //         -> meow.cpp:3
-                output = FormatTo(output, "\t{0}: {1} - {2}\n\t\t-> {3}:{4}\n",
-                                  index,
-                                  frame.GetAddress(), frame.GetSymbolName(),
-                                  frame.GetFileName(), frame.GetLineNumber());
+                // \t0: 0xBADF00D - bar::foo()
+                // \t\t-> meow.cpp:3
+                output = FormatTo(
+                    output, "\t{0}: {1} - {2}\n\t\t-> {3}:{4}\n",
+                    index,
+                    frame.GetAddress(), frame.GetSymbolName(),
+                    frame.GetFileName(), frame.GetLineNumber());
 
                 ++index;
             }

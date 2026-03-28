@@ -17,23 +17,23 @@ namespace Kitsune
         Uint32 CurrentDepth;
         Uint32 MaxDepth;
 
-        Array<BacktraceFrame, Details::BacktraceAllocator_> BacktraceArray;
+        Backtrace::ContainerType BacktraceArray;
     };
 
-    static void BacktraceErrorCallback(void* /* data */,
-                                       const char* /* message*/,
-                                       int /* error */)
+    static void BacktraceErrorCallback(void* data, const char* message,
+                                       int error)
     {
+        KITSUNE_UNUSED(data);
+        KITSUNE_UNUSED(message);
+        KITSUNE_UNUSED(error);
     }
 
-    static int BacktraceCallback(void* data,
-                                 std::uintptr_t programCounter,
-                                 const char* filename,
-                                 int line,
-                                 const char* mangledName)
+    static int BacktraceCallback(
+        void* untypedData, std::uintptr_t pc, const char* filename,
+        int line, const char* mangledName)
     {
-        auto* backtraceData = reinterpret_cast<BacktraceData*>(data);
-        if (backtraceData->CurrentDepth == backtraceData->MaxDepth)
+        auto* data = reinterpret_cast<BacktraceData*>(untypedData);
+        if (data->CurrentDepth == data->MaxDepth)
             return 1;
 
         // Since the symbol name is going to be de-mangled, the nullptr check will
@@ -50,24 +50,39 @@ namespace Kitsune
             }
         };
 
+        enum DemangleStatus : int
+        {
+            Success = 0,
+            FailedAllocation = -1,
+            InvalidMangledName = -2,
+            InvalidArguments = -3
+        };
+
         try
         {
-            int demangleStatus;
-            ScopedPtr<char, DemangleDeleter> namePointer(
-                ::abi::__cxa_demangle(mangledName, nullptr, nullptr,
-                                      &demangleStatus));
-
-            const char* symbolName = (demangleStatus != -2) ? namePointer.Get() :
-                                                              mangledName;
-
+            const char* symbolName = mangledName;
             if (symbolName == nullptr)
-                symbolName = "<unknown>";            //< Here!
+                symbolName = "<unknown>";
+            else
+            {
+                int demangleStatus;
+                ScopedPtr<char, DemangleDeleter> demangledName(
+                    ::abi::__cxa_demangle(mangledName, nullptr, nullptr,
+                                          &demangleStatus));
 
-            backtraceData->BacktraceArray.EmplaceBack(
-                filename, symbolName, line,
-                reinterpret_cast<void*>(programCounter));
+                if (demangleStatus == DemangleStatus::Success)
+                    symbolName = demangledName.Get();
+                else
+                    symbolName = mangledName;
+            }
 
-            ++backtraceData->CurrentDepth;
+            data->BacktraceArray.EmplaceBack(
+                filename,
+                symbolName,
+                line,
+                reinterpret_cast<void*>(pc));
+
+            ++data->CurrentDepth;
             return 0;
         }
         catch (...)
@@ -77,22 +92,23 @@ namespace Kitsune
         }
     }
 
-    Backtrace Backtrace::Capture(Uint32 skipCount,
-                                 Uint32 maxDepth) noexcept
+    Backtrace Backtrace::Capture(Uint32 skipCount, Uint32 maxDepth) noexcept
     {
         BacktraceData backtraceData = {
             .CurrentDepth = 0,
             .MaxDepth = maxDepth,
-
-            .BacktraceArray = {}
+            .BacktraceArray = { /* ... */ }
         };
 
         static backtrace_state* backtraceState = ::backtrace_create_state(
             nullptr, true, BacktraceErrorCallback, nullptr);
 
-        int result = ::backtrace_full(backtraceState, skipCount + 1,
-                                      BacktraceCallback, BacktraceErrorCallback,
-                                      &backtraceData);
+        int result = ::backtrace_full(
+            backtraceState,
+            static_cast<int>(skipCount + 1),
+            BacktraceCallback,
+            BacktraceErrorCallback,
+            &backtraceData);
 
         if (result != 0)
             return Backtrace();
@@ -100,19 +116,12 @@ namespace Kitsune
         return Backtrace(Move(backtraceData.BacktraceArray));
     }
 #else
-    Backtrace Backtrace::Capture(Uint32 /* skipCount */,
-                                 Uint32 /* maxDepth */) noexcept
+    Backtrace Backtrace::Capture(Uint32 skipCount, Uint32 maxDepth) noexcept
     {
+        KITSUNE_UNUSED(skipCount);
+        KITSUNE_UNUSED(maxDepth);
+
         return Backtrace();
     }
 #endif
-
-    bool Backtrace::IsSupported()
-    {
-#if defined(KITSUNE_SUPPORTS_BACKTRACES)
-        return true;
-#else
-        return false;
-#endif
-    }
 }

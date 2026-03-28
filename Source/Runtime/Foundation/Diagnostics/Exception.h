@@ -18,16 +18,17 @@ namespace Kitsune
         Exception() noexcept;
         Exception(const char* name, const char* description) noexcept;
 
-        virtual ~Exception() noexcept;
+        ~Exception() noexcept override;
 
     public:
-        const char* GetName() const noexcept;
-        const char* GetDescription() const noexcept;
+        [[nodiscard]] const char* GetName() const noexcept;
+        [[nodiscard]] const char* GetDescription() const noexcept;
 
     public:
         // Override the what() member function of std::exception, some compilers
         // will log it to the console if the exception escapes our try/catch block.
-        const char* what() const noexcept override
+        [[nodiscard]]
+        inline const char* what() const noexcept override
         {
             return GetName();
         }

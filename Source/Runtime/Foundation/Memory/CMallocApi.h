@@ -15,6 +15,7 @@ namespace Kitsune
         void Free(void* pointer, Usize bytes) override;
 
     public:
+        [[nodiscard]]
         inline constexpr Usize GetDefaultAlignment() const override
         {
             return s_DefaultAlignment;

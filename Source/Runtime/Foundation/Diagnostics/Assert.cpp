@@ -11,26 +11,30 @@
 
 namespace Kitsune::Details
 {
-    static const int MessageBoxAbortId = 1;
-    static const int MessageBoxIgnoreId = 2;
+    enum AssertButtonConstants : MessageBoxButtonId
+    {
+        Abort = 1,
+        Ignore = 2
+    };
 
-    inline void FallbackLogAssertionMessage(const char* expression,
-                                            const char* message,
-                                            const SourceLocation& location)
+    inline void FallbackLogAssertionMessage(
+        const char* expression, const char* message,
+        const SourceLocation& location)
     {
         // The global logger might not have been set just yet, so just print the
         // assertion message into stdout.
-        std::printf("Assertion `%s` has failed.\n"
-                    "`%s` [In function %s, file %s:%" PRIu32 "]\n",
-                    expression, message,
-                    location.FunctionName().Data(),
-                    location.FileName().Data(),
-                    location.Line());
+        std::printf(
+            "Assertion `%s` has failed.\n"
+            "`%s` [In function %s, file %s:%" PRIu32 "]\n",
+            expression, message,
+            location.FunctionName().Data(),
+            location.FileName().Data(),
+            location.Line());
     }
 
-    MessageBoxButtonId ShowAssertMessageBox(const char* expression,
-                                            const char* message,
-                                            const SourceLocation& location)
+    MessageBoxButtonId ShowAssertMessageBox(
+        const char* expression, const char* message,
+        const SourceLocation& location)
     {
         String description = Format(
             "Assertion failed!\n\nFile: {0}\nLine: {1}\nFunction: {2}\n\n"
@@ -44,21 +48,20 @@ namespace Kitsune::Details
         msgBoxSpecs.Icon = MessageBoxIcon::Error;
 
         msgBoxSpecs.Buttons = {
-            { .Id = MessageBoxAbortId,  .Text = "Abort" },
-            { .Id = MessageBoxIgnoreId, .Text = "Ignore" }
+            { .Id = AssertButtonConstants::Abort, .Text = "Abort" },
+            { .Id = AssertButtonConstants::Ignore, .Text = "Ignore" }
         };
 
-        MessageBoxButtonId buttonPressed;
-        bool success = ShowMessageBox(msgBoxSpecs, &buttonPressed);
-
-        return success ? buttonPressed : MessageBoxAbortId;
+        auto [success, buttonPressed] = ShowMessageBox(msgBoxSpecs);
+        return success ? buttonPressed : AssertButtonConstants::Abort;
     }
 
-    bool HandleAssertionFailure(const char* expression, const char* message,
-                                SourceLocation location)
+    bool HandleAssertionFailure(
+        const char* expression, const char* message,
+        SourceLocation location)
     {
         if (expression == nullptr) expression = "";
-        if (message == nullptr)    message = "";
+        if (message == nullptr) message = "";
 
         auto* engineLoop = EngineLoop::GetInstance();
         if (!engineLoop || (engineLoop->GetLoggers().IsEmpty()))
@@ -74,6 +77,9 @@ namespace Kitsune::Details
                 expression, message);
         }
 
-        return (ShowAssertMessageBox(expression, message, location) == MessageBoxAbortId);
+        MessageBoxButtonId result = ShowAssertMessageBox(
+            expression, message, location);
+
+        return (result == AssertButtonConstants::Abort);
     }
 }

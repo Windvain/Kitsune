@@ -25,7 +25,7 @@
     #error Kitsune does not support this operating system.
 #endif
 
-// Used for determining the existance of other compilers. Don't and probably will never
+// Used for determining the existence of other compilers. Don't and probably will never
 // support ICC.
 #if defined(__INTEL_COMPILER) || defined(__ICC) || defined(_ICL)
     #define KITSUNE_COMPILER_INTEL 1
@@ -97,8 +97,8 @@
     #define KITSUNE_ARCH_32_BIT 1
 #endif
 
-// An approximation of the platform's compiler size. Used only in preprocessor statements,
-// where `sizeof()` statements are not allowed.
+// An approximation of the platform's compiler size. Used only in preprocessor
+// statements, where `sizeof()` statements are not allowed.
 #if defined(UINTPTR_MAX)
     #define KITSUNE_POINTER_SIZE (UINTPTR_MAX / 255 % 255)
 #elif defined(__UINTPTR_MAX__)

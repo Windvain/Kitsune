@@ -149,13 +149,6 @@ namespace Kitsune
         return (iter1.GetBase() == iter2.GetBase());
     }
 
-    template<BidirectionalIterator Iter>
-    inline bool operator!=(const ReverseIterator<Iter>& iter1,
-                           const ReverseIterator<Iter>& iter2)
-    {
-        return (iter1.GetBase() != iter2.GetBase());
-    }
-
     template<RandomAccessIterator Iter>
     inline bool operator>=(const ReverseIterator<Iter>& iter1,
                            const ReverseIterator<Iter>& iter2)

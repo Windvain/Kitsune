@@ -11,8 +11,8 @@
 #include "Foundation/String/FormatException.h"
 
 KITSUNE_PUSH_COMPILER_WARNINGS()
-KITSUNE_IGNORE_MSVC_WARNING(4702)           // Unreachable code. No idea why this happens so I'm just
-                                            // going to ignore this. Seems to be a false alarm.
+KITSUNE_IGNORE_MSVC_WARNING(4702)   // Unreachable code. No idea why this happens, just
+                                    // going to ignore this. Seems to be a false alarm.
 
 namespace Kitsune
 {
@@ -62,12 +62,16 @@ namespace Kitsune
             {
                 bool isDoubleBrace = (leftBrace[1] == '{');
                 if ((rightBrace == formatString.GetEnd()) && !isDoubleBrace)
-                    throw FormatException("Format string contains a hanging left brace.");
+                {
+                    throw FormatException(
+                        "Format string contains a hanging left brace.");
+                }
 
                 if (!isDoubleBrace)
                 {
                     StringView formatArguments(leftBrace + 1, rightBrace);
-                    outputIter = HandleFormatting_(arguments, formatArguments, outputIter);
+                    outputIter = HandleFormatting_(
+                        arguments, formatArguments, outputIter);
 
                     formatString.RemovePrefix(formatArguments.Size() + 2);
                 }
@@ -80,7 +84,10 @@ namespace Kitsune
             else /* leftBrace > rightBrace */
             {
                 if (rightBrace[1] != '}')
-                    throw FormatException("Format string contains a hanging right brace.");
+                {
+                    throw FormatException(
+                        "Format string contains a hanging right brace.");
+                }
 
                 formatString.RemovePrefix(DoubleBracesSize);
                 *outputIter++ = '}';
@@ -113,7 +120,10 @@ namespace Kitsune
                 if constexpr (isHandleType)
                     outputIter = value.Format(context);
                 else
-                    outputIter = Formatter<ValueType, CharType>::Format(value, context);
+                {
+                    using FormatterType = Formatter<ValueType, CharType>;
+                    outputIter = FormatterType::Format(value, context);
+                }
             });
 
             return outputIter;

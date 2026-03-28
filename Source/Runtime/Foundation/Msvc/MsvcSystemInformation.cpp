@@ -4,10 +4,8 @@
 #include <comdef.h>
 #include <Wbemidl.h>
 
-#include "Foundation/Diagnostics/Assert.h"
-#include "Foundation/Diagnostics/SystemException.h"
-
 #include "Foundation/String/TranscodePresets.h"
+#include "Foundation/Diagnostics/SystemException.h"
 
 template<typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
@@ -18,12 +16,12 @@ namespace Kitsune
     {
         inline ComInitializer()
         {
-            if (FAILED(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
+            HRESULT result = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+            if (FAILED(result))
                 throw SystemException("Failed to initialize the COM library.");
 
-            // Initialize the COM library.
-            HRESULT result;
-            result = ::CoInitializeSecurity(nullptr, -1, nullptr, nullptr,
+            result = ::CoInitializeSecurity(
+                nullptr, -1, nullptr, nullptr,
                 RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE,
                 nullptr, EOAC_NONE, nullptr);
 
@@ -33,20 +31,21 @@ namespace Kitsune
 
         inline ~ComInitializer()
         {
-            // CoInitializeEx() should always be proceeded with CoUninitialize(), even
-            // if it returns S_FALSE.
+            // CoInitializeEx() should always be proceeded with CoUninitialize(),
+            // even if it returns S_FALSE.
             ::CoUninitialize();
         }
     };
 
-    static ComPtr<IEnumWbemClassObject> ExecuteWmiQuery(const WideStringView wqlQuery)
+    static ComPtr<IEnumWbemClassObject> ExecuteWmiQuery(WideStringView wqlQuery)
     {
         HRESULT result;
 
         // Get a pointer to the ROOT\CIMV2 namespace.
         ComPtr<IWbemLocator> wbemLocator;
-        result = ::CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER,
-            IID_IWbemLocator, &wbemLocator);
+        result = ::CoCreateInstance(
+            CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator,
+            &wbemLocator);
 
         if (FAILED(result))
             throw SystemException("Failed to create an instance of IWbemLocator.");
@@ -80,64 +79,46 @@ namespace Kitsune
         return enumerator;
     }
 
-    template<Invocable<IWbemClassObject*, VARIANT&> Func>
-    static void EnumerateWmiObject(
-        const ComPtr<IEnumWbemClassObject>& enumerator,
-        Func func)
+    template<Invocable<IWbemClassObject*> Func>
+    static void EnumerateWmiObject(const ComPtr<IEnumWbemClassObject>& enumerator,
+                                   Func func)
     {
         ULONG objectCount = 0;
         ComPtr<IWbemClassObject> classObject;
 
         while (enumerator)
         {
-            HRESULT result = enumerator->Next(WBEM_INFINITE, 1, &classObject,
-                                              &objectCount);
+            HRESULT result = enumerator->Next(
+                WBEM_INFINITE, 1, &classObject, &objectCount);
 
             if (FAILED(result))
             {
-                throw SystemException("Failed to obtain the next object with the "
-                                      "IEnumWbemClassObject class.");
+                throw SystemException(
+                    "Failed to obtain the next object with the "
+                    "IEnumWbemClassObject class.");
             }
 
             if (objectCount == 0)
                 break;
 
-            // Main body of the enumeration.
-            VARIANT variant;
-            ::VariantInit(&variant);
-
-            func(classObject.Get(), variant);
-
-            ::VariantClear(&variant);
+            func(classObject.Get());
         }
     }
 
-    static CpuArchitecture ToEngineArchitecture(Uint16 architecture)
+    inline static HRESULT GetClassObjectValue(
+        IWbemClassObject* classObject, WideStringView name,
+        VARIANT* variant)
     {
-        switch (architecture)
-        {
-        case PROCESSOR_ARCHITECTURE_INTEL: return CpuArchitecture::x86_32;
-        case PROCESSOR_ARCHITECTURE_AMD64: return CpuArchitecture::x86_64;
-        case PROCESSOR_ARCHITECTURE_ARM  : return CpuArchitecture::AArch32;
-        case PROCESSOR_ARCHITECTURE_ARM64: return CpuArchitecture::AArch64;
-        default:
-            return CpuArchitecture::Unknown;
-        }
+        return classObject->Get(name.Data(), 0, variant, nullptr, nullptr);
     }
 
-    static Uint64 TranslateToUint64(const BSTR string)
+    inline static String BstrToUtf8(BSTR string)
     {
         WideString wideString(string, ::SysStringLen(string));
-        unsigned long long value = std::wcstoull(wideString.Raw(), nullptr, 10);
-
-        KITSUNE_ASSERT(
-            value != 0,
-            "Failed to convert a BSTR into an unsigned long long.");
-
-        return value;
+        return Utf16ToUtf8<wchar_t, char>(wideString);
     }
 
-    CpuInformation SystemInformation::GetCpuInformation()
+    Array<CpuInformation> SystemInformation::GetCpuInformation()
     {
         ComInitializer initializer_{};
         ComPtr<IEnumWbemClassObject> enumerator = ExecuteWmiQuery(
@@ -145,85 +126,115 @@ namespace Kitsune
             L"NumberOfLogicalProcessors "
             L"FROM Win32_Processor");
 
-        CpuInformation cpuInfo;
-        bool alreadyRun = false;
+        VARIANT variant;
+        ::VariantInit(&variant);
 
-        EnumerateWmiObject(enumerator, [&cpuInfo, &alreadyRun](
-            IWbemClassObject* classObject, VARIANT& variant)
-        {
-            // Make sure the enumeration only runs once, because this function
-            // doesn't support multi-CPU setups, like ones using Intel's Xeon CPUs
-            // or AMD's Epyc CPUs.
-            if (alreadyRun)
-                return;
-
-            if (SUCCEEDED(classObject->Get(L"Architecture", 0, &variant, nullptr, nullptr)))
-                cpuInfo.Architecture = ToEngineArchitecture(variant.uiVal);
-
-            if (SUCCEEDED(classObject->Get(L"Manufacturer", 0, &variant, nullptr, nullptr)))
+        Array<CpuInformation> cpuInfoArray;
+        EnumerateWmiObject(enumerator,
+            [&](IWbemClassObject* classObject)
             {
-                WideString manufacturer(variant.bstrVal, ::SysStringLen(variant.bstrVal));
-                cpuInfo.Vendor = Utf16ToUtf8<wchar_t, char>(manufacturer);
+                CpuInformation cpuInformation;
+                if (SUCCEEDED(GetClassObjectValue(classObject, L"Architecture",
+                                                  &variant)))
+                {
+                    switch (variant.uiVal)
+                    {
+                    case PROCESSOR_ARCHITECTURE_INTEL:
+                        cpuInformation.m_Architecture = CpuArchitecture::x86_32;
+                        break;
+                    case PROCESSOR_ARCHITECTURE_AMD64:
+                        cpuInformation.m_Architecture = CpuArchitecture::x86_64;
+                        break;
+                    case PROCESSOR_ARCHITECTURE_ARM:
+                        cpuInformation.m_Architecture = CpuArchitecture::AArch32;
+                        break;
+                    case PROCESSOR_ARCHITECTURE_ARM64:
+                        cpuInformation.m_Architecture = CpuArchitecture::AArch64;
+                        break;
+                    default:
+                        cpuInformation.m_Architecture = CpuArchitecture::Other;
+                    }
+                }
 
-#if defined(KITSUNE_ARCH_X86)
-                cpuInfo.Vendor = TranslateX86VendorString_(cpuInfo.Vendor);
-#endif
-            }
+                if (SUCCEEDED(GetClassObjectValue(classObject, L"Manufacturer",
+                                                  &variant)))
+                {
+                    cpuInformation.m_Vendor = BstrToUtf8(variant.bstrVal);
+                }
 
-            if (SUCCEEDED(classObject->Get(L"Name", 0, &variant, nullptr, nullptr)))
-            {
-                WideString wideName(variant.bstrVal, ::SysStringLen(variant.bstrVal));
-                cpuInfo.Description = Utf16ToUtf8<wchar_t, char>(wideName);
-            }
+                if (SUCCEEDED(GetClassObjectValue(classObject, L"Name", &variant)))
+                    cpuInformation.m_Description = BstrToUtf8(variant.bstrVal);
 
-            if (SUCCEEDED(classObject->Get(L"NumberOfCores", 0, &variant, nullptr, nullptr)))
-                cpuInfo.PhysicalCoreCount = variant.ulVal;
+                if (SUCCEEDED(GetClassObjectValue(classObject, L"NumberOfCores",
+                                                  &variant)))
+                {
+                    cpuInformation.m_PhysicalCores = variant.ulVal;
+                }
 
-            if (SUCCEEDED(classObject->Get(L"NumberOfLogicalProcessors", 0, &variant,
-                                           nullptr, nullptr)))
-            {
-                cpuInfo.LogicalCoreCount = variant.ulVal;
-            }
+                if (SUCCEEDED(GetClassObjectValue(
+                    classObject, L"NumberOfLogicalProcessors", &variant)))
+                {
+                    cpuInformation.m_LogicalCores = variant.ulVal;
+                }
 
-            alreadyRun = true;
-        });
+                cpuInfoArray.PushBack(Move(cpuInformation));
+            });
 
-        cpuInfo.Features = GetCpuFeatures_();
-        return cpuInfo;
+        ::VariantClear(&variant);
+        return cpuInfoArray;
     }
 
-    OsInformation SystemInformation::GetOperatingSystemInformation()
+    OperatingSystemInformation SystemInformation::GetOperatingSystemInformation()
     {
         ComInitializer initializer_{};
         ComPtr<IEnumWbemClassObject> enumerator = ExecuteWmiQuery(
             L"SELECT Caption, OSType FROM Win32_OperatingSystem");
 
-        OsInformation osInfo;
-        EnumerateWmiObject(enumerator, [&osInfo](IWbemClassObject* classObject,
-                                                 VARIANT& variant)
-        {
-            if (SUCCEEDED(classObject->Get(L"Caption", 0, &variant, nullptr, nullptr)))
-            {
-                WideString wideName(variant.bstrVal, ::SysStringLen(variant.bstrVal));
-                osInfo.Name = Utf16ToUtf8<wchar_t, char>(wideName);
-            }
+        VARIANT variant;
+        ::VariantInit(&variant);
 
-            if (SUCCEEDED(classObject->Get(L"OsType", 0, &variant, nullptr, nullptr)))
+        enum OsTypeConstants : USHORT
+        {
+            Win3x = 15,
+            Win95 = 16,
+            Win98 = 17,
+            WinNt = 18,
+            WinCe = 19
+        };
+
+        OperatingSystemInformation osInformation;
+        EnumerateWmiObject(enumerator, [&](IWbemClassObject* classObject)
+        {
+            if (SUCCEEDED(GetClassObjectValue(classObject, L"Caption", &variant)))
+                osInformation.m_Name = BstrToUtf8(variant.bstrVal);
+
+            if (SUCCEEDED(GetClassObjectValue(classObject, L"OsType", &variant)))
             {
                 switch (variant.uiVal)
                 {
-                case 15: osInfo.ShortName = "Windows 3.x";      break;
-                case 16: osInfo.ShortName = "Windows 95";       break;
-                case 17: osInfo.ShortName = "Windows 98";       break;
-                case 18: osInfo.ShortName = "Windows NT";       break;
-                case 19: osInfo.ShortName = "Windows Embedded"; break;
+                case OsTypeConstants::Win3x:
+                    osInformation.m_ShortName = "Windows 3.x";
+                    break;
+                case OsTypeConstants::Win95:
+                    osInformation.m_ShortName = "Windows 95";
+                    break;
+                case OsTypeConstants::Win98:
+                    osInformation.m_ShortName = "Windows 98";
+                    break;
+                case OsTypeConstants::WinNt:
+                    osInformation.m_ShortName = "Windows NT";
+                    break;
+                case OsTypeConstants::WinCe:
+                    osInformation.m_ShortName = "Windows Embedded";
+                    break;
                 default:
-                    osInfo.ShortName = "Windows";
+                    osInformation.m_ShortName = "Windows";
                 }
             }
         });
 
-        return osInfo;
+        ::VariantClear(&variant);
+        return osInformation;
     }
 
     BatteryInformation SystemInformation::GetBatteryInformation()
@@ -232,71 +243,36 @@ namespace Kitsune
         ComPtr<IEnumWbemClassObject> enumerator = ExecuteWmiQuery(
             L"SELECT EstimatedChargeRemaining, BatteryStatus FROM Win32_Battery");
 
-        BatteryInformation batteryInfo = {
-            .OnBattery = false,
-            .UsesBattery = false,
+        VARIANT variant;
+        ::VariantInit(&variant);
 
-            .ChargePercentage = 100
+        enum BatteryStatusConstants : USHORT
+        {
+            Other = 1,          // Discharging.
+            Unknown = 2,        // Has access to AC power.
+
+            /* Charge status (Full, High, Low, Critical) */
         };
 
-        // A system without a battery installed won't even loop once.
-        EnumerateWmiObject(enumerator, [&batteryInfo](IWbemClassObject* classObject,
-                                                      VARIANT& variant)
+        BatteryInformation batteryInformation;
+        EnumerateWmiObject(enumerator, [&](IWbemClassObject* classObject)
         {
-            batteryInfo.UsesBattery = true;
-            if (SUCCEEDED(classObject->Get(L"EstimatedChargeRemaining", 0, &variant,
-                                           nullptr, nullptr)))
+            batteryInformation.m_UsesBattery = true;
+            if (SUCCEEDED(GetClassObjectValue(
+                classObject, L"EstimatedChargeRemaining", &variant)))
             {
-                batteryInfo.ChargePercentage = variant.uiVal;
+                batteryInformation.m_ChargePercentage = variant.uiVal;
             }
 
-            if (SUCCEEDED(classObject->Get(L"BatteryStatus", 0, &variant, nullptr, nullptr)))
-                batteryInfo.OnBattery = (variant.uiVal != 2);
-        });
-
-        return batteryInfo;
-    }
-
-    MemoryStatusInformation SystemInformation::GetCurrentMemoryStatus()
-    {
-        ComInitializer initializer_{};
-        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWmiQuery(
-            L"SELECT FreePhysicalMemory, FreeVirtualMemory, TotalVirtualMemorySize "
-            L"FROM Win32_OperatingSystem");
-
-        MemoryStatusInformation memoryStatusInfo = { 0 };
-        EnumerateWmiObject(enumerator, [&memoryStatusInfo](IWbemClassObject* classObject,
-                                                           VARIANT& variant)
-        {
-            // CIM passes in Uint64 values via STRINGS (bstrVal), not unsigned long long (ullVal).
-            // Why..
-            if (SUCCEEDED(classObject->Get(L"FreePhysicalMemory", 0, &variant,
-                                           nullptr, nullptr)))
+            if (SUCCEEDED(classObject->Get(
+                L"BatteryStatus", 0, &variant, nullptr, nullptr)))
             {
-                memoryStatusInfo.AvailablePhysicalMemory = TranslateToUint64(variant.bstrVal);
-            }
-
-            if (SUCCEEDED(classObject->Get(L"FreeVirtualMemory", 0, &variant,
-                                           nullptr, nullptr)))
-            {
-                memoryStatusInfo.AvailableVirtualMemory = TranslateToUint64(variant.bstrVal);
-            }
-
-            if (SUCCEEDED(classObject->Get(L"TotalVirtualMemorySize", 0, &variant,
-                                           nullptr, nullptr)))
-            {
-                memoryStatusInfo.TotalVirtualMemory = TranslateToUint64(variant.bstrVal);
+                batteryInformation.m_OnBattery =
+                    (variant.uiVal != BatteryStatusConstants::Unknown);
             }
         });
 
-        enumerator = ExecuteWmiQuery(L"SELECT Capacity FROM Win32_PhysicalMemory");
-        EnumerateWmiObject(enumerator, [&memoryStatusInfo](IWbemClassObject* classObject,
-                                                           VARIANT& variant)
-        {
-            if (SUCCEEDED(classObject->Get(L"Capacity", 0, &variant, nullptr, nullptr)))
-                memoryStatusInfo.TotalPhysicalMemory += TranslateToUint64(variant.bstrVal) / 1000;
-        });
-
-        return memoryStatusInfo;
+        ::VariantClear(&variant);
+        return batteryInformation;
     }
 }

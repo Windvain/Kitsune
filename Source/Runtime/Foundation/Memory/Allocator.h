@@ -16,7 +16,7 @@ namespace Kitsune
         Equatable<const T, const T> &&
         requires (T& alloc, void* pointer, Usize size, Usize align)
         {
-            { alloc.Allocate(size) }        -> std::convertible_to<void*>;
+            { alloc.Allocate(size) } -> std::convertible_to<void*>;
             { alloc.Allocate(size, align) } -> std::convertible_to<void*>;
 
             alloc.Free(pointer, size);

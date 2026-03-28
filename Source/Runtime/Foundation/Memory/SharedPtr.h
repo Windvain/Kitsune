@@ -23,13 +23,14 @@ namespace Kitsune
             {
             }
 
-            virtual ~ReferenceCountBase_() { /* ... */ }
+            virtual ~ReferenceCountBase_() = default;
 
         public:
             virtual void DeleteValue() = 0;
             virtual void DeleteReferenceCount() = 0;
 
         public:
+            [[nodiscard]]
             inline Int32 GetCount() const
             {
                 if constexpr (Mode == ThreadSafety::NotThreadSafe)
@@ -421,13 +422,6 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
-    inline bool operator!=(const SharedPtr<T, Mode>& pointer1,
-                           const SharedPtr<U, UMode>& pointer2)
-    {
-        return (pointer1.Get() != pointer2.Get());
-    }
-
-    template<typename T, ThreadSafety Mode, typename U, ThreadSafety UMode>
     inline bool operator>=(const SharedPtr<T, Mode>& pointer1,
                            const SharedPtr<U, UMode>& pointer2)
     {
@@ -462,12 +456,6 @@ namespace Kitsune
     }
 
     template<typename T, ThreadSafety Mode>
-    inline bool operator!=(std::nullptr_t, const SharedPtr<T, Mode>& pointer)
-    {
-        return (pointer.Get() != nullptr);
-    }
-
-    template<typename T, ThreadSafety Mode>
     inline bool operator>=(std::nullptr_t, const SharedPtr<T, Mode>& pointer)
     {
         return !(nullptr < pointer);
@@ -495,12 +483,6 @@ namespace Kitsune
     inline bool operator==(const SharedPtr<T, Mode>& pointer, std::nullptr_t)
     {
         return (pointer.Get() == nullptr);
-    }
-
-    template<typename T, ThreadSafety Mode>
-    inline bool operator!=(const SharedPtr<T, Mode>& pointer, std::nullptr_t)
-    {
-        return (pointer.Get() != nullptr);
     }
 
     template<typename T, ThreadSafety Mode>
@@ -631,6 +613,7 @@ namespace Kitsune
         }
 
     public:
+        [[nodiscard]]
         inline Int32 GetCount() const
         {
             if (m_Data == nullptr)
@@ -639,11 +622,13 @@ namespace Kitsune
             return m_Data->GetCount();
         }
 
+        [[nodiscard]]
         inline bool IsExpired() const
         {
             return (GetCount() == 0);
         }
 
+        [[nodiscard]]
         inline SharedPtr<T> Lock() const
         {
             if (IsExpired())

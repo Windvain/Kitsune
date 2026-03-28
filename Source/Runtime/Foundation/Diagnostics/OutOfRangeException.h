@@ -10,7 +10,7 @@ namespace Kitsune
     {
     public:
         inline OutOfRangeException()
-            : Exception("OutOfRangeException", "Requested an out of range index")
+            : Exception("OutOfRangeException", "Requested an out of range index.")
         {
         }
     };

@@ -49,7 +49,8 @@ namespace Kitsune::Algorithms
     }
 
     // Returns an iterator to the first occurrence of a value which satisfies the
-    // predicate `pred` in the range `[begin, end]`, or `end` if no occurrence were found.
+    // predicate `pred` in the range `[begin, end]`, or `end` if no occurrence
+    // were found.
     template<ForwardIterator Iter,
              Invocable<typename IteratorTraits<Iter>::ValueType> Pred>
     [[nodiscard]]

@@ -22,9 +22,7 @@ namespace Kitsune
 
     void Memory::Shutdown()
     {
-        if (s_MemoryApi != nullptr)
-            delete s_MemoryApi;
-
+        delete s_MemoryApi;
         s_Initialized = false;
     }
 

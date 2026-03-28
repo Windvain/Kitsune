@@ -24,14 +24,16 @@ namespace Kitsune
 
         using DeleterType = Del;
 
-        static_assert(!std::is_reference_v<T>,
-                      "The type of the pointer must be a valid type. "
-                      "A reference type cannot be pointed to and therefore is not valid.");
+        static_assert(
+            !std::is_reference_v<T>,
+            "The type of the pointer must be a valid type. "
+            "A reference type cannot be pointed to and therefore is not valid.");
 
-        static_assert(std::is_convertible_v<T*, typename Del::ValueType*>,
-                      "The specified deleter cannot be used to delete an object of "
-                      "type T, because T* is not implicitly convertible to a pointer "
-                      "to the deleter's value type.");
+        static_assert(
+            std::is_convertible_v<T*, typename Del::ValueType*>,
+            "The specified deleter cannot be used to delete an object of "
+            "type T, because T* is not implicitly convertible to a pointer "
+            "to the deleter's value type.");
 
     public:
         inline ScopedPtr()
@@ -175,12 +177,6 @@ namespace Kitsune
     }
 
     template<typename T, Deleter Del, typename U>
-    inline bool operator!=(const ScopedPtr<T, Del>& pointer1, U* pointer2)
-    {
-        return (pointer1.Get() != pointer2);
-    }
-
-    template<typename T, Deleter Del, typename U>
     inline bool operator>=(const ScopedPtr<T, Del>& pointer1, U* pointer2)
     {
         return (pointer1.Get() >= pointer2);
@@ -208,12 +204,6 @@ namespace Kitsune
     inline bool operator==(T* pointer1, const ScopedPtr<U, Del>& pointer2)
     {
         return (pointer1 == pointer2.Get());
-    }
-
-    template<typename T, Deleter Del, typename U>
-    inline bool operator!=(T* pointer1, const ScopedPtr<U, Del>& pointer2)
-    {
-        return (pointer1 != pointer2.Get());
     }
 
     template<typename T, Deleter Del, typename U>

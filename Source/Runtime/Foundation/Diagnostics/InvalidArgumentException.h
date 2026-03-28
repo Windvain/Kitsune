@@ -8,7 +8,7 @@ namespace Kitsune
     class InvalidArgumentException : public Exception
     {
     public:
-        InvalidArgumentException(const char* description = "Invalid argument passed")
+        InvalidArgumentException(const char* description = "Invalid argument passed.")
             : Exception("InvalidArgumentException", description)
         {
         }

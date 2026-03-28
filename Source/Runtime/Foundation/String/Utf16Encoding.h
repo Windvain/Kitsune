@@ -25,7 +25,8 @@ namespace Kitsune
         }
 
     public:
-        template<ForwardIterator InputIter, OutputIterator<CodepointType> OutputIter>
+        template<ForwardIterator InputIter,
+                 OutputIterator<CodepointType> OutputIter>
         inline static DecodeResult<InputIter, OutputIter> DecodeSingle(
             InputIter begin, InputIter end,
             OutputIter outBegin)
@@ -66,7 +67,8 @@ namespace Kitsune
             return Result(++begin, ++outBegin);
         }
 
-        template<ForwardIterator InputIter, OutputIterator<CodeunitType> OutputIter>
+        template<ForwardIterator InputIter,
+                 OutputIterator<CodeunitType> OutputIter>
         inline static EncodeResult<InputIter, OutputIter> EncodeSingle(
             InputIter begin, InputIter end, OutputIter outBegin)
         {
@@ -74,8 +76,11 @@ namespace Kitsune
             if (begin == end)
                 return Result(begin, outBegin);
 
-            if ((*begin > MaxCodepointValue()) || ((*begin >= 0xD800) && (*begin <= 0xDFFF)))
+            if ((*begin > MaxCodepointValue()) ||
+                ((*begin >= 0xD800) && (*begin <= 0xDFFF)))
+            {
                 return Result(begin, outBegin);
+            }
 
             if (*begin <= 0xFFFF)
                 *outBegin = static_cast<T>(*begin);

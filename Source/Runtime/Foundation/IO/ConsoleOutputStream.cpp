@@ -21,8 +21,8 @@ namespace Kitsune
             *m_Pointer = dataView.Front();
             ++m_Pointer;
 
-            if ((m_Pointer == (m_Buffer + s_BufferSize)) || (dataView.Front() == '\0') ||
-                (dataView.Front() == '\n'))
+            if ((m_Pointer == (m_Buffer + s_BufferSize)) ||
+                (dataView.Front() == '\0') || (dataView.Front() == '\n'))
             {
                 ThreadUnsafeFlush_();
             }
@@ -39,18 +39,20 @@ namespace Kitsune
 
     void ConsoleOutputStream::ThreadUnsafeFlush_()
     {
-        const char* modified = FindInvalidEncoding<Utf8Encoding<char>>(m_Buffer, m_Pointer);
+        const char* modified = FindInvalidEncoding<Utf8Encoding<char>>(
+            m_Buffer, m_Pointer);
+
         if ((m_Pointer != m_Buffer) && (modified == m_Buffer))
         {
             const char* replacementChar = "\uFFFD";
             WriteToConsole_(replacementChar, replacementChar + 3);
 
             m_Pointer = m_Buffer;
-            throw InvalidArgumentException("Tried to write an invalid string to the console.");
+            throw InvalidArgumentException(
+                "Tried to write an invalid string to the console.");
         }
 
         WriteToConsole_(m_Buffer, modified);
-
         if (modified != m_Pointer)
         {
             Ptrdiff charsRemaining = m_Buffer + s_BufferSize - modified;

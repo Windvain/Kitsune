@@ -257,7 +257,7 @@ namespace Kitsune
         }
     }
 
-    void WindowsWindow::SetTitle(const StringView title)
+    void WindowsWindow::SetTitle(StringView title)
     {
         WideString wideTitle = Utf8ToUtf16<char, wchar_t>(title);
         if (!::SetWindowTextW(m_Handle, wideTitle.Raw()))

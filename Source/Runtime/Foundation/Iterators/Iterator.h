@@ -70,8 +70,8 @@ namespace Kitsune
             { iterator-- } -> std::same_as<It>;
         };
 
-    // Describes a `BidirectionalIterator` which provides constant time advancement of
-    // the iterator.
+    // Describes a `BidirectionalIterator` which provides constant time
+    // advancement of the iterator.
     template<typename It>
     concept RandomAccessIterator =
         BidirectionalIterator<It> &&
@@ -79,14 +79,17 @@ namespace Kitsune
         requires (It iter, const It const_iter,
                   typename IteratorTraits<It>::DifferenceType n)
         {
-            { iter += n               } -> std::same_as<It&>;
-            { const_iter + n          } -> std::same_as<It>;
-            { n + const_iter          } -> std::same_as<It>;
-            { iter -= n               } -> std::same_as<It&>;
-            { const_iter - n          } -> std::same_as<It>;
+            { iter += n } -> std::same_as<It&>;
+            { const_iter + n } -> std::same_as<It>;
+            { n + const_iter } -> std::same_as<It>;
+            { iter -= n } -> std::same_as<It&>;
+            { const_iter - n } -> std::same_as<It>;
             { const_iter - const_iter } -> std::same_as<decltype(n)>;
 
-            { const_iter[n] }         -> std::same_as<typename IteratorTraits<It>::ValueType&>;
-            { ToAddress(const_iter) } -> std::same_as<typename IteratorTraits<It>::ValueType*>;
+            { const_iter[n] } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
+
+            {
+                ToAddress(const_iter)
+            } -> std::same_as<typename IteratorTraits<It>::ValueType*>;
         };
 }

@@ -17,8 +17,9 @@ namespace Kitsune
         using Iterator = Iter;
 
     public:
-        inline explicit BasicFormatContext(BasicStringView<Char> formatSpecs,
-                                           Iter outputIter)
+        inline explicit BasicFormatContext(
+            BasicStringView<Char> formatSpecs,
+            Iter outputIter)
             : m_FormatSpecs(formatSpecs), m_OutputIter(outputIter)
         {
         }
@@ -55,7 +56,9 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(bool boolean, const FormatContext<Iter>& context)
+        inline static Iter Format(
+            bool boolean,
+            const FormatContext<Iter>& context)
         {
             StringView specs = context.GetFormatSpecifications();
             bool formatAsInteger = false;
@@ -63,22 +66,22 @@ namespace Kitsune
             if (specs.Contains('i') || specs.Contains('I'))
                 formatAsInteger = true;
 
-            StringView result = formatAsInteger ? FormatAsInteger(boolean) :
-                                                  FormatAsBoolean(boolean);
+            StringView result = formatAsInteger ? FormatAsInteger_(boolean) :
+                                                  FormatAsBoolean_(boolean);
 
             return Algorithms::Copy(result.GetBegin(), result.GetEnd(),
                                     context.GetOutput());
         }
 
     private:
-        inline static StringView FormatAsInteger(bool boolean)
+        inline static StringView FormatAsInteger_(bool boolean)
         {
             // A false value will be converted to zero, while a true value
             // to one, so there is no need to use the integer formatter.
             return boolean ? "1" : "0";
         }
 
-        inline static StringView FormatAsBoolean(bool boolean)
+        inline static StringView FormatAsBoolean_(bool boolean)
         {
             return boolean ? "true" : "false";
         }
@@ -89,7 +92,9 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(Integer integer, const FormatContext<Iter>& context)
+        inline static Iter Format(
+            Integer integer,
+            const FormatContext<Iter>& context)
         {
             using UnsignedType = std::make_unsigned_t<Integer>;
             StringView specs = context.GetFormatSpecifications();
@@ -97,10 +102,14 @@ namespace Kitsune
             UnsignedType unsignedValue;
             UnsignedType base = 10;
 
-            if (specs.Contains('b') || specs.Contains('B'))      base = 2;
-            else if (specs.Contains('o') || specs.Contains('O')) base = 4;
-            else if (specs.Contains('d') || specs.Contains('D')) base = 10;
-            else if (specs.Contains('x') || specs.Contains('X')) base = 16;
+            if (specs.Contains('b') || specs.Contains('B'))
+                base = 2;
+            else if (specs.Contains('o') || specs.Contains('O'))
+                base = 4;
+            else if (specs.Contains('d') || specs.Contains('D'))
+                base = 10;
+            else if (specs.Contains('x') || specs.Contains('X'))
+                base = 16;
 
             if ((base != 10) || (integer >= 0))
                 std::memcpy(&unsignedValue, &integer, sizeof(Integer));
@@ -153,7 +162,10 @@ namespace Kitsune
             }
 
             Algorithms::Reverse(result.GetBegin(), result.GetEnd());
-            return Algorithms::Copy(result.GetBegin(), result.GetEnd(), context.GetOutput());
+
+            return Algorithms::Copy(
+                result.GetBegin(), result.GetEnd(),
+                context.GetOutput());
         }
     };
 
@@ -162,7 +174,9 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(char character, const FormatContext<Iter>& context)
+        inline static Iter Format(
+            char character,
+            const FormatContext<Iter>& context)
         {
             StringView specs = context.GetFormatSpecifications();
             if (specs.Contains('I') || specs.Contains('i'))
@@ -191,15 +205,19 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(Float floatNum, const FormatContext<Iter>& context)
+        inline static Iter Format(
+            Float floatNum,
+            const FormatContext<Iter>& context)
         {
             auto value = static_cast<long double>(floatNum);
-            auto count = static_cast<Usize>(std::snprintf(nullptr, 0, "%Lf", value) - 1);
+            int count = std::snprintf(nullptr, 0, "%Lf", value) - 1;
 
-            String str(count, '\0');
+            String str(static_cast<Usize>(count), '\0');
             std::snprintf(str.Data(), count, "%Lf", value);
 
-            return Algorithms::Copy(str.GetBegin(), str.GetEnd(), context.GetOutput());
+            return Algorithms::Copy(
+                str.GetBegin(), str.GetEnd(),
+                context.GetOutput());
         }
     };
 
@@ -208,7 +226,9 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(T* pointer, const FormatContext<Iter>& context)
+        inline static Iter Format(
+            T* pointer,
+            const FormatContext<Iter>& context)
         {
             auto pointerInt = *reinterpret_cast<Uintptr*>(&pointer);
             FormatContext<Iter> modifiedContext("0#x", context.GetOutput());
@@ -225,7 +245,9 @@ namespace Kitsune
     {
     public:
         template<OutputIterator<const char&> Iter>
-        inline static Iter Format(StringView string, const FormatContext<Iter>& context)
+        inline static Iter Format(
+            StringView string,
+            const FormatContext<Iter>& context)
         {
             return Algorithms::Copy(string.GetBegin(), string.GetEnd(),
                                     context.GetOutput());

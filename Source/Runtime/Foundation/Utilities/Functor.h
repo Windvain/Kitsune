@@ -66,11 +66,15 @@ namespace Kitsune
             inline BaseType_* MoveTo(Uint8 (*smallStorage)[]) override
             {
                 if constexpr (sizeof(*this) <= sizeof(void*))
-                    return Memory::ConstructAt<ThisType_>(*smallStorage, Move(m_Callable));
+                {
+                    return Memory::ConstructAt<ThisType_>(
+                        *smallStorage,
+                        Move(m_Callable));
+                }
 
-                // MoveTo() should only be called when the functor is stored locally/small.
-                // If the callable type is stored on the heap, then the pointers are swapped
-                // instead.
+                // MoveTo() should only be called when the functor is stored
+                // locally/small. If the callable type is stored on the heap,
+                // then the pointers are swapped instead.
                 KITSUNE_UNREACHABLE();
             }
 
@@ -82,10 +86,7 @@ namespace Kitsune
         class FunctorStorage
         {
         public:
-            inline FunctorStorage()
-                : m_Pointer(nullptr)
-            {
-            }
+            inline FunctorStorage() = default;
 
             template<typename T>
                 requires InvocableReturn<std::decay_t<T>, Ret, Args...>
@@ -163,6 +164,7 @@ namespace Kitsune
             }
 
         private:
+            [[nodiscard]]
             inline bool IsLocal_() const
             {
                 return (m_Pointer == static_cast<const void*>(m_SmallStorage));
@@ -183,8 +185,8 @@ namespace Kitsune
             }
 
         private:
-            CallableStorageBase<Ret, Args...>* m_Pointer;
-            Uint8 m_SmallStorage[8];
+            CallableStorageBase<Ret, Args...>* m_Pointer = nullptr;
+            Uint8 m_SmallStorage[8] = { 0 };
         };
     }
 

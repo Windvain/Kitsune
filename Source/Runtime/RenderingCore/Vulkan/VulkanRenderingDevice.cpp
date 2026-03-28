@@ -26,11 +26,12 @@ namespace Kitsune
 
         VkDeviceCreateInfo deviceCreateInfo = { /* ... */ };
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCreateInfo.queueCreateInfoCount = queueCreateInfos.Size();
-        deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.Data();
+        deviceCreateInfo.queueCreateInfoCount = static_cast<std::uint32_t>(queueCreateInfos.Size());
+        deviceCreateInfo.enabledExtensionCount = static_cast<std::uint32_t>(deviceExtensions.Size());
 
-        deviceCreateInfo.enabledExtensionCount = deviceExtensions.Size();
+        deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.Data();
         deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.Data();
+
         deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
         KITSUNE_VK_THROW_IF_FAIL(

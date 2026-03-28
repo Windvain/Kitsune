@@ -8,28 +8,26 @@
 
 namespace Kitsune
 {
-    bool ShowFallbackMessageBox(const MessageBoxSpecifications& specs,
-                                MessageBoxButtonId* pressed)
+    Pair<bool, MessageBoxButtonId> ShowFallbackMessageBox(
+        const MessageBoxSpecifications& specs)
     {
         // TODO: Unimplemented. Will implement once I iron out the needed changes.
         KITSUNE_UNUSED(specs);
-        KITSUNE_UNUSED(pressed);
-
-        return false;
+        return { false, 0 };
     }
 
-    bool ShowMessageBox(const MessageBoxSpecifications& specs,
-                        MessageBoxButtonId* pressed)
+    Pair<bool, MessageBoxButtonId> ShowMessageBox(
+        const MessageBoxSpecifications& specs)
     {
         // As of now, Windows will always load versions <6.0, which doesn't have
         // TaskDialogIndirect(). Applications will have to use an application
         // manifest to load the correct version.
         HMODULE comctl32 = ::LoadLibraryW(L"comctl32.dll");
         if (comctl32 == nullptr)
-            return ShowFallbackMessageBox(specs, pressed);
+            return ShowFallbackMessageBox(specs);
 
-        using TaskDialogIndirectProc = HRESULT (*)(const TASKDIALOGCONFIG*,
-                                                   int*, int*, BOOL*);
+        using TaskDialogIndirectProc =
+            HRESULT (*)(const TASKDIALOGCONFIG*, int*, int*, BOOL*);
 
         auto taskDialogIndirect = (TaskDialogIndirectProc)(void*)(
             ::GetProcAddress(comctl32, "TaskDialogIndirect"));
@@ -37,7 +35,7 @@ namespace Kitsune
         if (taskDialogIndirect == nullptr)
         {
             ::FreeLibrary(comctl32);
-            return ShowFallbackMessageBox(specs, pressed);
+            return ShowFallbackMessageBox(specs);
         }
 
         // The actual message box code.
@@ -86,13 +84,13 @@ namespace Kitsune
         }
 
         int internalPressed;
-        HRESULT result = taskDialogIndirect(&config, &internalPressed, nullptr,
-                                            nullptr);
+        HRESULT result = taskDialogIndirect(
+            &config, &internalPressed, nullptr, nullptr);
 
         ::FreeLibrary(comctl32);
 
         if (FAILED(result))
-            return false;
+            return { false, 0 };
 
         // HACK: IDCANCEL, IDABORT, and all other predefined IDs cause unintended
         // consequences. Offset the button ID internally to avoid this issue.
@@ -101,9 +99,10 @@ namespace Kitsune
         //
         // If no buttons were specified, then the message box automatically adds
         // an Ok button.
-        if ((pressed != nullptr) && !buttons.IsEmpty())
-            *pressed = internalPressed - (IDCONTINUE + 1);
+        Uint16 pressedId = (!buttons.IsEmpty()) ?
+            internalPressed - (IDCONTINUE + 1) :
+            0;
 
-        return true;
+        return { true, pressedId };
     }
 }

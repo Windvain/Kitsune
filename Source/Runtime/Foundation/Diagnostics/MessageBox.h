@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Foundation/Common/Types.h"
-
 #include "Foundation/String/String.h"
+
+#include "Foundation/Containers/Pair.h"
 #include "Foundation/Containers/Array.h"
 
 namespace Kitsune
@@ -37,9 +37,9 @@ namespace Kitsune
     };
 
     // Shows a platform native message box.
-    // If `pressed` is not a null pointer, this function will write the ID of the button
-    // pressed by the user into it.
-    // Returns true if the message box was successfully shown, else returns false.
-    bool ShowMessageBox(const MessageBoxSpecifications& specs,
-                        MessageBoxButtonId* pressed = nullptr);
+    // Returns a pair of values, the former is true when the message box
+    // was successfully shown, else it is false. The latter returns the ID
+    // of the button pressed by the user.
+    Pair<bool, MessageBoxButtonId>
+    ShowMessageBox(const MessageBoxSpecifications& specs);
 }

@@ -7,14 +7,14 @@ namespace Kitsune
 {
 #if defined(KITSUNE_SUPPORTS_BACKTRACES)
     KITSUNE_NOINLINE
-    static Array<BacktraceFrame, Details::BacktraceAllocator_> GuardedBacktraceCapture(
+    static Backtrace::ContainerType GuardedBacktraceCapture(
         Uint32 skipCount, Uint32 maxDepth) noexcept
     {
         const Uint32 MaxCapturedFrames = 128;
         maxDepth = KITSUNE_MIN(maxDepth, MaxCapturedFrames);
 
         // Capture the backtrace.
-        Array<void*, Details::BacktraceAllocator_> stackTrace(maxDepth, 0);
+        Array<void*, Backtrace::AllocatorType> stackTrace(maxDepth, 0);
         USHORT frameCount = ::CaptureStackBackTrace(
             skipCount,
             maxDepth,
@@ -24,7 +24,7 @@ namespace Kitsune
         stackTrace.Remove(stackTrace.GetBegin() + frameCount, stackTrace.GetEnd());
 
         // Get the symbol information out of the pointers.
-        Array<BacktraceFrame, Details::BacktraceAllocator_> backtraceArray;
+        Backtrace::ContainerType backtraceArray;
         for (void* pointer : stackTrace)
         {
             auto address = reinterpret_cast<DWORD_PTR>(pointer);
@@ -72,7 +72,7 @@ namespace Kitsune
             return { /* ... */ };
         }
 
-        Array<BacktraceFrame, Details::BacktraceAllocator_> backtraceArray;
+        Backtrace::ContainerType backtraceArray;
         try
         {
             // Skip GuardedBacktraceCapture() and Backtrace::Capture().
@@ -83,7 +83,7 @@ namespace Kitsune
         }
 
         ::SymCleanup(::GetCurrentProcess());
-        return backtraceArray;
+        return Backtrace(Move(backtraceArray));
     }
 
 #else
@@ -91,16 +91,8 @@ namespace Kitsune
     {
         KITSUNE_UNUSED(skipCount);
         KITSUNE_UNUSED(maxDepth);
+
         return Backtrace();
     }
 #endif
-
-    bool Backtrace::IsSupported()
-    {
-#if defined(KITSUNE_SUPPORTS_BACKTRACES)
-        return true;
-#else
-        return false;
-#endif
-    }
 }

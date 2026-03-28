@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
-#include "Foundation/Common/Macros.h"
+#include "Foundation/Common/Predefined.h"
 
 #if defined(KITSUNE_ARCH_X86)
     #if defined(KITSUNE_COMPILER_MSVC)
@@ -17,20 +17,18 @@ namespace Kitsune
 {
     struct CpuIdResult
     {
-        int Eax, Ebx, Ecx, Edx;
+        unsigned int Eax, Ebx, Ecx, Edx;
     };
 
     // Returns the result of calling the CPUID instruction. Returns the values
     // of the registers EAX, EBX, ECX, and EDX.
-    KITSUNE_FORCEINLINE CpuIdResult CallCpuId(Int32 eax, Int32 ecx)
+    inline CpuIdResult CallCpuId(Int32 eax, Int32 ecx)
     {
+        unsigned int cpuInfo[4];
 #if defined(KITSUNE_COMPILER_MSVC)
-        int cpuInfo[4];
-        __cpuidex(cpuInfo, eax, ecx);
-
+        __cpuidex(reinterpret_cast<int(*)[4]>(cpuInfo), eax, ecx);
         return CpuIdResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
 #else
-        unsigned int cpuInfo[4];
         __get_cpuid_count(
             eax, ecx,
             cpuInfo,

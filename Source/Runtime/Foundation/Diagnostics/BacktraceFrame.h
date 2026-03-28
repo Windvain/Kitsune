@@ -9,16 +9,16 @@ namespace Kitsune
     class BacktraceFrame
     {
     public:
-        inline BacktraceFrame()
-            : m_FileName("<unknown>"), m_SymbolName("<unknown>"),
-              m_LineNumber(), m_Address()
-        {
-        }
-
-        inline BacktraceFrame(StringView fileName, StringView symbolName,
-                              Uint64 lineNumber, void* address)
-            : m_FileName(fileName), m_SymbolName(symbolName),
-              m_LineNumber(lineNumber), m_Address(address)
+        inline BacktraceFrame() = default;
+        inline BacktraceFrame(
+            StringView fileName,
+            StringView symbolName,
+            Uint64 lineNumber,
+            void* address)
+            : m_FileName(fileName),
+              m_SymbolName(symbolName),
+              m_LineNumber(lineNumber),
+              m_Address(address)
         {
         }
 
@@ -50,17 +50,17 @@ namespace Kitsune
     public:
         inline bool operator==(const BacktraceFrame& backtraceFrame) const
         {
-            return (m_FileName   == backtraceFrame.m_FileName) &&
+            return (m_FileName == backtraceFrame.m_FileName) &&
                    (m_SymbolName == backtraceFrame.m_SymbolName) &&
                    (m_LineNumber == backtraceFrame.m_LineNumber) &&
-                   (m_Address    == backtraceFrame.m_Address);
+                   (m_Address == backtraceFrame.m_Address);
         }
 
     private:
-        String m_FileName;
-        String m_SymbolName;
+        String m_FileName = "<unknown>";
+        String m_SymbolName = "<unknown>";
 
-        Uint64 m_LineNumber;
-        void* m_Address;
+        Uint64 m_LineNumber = 0;
+        void* m_Address = nullptr;
     };
 }

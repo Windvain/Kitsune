@@ -19,9 +19,10 @@ namespace Kitsune
     class BasicStringView
     {
     public:
-        static_assert(std::is_trivial_v<T>,
-                    "BasicStringView<T> assumes that the element type being "
-                    "passed to it is a trivial type.");
+        static_assert(
+            std::is_trivial_v<T>,
+            "BasicStringView<T> assumes that the element type being "
+            "passed to it is a trivial type.");
 
         using ValueType = T;
 
@@ -218,11 +219,29 @@ namespace Kitsune
         }
 
     public:
-        [[nodiscard]] inline Iterator GetBegin() { return m_Pointer; }
-        [[nodiscard]] inline ConstIterator GetBegin() const { return m_Pointer; }
+        [[nodiscard]]
+        inline Iterator GetBegin()
+        {
+            return m_Pointer;
+        }
 
-        [[nodiscard]] inline Iterator GetEnd() { return (m_Pointer + m_Size); }
-        [[nodiscard]] inline ConstIterator GetEnd() const { return (m_Pointer + m_Size); }
+        [[nodiscard]]
+        inline ConstIterator GetBegin() const
+        {
+            return m_Pointer;
+        }
+
+        [[nodiscard]]
+        inline Iterator GetEnd()
+        {
+            return (m_Pointer + m_Size);
+        }
+
+        [[nodiscard]]
+        inline ConstIterator GetEnd() const
+        {
+            return (m_Pointer + m_Size);
+        }
 
         [[nodiscard]]
         inline ReverseIterator GetReverseBegin()

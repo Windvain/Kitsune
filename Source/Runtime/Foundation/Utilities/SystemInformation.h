@@ -1,90 +1,127 @@
 #pragma once
 
 #include "Foundation/String/String.h"
+#include "Foundation/Containers/Array.h"
 
-#include "Foundation/Utilities/EnumFlags.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
+    // The architecture of the CPU.
     enum class CpuArchitecture
     {
-        Unknown,
-
-        x86_32,
-        x86_64,
-        AArch32,
-        AArch64
+        Other,      //< The architecture is unknown or is not included in this enum.
+        x86_32,     //< CPU architecture is the 32-bit version of x86.
+        x86_64,     //< CPU architecture is x86_64, or better known by x64 or AMD64.
+        AArch32,    //< Architecture matches ARMv7 and below.
+        AArch64     //< Architecture matches all ARMv8 CPUs and above.
     };
 
-    // CPU additional features. Only x86 architecture features are listed
-    // for now, as there are no plans to support ARM CPUs.
-    enum class CpuFeatures : Uint64
+    // Contains information regarding the system's CPU.
+    class CpuInformation
     {
-        None     = 0,
-        MMX      = 1 << 0,
-        SSE      = 1 << 1,
-        SSE2     = 1 << 2,
-        SSE3     = 1 << 3,
-        SSSE3    = 1 << 4,
-        SSE4_1   = 1 << 5,
-        SSE4_2   = 1 << 6,
-        POPCNT   = 1 << 7,
-        AVX      = 1 << 8,
-        AVX2     = 1 << 9,
-        AVX512_F = 1 << 10
+    public:
+        [[nodiscard]] inline String Vendor() const { return m_Vendor; }
+        [[nodiscard]] inline String Description() const { return m_Description; }
+
+        [[nodiscard]]
+        inline Uint32 LogicalCoreCount() const { return m_LogicalCores; }
+
+        [[nodiscard]]
+        inline Uint32 PhysicalCoreCount() const { return m_PhysicalCores; }
+
+        [[nodiscard]]
+        inline CpuArchitecture Architecture() const
+        {
+            return m_Architecture;
+        }
+
+        [[nodiscard]]
+        inline Uint32 ArchitectureBitWidth() const
+        {
+            switch (m_Architecture)
+            {
+            case CpuArchitecture::x86_32:   [[fallthrough]];
+            case CpuArchitecture::AArch32:
+                return 32;
+
+            case CpuArchitecture::x86_64:   [[fallthrough]];
+            case CpuArchitecture::AArch64:
+                return 64;
+
+            case CpuArchitecture::Other:
+                return 0;
+            }
+
+            KITSUNE_UNREACHABLE();
+        }
+
+    private:
+        friend class SystemInformation;
+
+    private:
+        String m_Vendor;
+        String m_Description;
+
+        Uint32 m_LogicalCores = 0;
+        Uint32 m_PhysicalCores = 0;
+
+        CpuArchitecture m_Architecture = CpuArchitecture::Other;
     };
 
-    KITSUNE_OVERLOAD_FLAGS_OPERATORS(CpuFeatures);
-
-    struct CpuInformation
+    // Contains information regarding the operating system.
+    class OperatingSystemInformation
     {
-        CpuFeatures Features;
-        CpuArchitecture Architecture;
+    public:
+        [[nodiscard]] inline String Name() const { return m_Name; }
+        [[nodiscard]] inline String ShortName() const { return m_ShortName; }
 
-        String Vendor;
-        String Description;
+        [[nodiscard]]
+        inline Uint32 ArchitectureBitWidth() const { return m_ArchitectureBits; }
 
-        Uint32 LogicalCoreCount;
-        Uint32 PhysicalCoreCount;
+    private:
+        friend class SystemInformation;
+        OperatingSystemInformation() = default;
+
+    private:
+        String m_Name = "<unknown>";
+        String m_ShortName = "<unknown>";
+
+        Uint32 m_ArchitectureBits = 0;
     };
 
-    struct OsInformation
+    // Contains information about the battery state.
+    class BatteryInformation
     {
-        String Name;
-        String ShortName;
-    };
+    public:
+        [[nodiscard]] inline bool OnBattery() const { return m_OnBattery; }
+        [[nodiscard]] inline bool UsesBattery() const { return m_UsesBattery; }
 
-    struct BatteryInformation
-    {
-        bool OnBattery;
-        bool UsesBattery;
+        [[nodiscard]]
+        inline Uint8 ChargePercentage() const
+        {
+            return m_ChargePercentage;
+        }
 
-        Uint8 ChargePercentage;
-    };
+    private:
+        friend class SystemInformation;
+        BatteryInformation() = default;
 
-    struct MemoryStatusInformation
-    {
-        Uint64 TotalPhysicalMemory;
-        Uint64 AvailablePhysicalMemory;
-        Uint64 TotalVirtualMemory;
-        Uint64 AvailableVirtualMemory;
+    private:
+        bool m_OnBattery = false;
+        bool m_UsesBattery = false;
+
+        Uint8 m_ChargePercentage = 100;
     };
 
     // Obtains the running system's information. Currently, this class only
-    // has full functionality under x86. ARM will still compile (?) but will
-    // return `<unknown>` for many functions.
+    // has full functionality under the x86 architecture.
     class SystemInformation : public NonCopyable
     {
     public:
-        static CpuInformation GetCpuInformation();
-        static OsInformation GetOperatingSystemInformation();
+        static Array<CpuInformation> GetCpuInformation();
+        static OperatingSystemInformation GetOperatingSystemInformation();
 
         static BatteryInformation GetBatteryInformation();
-        static MemoryStatusInformation GetCurrentMemoryStatus();
-
-    private:
-        static CpuFeatures GetCpuFeatures_();
-        static StringView TranslateX86VendorString_(const StringView manufacturer);
     };
 }

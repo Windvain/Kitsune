@@ -8,7 +8,7 @@ namespace Kitsune
     class FormatException : public Exception
     {
     public:
-        inline FormatException(const char* desc = "Unknown format error")
+        inline FormatException(const char* desc = "Unknown format error.")
             : Exception("FormatException", desc)
         {
         }

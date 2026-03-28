@@ -33,7 +33,7 @@ namespace Kitsune
     // the output as a string.
     template<typename... Args>
     [[nodiscard]]
-    inline String Format(const StringView formatString, Args&&... args)
+    inline String Format(StringView formatString, Args&&... args)
     {
         using OutputIter = BackInsertIterator<String>;
         String result;

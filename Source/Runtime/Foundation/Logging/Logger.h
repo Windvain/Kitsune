@@ -8,7 +8,7 @@ namespace Kitsune
     class Logger
     {
     public:
-        virtual ~Logger() { /* ... */ }
+        virtual ~Logger() = default;
 
     public:
         virtual void Log(const LogPayload& payload) = 0;

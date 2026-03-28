@@ -49,7 +49,6 @@ set(FILES
     "Foundation/Diagnostics/Exception.cpp"
     "Foundation/Diagnostics/Exception.h"
     "Foundation/Diagnostics/InvalidArgumentException.h"
-    "Foundation/Diagnostics/IsDebuggerAttached.h"
     "Foundation/Diagnostics/LogicException.h"
     "Foundation/Diagnostics/MessageBox.h"
     "Foundation/Diagnostics/OutOfRangeException.h"
@@ -126,7 +125,6 @@ set(FILES
     "Foundation/Utilities/EnumFlags.h"
     "Foundation/Utilities/Functor.h"
     "Foundation/Utilities/NonCopyable.h"
-    "Foundation/Utilities/SystemInformation.cpp"
     "Foundation/Utilities/SystemInformation.h"
 
     "Launch/EngineLoop.cpp"
@@ -179,7 +177,6 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Application/Windows/WindowsWindow.h"
 
         "Foundation/Windows/WindowsConsoleStream.cpp"
-        "Foundation/Windows/WindowsDebuggerAttached.cpp"
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"
@@ -187,6 +184,15 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Launch/Windows/WindowsEngineLoop.cpp"
         "Launch/Windows/WindowsEntry.cpp"
     )
+
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        list(APPEND FILES
+            "Foundation/Msvc/MsvcBacktrace.cpp"
+            "Foundation/Msvc/MsvcInterlocked.inl"
+            "Foundation/Msvc/MsvcSystemInformation.cpp")
+    else()
+        list(APPEND FILES "Foundation/Windows/WindowsSystemInformation.cpp")
+    endif()
 
     if (KITSUNE_BUILD_VULKAN_BACKEND)
         list(APPEND FILES
@@ -208,12 +214,6 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    list(APPEND FILES
-        "Foundation/Msvc/MsvcBacktrace.cpp"
-        "Foundation/Msvc/MsvcInterlocked.inl"
-        "Foundation/Msvc/MsvcSystemInformation.cpp"
-    )
-
     append_if_backtrace_supported(LINKED_LIBRARIES "dbghelp.lib")
     list(APPEND LINKED_LIBRARIES
         # Used for querying WMI which is used in getting information about the system.
@@ -257,9 +257,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND FILES
         "Foundation/Clang/ClangBacktrace.cpp"
         "Foundation/Clang/ClangInterlocked.inl"
-
-        # This file is for compilers OTHER than MSVC.
-        "Foundation/Windows/WindowsSystemInformation.cpp"
     )
 
     find_library(LIBBACKTRACE_LIBRARY

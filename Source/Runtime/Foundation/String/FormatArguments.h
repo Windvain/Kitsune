@@ -39,6 +39,8 @@ namespace Kitsune
             using GeneralFunctionType = void(*)();
 
         public:
+            CustomTypeHandle() = default;
+
             template<typename T>
             inline explicit CustomTypeHandle(const T& value)
                 : m_Pointer(AddressOf(value)),
@@ -68,8 +70,8 @@ namespace Kitsune
             }
 
         private:
-            const void* m_Pointer;
-            GeneralFunctionType m_FormatFunction;
+            const void* m_Pointer = nullptr;
+            GeneralFunctionType m_FormatFunction = nullptr;
         };
 
     public:
@@ -105,7 +107,6 @@ namespace Kitsune
                 m_SharedData.SignedLong = value;
             else if constexpr (std::is_same_v<PureType, signed long long>)
                 m_SharedData.SignedLongLong = value;
-
             else if constexpr (std::is_same_v<PureType, float>)
                 m_SharedData.Float = value;
             else if constexpr (std::is_same_v<PureType, double>)
@@ -125,28 +126,58 @@ namespace Kitsune
         inline void Visit(Function func) const
         {
             switch (m_EnumType)
-        {
-            case FormatType::Boolean:          func(m_SharedData.Boolean);          break;
-            case FormatType::Character:        func(m_SharedData.Character);        break;
-
-            case FormatType::SignedChar:       func(m_SharedData.SignedChar);       break;
-            case FormatType::SignedShort:      func(m_SharedData.SignedShort);      break;
-            case FormatType::SignedInt:        func(m_SharedData.SignedInt);        break;
-            case FormatType::SignedLong:       func(m_SharedData.SignedLong);       break;
-            case FormatType::SignedLongLong:   func(m_SharedData.SignedLongLong);   break;
-
-            case FormatType::UnsignedChar:     func(m_SharedData.UnsignedChar);     break;
-            case FormatType::UnsignedShort:    func(m_SharedData.UnsignedShort);    break;
-            case FormatType::UnsignedInt:      func(m_SharedData.UnsignedInt);      break;
-            case FormatType::UnsignedLong:     func(m_SharedData.UnsignedLong);     break;
-            case FormatType::UnsignedLongLong: func(m_SharedData.UnsignedLongLong); break;
-
-            case FormatType::Float:            func(m_SharedData.Float);            break;
-            case FormatType::Double:           func(m_SharedData.Double);           break;
-            case FormatType::LongDouble:       func(m_SharedData.LongDouble);       break;
-
-            case FormatType::Pointer:          func(m_SharedData.Pointer);          break;
-            case FormatType::String:           func(m_SharedData.String);           break;
+            {
+            case FormatType::Boolean:
+                func(m_SharedData.Boolean);
+                break;
+            case FormatType::Character:
+                func(m_SharedData.Character);
+                break;
+            case FormatType::SignedChar:
+                func(m_SharedData.SignedChar);
+                break;
+            case FormatType::SignedShort:
+                func(m_SharedData.SignedShort);
+                break;
+            case FormatType::SignedInt:
+                func(m_SharedData.SignedInt);
+                break;
+            case FormatType::SignedLong:
+                func(m_SharedData.SignedLong);
+                break;
+            case FormatType::SignedLongLong:
+                func(m_SharedData.SignedLongLong);
+                break;
+            case FormatType::UnsignedChar:
+                func(m_SharedData.UnsignedChar);
+                break;
+            case FormatType::UnsignedShort:
+                func(m_SharedData.UnsignedShort);
+                break;
+            case FormatType::UnsignedInt:
+                func(m_SharedData.UnsignedInt);
+                break;
+            case FormatType::UnsignedLong:
+                func(m_SharedData.UnsignedLong);
+                break;
+            case FormatType::UnsignedLongLong:
+                func(m_SharedData.UnsignedLongLong);
+                break;
+            case FormatType::Float:
+                func(m_SharedData.Float);
+                break;
+            case FormatType::Double:
+                func(m_SharedData.Double);
+                break;
+            case FormatType::LongDouble:
+                func(m_SharedData.LongDouble);
+                break;
+            case FormatType::Pointer:
+                func(m_SharedData.Pointer);
+                break;
+            case FormatType::String:
+                func(m_SharedData.String);
+                break;
             default:
                 func(m_SharedData.Custom);
             }
@@ -221,9 +252,9 @@ namespace Kitsune
             long double LongDouble;
 
             const volatile void* Pointer;
-            BasicStringView<Char> String;
+            BasicStringView<Char> String{ /* ... */ };
             CustomTypeHandle Custom;
-        } m_SharedData = { 0 };
+        } m_SharedData;
     };
 
     template<Character Char, Usize ArgCount, OutputIterator<const Char&> OutputIter>

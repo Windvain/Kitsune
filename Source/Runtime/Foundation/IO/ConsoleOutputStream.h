@@ -10,7 +10,7 @@ namespace Kitsune
     {
     public:
         inline ConsoleOutputStream() = default;
-        inline ~ConsoleOutputStream()
+        inline ~ConsoleOutputStream() override
         {
             Flush();
         }
@@ -27,7 +27,7 @@ namespace Kitsune
         static constexpr Usize s_BufferSize = 128;
 
     private:
-        char m_Buffer[s_BufferSize];
+        char m_Buffer[s_BufferSize] = { 0 };
         char* m_Pointer = m_Buffer;
 
         Mutex m_Lock;

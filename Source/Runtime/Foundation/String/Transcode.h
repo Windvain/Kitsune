@@ -27,7 +27,9 @@ namespace Kitsune
 
         while (begin != end)
         {
-            auto [newBegin, newOutIter_] = InEncoding::DecodeSingle(begin, end, codepointPtr);
+            auto [newBegin, newOutIter_] = InEncoding::DecodeSingle(
+                begin, end, codepointPtr);
+
             if (newBegin == begin)
                 return Result(newBegin, outBegin);
 

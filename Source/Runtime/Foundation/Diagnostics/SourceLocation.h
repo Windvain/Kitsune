@@ -75,14 +75,17 @@ namespace Kitsune
     public:
         inline bool operator==(const SourceLocation& location) const
         {
-            return (m_Line         == location.m_Line) &&
-                   (m_FileName     == location.m_FileName) &&
+            return (m_Line == location.m_Line) &&
+                   (m_FileName == location.m_FileName) &&
                    (m_FunctionName == location.m_FunctionName);
         }
 
     private:
-        inline SourceLocation(const char* file, const char* func, Uint32 line)
-            : m_FileName(file), m_FunctionName(func), m_Line(line)
+        inline SourceLocation(const char* fileName, const char* functionName,
+                              Uint32 line)
+            : m_FileName(fileName),
+              m_FunctionName(functionName),
+              m_Line(line)
         {
         }
 

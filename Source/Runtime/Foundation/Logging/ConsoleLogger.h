@@ -22,9 +22,9 @@ namespace Kitsune
 
     private:
         static String MakeTimeHeader_();
-        static String MakeSeverityHeader_(const LogSeverity severity);
+        static String MakeSeverityHeader_(LogSeverity severity);
 
-        static String MakeLoggerNameHeader_(const StringView loggerName);
+        static String MakeLoggerNameHeader_(StringView loggerName);
 
     private:
         ConsoleOutputStream m_Stream;

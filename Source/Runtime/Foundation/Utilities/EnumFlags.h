@@ -1,6 +1,6 @@
 #pragma once
 
-#include <type_traits>
+#include <type_traits>      // IWYU pragma: keep
 
 // Helper macro for overloading bitwise operators on enum classes.
 #define KITSUNE_OVERLOAD_FLAGS_OPERATORS(Flags)                                  \

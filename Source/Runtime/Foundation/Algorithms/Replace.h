@@ -5,7 +5,7 @@
 
 namespace Kitsune::Algorithms
 {
-    // Replaces all occurances of `comp` in the range `[begin, end]` with `newValue`.
+    // Replaces all occurrences of `comp` in the range `[begin, end]` with `newValue`.
     template<ForwardIterator Iter, typename T>
         requires Equatable<typename IteratorTraits<Iter>::ValueType, T>
     inline void Replace(Iter begin, Iter end, const T& comp, const T& newValue)
@@ -18,7 +18,7 @@ namespace Kitsune::Algorithms
         ReplaceIf(begin, end, pred, newValue);
     }
 
-    // Replaces all occurances of `comp` in the range `[begin, begin + n]`
+    // Replaces all occurrences of `comp` in the range `[begin, begin + n]`
     // with `newValue`.
     template<ForwardIterator Iter, typename Size, typename T>
         requires Equatable<typename IteratorTraits<Iter>::ValueType, T>

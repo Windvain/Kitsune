@@ -9,7 +9,7 @@ namespace Kitsune
     class OutputStream
     {
     public:
-        virtual ~OutputStream() { /* ... */ }
+        virtual ~OutputStream() = default;
 
         virtual void Write(const T* pointer, Usize count) = 0;
         virtual void Flush() { /* ... */ }
@@ -20,7 +20,7 @@ namespace Kitsune
     class InputStream
     {
     public:
-        virtual ~InputStream() { /* ... */ }
+        virtual ~InputStream() = default;
 
         virtual void Read(OutputStream<T>& stream) = 0;
         virtual void Read(OutputStream<T>& stream, char delimiter) = 0;

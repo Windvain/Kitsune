@@ -19,11 +19,12 @@ namespace Kitsune
     class LogPayload
     {
     public:
-        LogPayload() = default;
-        inline LogPayload(const StringView message, const StringView loggerName,
-                          SourceLocation loc, LogSeverity severity)
-            : Message(message), LoggerName(loggerName),
-              Location(Move(loc)), Severity(severity)
+        inline LogPayload(StringView message, StringView loggerName,
+                          SourceLocation location, LogSeverity severity)
+            : Message(message),
+              LoggerName(loggerName),
+              Location(Move(location)),
+              Severity(severity)
         {
         }
 

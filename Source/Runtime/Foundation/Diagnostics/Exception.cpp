@@ -34,8 +34,9 @@ namespace Kitsune
     Exception::Exception(const char* name, const char* description) noexcept
     {
         using Details::ExceptionData;
+        void* pointer = Memory::TryAllocate(
+            sizeof(ExceptionData), alignof(ExceptionData));
 
-        void* pointer = Memory::TryAllocate(sizeof(ExceptionData), alignof(ExceptionData));
         if (pointer == nullptr)
             return;
 

@@ -18,9 +18,10 @@ namespace Kitsune
     class BasicString
     {
     private:
-        static_assert(std::is_trivial_v<T>,
-                      "BasicString<T> assumes that the element type being "
-                      "passed to it is a trivial type.");
+        static_assert(
+            std::is_trivial_v<T>,
+            "BasicString<T> assumes that the element type being passed to "
+            "it is a trivial type.");
 
     public:
         using ValueType = T;
@@ -52,8 +53,8 @@ namespace Kitsune
                 m_Pointer = m_SharedData.Buffer;
             else
             {
-                // No need to align allocations, all character types should be trivial
-                // and therefore align to alignof(std::max_align_t).
+                // No need to align allocations, all character types should
+                // be trivial and therefore align to alignof(std::max_align_t).
                 m_SharedData.Capacity = s_AllocationFactor * capacity;
                 m_Pointer = static_cast<T*>(
                     m_Allocator.Allocate((m_SharedData.Capacity + 1) * sizeof(T)));
@@ -116,8 +117,9 @@ namespace Kitsune
             m_Size = string.Size();
             m_SharedData = string.m_SharedData;
 
-            m_Pointer = string.IsStorageLocal() ? m_SharedData.Buffer :
-                                                  string.m_Pointer;
+            m_Pointer = string.IsStorageLocal() ?
+                m_SharedData.Buffer :
+                string.m_Pointer;
 
             // Leave the moved string in an undefined state.
             string.m_Pointer = string.m_SharedData.Buffer;
@@ -164,8 +166,8 @@ namespace Kitsune
             m_Size = string.Size();
             m_SharedData = string.m_SharedData;
 
-            m_Pointer = string.IsStorageLocal() ? m_SharedData.Buffer :
-                                                  string.m_Pointer;
+            m_Pointer = string.IsStorageLocal() ?
+                m_SharedData.Buffer : string.m_Pointer;
 
             string.m_Pointer = string.m_SharedData.Buffer;
             return *this;
@@ -386,8 +388,17 @@ namespace Kitsune
         [[nodiscard]] inline Iterator GetBegin() { return m_Pointer; }
         [[nodiscard]] inline ConstIterator GetBegin() const { return m_Pointer; }
 
-        [[nodiscard]] inline Iterator GetEnd() { return (m_Pointer + m_Size); }
-        [[nodiscard]] inline ConstIterator GetEnd() const { return (m_Pointer + m_Size); }
+        [[nodiscard]]
+        inline Iterator GetEnd()
+        {
+            return (m_Pointer + m_Size);
+        }
+
+        [[nodiscard]]
+        inline ConstIterator GetEnd() const
+        {
+            return (m_Pointer + m_Size);
+        }
 
         [[nodiscard]]
         inline ReverseIterator GetReverseBegin()
@@ -707,7 +718,9 @@ namespace Kitsune
         {
             // This is incredibly hard to read. Gosh.
             T* oldPointer = m_Pointer;
-            m_Pointer = string.IsStorageLocal() ? m_SharedData.Buffer : string.m_Pointer;
+            m_Pointer = string.IsStorageLocal() ?
+                m_SharedData.Buffer :
+                string.m_Pointer;
 
             if (oldPointer == m_SharedData.Buffer)
                 string.m_Pointer = string.m_SharedData.Buffer;
@@ -746,15 +759,16 @@ namespace Kitsune
             if (newCapacity < s_SmallBufferSize)
             {
                 Usize capacity = m_SharedData.Capacity;
-                std::memcpy(m_SharedData.Buffer, m_Pointer, (Size() + 1) * sizeof(T));
+                std::memcpy(
+                    m_SharedData.Buffer, m_Pointer, (Size() + 1) * sizeof(T));
 
                 m_Allocator.Free(m_Pointer, capacity);
                 m_Pointer = m_SharedData.Buffer;
             }
             else
             {
-                // No need to align allocations, all character types should be trivial
-                // and therefore align to alignof(std::max_align_t).
+                // No need to align allocations, all character types should
+                // be trivial and therefore align to alignof(std::max_align_t).
                 T* pointer = static_cast<T*>(
                     m_Allocator.Allocate((newCapacity + 1) * sizeof(T)));
 
@@ -785,13 +799,16 @@ namespace Kitsune
 
     private:
         static constexpr Usize s_SmallBufferSize = 16 / sizeof(T);
-        static constexpr float s_AllocationFactor = 1.5f;
+        static constexpr Usize s_AllocationFactor = 2;
 
-        // The largest character currently is char32_t, which is 4 bytes long. That makes
-        // the minimum size 16 bytes / sizeof(char32_t) = 4 characters for the entire buffer.
-        static_assert(s_SmallBufferSize >= 4,
-                      "The BasicString<T> class has not been tested for"
-                      "characters above 4 bytes/32 bits in size.");
+        // The largest character currently is char32_t, which is 4 bytes
+        // long.
+        // That makes the minimum size 16 bytes / sizeof(char32_t) = 4 characters
+        // for the entire buffer.
+        static_assert(
+            s_SmallBufferSize >= 4,
+            "The BasicString<T> class has not been tested for"
+            "characters above 4 bytes/32 bits in size.");
 
     private:
         T* m_Pointer;
@@ -811,7 +828,8 @@ namespace Kitsune
                            const BasicString<T, Alloc2>& string2)
     {
         return (string1.Size() == string2.Size()) &&
-               (std::memcmp(string1.Raw(), string2.Raw(), string1.Size() * sizeof(T)) == 0);
+               (std::memcmp(string1.Raw(), string2.Raw(),
+                            string1.Size() * sizeof(T)) == 0);
     }
 
     template<Character T, Allocator Alloc>
