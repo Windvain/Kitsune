@@ -189,7 +189,7 @@ namespace Kitsune
         // A value of 255 for the BatteryLifePercent member variable means that
         // the status of charge is unknown.
         batteryInformation.m_ChargePercentage =
-            KITSUNE_MIN(powerStatus.BatteryLifePercent, 100);
+            Maths::Minimum(powerStatus.BatteryLifePercent, BYTE(100));
 
         return batteryInformation;
     }

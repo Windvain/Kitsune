@@ -11,7 +11,7 @@ namespace Kitsune
         Uint32 skipCount, Uint32 maxDepth) noexcept
     {
         const Uint32 MaxCapturedFrames = 128;
-        maxDepth = KITSUNE_MIN(maxDepth, MaxCapturedFrames);
+        maxDepth = Maths::Minimum(maxDepth, MaxCapturedFrames);
 
         // Capture the backtrace.
         Array<void*, Backtrace::AllocatorType> stackTrace(maxDepth, 0);
@@ -36,9 +36,9 @@ namespace Kitsune
             void* funcAddress = nullptr;
 
             const Usize MaxSymbolNameLength = 256;
-            Uint8 symbolInfoBuffer[sizeof(SYMBOL_INFO) + MaxSymbolNameLength] = { 0 };
+            Byte buffer[sizeof(SYMBOL_INFO) + MaxSymbolNameLength] = { /* ... */ };
 
-            auto* symbolInfo = reinterpret_cast<SYMBOL_INFO*>(symbolInfoBuffer);
+            auto* symbolInfo = reinterpret_cast<SYMBOL_INFO*>(buffer);
             symbolInfo->SizeOfStruct = sizeof(SYMBOL_INFO);
             symbolInfo->MaxNameLen = MaxSymbolNameLength;
 
@@ -57,7 +57,8 @@ namespace Kitsune
                 funcAddress = reinterpret_cast<void*>(lineStruct.Address);
             }
 
-            backtraceArray.EmplaceBack(fileName, symbolName, lineNumber, funcAddress);
+            backtraceArray.EmplaceBack(fileName, symbolName, lineNumber,
+                                       funcAddress);
         }
 
         return backtraceArray;

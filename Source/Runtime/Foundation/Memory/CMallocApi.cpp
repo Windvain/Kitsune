@@ -1,4 +1,5 @@
 #include "Foundation/Memory/CMallocApi.h"
+#include "Foundation/Maths/Maximum.h"
 
 #include "Foundation/Common/Predefined.h"
 #include "Foundation/Diagnostics/Assert.h"
@@ -29,7 +30,7 @@ namespace Kitsune
             "checked in the Memory class before sending a request for "
             "memory to MemoryApi.");
 
-        alignment = KITSUNE_MAX(alignment, s_DefaultAlignment);
+        alignment = Maths::Maximum(alignment, s_DefaultAlignment);
 
         // MSVC doesn't support the aligned_alloc function.
 #if defined(KITSUNE_OS_WINDOWS)

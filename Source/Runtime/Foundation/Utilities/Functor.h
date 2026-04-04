@@ -20,15 +20,15 @@ namespace Kitsune
         class CallableStorageBase
         {
         public:
-            virtual ~CallableStorageBase() { /* ... */ }
+            virtual ~CallableStorageBase() = default;
 
         public:
             virtual Ret Invoke(Args&&... args) const = 0;
 
             // A pointer to an array.. This is utter blasphemy.
             // But at least it compiles ¯\_(ツ)_/¯
-            virtual CallableStorageBase* Clone(Uint8 (*smallStorage)[]) const = 0;
-            virtual CallableStorageBase* MoveTo(Uint8 (*smallStorage)[]) = 0;
+            virtual CallableStorageBase* Clone(Byte (*smallStorage)[]) const = 0;
+            virtual CallableStorageBase* MoveTo(Byte (*smallStorage)[]) = 0;
         };
 
         template<typename T, typename Ret, typename... Args>
@@ -55,7 +55,7 @@ namespace Kitsune
                 return m_Callable(Forward<Args>(args)...);
             }
 
-            inline BaseType_* Clone(Uint8 (*smallStorage)[]) const override
+            inline BaseType_* Clone(Byte (*smallStorage)[]) const override
             {
                 if constexpr (sizeof(*this) > sizeof(void*))
                     return Memory::New<ThisType_>(m_Callable);
@@ -63,7 +63,7 @@ namespace Kitsune
                     return Memory::ConstructAt<ThisType_>(*smallStorage, m_Callable);
             }
 
-            inline BaseType_* MoveTo(Uint8 (*smallStorage)[]) override
+            inline BaseType_* MoveTo(Byte (*smallStorage)[]) override
             {
                 if constexpr (sizeof(*this) <= sizeof(void*))
                 {
@@ -126,6 +126,9 @@ namespace Kitsune
         public:
             inline FunctorStorage& operator=(const FunctorStorage& storage)
             {
+                if (this == &storage)
+                    return *this;
+
                 Destroy();
                 m_Pointer = storage.m_Pointer->Clone(&m_SmallStorage);
 
@@ -134,6 +137,9 @@ namespace Kitsune
 
             inline FunctorStorage& operator=(FunctorStorage&& storage)
             {
+                if (this == &storage)
+                    return *this;
+
                 Assign_(Move(storage));
                 return *this;
             }
@@ -186,7 +192,7 @@ namespace Kitsune
 
         private:
             CallableStorageBase<Ret, Args...>* m_Pointer = nullptr;
-            Uint8 m_SmallStorage[8] = { 0 };
+            Byte m_SmallStorage[8] = { /* ... */ };
         };
     }
 

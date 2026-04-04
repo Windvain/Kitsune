@@ -26,11 +26,14 @@ namespace Kitsune
 
         VkDeviceCreateInfo deviceCreateInfo = { /* ... */ };
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCreateInfo.queueCreateInfoCount = static_cast<std::uint32_t>(queueCreateInfos.Size());
-        deviceCreateInfo.enabledExtensionCount = static_cast<std::uint32_t>(deviceExtensions.Size());
 
         deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.Data();
+        deviceCreateInfo.queueCreateInfoCount =
+            static_cast<std::uint32_t>(queueCreateInfos.Size());
+
         deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.Data();
+        deviceCreateInfo.enabledExtensionCount =
+            static_cast<std::uint32_t>(deviceExtensions.Size());
 
         deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -350,8 +353,8 @@ namespace Kitsune
         VkExtent2D maxImageExtent = capabilities.maxImageExtent;
 
         return {
-            Clamp(size.X, minImageExtent.width, maxImageExtent.width),
-            Clamp(size.Y, minImageExtent.height, maxImageExtent.height)
+            Maths::Clamp(size.X, minImageExtent.width, maxImageExtent.width),
+            Maths::Clamp(size.Y, minImageExtent.height, maxImageExtent.height)
         };
     }
 

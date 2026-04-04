@@ -9,6 +9,7 @@
 #include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
 
+#include "Foundation/Maths/Minimum.h"
 #include "Foundation/Algorithms/Equal.h"
 #include "Foundation/Algorithms/Destroy.h"
 
@@ -454,7 +455,7 @@ namespace Kitsune
 
             Algorithms::UninitializedMoveN(
                 GetReverseBegin(),
-                KITSUNE_MIN(removedSize, GetEnd() - end), begin);
+                Maths::Minimum(removedSize, GetEnd() - end), begin);
 
             m_End -= removedSize;
         }
@@ -503,7 +504,7 @@ namespace Kitsune
             T* pointer = static_cast<T*>(m_Allocator.Allocate(
                 newCapacity * sizeof(T), alignof(T)));
 
-            Usize moveCount = KITSUNE_MIN(newCapacity, Size());
+            Usize moveCount = Maths::Minimum(newCapacity, Size());
 
             Algorithms::UninitializedMoveN(m_Begin, moveCount, pointer);
             Algorithms::Destroy(m_Begin, m_End);

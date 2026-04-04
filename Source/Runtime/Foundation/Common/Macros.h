@@ -105,12 +105,6 @@
     #define KITSUNE_IGNORE_CLANG_WARNING(code)
 #endif
 
-// Gets the largest/smallest value out of the two variables `x` and `y`.
-// This macro expands into a ternary statement, so it might not be suitable
-// under certain circumstances.
-#define KITSUNE_MIN(x, y) (((x) < (y)) ? (x) : (y))
-#define KITSUNE_MAX(x, y) (((x) > (y)) ? (x) : (y))
-
 // Equivalent to the sign() function in mathematics. Returns 1 if the value `x` is
 // positive, -1 if it is negative, and 0 if the value is equal to 0.
 // This macro expands into a ternary statement, so it might not be suitable

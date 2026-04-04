@@ -4,10 +4,11 @@
 #include <cstring>
 
 #include "Foundation/Common/Macros.h"
-#include "Foundation/Algorithms/Find.h"
-
-#include "Foundation/Templates/Swap.h"
 #include "Foundation/Concepts/Character.h"
+
+#include "Foundation/Maths/Minimum.h"
+#include "Foundation/Templates/Swap.h"
+#include "Foundation/Algorithms/Find.h"
 
 #include "Foundation/Iterators/ReverseIterator.h"
 #include "Foundation/Diagnostics/OutOfRangeException.h"
@@ -132,7 +133,7 @@ namespace Kitsune
         [[nodiscard]]
         inline bool StartsWith(BasicStringView<T> string) const
         {
-            Usize minimumSize = KITSUNE_MIN(Size(), string.Size());
+            Usize minimumSize = Maths::Minimum(Size(), string.Size());
             return (BasicStringView<T>(Data(), minimumSize) == string);
         }
 
@@ -192,8 +193,9 @@ namespace Kitsune
         [[nodiscard]]
         inline ConstIterator Find(BasicStringView<T> string) const
         {
-            return Algorithms::Find(GetBegin(), GetEnd(),
-                                    string.GetBegin(), string.GetEnd());
+            return Algorithms::Find(
+                GetBegin(), GetEnd(),
+                string.GetBegin(), string.GetEnd());
         }
 
         [[nodiscard]]
@@ -214,7 +216,7 @@ namespace Kitsune
             if (startPos > Size())
                 throw OutOfRangeException();
 
-            Usize minimum = KITSUNE_MIN(count, Size() - startPos);
+            Usize minimum = Maths::Minimum(count, Size() - startPos);
             return BasicStringView(m_Pointer + startPos, minimum);
         }
 

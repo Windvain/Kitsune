@@ -1,12 +1,12 @@
 #pragma once
 
 #include <cinttypes>
-
 #include "Foundation/Common/Macros.h"
+
+#include "Foundation/Maths/Minimum.h"
 #include "Foundation/Algorithms/Copy.h"
 
 #include "Foundation/String/StringView.h"
-
 #include "Foundation/String/FormatArguments.h"
 #include "Foundation/String/FormatException.h"
 
@@ -49,7 +49,7 @@ namespace Kitsune
                 (rightBrace != formatString.GetBegin()))
             {
                 outputIter = Algorithms::Copy(
-                    formatString.GetBegin(), KITSUNE_MIN(leftBrace, rightBrace),
+                    formatString.GetBegin(), Maths::Minimum(leftBrace, rightBrace),
                     outputIter);
 
                 formatString.RemovePrefix(leftBrace - formatString.GetBegin());

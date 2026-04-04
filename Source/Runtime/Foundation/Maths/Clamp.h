@@ -2,7 +2,7 @@
 
 #include "Foundation/Concepts/Invocable.h"
 
-namespace Kitsune
+namespace Kitsune::Maths
 {
     template<typename T>
     inline const T& Clamp(const T& value, const T& minimumValue, const T& maximumValue)

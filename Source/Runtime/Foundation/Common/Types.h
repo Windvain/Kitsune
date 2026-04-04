@@ -64,4 +64,68 @@ namespace Kitsune
 #else
     using NativeChar = char;
 #endif
+
+    enum class Byte : Uint8 { /* ... */ };
+
+    template<typename Int>
+    inline Byte operator<<(Byte byte, Int offset)
+    {
+        return Byte(static_cast<unsigned int>(byte) << offset);
+    }
+
+    template<typename Int>
+    inline Byte operator>>(Byte byte, Int offset)
+    {
+        return Byte(static_cast<unsigned int>(byte) >> offset);
+    }
+
+    template<typename Int>
+    inline Byte& operator<<=(Byte& byte, Int offset)
+    {
+        return (byte = byte << offset);
+    }
+
+    template<typename Int>
+    inline Byte& operator>>=(Byte& byte, Int offset)
+    {
+        return (byte = byte >> offset);
+    }
+
+    inline Byte operator|(Byte byte1, Byte byte2)
+    {
+        return Byte(static_cast<unsigned int>(byte1) |
+                    static_cast<unsigned int>(byte2));
+    }
+
+    inline Byte operator&(Byte byte1, Byte byte2)
+    {
+        return Byte(static_cast<unsigned int>(byte1) &
+                    static_cast<unsigned int>(byte2));
+    }
+
+    inline Byte operator^(Byte byte1, Byte byte2)
+    {
+        return Byte(static_cast<unsigned int>(byte1) ^
+                    static_cast<unsigned int>(byte2));
+    }
+
+    inline Byte& operator|=(Byte& byte1, Byte byte2)
+    {
+        return (byte1 = byte1 | byte2);
+    }
+
+    inline Byte& operator&=(Byte& byte1, Byte byte2)
+    {
+        return (byte1 = byte1 & byte2);
+    }
+
+    inline Byte& operator^=(Byte& byte1, Byte byte2)
+    {
+        return (byte1 = byte1 ^ byte2);
+    }
+
+    inline Byte operator~(Byte byte)
+    {
+        return Byte(~static_cast<unsigned int>(byte));
+    }
 }
