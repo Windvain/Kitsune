@@ -55,10 +55,7 @@ set(FILES
     "Foundation/Diagnostics/SourceLocation.h"
     "Foundation/Diagnostics/SystemException.h"
 
-    "Foundation/IO/ConsoleOutputStream.cpp"
-    "Foundation/IO/ConsoleOutputStream.h"
-    "Foundation/IO/Stream.h"
-    "Foundation/IO/WriteStreamIterator.h"
+    "Foundation/Filesystem/FileStream.h"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
@@ -66,12 +63,12 @@ set(FILES
     "Foundation/Iterators/ReverseIterator.h"
     "Foundation/Iterators/ToAddress.h"
 
-    "Foundation/Logging/ConsoleLogger.cpp"
-    "Foundation/Logging/ConsoleLogger.h"
-    "Foundation/Logging/GlobalLog.cpp"
-    "Foundation/Logging/GlobalLog.h"
+    "Foundation/Logging/ConsoleLogSink.cpp"
+    "Foundation/Logging/ConsoleLogSink.h"
+    "Foundation/Logging/Logger.cpp"
     "Foundation/Logging/Logger.h"
     "Foundation/Logging/LogPayload.h"
+    "Foundation/Logging/LogSink.h"
 
     "Foundation/Maths/Clamp.h"
     "Foundation/Maths/Vector2.h"
@@ -90,6 +87,10 @@ set(FILES
     "Foundation/Memory/MemoryApi.h"
     "Foundation/Memory/ScopedPtr.h"
     "Foundation/Memory/SharedPtr.h"
+
+    "Foundation/Streams/ConsoleWriter.h"
+    "Foundation/Streams/Stream.h"
+    "Foundation/Streams/WriterIterator.h"
 
     "Foundation/String/Decode.h"
     "Foundation/String/Encode.h"
@@ -121,7 +122,6 @@ set(FILES
 
     "Foundation/Utilities/BadCallException.h"
     "Foundation/Utilities/Comparators.h"
-    "Foundation/Utilities/CpuId.h"
     "Foundation/Utilities/EnumFlags.h"
     "Foundation/Utilities/Functor.h"
     "Foundation/Utilities/NonCopyable.h"
@@ -138,6 +138,17 @@ set(FILES
 set(COMPILER_OPTIONS "")
 set(COMPILER_DEFS "")
 set(LINKED_LIBRARIES "")
+
+# CpuId.h should only be included on x86_64 targets.
+#
+# On Windows, CMAKE_SYSTEM_PROCESSOR is defined as "AMD64" on x86_64 platforms.
+# On other platforms, CMake calls "uname -m", which returns "x86_64" if running on
+# a 64-bit x86 system.
+if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+    list(APPEND FILES
+        "Foundation/Utilities/CpuId.h"
+    )
+endif()
 
 if (KITSUNE_BUILD_VULKAN_BACKEND)
     list(APPEND FILES
@@ -176,7 +187,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Application/Windows/WindowsWindow.cpp"
         "Application/Windows/WindowsWindow.h"
 
-        "Foundation/Windows/WindowsConsoleStream.cpp"
+        "Foundation/Windows/WindowsConsoleWriter.cpp"
+        "Foundation/Windows/WindowsFileStream.cpp"
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"

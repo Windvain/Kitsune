@@ -2,7 +2,7 @@
 #include "RenderingCore/Vulkan/VulkanRenderingContext.h"
 
 #include "Foundation/Containers/Set.h"
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 
 #include "Foundation/Maths/Clamp.h"
 #include "Foundation/Diagnostics/Assert.h"

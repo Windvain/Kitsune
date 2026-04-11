@@ -1,6 +1,6 @@
 #include "RenderingCore/Vulkan/VulkanRenderingDevice.h"
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Application/Windows/WindowsWindow.h"
 
 namespace Kitsune

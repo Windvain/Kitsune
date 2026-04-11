@@ -1,10 +1,8 @@
 #pragma once
 
 #include "Foundation/Logging/Logger.h"
-#include "Foundation/Threading/Mutex.h"
 
-#include "Foundation/Memory/ScopedPtr.h"
-#include "Foundation/Containers/Array.h"
+#include "Foundation/Threading/Mutex.h"
 #include "Foundation/Diagnostics/Backtrace.h"
 
 #include "Application/Application.h"
@@ -43,25 +41,6 @@ namespace Kitsune
         }
 
     public:
-        template<std::derived_from<Logger> LoggerT, typename... Args>
-        inline void RegisterLogger(Args&&... args)
-        {
-            m_Loggers.PushBack(MakeScoped<LoggerT>(Forward<Args>(args)...));
-        }
-
-        [[nodiscard]]
-        inline Array<ScopedPtr<Logger>>& GetLoggers()
-        {
-            return m_Loggers;
-        }
-
-        [[nodiscard]]
-        inline const Array<ScopedPtr<Logger>>& GetLoggers() const
-        {
-            return m_Loggers;
-        }
-
-    public:
         // Should only be called in the Exception class's constructor.
         inline void CaptureExceptionBacktrace()
         {
@@ -95,7 +74,7 @@ namespace Kitsune
 
     public:
         CommandLineArguments m_CommandLineArguments;
-        Array<ScopedPtr<Logger>> m_Loggers;
+        Logger* m_Logger = nullptr;
 
         Int32 m_ExitCode = 0;
         bool m_ExitRequested = false;

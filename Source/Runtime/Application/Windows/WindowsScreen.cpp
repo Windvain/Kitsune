@@ -1,7 +1,7 @@
 #include "Application/Windows/WindowsScreen.h"
 #include <ShellScalingApi.h>
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Foundation/String/TranscodePresets.h"
 
 namespace Kitsune

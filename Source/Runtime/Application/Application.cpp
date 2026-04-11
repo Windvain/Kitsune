@@ -1,6 +1,6 @@
 #include "Application/Application.h"
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Foundation/Diagnostics/LogicException.h"
 
 namespace Kitsune

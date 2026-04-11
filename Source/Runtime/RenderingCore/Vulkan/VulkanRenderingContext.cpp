@@ -1,7 +1,7 @@
 #include "RenderingCore/Vulkan/VulkanRenderingContext.h"
 #include "RenderingCore/Vulkan/VulkanRenderingDevice.h"
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Foundation/Algorithms/Contains.h"
 
 #include "Foundation/Diagnostics/Assert.h"

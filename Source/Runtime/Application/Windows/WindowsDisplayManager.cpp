@@ -1,6 +1,6 @@
 #include "Application/Windows/WindowsDisplayManager.h"
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Foundation/String/TranscodePresets.h"
 
 #include "Foundation/Diagnostics/Assert.h"

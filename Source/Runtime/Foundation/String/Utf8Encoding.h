@@ -19,9 +19,14 @@ namespace Kitsune
         using CodeunitType = T;
 
     public:
-        inline static CodepointType MaxCodepointValue()
+        constexpr static CodepointType MaxCodepointValue()
         {
             return 0x10FFFF;
+        }
+
+        constexpr static Usize MaximumCodeunits()
+        {
+            return 4;
         }
 
     public:

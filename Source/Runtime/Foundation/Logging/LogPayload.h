@@ -19,10 +19,10 @@ namespace Kitsune
     class LogPayload
     {
     public:
-        inline LogPayload(StringView message, StringView loggerName,
+        inline LogPayload(StringView message, StringView topic,
                           SourceLocation location, LogSeverity severity)
             : Message(message),
-              LoggerName(loggerName),
+              Topic(topic),
               Location(Move(location)),
               Severity(severity)
         {
@@ -30,7 +30,9 @@ namespace Kitsune
 
     public:
         String Message;
-        String LoggerName;
+        String Topic;
+
+        /* TODO: Maybe add time? */
 
         SourceLocation Location;
         LogSeverity Severity;

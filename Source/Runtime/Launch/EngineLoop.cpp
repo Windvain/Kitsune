@@ -1,7 +1,7 @@
 #include "Launch/EngineLoop.h"
 
-#include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Logging/ConsoleLogger.h"
+#include "Foundation/Logging/Logger.h"
+#include "Foundation/Logging/ConsoleLogSink.h"
 
 #include "Foundation/Diagnostics/LogicException.h"
 
@@ -28,9 +28,10 @@ namespace Kitsune
     void EngineLoop::Initialize(int argc, char** argv)
     {
         m_CommandLineArguments = CommandLineArguments(argc, argv);
+        m_Logger = Memory::New<Logger>();
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)
-        RegisterLogger<ConsoleLogger>();
+        m_Logger->RegisterSink(MakeScoped<ConsoleLogSink>());
 #endif
         KITSUNE_ENGINE_INFO_FORMAT(
             Launch,
@@ -65,9 +66,14 @@ namespace Kitsune
         KITSUNE_ENGINE_INFO(Launch, "Kitsune Engine shutting down, goodbye!");
 
         if (m_Application != nullptr)
+        {
             Memory::Delete(m_Application);
+            m_Application = nullptr;
+        }
 
-        m_Loggers.Clear();
+        Memory::Delete(m_Logger);
+        m_Logger = nullptr;
+
         return m_ExitCode;
     }
 }

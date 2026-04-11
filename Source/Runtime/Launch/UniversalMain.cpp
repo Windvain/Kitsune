@@ -1,7 +1,7 @@
 #include "Launch/EngineLoop.h"
 #include "Foundation/Memory/Memory.h"
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Foundation/Diagnostics/Exception.h"
 
 namespace Kitsune

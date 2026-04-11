@@ -1,10 +1,10 @@
 #include "Application/DisplayManager.h"
+#include "Application/Null/NullDisplayManager.h"
 
 #include "Foundation/Common/Predefined.h"
-#include "Foundation/Logging/GlobalLog.h"
-#include "Foundation/Diagnostics/LogicException.h"
+#include "Foundation/Logging/Logger.h"
 
-#include "Application/Null/NullDisplayManager.h"
+#include "Foundation/Diagnostics/LogicException.h"
 
 #if defined(KITSUNE_OS_WINDOWS)
     #include "Application/Windows/WindowsDisplayManager.h"

@@ -1,7 +1,7 @@
 #include "Launch/EngineLoop.h"
 
 #include <Windows.h>
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 
 // Clang doesn't recognize that ::TerminateProcess() will just quit the program
 // and marks ForceExit()'s [[noreturn]] as invalid.

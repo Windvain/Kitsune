@@ -4,10 +4,9 @@
 #include <cinttypes>
 
 #include "Foundation/String/Format.h"
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 
 #include "Foundation/Diagnostics/MessageBox.h"
-#include "Launch/EngineLoop.h"
 
 namespace Kitsune::Details
 {
@@ -63,8 +62,8 @@ namespace Kitsune::Details
         if (expression == nullptr) expression = "";
         if (message == nullptr) message = "";
 
-        auto* engineLoop = EngineLoop::GetInstance();
-        if (!engineLoop || (engineLoop->GetLoggers().IsEmpty()))
+        Logger* logger = Logger::GetInstance();
+        if ((logger == nullptr) || logger->GetSinks().IsEmpty())
             FallbackLogAssertionMessage(expression, message, location);
         else
         {

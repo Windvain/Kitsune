@@ -18,18 +18,25 @@ namespace Kitsune
         BasicStringView<typename InEncoding::CodeunitType> string)
     {
         BasicString<typename OutEncoding::CodeunitType> outputString;
-        auto [newIterator, newOutIter_] = Transcode<InEncoding, OutEncoding>(
-            string.GetBegin(), string.GetEnd(),
-            BackInsertIterator<decltype(outputString)>(outputString));
-
-        // Append a unicode "replacement character" to the end of the string, no need
-        // for the function to continue.
-        if (newIterator != string.GetEnd())
+        while (!string.IsEmpty())
         {
-            const char32_t InvalidCharacter = 0xFFFD;
-            KITSUNE_UNUSED(InEncoding::EncodeSingle(
-                &InvalidCharacter, &InvalidCharacter + 1,
-                BackInsertIterator<decltype(outputString)>(outputString)));
+            auto [newIterator, newOutIter_] = Transcode<InEncoding, OutEncoding>(
+                string.GetBegin(), string.GetEnd(),
+                BackInsertIterator<decltype(outputString)>(outputString));
+
+            string.RemovePrefix(newIterator - string.GetBegin());
+
+            // Append a unicode "replacement character" to the end of the string, no need
+            // for the function to continue.
+            if (newIterator != string.GetEnd())
+            {
+                const char32_t InvalidCharacter = 0xFFFD;
+                KITSUNE_UNUSED(OutEncoding::EncodeSingle(
+                    &InvalidCharacter, &InvalidCharacter + 1,
+                    BackInsertIterator<decltype(outputString)>(outputString)));
+
+                string.RemovePrefix(1);
+            }
         }
 
         return outputString;

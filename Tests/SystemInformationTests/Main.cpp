@@ -1,7 +1,7 @@
 #include "Application/Application.h"
 #include "Foundation/Memory/Memory.h"
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Foundation/Utilities/SystemInformation.h"
 
 using namespace Kitsune;

@@ -1,7 +1,7 @@
 #include "Application/Windows/WindowsWindow.h"
 #include <ShellScalingApi.h>
 
-#include "Foundation/Logging/GlobalLog.h"
+#include "Foundation/Logging/Logger.h"
 #include "Foundation/String/TranscodePresets.h"
 
 #include "Foundation/Diagnostics/Assert.h"
