@@ -17,7 +17,7 @@ namespace Kitsune::Details
 
         WideString wideString = Utf8ToUtf16<char, wchar_t>(string);
         ::WriteConsoleW(
-            handle, wideString.Data(), wideString.Size(),
+            handle, wideString.Data(), static_cast<DWORD>(wideString.Size()),
             nullptr, nullptr);
     }
 }

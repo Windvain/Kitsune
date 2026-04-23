@@ -502,6 +502,15 @@ namespace Kitsune
             return { Iterator(node, this), result };
         }
 
+    public:
+        // Should not be called by engine/client code.
+        // Made public so that the compiler can generate code for range-based for loops.
+        inline Iterator begin() { return GetBegin(); }
+        inline ConstIterator begin() const { return GetBegin(); }
+
+        inline Iterator end() { return GetEnd(); }
+        inline ConstIterator end() const { return GetEnd(); }
+
     private:
         template<typename U, typename SetType>
         friend class Details::SetIterator;

@@ -19,6 +19,8 @@ namespace Kitsune::Details
         case FileAccessMode::ReadWrite:
             return GENERIC_READ | GENERIC_WRITE;
         }
+
+        KITSUNE_UNREACHABLE();
     }
 
     static DWORD GetCreationMode(FileOpenMode openMode)
@@ -36,6 +38,8 @@ namespace Kitsune::Details
         case FileOpenMode::Truncate:
             return TRUNCATE_EXISTING;
         }
+
+        KITSUNE_UNREACHABLE();
     }
 
     // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init)
@@ -86,8 +90,11 @@ namespace Kitsune::Details
         if (m_OpenMode == FileOpenMode::Append)
             Seek(0, SeekOrigin::End);
 
-        if (!::WriteFile(handle, data, dataCount, &writtenCount_, nullptr))
+        if (!::WriteFile(handle, data, static_cast<DWORD>(dataCount), &writtenCount_,
+                         nullptr))
+        {
             throw SystemException("Failed to write to the underlying file handle.");
+        }
     }
 
     Usize FileObject::Read(Byte* buffer, Usize bufferSize)
@@ -97,8 +104,11 @@ namespace Kitsune::Details
         HANDLE handle = *reinterpret_cast<HANDLE*>(m_Buffer);
         DWORD readCount;
 
-        if (!::ReadFile(handle, buffer, bufferSize, &readCount, nullptr))
+        if (!::ReadFile(handle, buffer, static_cast<DWORD>(bufferSize), &readCount,
+                        nullptr))
+        {
             throw SystemException("Failed to read from the underlying file handle.");
+        }
 
         return readCount;
     }
@@ -110,7 +120,7 @@ namespace Kitsune::Details
         LARGE_INTEGER filePointer;
         LARGE_INTEGER zero = { .QuadPart = offset };
 
-        DWORD winOrigin;
+        DWORD winOrigin = FILE_CURRENT;     // Shut MSVC up.
         switch (origin)
         {
         case SeekOrigin::Begin:

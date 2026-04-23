@@ -27,20 +27,20 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline ScreenHandle GetPrimaryScreen() const override
+        inline Screen* GetPrimaryScreen() const override
         {
             return m_PrimaryScreen.Get();
         }
 
         [[nodiscard]]
-        inline Array<ScreenHandle> GetScreens() const override
+        inline Array<Screen*> GetScreens() const override
         {
             return { m_PrimaryScreen.Get() };
         }
 
     public:
         [[nodiscard]]
-        inline WindowHandle GetPrimaryWindow() const override
+        inline Window* GetPrimaryWindow() const override
         {
             return m_PrimaryWindow.Get();
         }

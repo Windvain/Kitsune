@@ -48,14 +48,14 @@ namespace Kitsune
         // functions were called.
         // Do not cache these values.
         [[nodiscard]]
-        virtual ScreenHandle GetPrimaryScreen() const = 0;
+        virtual Screen* GetPrimaryScreen() const = 0;
 
         [[nodiscard]]
-        virtual Array<ScreenHandle> GetScreens() const = 0;
+        virtual Array<Screen*> GetScreens() const = 0;
 
     public:
         [[nodiscard]]
-        virtual WindowHandle GetPrimaryWindow() const = 0;
+        virtual Window* GetPrimaryWindow() const = 0;
 
     public:
         // These functions (i.e. Initialize() and Shutdown()) should not be called by

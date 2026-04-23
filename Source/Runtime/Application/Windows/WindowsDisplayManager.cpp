@@ -6,10 +6,6 @@
 #include "Foundation/Diagnostics/Assert.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
-#if defined(KITSUNE_HAS_VULKAN_BACKEND)
-    #include "RenderingCore/Vulkan/VulkanRenderingContext.h"
-#endif
-
 namespace Kitsune
 {
     WindowsDisplayManager::WindowsDisplayManager(
@@ -25,20 +21,9 @@ namespace Kitsune
         RegisterWindowClass_(className);
         UpdateScreenList_();
 
-        InitializeRenderingContext_(specs.Backend);
-
         m_PrimaryWindow = Memory::New<WindowsWindow>(
             m_WindowClassName,
             specs.PrimaryWindowSpecs);
-
-        KITSUNE_ASSERT(
-            m_RenderingContext != nullptr,
-            "The rendering context has not been created, therefore the "
-            "rendering device cannot be created.");
-
-        m_RenderingDevice = m_RenderingContext->CreateRenderingDevice(
-            Uint32(0),
-            m_PrimaryWindow);
 
         KITSUNE_ENGINE_INFO(
             DisplayManager,
@@ -48,14 +33,6 @@ namespace Kitsune
 
     WindowsDisplayManager::~WindowsDisplayManager()
     {
-        KITSUNE_ASSERT(
-            m_RenderingContext != nullptr,
-            "The rendering context has not been created, therefore the "
-            "rendering device cannot be created.");
-
-        m_RenderingContext->DestroyRenderingDevice(m_RenderingDevice);
-        Memory::Delete(m_RenderingContext);
-
         Memory::Delete(m_PrimaryWindow);
         KITSUNE_VERIFY(
             ::UnregisterClassW(m_WindowClassName.Raw(), nullptr),
@@ -78,7 +55,7 @@ namespace Kitsune
         UpdateScreenList_();
     }
 
-    ScreenHandle WindowsDisplayManager::GetPrimaryScreen() const
+    Screen* WindowsDisplayManager::GetPrimaryScreen() const
     {
         if (m_Screens.IsEmpty())
             return nullptr;
@@ -86,18 +63,13 @@ namespace Kitsune
         return m_Screens[0].Get();
     }
 
-    Array<ScreenHandle> WindowsDisplayManager::GetScreens() const
+    Array<Screen*> WindowsDisplayManager::GetScreens() const
     {
-        Array<ScreenHandle> screenHandles;
+        Array<Screen*> screens;
         for (const ScopedPtr<WindowsScreen>& screen : m_Screens)
-            screenHandles.PushBack(screen.Get());
+            screens.PushBack(screen.Get());
 
-        return screenHandles;
-    }
-
-    WindowHandle WindowsDisplayManager::GetPrimaryWindow() const
-    {
-        return m_PrimaryWindow;
+        return screens;
     }
 
     void WindowsDisplayManager::RegisterWindowClass_(
@@ -201,24 +173,6 @@ namespace Kitsune
         KITSUNE_ENGINE_INFO_FORMAT(
             DisplayManager,
             "Screen disconnected! {0}", *screen);
-    }
-
-    void WindowsDisplayManager::InitializeRenderingContext_(RenderingBackend backend)
-    {
-        switch (backend)
-        {
-#if defined(KITSUNE_HAS_VULKAN_BACKEND)
-        case RenderingBackend::Vulkan:
-        {
-            m_RenderingContext = Memory::New<VulkanRenderingContext>();
-            break;
-        }
-#endif
-        default:
-            throw SystemException(
-                "The engine was built with no valid rendering backend, or a "
-                "valid rendering backend exists but was not picked.");
-        }
     }
 
     LRESULT WindowsDisplayManager::WindowProcedure_(

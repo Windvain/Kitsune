@@ -1,6 +1,6 @@
 #pragma once
 
-#include <climits>
+#include <cstdint>
 #include <type_traits>
 
 #include "Foundation/Common/Predefined.h"
@@ -8,56 +8,23 @@
 namespace Kitsune
 {
     using Int8 = signed char;
+    using Int16 = std::int16_t;
+    using Int32 = std::int32_t;
+    using Int64 = std::int64_t;
+
     using Uint8 = unsigned char;
-
-#if USHRT_MAX == 0xffff
-    using Int16 = signed short;
-    using Uint16 = unsigned short;
-#else
-    #error Could not determine a suitable type to use for [U]Int16.
-#endif
-
-#if UINT_MAX == 0xffffffff
-    using Int32 = signed int;
-    using Uint32 = unsigned int;
-#elif ULONG_MAX == 0xffffffff
-    using Int32 = signed long;
-    using Uint32 = unsigned long;
-#elif USHRT_MAX == 0xffffffff
-    using Int32 = signed short;
-    using Uint32 = unsigned short;
-#else
-    #error Could not determine a suitable type to use for [U]Int32.
-#endif
-
-#if ULONG_MAX == 0xffffffffffffffff
-    using Int64 = signed long;
-    using Uint64 = unsigned long;
-#elif ULLONG_MAX == 0xffffffffffffffff
-    using Int64 = signed long long;
-    using Uint64 = unsigned long long;
-#elif UINT_MAX == 0xffffffffffffffff
-    using Int64 = signed int;
-    using Uint64 = unsigned int;
-#else
-    #error Could not determine a suitable type to use for [U]Int64.
-#endif
+    using Uint16 = std::uint16_t;
+    using Uint32 = std::uint32_t;
+    using Uint64 = std::uint64_t;
 
     using Usize = std::size_t;
-    using Ssize = std::make_unsigned_t<Usize>;
+    using Ssize = std::make_signed_t<Usize>;
 
     using Index = Usize;
     using Ptrdiff = std::ptrdiff_t;
 
-#if KITSUNE_POINTER_SIZE == 8
-    using Intptr = Int64;
-    using Uintptr = Uint64;
-#elif KITSUNE_POINTER_SIZE == 4
-    using Intptr = Int32;
-    using Uintptr = Uint32;
-#else
-    #error Could not determine a suitable type to use for [U]Intptr.
-#endif
+    using Intptr = std::intptr_t;
+    using Uintptr = std::uintptr_t;
 
 #if defined(KITSUNE_OS_WINDOWS)
     using NativeChar = wchar_t;

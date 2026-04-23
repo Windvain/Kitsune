@@ -149,7 +149,8 @@ namespace Kitsune
                 return;
 
             // Flush all output data before closing the file stream.
-            Flush();
+            if (IsWritable())
+                Flush();
 
             if (m_Buffer != nullptr)
             {

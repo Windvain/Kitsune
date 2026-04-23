@@ -87,7 +87,4 @@ namespace Kitsune
             return output;
         }
     };
-
-    // A handle to the `Window` class. Defined as `Window*`.
-    using WindowHandle = Window*;
 }

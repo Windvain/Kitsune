@@ -7,9 +7,6 @@
 #include "Application/Windows/WindowsScreen.h"
 #include "Application/Windows/WindowsWindow.h"
 
-#include "RenderingCore/RenderingDevice.h"
-#include "RenderingCore/RenderingContext.h"
-
 namespace Kitsune
 {
     class WindowsDisplayManager : public DisplayManager
@@ -24,11 +21,15 @@ namespace Kitsune
     public:
         void Update() override;
 
-        [[nodiscard]] ScreenHandle GetPrimaryScreen() const override;
-        [[nodiscard]] Array<ScreenHandle> GetScreens() const override;
+        [[nodiscard]] Screen* GetPrimaryScreen() const override;
+        [[nodiscard]] Array<Screen*> GetScreens() const override;
 
     public:
-        [[nodiscard]] WindowHandle GetPrimaryWindow() const override;
+        [[nodiscard]]
+        inline Window* GetPrimaryWindow() const override
+        {
+            return m_PrimaryWindow;
+        }
 
     private:
         void RegisterWindowClass_(WideStringView className);
@@ -36,8 +37,6 @@ namespace Kitsune
 
         static void OnScreenConnected_(Screen* screen);
         static void OnScreenDisconnected_(Screen* screen);
-
-        void InitializeRenderingContext_(RenderingBackend backend);
 
     private:
         static LRESULT WindowProcedure_(
@@ -57,8 +56,5 @@ namespace Kitsune
         WindowsWindow* m_PrimaryWindow;
 
         WideString m_WindowClassName;
-
-        RenderingContext* m_RenderingContext = nullptr;
-        RenderingDevice* m_RenderingDevice = nullptr;
     };
 }

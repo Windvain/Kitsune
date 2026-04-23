@@ -96,21 +96,3 @@
 #else
     #define KITSUNE_ARCH_32_BIT 1
 #endif
-
-// An approximation of the platform's compiler size. Used only in preprocessor
-// statements, where `sizeof()` statements are not allowed.
-#if defined(UINTPTR_MAX)
-    #define KITSUNE_POINTER_SIZE (UINTPTR_MAX / 255 % 255)
-#elif defined(__UINTPTR_MAX__)
-    #define KITSUNE_POINTER_SIZE (__UINTPTR_MAX__ / 255 % 255)
-#elif defined(KITSUNE_OS_WINDOWS_64BIT) || defined(KITSUNE_ARCH_AARCH64) || \
-      defined(KITSUNE_ARCH_X86_64)
-    #define KITSUNE_POINTER_MAX_ 0xffffffffffffffff
-    #define KITSUNE_POINTER_SIZE (KITSUNE_POINTER_MAX_ / 255 % 255)
-#elif defined(KITSUNE_OS_WINDOWS_32BIT) || defined(KITSUNE_ARCH_AARCH32) || \
-      defined(KITSUNE_ARCH_X86_32)
-    #define KITSUNE_POINTER_MAX_ 0xffffffff
-    #define KITSUNE_POINTER_SIZE (KITSUNE_POINTER_MAX_ / 255 % 255)
-#else
-    #error Failed to determine the size of a pointer.
-#endif
