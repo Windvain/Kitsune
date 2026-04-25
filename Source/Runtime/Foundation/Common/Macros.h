@@ -113,3 +113,6 @@
 
 // Macro for marking variables as "unused". Mainly used to shut the compiler up.
 #define KITSUNE_UNUSED(x) ((void)x)
+
+// Macro for getting the size of a C-styled array.
+#define KITSUNE_ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))

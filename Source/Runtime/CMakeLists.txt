@@ -127,12 +127,21 @@ set(FILES
     "Foundation/Utilities/NonCopyable.h"
     "Foundation/Utilities/SystemInformation.h"
 
+    "GraphicsCore/CommandList.h"
+    "GraphicsCore/CommandQueue.h"
+    "GraphicsCore/Fence.h"
+    "GraphicsCore/GpuDevice.h"
+    "GraphicsCore/GpuInstance.cpp"
+    "GraphicsCore/GpuInstance.h"
+    "GraphicsCore/RenderPipeline.h"
+    "GraphicsCore/RenderSurface.h"
+    "GraphicsCore/Semaphore.h"
+    "GraphicsCore/ShaderModule.h"
+    "GraphicsCore/Texture.h"
+
     "Launch/EngineLoop.cpp"
     "Launch/EngineLoop.h"
     "Launch/UniversalMain.cpp"
-
-    "RenderingCore/RenderingContext.h"
-    "RenderingCore/RenderingDevice.h"
 )
 
 set(COMPILER_OPTIONS "")
@@ -151,18 +160,34 @@ if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64" OR "${CMAKE_SYSTEM_PROCESSOR}" 
 endif()
 
 if (KITSUNE_BUILD_VULKAN_BACKEND)
-    list(APPEND FILES
-        "RenderingCore/Vulkan/VulkanHeader.h"
-        "RenderingCore/Vulkan/VulkanRenderingContext.cpp"
-        "RenderingCore/Vulkan/VulkanRenderingContext.h"
-        "RenderingCore/Vulkan/VulkanRenderingDevice.cpp"
-        "RenderingCore/Vulkan/VulkanRenderingDevice.h"
-    )
-
     find_package(Vulkan REQUIRED)
 
     list(APPEND COMPILER_DEFS "KITSUNE_HAS_VULKAN_BACKEND=1")
     list(APPEND LINKED_LIBRARIES Vulkan::Vulkan)
+
+    list(APPEND FILES
+        "GraphicsCore/Vulkan/VulkanCommandList.cpp"
+        "GraphicsCore/Vulkan/VulkanCommandList.h"
+        "GraphicsCore/Vulkan/VulkanCommandQueue.cpp"
+        "GraphicsCore/Vulkan/VulkanCommandQueue.h"
+        "GraphicsCore/Vulkan/VulkanFence.cpp"
+        "GraphicsCore/Vulkan/VulkanFence.h"
+        "GraphicsCore/Vulkan/VulkanGpuDevice.cpp"
+        "GraphicsCore/Vulkan/VulkanGpuDevice.h"
+        "GraphicsCore/Vulkan/VulkanGpuInstance.cpp"
+        "GraphicsCore/Vulkan/VulkanGpuInstance.h"
+        "GraphicsCore/Vulkan/VulkanRenderPipeline.cpp"
+        "GraphicsCore/Vulkan/VulkanRenderPipeline.h"
+        "GraphicsCore/Vulkan/VulkanRenderSurface.cpp"
+        "GraphicsCore/Vulkan/VulkanRenderSurface.h"
+        "GraphicsCore/Vulkan/VulkanSemaphore.cpp"
+        "GraphicsCore/Vulkan/VulkanSemaphore.h"
+        "GraphicsCore/Vulkan/VulkanShaderModule.cpp"
+        "GraphicsCore/Vulkan/VulkanShaderModule.h"
+        "GraphicsCore/Vulkan/VulkanTexture.cpp"
+        "GraphicsCore/Vulkan/VulkanTexture.h"
+        "GraphicsCore/Vulkan/VulkanUtilities.h"
+    )
 endif()
 
 # Can't make these any shorter, because.. CMake...
@@ -208,7 +233,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 
     if (KITSUNE_BUILD_VULKAN_BACKEND)
         list(APPEND FILES
-            "RenderingCore/Vulkan/Windows/WindowsVulkanRenderingDevice.cpp"
+            "GraphicsCore/Vulkan/Windows/WindowsVulkanRenderSurface.cpp"
         )
     endif()
 
