@@ -8,6 +8,7 @@ namespace Kitsune
     namespace Details
     {
         [[nodiscard]] VkQueueFlags EngineToVulkan_(CommandQueueType queueType);
+        [[nodiscard]] VkQueue GetVulkanHandle_(const SharedPtr<CommandQueue>& queue);
     }
 
     class VulkanGpuDevice;
@@ -24,10 +25,6 @@ namespace Kitsune
             const SharedPtr<Semaphore>& waitSemaphore,
             SharedPtr<Semaphore>& signaledSemaphore,
             SharedPtr<Fence>& signaledFence) override;
-
-        void Present(const SharedPtr<RenderSurface>& surface,
-                     Uint32 backBufferIndex,
-                     const SharedPtr<Semaphore>& waitSemaphore) override;
 
     public:
         [[nodiscard]]

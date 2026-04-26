@@ -12,6 +12,9 @@ namespace Kitsune
 
         [[nodiscard]]
         VkSurfaceKHR GetVulkanHandle_(const SharedPtr<RenderSurface>& surface);
+
+        [[nodiscard]]
+        SurfaceTextureResult VulkanToEngine_(VkResult result);
     }
 
     class Window;
@@ -55,7 +58,12 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        Uint32 AcquireNextImage(SharedPtr<Semaphore>& semaphore) override;
+        Pair<Uint32, SurfaceTextureResult> AcquireNextImage(
+            SharedPtr<Semaphore>& semaphore) override;
+
+        void Present(
+            Uint32 backBufferIndex,
+            const SharedPtr<Semaphore>& waitSemaphore) override;
 
     public:
         void ConfigureSwapChain(

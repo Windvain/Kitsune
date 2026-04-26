@@ -34,6 +34,9 @@ namespace Kitsune
             Uint32 index, Uint32 queueIndex) const override;
 
     public:
+        void WaitIdle();
+
+    public:
         [[nodiscard]]
         SharedPtr<Fence> CreateFence() override;
 

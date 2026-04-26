@@ -32,10 +32,5 @@ namespace Kitsune
             const SharedPtr<Semaphore>& waitSemaphore,
             SharedPtr<Semaphore>& signaledSemaphore,
             SharedPtr<Fence>& signaledFence) = 0;
-
-        virtual void Present(
-            const SharedPtr<RenderSurface>& surface,
-            Uint32 backBufferIndex,
-            const SharedPtr<Semaphore>& waitSemaphore) = 0;
     };
 }

@@ -27,6 +27,11 @@ namespace Kitsune
 
             KITSUNE_UNREACHABLE();
         }
+
+        VkQueue GetVulkanHandle_(const SharedPtr<CommandQueue>& queue)
+        {
+            return DynamicPointerCast<VulkanCommandQueue>(queue)->GetVulkanQueue();
+        }
     }
 
     VulkanCommandQueue::VulkanCommandQueue(VulkanGpuDevice& device,
@@ -72,36 +77,5 @@ namespace Kitsune
             ::vkQueueSubmit(m_Queue, commandBuffers.Size(), &submitInfo,
                             vkSignaledFence),
             "Failed to submit Vulkan command buffers to a queue.");
-    }
-
-    void VulkanCommandQueue::Present(const SharedPtr<RenderSurface>& surface,
-                                     Uint32 backBufferIndex,
-                                     const SharedPtr<Semaphore>& waitSemaphore)
-    {
-        if (surface == nullptr)
-        {
-            throw InvalidArgumentException(
-                "Failed to submit a present command to the queue. The surface given "
-                "is invalid. (NULL)");
-        }
-
-        VkSemaphore vulkanSemaphore = Details::GetVulkanHandle_(waitSemaphore);
-        VkSwapchainKHR swapChain = DynamicPointerCast<VulkanRenderSurface>(
-            surface)->GetVulkanSwapChain();
-
-        VkPresentInfoKHR presentInfo = {
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .pNext = nullptr,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &vulkanSemaphore,
-            .swapchainCount = (vulkanSemaphore != VK_NULL_HANDLE),
-            .pSwapchains = &swapChain,
-            .pImageIndices = &backBufferIndex,
-            .pResults = nullptr
-        };
-
-        KITSUNE_VK_THROW_IF_FAIL(
-            ::vkQueuePresentKHR(m_Queue, &presentInfo),
-            "Failed to present command buffers.");
     }
 }

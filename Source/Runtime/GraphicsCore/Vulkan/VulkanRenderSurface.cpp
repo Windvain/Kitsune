@@ -5,6 +5,7 @@
 
 #include "GraphicsCore/Vulkan/VulkanSemaphore.h"
 #include "GraphicsCore/Vulkan/VulkanGpuInstance.h"
+#include "GraphicsCore/Vulkan/VulkanCommandQueue.h"
 
 #include "Foundation/Algorithms/Contains.h"
 
@@ -57,6 +58,23 @@ namespace Kitsune
         {
             return DynamicPointerCast<VulkanRenderSurface>(surface)->GetVulkanSurface();
         }
+
+        SurfaceTextureResult VulkanToEngine_(VkResult result)
+        {
+            switch (result)
+            {
+            case VK_SUCCESS:
+                return SurfaceTextureResult::Success;
+            case VK_SUBOPTIMAL_KHR:
+                return SurfaceTextureResult::Suboptimal;
+            case VK_ERROR_OUT_OF_DATE_KHR:
+                return SurfaceTextureResult::Outdated;
+            default:
+                return SurfaceTextureResult::Unknown;
+            }
+
+            KITSUNE_UNREACHABLE();
+        }
     }
 
     VulkanRenderSurface::~VulkanRenderSurface()
@@ -106,27 +124,68 @@ namespace Kitsune
         return m_BackBuffers[index];
     }
 
-    Uint32 VulkanRenderSurface::AcquireNextImage(SharedPtr<Semaphore>& semaphore)
+    Pair<Uint32, SurfaceTextureResult> VulkanRenderSurface::AcquireNextImage(
+        SharedPtr<Semaphore>& semaphore)
     {
-        Uint32 index;
-        KITSUNE_VK_THROW_IF_FAIL(
-            ::vkAcquireNextImageKHR(
-                m_Device->GetVulkanDevice(), m_SwapChain, UINT64_MAX,
-                Details::GetVulkanHandle_(semaphore), nullptr, &index),
-            "Failed to acquire the next image from the swap chain.");
+        Uint32 index = 0;
+        VkResult result = ::vkAcquireNextImageKHR(
+            m_Device->GetVulkanDevice(),
+            m_SwapChain,
+            UINT64_MAX,
+            Details::GetVulkanHandle_(semaphore),
+            nullptr,
+            &index);
 
-        return index;
+        SurfaceTextureResult textureResult = Details::VulkanToEngine_(result);
+        if (textureResult == SurfaceTextureResult::Unknown)
+            throw SystemException("Failed to acquire the next swap chain image.");
+
+        return { index, textureResult };
+    }
+
+    void VulkanRenderSurface::Present(
+        Uint32 backBufferIndex,
+        const SharedPtr<Semaphore>& waitSemaphore)
+    {
+        VkSemaphore vulkanSemaphore = Details::GetVulkanHandle_(waitSemaphore);
+        VkSwapchainKHR swapChain = m_SwapChain;
+
+        VkPresentInfoKHR presentInfo = {
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &vulkanSemaphore,
+            .swapchainCount = (vulkanSemaphore != VK_NULL_HANDLE),
+            .pSwapchains = &swapChain,
+            .pImageIndices = &backBufferIndex,
+            .pResults = nullptr
+        };
+
+        VkResult result = ::vkQueuePresentKHR(
+            Details::GetVulkanHandle_(m_SwapChainConfiguration.Queue),
+            &presentInfo);
+
+        // Let AcquireNextImage() handle outdated/suboptimal cases.
+        if ((result < 0) && (result != VK_ERROR_OUT_OF_DATE_KHR))
+            throw SystemException("Failed to present a surface texture.");
     }
 
     void VulkanRenderSurface::ConfigureSwapChain(
         const SharedPtr<GpuDevice>& device,
         const SwapChainConfiguration& configuration)
     {
-        m_Device = DynamicPointerCast<VulkanGpuDevice>(device);
+        auto vulkanGpuDevice = DynamicPointerCast<VulkanGpuDevice>(device);
 
-        VkPhysicalDevice physicalDevice = m_Device->GetVulkanPhysicalDevice();
+        VkPhysicalDevice physicalDevice = vulkanGpuDevice->GetVulkanPhysicalDevice();
         VkSurfaceCapabilitiesKHR capabilities = GetVkSurfaceCapabilities_(
             physicalDevice);
+
+        if (configuration.Queue == nullptr)
+        {
+            throw InvalidArgumentException(
+                "Failed to configure the swap chain. The specified queue which will "
+                "be used for presentation is invalid. (NULL)");
+        }
 
         if ((configuration.ImageCount < capabilities.minImageCount) ||
             (configuration.ImageCount > capabilities.maxImageCount))
@@ -185,14 +244,26 @@ namespace Kitsune
             .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
             .presentMode = Details::EngineToVulkan_(configuration.PresentMode),
             .clipped = true,
-            .oldSwapchain = VK_NULL_HANDLE
+            .oldSwapchain = m_SwapChain
         };
 
+        VkSwapchainKHR newSwapChain;
         KITSUNE_VK_THROW_IF_FAIL(
             ::vkCreateSwapchainKHR(
-                m_Device->GetVulkanDevice(), &createInfo, nullptr,
-                &m_SwapChain),
+                vulkanGpuDevice->GetVulkanDevice(), &createInfo, nullptr,
+                &newSwapChain),
             "Failed to create a swap chain for the window.");
+
+        if (m_Device != nullptr)
+        {
+            m_Device->WaitIdle();
+            m_BackBuffers.Clear();
+
+            ::vkDestroySwapchainKHR(m_Device->GetVulkanDevice(), m_SwapChain, nullptr);
+        }
+
+        m_Device = vulkanGpuDevice;
+        m_SwapChain = newSwapChain;
 
         Uint32 backBufferCount;
         KITSUNE_VK_THROW_IF_FAIL(
@@ -212,6 +283,7 @@ namespace Kitsune
             m_BackBuffers.PushBack(MakeScoped<VulkanTexture>(backBuffer));
 
         m_SwapChainConfiguration = configuration;
+        m_SwapChainConfiguration.ImageCount = backBufferCount;
     }
 
     VkSurfaceCapabilitiesKHR VulkanRenderSurface::GetVkSurfaceCapabilities_(

@@ -88,6 +88,13 @@ namespace Kitsune
         return m_CommandQueues[index][queueIndex];
     }
 
+    void VulkanGpuDevice::WaitIdle()
+    {
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkDeviceWaitIdle(m_Device),
+            "Failed to wait until the device is idle.");
+    }
+
     SharedPtr<Fence> VulkanGpuDevice::CreateFence()
     {
         return MakeShared<VulkanFence>(*this);

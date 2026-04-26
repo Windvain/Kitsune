@@ -5,13 +5,15 @@
 #include "Foundation/Maths/Vector2.h"
 #include "Foundation/Memory/SharedPtr.h"
 
+#include "Foundation/Containers/Pair.h"
 #include "Foundation/Containers/Array.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    class GpuDevice;
     class Semaphore;
+    class GpuDevice;
+    class CommandQueue;
 
     // The presentation mode of a surface.
     enum class SurfacePresentMode
@@ -23,6 +25,16 @@ namespace Kitsune
         Mailbox         //< A combination of both Immediate and FIFO modes. Doesn't
                         //  block the GPU from running faster while avoiding screen
                         //  tearing.
+    };
+
+    enum class SurfaceTextureResult
+    {
+        Unknown,        //< An unknown error occurred.
+        Success,        //< Successfully retrieved the surface texture.
+        Suboptimal,     //< The surface texture was retrieved, but the swap chain
+                        //  no longer matches the surface properties.
+        Outdated        //< The swap chain needs to be recreated, the surface texture
+                        //  was not retrieved.
     };
 
     // Stores the capabilities of a render surface.
@@ -46,6 +58,8 @@ namespace Kitsune
 
         TextureFormat Format;
         SurfacePresentMode PresentMode;
+
+        SharedPtr<CommandQueue> Queue;
     };
 
     // Contains pixel data for rendering to a window.
@@ -67,7 +81,12 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        virtual Uint32 AcquireNextImage(SharedPtr<Semaphore>& semaphore) = 0;
+        virtual Pair<Uint32, SurfaceTextureResult> AcquireNextImage(
+            SharedPtr<Semaphore>& semaphore) = 0;
+
+        virtual void Present(
+            Uint32 backBufferIndex,
+            const SharedPtr<Semaphore>& waitSemaphore) = 0;
 
     public:
         virtual void ConfigureSwapChain(
