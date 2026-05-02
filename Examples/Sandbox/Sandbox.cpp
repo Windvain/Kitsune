@@ -2,9 +2,7 @@
 #include "Foundation/Memory/Memory.h"
 
 #include "GraphicsCore/GpuInstance.h"
-
-#include "Foundation/Algorithms/Contains.h"
-#include "Foundation/Filesystem/FileStream.h"
+#include "GraphicsCore/CommandList.h"
 
 using namespace Kitsune;
 
@@ -15,7 +13,7 @@ public:
         : Application(specs)
     {
         DisplayManager* displayManager = DisplayManager::GetInstance();
-        Window* window = displayManager->GetPrimaryWindow();
+        m_Window = displayManager->GetPrimaryWindow();
 
         m_GpuInstance = GpuInstance::Create({
             .DebugEnabled = false,
@@ -23,14 +21,14 @@ public:
             .Name = "Sandbox"
         });
 
-        m_Surface = m_GpuInstance->RequestSurface(window);
+        m_Surface = m_GpuInstance->RequestSurface(m_Window);
         m_Device = m_GpuInstance->RequestDevice({
             .SupportedSurface = m_Surface,
-            .Extensions = GpuDeviceExtension::None,
+            .Features = GpuDeviceFeature::WireframeRendering,
             .CommandQueues = {
                 {
                     .Type = CommandQueueType::Graphics,
-                    .Count = 3,
+                    .Count = 1,
                     .Flags = CommandQueueFlag::Presentable,
                     .Priorities = { 1.0f }
                 }
@@ -38,136 +36,158 @@ public:
             .Preference = GpuDevicePreference::HighPerformance
         });
 
-        RenderSurfaceCapabilities surfaceCapabilities =
-            m_Surface->GetCapabilities(m_Device);
+        m_GraphicsQueue = m_Device->GetCommandQueue(0, 0);
+        m_SwapChain = m_Device->CreateSwapChain(
+            m_Surface, m_GraphicsQueue,
+            {
+                .ImageCount = FrameCount,
+                .Extent = m_Window->GetSize(),
+                .Format = TextureFormat::R8G8B8A8Srgb,
+                .PresentMode = PresentMode::Mailbox,
+            });
 
-        auto supportedFormats = surfaceCapabilities.TextureFormats;
-        auto supportedPresentModes = surfaceCapabilities.PresentModes;
-
-        TextureFormat usedSurfaceFormat = SurfaceFormat;
-        SurfacePresentMode usedPresentMode = PresentMode;
-
-        if (!Algorithms::Contains(supportedFormats.GetBegin(), supportedFormats.GetEnd(),
-                                  SurfaceFormat))
-        {
-            usedSurfaceFormat = supportedFormats[0];
-        }
-
-        if (!Algorithms::Contains(
-                supportedPresentModes.GetBegin(), supportedPresentModes.GetEnd(),
-                PresentMode))
-        {
-            usedPresentMode = SurfacePresentMode::Fifo;
-        }
-
-        m_Surface->ConfigureSwapChain(m_Device, {
-            .ImageCount = Maths::Minimum(
-                surfaceCapabilities.MinimumImageCount + 1,
-                FrameCount),
-            .Extents = window->GetSize(),
-            .Format = usedSurfaceFormat,
-            .PresentMode = usedPresentMode
-        });
-
-        m_GraphicsQueue = m_Device->GetQueue(0, 0);
-
-        FileStream stream("Triangle.spv", FileAccessMode::Read);
-        Usize shaderSize = stream.Seek(0, SeekOrigin::End);
-
-        Array<Byte> shaderSource(shaderSize, Byte());
-
-        stream.Seek(0, SeekOrigin::Begin);
-        stream.Read(shaderSource.Data(), shaderSize);
-
-        SharedPtr<ShaderModule> shaderModule = m_Device->CreateShaderModule(
-            shaderSource.Data(), shaderSource.Size());
-
+        SharedPtr<ShaderModule> shaderModule = m_Device->CreateShaderModule("./Triangle.spv");
         m_RenderPipeline = m_Device->CreateRenderPipeline({
             .Topology = PrimitiveTopology::TriangleList,
             .FillMode = PolygonFillMode::Solid,
+            .FrontFace = FrontFace::Clockwise,
+            .CullMode = CullMode::Back,
             .VertexShader = shaderModule,
             .FragmentShader = shaderModule,
-            .RenderTargetFormat = usedSurfaceFormat
+            .Format = TextureFormat::R8G8B8A8Srgb
         });
 
         m_CommandPool = m_Device->CreateCommandPool(m_GraphicsQueue);
         for (Uint32 index = 0; index < MaxInFlightFrames; ++index)
         {
-            m_CommandLists.PushBack(m_CommandPool->AllocateCommandList());
-            m_AcquireSemaphore.PushBack(m_Device->MakeSemaphore());
+            m_CommandLists.PushBack(m_CommandPool->AllocateCommandList(
+                CommandListLevel::Primary));
 
-            m_FrameFences.PushBack(m_Device->CreateFence());
+            m_AcquireSemaphore.PushBack(m_Device->MakeSemaphore());
+            m_FrameFences.PushBack(m_Device->CreateFence(FenceFlag::Signaled));
         }
 
-        SwapChainConfiguration swapChainConfig = m_Surface->GetSwapChainConfiguration();
-        for (Uint32 index = 0; index < swapChainConfig.ImageCount; ++index)
+        for (Uint32 index = 0; index < m_SwapChain->GetImageCount(); ++index)
         {
-            SharedPtr<Texture> backBuffer = m_Surface->GetBackBuffer(index);
-            m_BackBuffers.PushBack(m_Device->CreateTextureView(backBuffer, {
-                .Dimension = TextureViewDimension::Texture2D,
-                .Format = usedSurfaceFormat
+            SharedPtr<Texture> backBuffer = m_SwapChain->GetBackBuffer(index);
+            m_BackBufferViews.PushBack(m_Device->CreateTextureView(backBuffer, {
+                .Type = TextureViewType::Texture2D,
+                .Format = m_SwapChain->GetSurfaceFormat(),
+                .Mapping = {
+                    .Red = TextureComponentSwizzle::Red,
+                    .Green = TextureComponentSwizzle::Green,
+                    .Blue = TextureComponentSwizzle::Blue,
+                    .Alpha = TextureComponentSwizzle::Alpha
+                }
             }));
 
             m_DrawFinishedSemaphore.PushBack(m_Device->MakeSemaphore());
         }
     }
 
-    void OnUpdate()
+    void OnUpdate() override
     {
-        m_FrameFences[m_FrameIndex]->Wait(UINT64_MAX);
-        m_FrameFences[m_FrameIndex]->Reset();
+        if (m_Window->GetSize() != m_WindowSize)
+        {
+            OnSwapChainInvalidation();
+            m_WindowSize = m_Window->GetSize();
+        }
 
-        Uint32 index = m_Surface->AcquireNextImage(m_AcquireSemaphore[m_FrameIndex]);
-        RecordCommandList(index);
-
-        m_GraphicsQueue->Submit(
-            { m_CommandLists[m_FrameIndex] },
-            m_AcquireSemaphore[m_FrameIndex],
-            m_DrawFinishedSemaphore[index],
-            m_FrameFences[m_FrameIndex]);
-
-        m_GraphicsQueue->Present(m_Surface, index, m_DrawFinishedSemaphore[index]);
-        m_FrameIndex = (m_FrameIndex + 1) % MaxInFlightFrames;
+        OnDraw();
     }
 
 public:
+    void OnSwapChainInvalidation()
+    {
+        m_GraphicsQueue->WaitIdle();
+        m_SwapChain->Resize(m_Window->GetSize());
+
+        m_BackBufferViews.Clear();
+        for (Uint32 index = 0; index < m_SwapChain->GetImageCount(); ++index)
+        {
+            SharedPtr<Texture> backBuffer = m_SwapChain->GetBackBuffer(index);
+            m_BackBufferViews.PushBack(m_Device->CreateTextureView(backBuffer, {
+                .Type = TextureViewType::Texture2D,
+                .Format = m_SwapChain->GetSurfaceFormat(),
+                .Mapping = {
+                    .Red = TextureComponentSwizzle::Red,
+                    .Green = TextureComponentSwizzle::Green,
+                    .Blue = TextureComponentSwizzle::Blue,
+                    .Alpha = TextureComponentSwizzle::Alpha
+                }
+            }));
+        }
+    }
+
+    void OnDraw()
+    {
+        m_FrameFences[m_FrameIndex]->Wait(UINT64_MAX);
+        auto [index, result] = m_SwapChain->AcquireNextImage(
+            m_AcquireSemaphore[m_FrameIndex]);
+
+        if (!result)
+        {
+            OnSwapChainInvalidation();
+            return;
+        }
+
+        m_FrameFences[m_FrameIndex]->Reset();
+        RecordCommandList(index);
+
+        CommandQueueSubmitInformation submitInformation = {
+            .Waited = { m_AcquireSemaphore[m_FrameIndex] },
+            .Signaled = { m_DrawFinishedSemaphore[index] }
+        };
+
+        m_GraphicsQueue->Submit(
+            { m_CommandLists[m_FrameIndex] },
+            submitInformation,
+            m_FrameFences[m_FrameIndex]);
+
+        m_SwapChain->Present(index, m_DrawFinishedSemaphore[index]);
+        m_FrameIndex = (m_FrameIndex + 1) % MaxInFlightFrames;
+    }
+
     void RecordCommandList(Uint32 index)
     {
         SharedPtr<CommandList>& commandList = m_CommandLists[m_FrameIndex];
         commandList->Reset();
 
-        SwapChainConfiguration swapChainConfig = m_Surface->GetSwapChainConfiguration();
+        Vector2<Uint32> extent = m_SwapChain->GetExtent();
 
-        SharedPtr<Texture> backBuffer = m_Surface->GetBackBuffer(index);
-        SharedPtr<TextureView>& backBufferView = m_BackBuffers[index];
+        SharedPtr<Texture> backBuffer = m_SwapChain->GetBackBuffer(index);
+        SharedPtr<TextureView>& backBufferView = m_BackBufferViews[index];
 
         commandList->Begin();
         {
-            RenderingSpecifications renderingSpecs = {
-                .RenderArea = Rect2<Uint32>({ 0, 0 }, swapChainConfig.Extents)
+            RenderingInformation renderingInfo = {
+                .RenderArea = Rect2<Uint32>({ 0, 0 }, extent),
+                .ClearColor = { 0.2f, 0.0f, 1.0f, 1.0f }
             };
 
             commandList->BindRenderPipeline(m_RenderPipeline);
             commandList->SetViewport(
-                Rect2<float>({ 0.0f, 0.0f }, swapChainConfig.Extents),
+                Rect2<float>({ 0.0f, 0.0f }, extent),
                 0.0f,
                 1.0f);
 
-            commandList->SetScissor(renderingSpecs.RenderArea);
-            commandList->TextureBarrier(backBuffer, {
-                TextureUsage::Undefined,
-                TextureUsage::RenderAttachment
-            });
+            commandList->SetScissor(renderingInfo.RenderArea);
+            commandList->TextureMemoryBarrier({{
+                backBuffer,
+                TextureLayout::Undefined,
+                TextureLayout::RenderTarget
+            }});
 
-            commandList->BeginRendering(backBufferView, renderingSpecs);
+            commandList->BeginRendering(backBufferView, renderingInfo);
             {
                 commandList->Draw(3, 1, 0, 0);
             }
             commandList->EndRendering();
-            commandList->TextureBarrier(backBuffer, {
-                TextureUsage::RenderAttachment,
-                TextureUsage::Presentation
-            });
+            commandList->TextureMemoryBarrier({{
+                backBuffer,
+                TextureLayout::RenderTarget,
+                TextureLayout::Presentation,
+            }});
         }
         commandList->End();
     }
@@ -176,26 +196,27 @@ public:
     static constexpr Uint32 FrameCount = 3;
     static constexpr Uint32 MaxInFlightFrames = 2;
 
-    static constexpr TextureFormat SurfaceFormat = TextureFormat::Rgba8Srgb;
-    static constexpr SurfacePresentMode PresentMode = SurfacePresentMode::Mailbox;
-
 private:
     SharedPtr<GpuInstance> m_GpuInstance;
     SharedPtr<RenderSurface> m_Surface;
     SharedPtr<GpuDevice> m_Device;
 
     SharedPtr<CommandQueue> m_GraphicsQueue;
+    SharedPtr<SwapChain> m_SwapChain;
     SharedPtr<RenderPipeline> m_RenderPipeline;
 
     SharedPtr<CommandPool> m_CommandPool;
     Array<SharedPtr<CommandList>> m_CommandLists;
+    Array<SharedPtr<TextureView>> m_BackBufferViews;
 
-    Array<SharedPtr<TextureView>> m_BackBuffers;
     Array<SharedPtr<Semaphore>> m_AcquireSemaphore;
     Array<SharedPtr<Semaphore>> m_DrawFinishedSemaphore;
     Array<SharedPtr<Fence>> m_FrameFences;
 
     Uint32 m_FrameIndex = 0;
+
+    Window* m_Window;
+    Vector2<Uint32> m_WindowSize;
 };
 
 Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)

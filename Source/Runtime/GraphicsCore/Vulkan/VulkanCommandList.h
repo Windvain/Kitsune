@@ -5,14 +5,20 @@
 
 namespace Kitsune
 {
+    class VulkanGpuDevice;
+
+    class VulkanCommandList;
+    class VulkanCommandQueue;
+
     namespace Details
     {
         [[nodiscard]]
-        VkCommandBuffer GetVulkanHandle_(const SharedPtr<CommandList>& commandList);
-    }
+        VkCommandBufferLevel ToVkCommandBufferLevel_(CommandListLevel level);
 
-    class VulkanGpuDevice;
-    class VulkanCommandQueue;
+        [[nodiscard]]
+        SharedPtr<VulkanCommandList> ToImplementation_(
+            const SharedPtr<CommandList>& commandList);
+    }
 
     class VulkanCommandPool : public CommandPool
     {
@@ -25,7 +31,7 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        SharedPtr<CommandList> AllocateCommandList() override;
+        SharedPtr<CommandList> AllocateCommandList(CommandListLevel level) override;
 
     public:
         [[nodiscard]]
@@ -42,7 +48,11 @@ namespace Kitsune
     class VulkanCommandList : public CommandList
     {
     public:
-        VulkanCommandList(VulkanGpuDevice& device, VulkanCommandPool& commandPool);
+        VulkanCommandList(
+            VulkanGpuDevice& device,
+            VulkanCommandPool& commandPool,
+            CommandListLevel level);
+
         ~VulkanCommandList() override;
 
     public:
@@ -50,15 +60,16 @@ namespace Kitsune
         void End() override;
 
         void BeginRendering(
-            const SharedPtr<TextureView>& texture,
-            const RenderingSpecifications& specifications) override;
+            const SharedPtr<TextureView>& textureView,
+            const RenderingInformation& information) override;
 
         void EndRendering() override;
 
     public:
         void SetViewport(
             const Rect2<float>& viewport,
-            float minimumDepth, float maximumDepth) override;
+            float minimumDepth,
+            float maximumDepth) override;
 
         void SetScissor(const Rect2<Uint32>& scissorRect) override;
 
@@ -70,9 +81,9 @@ namespace Kitsune
                   Uint32 firstVertex, Uint32 firstInstance) override;
 
         void Reset() override;
-        void TextureBarrier(
-            const SharedPtr<Texture>& texture,
-            const TextureBarrierDescription& description) override;
+
+        void TextureMemoryBarrier(
+            const Array<TextureMemoryBarrierDescription>& descriptions) override;
 
     public:
         [[nodiscard]]
@@ -83,10 +94,10 @@ namespace Kitsune
 
     private:
         [[nodiscard]]
-        static VkAccessFlags2 GetAccessFlags_(TextureUsage textureUsage);
+        static VkPipelineStageFlags2 GetPipelineStage_(TextureLayout layout);
 
         [[nodiscard]]
-        static VkPipelineStageFlags2 GetPipelineStage_(TextureUsage textureUsage);
+        static VkAccessFlags2 GetAccessFlags_(TextureLayout layout);
 
     private:
         VulkanGpuDevice& m_Device;

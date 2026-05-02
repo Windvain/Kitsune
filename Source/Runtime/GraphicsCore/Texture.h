@@ -1,81 +1,268 @@
 #pragma once
 
+#include "Foundation/Maths/Vector2.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    // The format of a texture.
+    // Specifies the pixel format of a texture.
     enum class TextureFormat
     {
-        Unspecified,
-        R8UnsignedNormalized,
-        Rg8UnsignedNormalized,
-        Rgb8UnsignedNormalized,
-        Rgba8UnsignedNormalized,
-        Bgr8UnsignedNormalized,
-        Bgra8UnsignedNormalized,
-        R8SignedNormalized,
-        Rg8SignedNormalized,
-        Rgb8SignedNormalized,
-        Rgba8SignedNormalized,
-        Bgr8SignedNormalized,
-        Bgra8SignedNormalized,
-        R8UnsignedInteger,
-        Rg8UnsignedInteger,
-        Rgb8UnsignedInteger,
-        Rgba8UnsignedInteger,
-        Bgr8UnsignedInteger,
-        Bgra8UnsignedInteger,
-        R8SignedInteger,
-        Rg8SignedInteger,
-        Rgb8SignedInteger,
-        Rgba8SignedInteger,
-        Bgr8SignedInteger,
-        Bgra8SignedInteger,
+        Unknown,        //< Unknown format.
+
+        // A one-component format, with an 8-bit unsigned float per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        R8Unorm,
+
+        // A two-component format, with an 8-bit unsigned float per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        R8G8Unorm,
+
+        // A four-component format, with an 8-bit unsigned float per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Blue component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        R8G8B8A8Unorm,
+
+        // A three-component format, with an 8-bit unsigned float per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        B8G8R8Unorm,
+
+        // A four-component format, with an 8-bit unsigned float per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        B8G8R8A8Unorm,
+
+        // A one-component format, with an 8-bit signed float per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        R8Snorm,
+
+        // A two-component format, with an 8-bit signed float per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        R8G8Snorm,
+
+        // A four-component format, with an 8-bit signed float per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Blue component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        R8G8B8A8Snorm,
+
+        // A three-component format, with an 8-bit signed float per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        B8G8R8Snorm,
+
+        // A four-component format, with an 8-bit signed float per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        B8G8R8A8Snorm,
+
+        // A one-component format, with an 8-bit unsigned integer per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        R8Uint,
+
+        // A two-component format, with an 8-bit unsigned integer per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        R8G8Uint,
+
+        // A four-component format, with an 8-bit unsigned integer per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Blue component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        R8G8B8A8Uint,
+
+        // A three-component format, with an 8-bit unsigned integer per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        B8G8R8Uint,
+
+        // A four-component format, with an 8-bit unsigned integer per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        B8G8R8A8Uint,
+
+        // A one-component format, with an 8-bit signed integer per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        R8Sint,
+
+        // A two-component format, with an 8-bit signed integer per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        R8G8Sint,
+
+        // A four-component format, with an 8-bit signed integer per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Blue component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        R8G8B8A8Sint,
+
+        // A three-component format, with an 8-bit signed integer per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        B8G8R8Sint,
+
+        // A four-component format, with an 8-bit signed integer per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        B8G8R8A8Sint,
+
+        // A one-component format in the sRGB encoding, with an 8-bit unsigned float
+        // per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
         R8Srgb,
-        Rg8Srgb,
-        Rgb8Srgb,
-        Rgba8Srgb,
-        Bgr8Srgb,
-        Bgra8Srgb
+
+        // A two-component format in the sRGB encoding, with an 8-bit unsigned float
+        // per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        R8G8Srgb,
+
+        // A four-component format in the sRGB encoding, with an 8-bit unsigned float
+        // per channel.
+        // Consists of:
+        // An 8-bit Red component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Blue component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        R8G8B8A8Srgb,
+
+        // A three-component format in the sRGB encoding, with an 8-bit unsigned float
+        // per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        B8G8R8Srgb,
+
+        // A four-component format in the sRGB encoding, with an 8-bit unsigned float
+        // per channel.
+        // Consists of:
+        // An 8-bit Blue component in byte 1.
+        // An 8-bit Green component in byte 2.
+        // An 8-bit Red component in byte 3.
+        // An 8-bit Alpha component in byte 4.
+        B8G8R8A8Srgb
     };
 
-    // The usage of a texture.
-    enum class TextureUsage
+    // Describes the intended usage and layout for a texture.
+    enum class TextureLayout
     {
-        Undefined,
-        RenderAttachment,
-        Presentation
+        Undefined,          //< The texture's layout is undefined.
+        RenderTarget,       //< The texture's layout is optimized for rendering.
+        Presentation        //< The texture's layout is optimized for presentation to
+                            //  the screen.
     };
 
-    // The type of a texture view.
-    enum class TextureViewDimension
+    // Specifies the type of texture which is stored on the GPU.
+    enum class TextureType
     {
-        Texture1D,
-        Texture1DArray,
-        Texture2D,
-        Texture2DArray,
-        Texture3D
+        Texture1D,          //< The texture is a one-dimensional texture.
+        Texture2D,          //< The texture is a two-dimensional texture.
+        Texture3D           //< The texture is a three-dimensional texture.
     };
 
-    // Contains information used for creating a texture view.
+    // Specifies how the texture is viewed/accessed.
+    enum class TextureViewType
+    {
+        Texture1D,          //< The texture is interpreted as a 1-dimensional texture.
+        Texture1DArray,     //< The texture is interpreted as an array of 1-dimensional
+                            //  textures.
+        Texture2D,          //< The texture is interpreted as a 2-dimensional texture.
+        Texture2DArray,     //< The texture is interpreted as an array of 2-dimensional
+                            //  textures.
+        Texture3D           //< The texture is interpreted as a 3-dimensional texture.
+    };
+
+    // Determines how a texture's component is populated.
+    enum class TextureComponentSwizzle
+    {
+        Zero,               //< Component is set to 0.
+        One,                //< Component is set to 1 (for integer formats) or 1.0
+                            //  (for floating-point formats).
+        Red,                //< Component is set to the Red component.
+        Green,              //< Component is set to the Green component.
+        Blue,               //< Component is set to the Blue component.
+        Alpha               //< Component is set to the Alpha component.
+    };
+
+    // Determines how a texture's components are populated.
+    struct TextureViewComponentMapping
+    {
+        TextureComponentSwizzle Red;
+        TextureComponentSwizzle Green;
+        TextureComponentSwizzle Blue;
+        TextureComponentSwizzle Alpha;
+    };
+
+    // Contains the specifications of a texture view.
     struct TextureViewSpecifications
     {
-        TextureViewDimension Dimension;
+        TextureViewType Type;
         TextureFormat Format;
+        TextureViewComponentMapping Mapping;
     };
 
-    // A region in memory whose layout is interpreted as an image.
+    // A resource representing image data.
     class Texture : public NonCopyable
     {
     public:
         virtual ~Texture() = default;
+
+    public:
+        [[nodiscard]]
+        virtual Vector2<Uint32> GetSize() const = 0;
     };
 
-    // Provides a view to a texture.
+    // Provides an interpretation of a texture resource.
     class TextureView : public NonCopyable
     {
     public:
         virtual ~TextureView() = default;
+
+    public:
+        [[nodiscard]]
+        virtual Texture* GetTexture() const = 0;
     };
 }

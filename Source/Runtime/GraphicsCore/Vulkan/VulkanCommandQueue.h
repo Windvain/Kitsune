@@ -1,30 +1,38 @@
 #pragma once
 
+#include "Foundation/Memory/SharedPtr.h"
+
 #include "GraphicsCore/CommandQueue.h"
 #include "GraphicsCore/Vulkan/VulkanUtilities.h"
 
 namespace Kitsune
 {
+    class VulkanGpuDevice;
+    class VulkanCommandQueue;
+
     namespace Details
     {
-        [[nodiscard]] VkQueueFlags EngineToVulkan_(CommandQueueType queueType);
-        [[nodiscard]] VkQueue GetVulkanHandle_(const SharedPtr<CommandQueue>& queue);
-    }
+        [[nodiscard]]
+        VkQueueFlags ToVkQueueFlags_(CommandQueueType queueType);
 
-    class VulkanGpuDevice;
+        [[nodiscard]]
+        SharedPtr<VulkanCommandQueue> ToImplementation_(
+            const SharedPtr<CommandQueue>& commandQueue);
+    }
 
     class VulkanCommandQueue : public CommandQueue
     {
     public:
-        VulkanCommandQueue(VulkanGpuDevice& device,
-                           Uint32 familyIndex, Uint32 queueIndex);
+        VulkanCommandQueue(VulkanGpuDevice& device, Uint32 familyIndex,
+                           Uint32 queueIndex);
 
     public:
         void Submit(
             const Array<SharedPtr<CommandList>>& commandLists,
-            const SharedPtr<Semaphore>& waitSemaphore,
-            SharedPtr<Semaphore>& signaledSemaphore,
-            SharedPtr<Fence>& signaledFence) override;
+            const CommandQueueSubmitInformation& information,
+            const SharedPtr<Fence>& fence) override;
+
+        void WaitIdle() override;
 
     public:
         [[nodiscard]]

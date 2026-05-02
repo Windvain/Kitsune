@@ -5,12 +5,10 @@ namespace Kitsune
 {
     namespace Details
     {
-        VkSemaphore GetVulkanHandle_(const SharedPtr<Semaphore>& semaphore)
+        SharedPtr<VulkanSemaphore> ToImplementation_(
+            const SharedPtr<Semaphore>& semaphore)
         {
-            if (semaphore == nullptr)
-                return VK_NULL_HANDLE;
-
-            return DynamicPointerCast<VulkanSemaphore>(semaphore)->GetVulkanSemaphore();
+            return DynamicPointerCast<VulkanSemaphore>(semaphore);
         }
     }
 

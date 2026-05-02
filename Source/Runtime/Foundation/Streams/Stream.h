@@ -43,6 +43,12 @@ namespace Kitsune
             return Seek(offset, SeekOrigin::Begin);
         }
 
+        [[noreturn]]
+        inline virtual Usize Length() const
+        {
+            throw LogicException("The stream does not support Length().");
+        }
+
     public:
         [[nodiscard]] virtual bool IsWritable() const = 0;
         [[nodiscard]] virtual bool IsReadable() const = 0;

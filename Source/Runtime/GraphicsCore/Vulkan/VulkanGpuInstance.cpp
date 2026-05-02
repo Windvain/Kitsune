@@ -4,18 +4,17 @@
 #include "GraphicsCore/Vulkan/VulkanCommandQueue.h"
 #include "GraphicsCore/Vulkan/VulkanRenderSurface.h"
 
-#include "Foundation/Containers/Set.h"
 #include "Foundation/Logging/Logger.h"
-#include "Foundation/Algorithms/Contains.h"
+#include "Foundation/Containers/Set.h"
 
 #include "Foundation/Diagnostics/Assert.h"
-#include "Foundation/Diagnostics/InvalidArgumentException.h"
+#include "Foundation/Algorithms/Contains.h"
 
 namespace Kitsune
 {
     namespace Details
     {
-        LogSeverity VulkanToEngine_(VkDebugUtilsMessageSeverityFlagsEXT severity)
+        LogSeverity ToLogSeverity_(VkDebugUtilsMessageSeverityFlagsEXT severity)
         {
             if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
                 return LogSeverity::Error;
@@ -111,14 +110,15 @@ namespace Kitsune
             Array<const char*> extensions = GetDeviceExtensions_();
             if ((queueInfos.Size() != requirements.CommandQueues.Size()) ||
                 (!DeviceHasExtensionSupport_(physicalDevice, extensions)) ||
-                (!DeviceSupportsFeatures_(physicalDevice)))
+                (!DeviceSupportsFeatures_(physicalDevice, requirements.Features)))
             {
                 continue;
             }
 
             return *m_Devices.Insert(
                 m_Devices.GetBegin(),
-                MakeShared<VulkanGpuDevice>(physicalDevice, queueInfos, extensions));
+                MakeShared<VulkanGpuDevice>(
+                    physicalDevice, queueInfos, extensions, requirements.Features));
         }
 
         throw SystemException(
@@ -324,7 +324,7 @@ namespace Kitsune
 
         KITSUNE_ENGINE_LOG(
             GraphicsCore,
-            Details::VulkanToEngine_(severity), SourceLocation(),
+            Details::ToLogSeverity_(severity), SourceLocation(),
             data->pMessage);
 
         return VK_FALSE;
@@ -365,7 +365,7 @@ namespace Kitsune
                 continue;
             }
 
-            VkQueueFlags flags = Details::EngineToVulkan_(queueSpecifications.Type);
+            VkQueueFlags flags = Details::ToVkQueueFlags_(queueSpecifications.Type);
             for (Uint32 index = 0; index < familyProperties.Size(); ++index)
             {
                 auto properties = familyProperties[index].queueFamilyProperties;
@@ -377,8 +377,7 @@ namespace Kitsune
 
                 // If CommandQueueFlag::Presentable was specified, make sure the surface
                 // passed in is supported.
-                if ((queueSpecifications.Flags & CommandQueueFlag::Presentable) ==
-                    CommandQueueFlag::Presentable)
+                if (bool(queueSpecifications.Flags & CommandQueueFlag::Presentable))
                 {
                     if (!QuerySurfaceSupport_(physicalDevice, index, supportedSurface))
                         continue;
@@ -418,7 +417,7 @@ namespace Kitsune
             ::vkGetPhysicalDeviceSurfaceSupportKHR(
                 physicalDevice,
                 familyIndex,
-                Details::GetVulkanHandle_(surface),
+                Details::ToImplementation_(surface)->GetVulkanSurface(),
                 &supportsPresentation),
             "Failed to retrieve the presentation state of a Vulkan "
             "physical device.");
@@ -471,7 +470,9 @@ namespace Kitsune
         return true;
     }
 
-    bool VulkanGpuInstance::DeviceSupportsFeatures_(VkPhysicalDevice device)
+    bool VulkanGpuInstance::DeviceSupportsFeatures_(
+        VkPhysicalDevice device,
+        GpuDeviceFeature features)
     {
         // These names are even longer than Java class names...
         using Vulkan13Features = VkPhysicalDeviceVulkan13Features;
@@ -479,14 +480,8 @@ namespace Kitsune
         Vulkan13Features vulkan13Features = { /* ... */ };
         vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
         vulkan13Features.pNext = nullptr;
-        vulkan13Features.synchronization2 = VK_TRUE;
 
         VkPhysicalDeviceFeatures deviceFeatures = { /* ... */ };
-
-#if !defined(KITSUNE_BUILD_PRODUCTION)
-        deviceFeatures.fillModeNonSolid = VK_TRUE;
-#endif
-
         VkPhysicalDeviceFeatures2 features2 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
             .pNext = &vulkan13Features,
@@ -495,39 +490,15 @@ namespace Kitsune
 
         ::vkGetPhysicalDeviceFeatures2(device, &features2);
 
-        const auto* current = reinterpret_cast<const VkBaseInStructure*>(&features2);
-        bool supported = true;
+        // Vulkan 1.3 feature checks.
+        if (!vulkan13Features.synchronization2 || !vulkan13Features.dynamicRendering)
+            return false;
 
-        while (current != nullptr)
+        // VkPhysicalDeviceFeatures feature checks.
+        if (bool(features & GpuDeviceFeature::WireframeRendering) &&
+            (features2.features.fillModeNonSolid == VK_FALSE))
         {
-            switch (current->sType)
-            {
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES:
-            {
-                auto* features = reinterpret_cast<const Vulkan13Features*>(current);
-                if (!features->synchronization2 || !features->dynamicRendering)
-                    supported = false;
-
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2:
-            {
-                auto* features = reinterpret_cast<const VkPhysicalDeviceFeatures2*>(
-                    current);
-
-                if (features->features.fillModeNonSolid == VK_FALSE)
-                    supported = false;
-
-                break;
-            }
-            default:
-                break;
-            }
-
-            if (!supported)
-                return false;
-
-            current = current->pNext;
+            return false;
         }
 
         return true;

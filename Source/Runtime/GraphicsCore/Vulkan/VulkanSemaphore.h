@@ -7,13 +7,15 @@
 
 namespace Kitsune
 {
+    class VulkanSemaphore;
+    class VulkanGpuDevice;
+
     namespace Details
     {
         [[nodiscard]]
-        VkSemaphore GetVulkanHandle_(const SharedPtr<Semaphore>& semaphore);
+        SharedPtr<VulkanSemaphore> ToImplementation_(
+            const SharedPtr<Semaphore>& semaphore);
     }
-
-    class VulkanGpuDevice;
 
     class VulkanSemaphore : public Semaphore
     {

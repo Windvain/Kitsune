@@ -1,239 +1,251 @@
 #include "GraphicsCore/Vulkan/VulkanTexture.h"
 #include "GraphicsCore/Vulkan/VulkanGpuDevice.h"
 
+#include "Foundation/Diagnostics/InvalidArgumentException.h"
+
 namespace Kitsune
 {
     namespace Details
     {
-        TextureFormat VulkanToEngine_(VkFormat format)
+        TextureFormat ToTextureFormat_(VkFormat format)
         {
             switch (format)
             {
             case VK_FORMAT_R8_UNORM:
-                return TextureFormat::R8UnsignedNormalized;
+                return TextureFormat::R8Unorm;
             case VK_FORMAT_R8G8_UNORM:
-                return TextureFormat::Rg8UnsignedNormalized;
-            case VK_FORMAT_R8G8B8_UNORM:
-                return TextureFormat::Rgb8UnsignedNormalized;
+                return TextureFormat::R8G8Unorm;
             case VK_FORMAT_R8G8B8A8_UNORM:
-                return TextureFormat::Rgba8UnsignedNormalized;
+                return TextureFormat::R8G8B8A8Unorm;
             case VK_FORMAT_B8G8R8_UNORM:
-                return TextureFormat::Bgr8UnsignedNormalized;
+                return TextureFormat::B8G8R8Unorm;
             case VK_FORMAT_B8G8R8A8_UNORM:
-                return TextureFormat::Bgra8UnsignedNormalized;
+                return TextureFormat::B8G8R8A8Unorm;
             case VK_FORMAT_R8_SNORM:
-                return TextureFormat::R8SignedNormalized;
+                return TextureFormat::R8Snorm;
             case VK_FORMAT_R8G8_SNORM:
-                return TextureFormat::Rg8SignedNormalized;
-            case VK_FORMAT_R8G8B8_SNORM:
-                return TextureFormat::Rgb8SignedNormalized;
+                return TextureFormat::R8G8Snorm;
             case VK_FORMAT_R8G8B8A8_SNORM:
-                return TextureFormat::Rgba8SignedNormalized;
+                return TextureFormat::R8G8B8A8Snorm;
             case VK_FORMAT_B8G8R8_SNORM:
-                return TextureFormat::Bgr8SignedNormalized;
+                return TextureFormat::B8G8R8Snorm;
             case VK_FORMAT_B8G8R8A8_SNORM:
-                return TextureFormat::Bgra8SignedNormalized;
+                return TextureFormat::B8G8R8A8Snorm;
             case VK_FORMAT_R8_UINT:
-                return TextureFormat::R8UnsignedInteger;
+                return TextureFormat::R8Uint;
             case VK_FORMAT_R8G8_UINT:
-                return TextureFormat::Rg8UnsignedInteger;
-            case VK_FORMAT_R8G8B8_UINT:
-                return TextureFormat::Rgb8UnsignedInteger;
+                return TextureFormat::R8G8Uint;
             case VK_FORMAT_R8G8B8A8_UINT:
-                return TextureFormat::Rgba8UnsignedInteger;
+                return TextureFormat::R8G8B8A8Uint;
             case VK_FORMAT_B8G8R8_UINT:
-                return TextureFormat::Bgr8UnsignedInteger;
+                return TextureFormat::B8G8R8Uint;
             case VK_FORMAT_B8G8R8A8_UINT:
-                return TextureFormat::Bgra8UnsignedInteger;
+                return TextureFormat::B8G8R8A8Uint;
             case VK_FORMAT_R8_SINT:
-                return TextureFormat::R8SignedInteger;
+                return TextureFormat::R8Sint;
             case VK_FORMAT_R8G8_SINT:
-                return TextureFormat::Rg8SignedInteger;
-            case VK_FORMAT_R8G8B8_SINT:
-                return TextureFormat::Rgb8SignedInteger;
+                return TextureFormat::R8G8Sint;
             case VK_FORMAT_R8G8B8A8_SINT:
-                return TextureFormat::Rgba8SignedInteger;
+                return TextureFormat::R8G8B8A8Sint;
             case VK_FORMAT_B8G8R8_SINT:
-                return TextureFormat::Bgr8SignedInteger;
+                return TextureFormat::B8G8R8Sint;
             case VK_FORMAT_B8G8R8A8_SINT:
-                return TextureFormat::Bgra8SignedInteger;
+                return TextureFormat::B8G8R8A8Sint;
             case VK_FORMAT_R8_SRGB:
                 return TextureFormat::R8Srgb;
             case VK_FORMAT_R8G8_SRGB:
-                return TextureFormat::Rg8Srgb;
-            case VK_FORMAT_R8G8B8_SRGB:
-                return TextureFormat::Rgb8Srgb;
+                return TextureFormat::R8G8Srgb;
             case VK_FORMAT_R8G8B8A8_SRGB:
-                return TextureFormat::Rgba8Srgb;
+                return TextureFormat::R8G8B8A8Srgb;
             case VK_FORMAT_B8G8R8_SRGB:
-                return TextureFormat::Bgr8Srgb;
+                return TextureFormat::B8G8R8Srgb;
             case VK_FORMAT_B8G8R8A8_SRGB:
-                return TextureFormat::Bgra8Srgb;
+                return TextureFormat::B8G8R8A8Srgb;
             default:
-                return TextureFormat::Unspecified;
+                return TextureFormat::Unknown;
             }
         }
 
-        VkFormat EngineToVulkan_(TextureFormat format)
+        VkFormat ToVkFormat_(TextureFormat format)
         {
             switch (format)
             {
-            case TextureFormat::R8UnsignedNormalized:
+            case TextureFormat::R8Unorm:
                 return VK_FORMAT_R8_UNORM;
-            case TextureFormat::Rg8UnsignedNormalized:
+            case TextureFormat::R8G8Unorm:
                 return VK_FORMAT_R8G8_UNORM;
-            case TextureFormat::Rgb8UnsignedNormalized:
-                return VK_FORMAT_R8G8B8_UNORM;
-            case TextureFormat::Rgba8UnsignedNormalized:
+            case TextureFormat::R8G8B8A8Unorm:
                 return VK_FORMAT_R8G8B8A8_UNORM;
-            case TextureFormat::Bgr8UnsignedNormalized:
+            case TextureFormat::B8G8R8Unorm:
                 return VK_FORMAT_B8G8R8_UNORM;
-            case TextureFormat::Bgra8UnsignedNormalized:
+            case TextureFormat::B8G8R8A8Unorm:
                 return VK_FORMAT_B8G8R8A8_UNORM;
-            case TextureFormat::R8SignedNormalized:
+            case TextureFormat::R8Snorm:
                 return VK_FORMAT_R8_SNORM;
-            case TextureFormat::Rg8SignedNormalized:
+            case TextureFormat::R8G8Snorm:
                 return VK_FORMAT_R8G8_SNORM;
-            case TextureFormat::Rgb8SignedNormalized:
-                return VK_FORMAT_R8G8B8_SNORM;
-            case TextureFormat::Rgba8SignedNormalized:
+            case TextureFormat::R8G8B8A8Snorm:
                 return VK_FORMAT_R8G8B8A8_SNORM;
-            case TextureFormat::Bgr8SignedNormalized:
+            case TextureFormat::B8G8R8Snorm:
                 return VK_FORMAT_B8G8R8_SNORM;
-            case TextureFormat::Bgra8SignedNormalized:
+            case TextureFormat::B8G8R8A8Snorm:
                 return VK_FORMAT_B8G8R8A8_SNORM;
-            case TextureFormat::R8UnsignedInteger:
+            case TextureFormat::R8Uint:
                 return VK_FORMAT_R8_UINT;
-            case TextureFormat::Rg8UnsignedInteger:
+            case TextureFormat::R8G8Uint:
                 return VK_FORMAT_R8G8_UINT;
-            case TextureFormat::Rgb8UnsignedInteger:
-                return VK_FORMAT_R8G8B8_UINT;
-            case TextureFormat::Rgba8UnsignedInteger:
+            case TextureFormat::R8G8B8A8Uint:
                 return VK_FORMAT_R8G8B8A8_UINT;
-            case TextureFormat::Bgr8UnsignedInteger:
+            case TextureFormat::B8G8R8Uint:
                 return VK_FORMAT_B8G8R8_UINT;
-            case TextureFormat::Bgra8UnsignedInteger:
+            case TextureFormat::B8G8R8A8Uint:
                 return VK_FORMAT_B8G8R8A8_UINT;
-            case TextureFormat::R8SignedInteger:
+            case TextureFormat::R8Sint:
                 return VK_FORMAT_R8_SINT;
-            case TextureFormat::Rg8SignedInteger:
+            case TextureFormat::R8G8Sint:
                 return VK_FORMAT_R8G8_SINT;
-            case TextureFormat::Rgb8SignedInteger:
-                return VK_FORMAT_R8G8B8_SINT;
-            case TextureFormat::Rgba8SignedInteger:
+            case TextureFormat::R8G8B8A8Sint:
                 return VK_FORMAT_R8G8B8A8_SINT;
-            case TextureFormat::Bgr8SignedInteger:
+            case TextureFormat::B8G8R8Sint:
                 return VK_FORMAT_B8G8R8_SINT;
-            case TextureFormat::Bgra8SignedInteger:
+            case TextureFormat::B8G8R8A8Sint:
                 return VK_FORMAT_B8G8R8A8_SINT;
             case TextureFormat::R8Srgb:
                 return VK_FORMAT_R8_SRGB;
-            case TextureFormat::Rg8Srgb:
+            case TextureFormat::R8G8Srgb:
                 return VK_FORMAT_R8G8_SRGB;
-            case TextureFormat::Rgb8Srgb:
-                return VK_FORMAT_R8G8B8_SRGB;
-            case TextureFormat::Rgba8Srgb:
+            case TextureFormat::R8G8B8A8Srgb:
                 return VK_FORMAT_R8G8B8A8_SRGB;
-            case TextureFormat::Bgr8Srgb:
+            case TextureFormat::B8G8R8Srgb:
                 return VK_FORMAT_B8G8R8_SRGB;
-            case TextureFormat::Bgra8Srgb:
+            case TextureFormat::B8G8R8A8Srgb:
                 return VK_FORMAT_B8G8R8A8_SRGB;
             default:
                 return VK_FORMAT_UNDEFINED;
             }
         }
 
-        VkImageViewType EngineToVulkan_(TextureViewDimension dimension)
+        SharedPtr<VulkanTexture> ToImplementation_(const SharedPtr<Texture>& texture)
         {
-            switch (dimension)
+            return DynamicPointerCast<VulkanTexture>(texture);
+        }
+
+        SharedPtr<VulkanTextureView> ToImplementation_(
+            const SharedPtr<TextureView>& textureView)
+        {
+            return DynamicPointerCast<VulkanTextureView>(textureView);
+        }
+
+
+        VkImageViewType ToVkImageViewType_(TextureViewType type)
+        {
+            switch (type)
             {
-            case TextureViewDimension::Texture1D:
+            case TextureViewType::Texture1D:
                 return VK_IMAGE_VIEW_TYPE_1D;
-            case TextureViewDimension::Texture1DArray:
+            case TextureViewType::Texture1DArray:
                 return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-            case TextureViewDimension::Texture2D:
+            case TextureViewType::Texture2D:
                 return VK_IMAGE_VIEW_TYPE_2D;
-            case TextureViewDimension::Texture2DArray:
+            case TextureViewType::Texture2DArray:
                 return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-            case TextureViewDimension::Texture3D:
+            case TextureViewType::Texture3D:
                 return VK_IMAGE_VIEW_TYPE_3D;
             }
 
             KITSUNE_UNREACHABLE();
         }
 
-        VkImageLayout EngineToVulkan_(TextureUsage textureUsage)
+        static VkComponentSwizzle ToVkComponentSwizzle_(TextureComponentSwizzle swizzle)
         {
-            switch (textureUsage)
+            switch (swizzle)
             {
-            case TextureUsage::Undefined:
+            case TextureComponentSwizzle::Zero:
+                return VK_COMPONENT_SWIZZLE_ZERO;
+            case TextureComponentSwizzle::One:
+                return VK_COMPONENT_SWIZZLE_ONE;
+            case TextureComponentSwizzle::Red:
+                return VK_COMPONENT_SWIZZLE_R;
+            case TextureComponentSwizzle::Green:
+                return VK_COMPONENT_SWIZZLE_G;
+            case TextureComponentSwizzle::Blue:
+                return VK_COMPONENT_SWIZZLE_B;
+            case TextureComponentSwizzle::Alpha:
+                return VK_COMPONENT_SWIZZLE_A;
+            }
+
+            KITSUNE_UNREACHABLE();
+        }
+
+        VkComponentMapping ToVkComponentMapping_(TextureViewComponentMapping mapping)
+        {
+            return {
+                .r = ToVkComponentSwizzle_(mapping.Red),
+                .g = ToVkComponentSwizzle_(mapping.Green),
+                .b = ToVkComponentSwizzle_(mapping.Blue),
+                .a = ToVkComponentSwizzle_(mapping.Alpha),
+            };
+        }
+
+        VkImageLayout ToVkImageLayout_(TextureLayout layout)
+        {
+            switch (layout)
+            {
+            case TextureLayout::Undefined:
                 return { /* ... */ };
-            case TextureUsage::RenderAttachment:
+            case TextureLayout::RenderTarget:
                 return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            case TextureUsage::Presentation:
+            case TextureLayout::Presentation:
                 return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             }
         }
-
-        VkImage GetVulkanHandle_(const SharedPtr<Texture>& texture)
-        {
-            return DynamicPointerCast<VulkanTexture>(texture)->GetVulkanImage();
-        }
-
-        VkImageView GetVulkanHandle_(const SharedPtr<TextureView>& texture)
-        {
-            return DynamicPointerCast<VulkanTextureView>(texture)->GetVulkanImageView();
-        }
     }
 
-    VulkanTexture::VulkanTexture(VkImage image)
-        : m_Image(image)
+    VulkanTexture::VulkanTexture(VkImage image, const Vector2<Uint32>& size)
+        : m_Image(image), m_Size(size)
     {
     }
 
     VulkanTexture::~VulkanTexture()
     {
-        if (m_Device != VK_NULL_HANDLE)
-            ::vkDestroyImage(m_Device, m_Image, nullptr);
+        if (m_Device != nullptr)
+            (void)0;        // Implemented later, destroy the image.
 
-        /* Else, the image's lifetime is managed externally. */
+        /* Else, the image is managed externally. */
     }
 
     VulkanTextureView::VulkanTextureView(
         VulkanGpuDevice& device,
         const SharedPtr<VulkanTexture>& texture,
         const TextureViewSpecifications& specifications)
-        : m_Device(device), m_Texture(texture)
+        : m_Device(device), m_Texture(texture.Get())
     {
-        VkComponentMapping componentMapping = {
-            VK_COMPONENT_SWIZZLE_R,
-            VK_COMPONENT_SWIZZLE_G,
-            VK_COMPONENT_SWIZZLE_B,
-            VK_COMPONENT_SWIZZLE_A,
-        };
-
-        VkImageSubresourceRange subresourceRange = {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1
-        };
+        if (texture == nullptr)
+        {
+            throw InvalidArgumentException(
+                "Failed to construct a Vulkan texture view. The texture is NULL.");
+        }
 
         VkImageViewCreateInfo createInfo = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .image = m_Texture->GetVulkanImage(),
-            .viewType = Details::EngineToVulkan_(specifications.Dimension),
-            .format = Details::EngineToVulkan_(specifications.Format),
-            .components = componentMapping,
-            .subresourceRange = subresourceRange
+            .viewType = Details::ToVkImageViewType_(specifications.Type),
+            .format = Details::ToVkFormat_(specifications.Format),
+            .components = Details::ToVkComponentMapping_(specifications.Mapping),
+            .subresourceRange = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
         };
 
         KITSUNE_VK_THROW_IF_FAIL(
-            ::vkCreateImageView(m_Device.GetVulkanDevice(), &createInfo, nullptr,
-                                &m_ImageView),
+            ::vkCreateImageView(
+                m_Device.GetVulkanDevice(), &createInfo, nullptr, &m_ImageView),
             "Failed to create a Vulkan image view.");
     }
 

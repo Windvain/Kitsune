@@ -57,6 +57,7 @@ namespace Kitsune
             Usize Read(Byte* buffer, Usize bufferSize);
 
             Usize Seek(Ptrdiff offset, SeekOrigin origin);
+            [[nodiscard]] Usize Size() const;
 
         public:
             [[nodiscard]] bool IsOpen() const;
@@ -283,6 +284,18 @@ namespace Kitsune
             }
 
             return m_FileObject.Seek(offset, origin);
+        }
+
+        inline Usize Length() const override
+        {
+            if (!IsOpen())
+            {
+                throw LogicException(
+                    "Could not get the length of a file stream which does not hold "
+                    "a file handle/descriptor.");
+            }
+
+            return m_FileObject.Size();
         }
 
     public:

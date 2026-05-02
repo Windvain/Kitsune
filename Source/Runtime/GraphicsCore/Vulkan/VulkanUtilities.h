@@ -49,19 +49,19 @@ namespace Kitsune::Details
 #endif
 
     [[nodiscard]]
-    inline Vector2<Uint32> VulkanToEngine_(const VkExtent2D& extent)
+    inline Vector2<Uint32> ToVector2_(const VkExtent2D& extent)
     {
         return { extent.width, extent.height };
     }
 
     [[nodiscard]]
-    inline VkExtent2D EngineToVulkan_(const Vector2<Uint32>& vector)
+    inline VkExtent2D ToVkExtent2D_(const Vector2<Uint32>& vector)
     {
         return { vector.X, vector.Y };
     }
 
     [[nodiscard]]
-    inline Rect2<Uint32> VulkanToEngine_(const VkRect2D& rectangle)
+    inline Rect2<Uint32> ToRect2_(const VkRect2D& rectangle)
     {
         return {
             {
@@ -73,7 +73,7 @@ namespace Kitsune::Details
     }
 
     [[nodiscard]]
-    inline VkRect2D EngineToVulkan_(const Rect2<Uint32>& vector)
+    inline VkRect2D ToVkRect2D_(const Rect2<Uint32>& vector)
     {
         return {
             .offset = {

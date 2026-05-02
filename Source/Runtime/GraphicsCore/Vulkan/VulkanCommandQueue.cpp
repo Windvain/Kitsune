@@ -1,19 +1,16 @@
 #include "GraphicsCore/Vulkan/VulkanCommandQueue.h"
 
-#include "GraphicsCore/Vulkan/VulkanGpuDevice.h"
-#include "GraphicsCore/Vulkan/VulkanRenderSurface.h"
-
 #include "GraphicsCore/Vulkan/VulkanFence.h"
 #include "GraphicsCore/Vulkan/VulkanSemaphore.h"
-#include "GraphicsCore/Vulkan/VulkanCommandList.h"
 
-#include "Foundation/Diagnostics/InvalidArgumentException.h"
+#include "GraphicsCore/Vulkan/VulkanGpuDevice.h"
+#include "GraphicsCore/Vulkan/VulkanCommandList.h"
 
 namespace Kitsune
 {
     namespace Details
     {
-        VkQueueFlags EngineToVulkan_(CommandQueueType queueType)
+        VkQueueFlags ToVkQueueFlags_(CommandQueueType queueType)
         {
             switch (queueType)
             {
@@ -28,14 +25,15 @@ namespace Kitsune
             KITSUNE_UNREACHABLE();
         }
 
-        VkQueue GetVulkanHandle_(const SharedPtr<CommandQueue>& queue)
+        SharedPtr<VulkanCommandQueue> ToImplementation_(
+            const SharedPtr<CommandQueue>& commandQueue)
         {
-            return DynamicPointerCast<VulkanCommandQueue>(queue)->GetVulkanQueue();
+            return DynamicPointerCast<VulkanCommandQueue>(commandQueue);
         }
     }
 
-    VulkanCommandQueue::VulkanCommandQueue(VulkanGpuDevice& device,
-                                           Uint32 familyIndex, Uint32 queueIndex)
+    VulkanCommandQueue::VulkanCommandQueue(VulkanGpuDevice& device, Uint32 familyIndex,
+                                           Uint32 queueIndex)
         : m_Device(device),
           m_FamilyIndex(familyIndex),
           m_QueueIndex(queueIndex)
@@ -46,36 +44,56 @@ namespace Kitsune
 
     void VulkanCommandQueue::Submit(
         const Array<SharedPtr<CommandList>>& commandLists,
-        const SharedPtr<Semaphore>& waitSemaphore,
-        SharedPtr<Semaphore>& signaledSemaphore,
-        SharedPtr<Fence>& signaledFence)
+        const CommandQueueSubmitInformation& information,
+        const SharedPtr<Fence>& fence)
     {
-        Array<VkCommandBuffer> commandBuffers;
-        for (const SharedPtr<CommandList>& commandList : commandLists)
-            commandBuffers.PushBack(Details::GetVulkanHandle_(commandList));
-
-        VkSemaphore vkWaitSemaphore = Details::GetVulkanHandle_(waitSemaphore);
-        VkSemaphore vkSignaledSemaphore = Details::GetVulkanHandle_(signaledSemaphore);
-        VkFence vkSignaledFence = Details::GetVulkanHandle_(signaledFence);
-
         VkPipelineStageFlags waitDestStage =
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+        Array<VkSemaphore> waited;
+        Array<VkSemaphore> signaled;
+
+        for (const SharedPtr<Semaphore>& semaphore : information.Waited)
+            waited.PushBack(Details::ToImplementation_(semaphore)->GetVulkanSemaphore());
+
+        for (const SharedPtr<Semaphore>& semaphore : information.Signaled)
+        {
+            signaled.PushBack(
+                Details::ToImplementation_(semaphore)->GetVulkanSemaphore());
+        }
+
+        Array<VkCommandBuffer> commandBuffers;
+        for (const SharedPtr<CommandList>& commandList : commandLists)
+        {
+            auto vulkanCommandList = Details::ToImplementation_(commandList);
+            commandBuffers.PushBack(vulkanCommandList->GetVulkanCommandBuffer());
+        }
 
         VkSubmitInfo submitInfo = {
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .pNext = nullptr,
-            .waitSemaphoreCount = (vkWaitSemaphore != VK_NULL_HANDLE),
-            .pWaitSemaphores = &vkWaitSemaphore,
+            .waitSemaphoreCount = static_cast<Uint32>(waited.Size()),
+            .pWaitSemaphores = waited.Data(),
             .pWaitDstStageMask = &waitDestStage,
-            .commandBufferCount = static_cast<Uint32>(commandBuffers.Size()),
+            .commandBufferCount = static_cast<Uint32>(commandLists.Size()),
             .pCommandBuffers = commandBuffers.Data(),
-            .signalSemaphoreCount = (vkSignaledSemaphore != VK_NULL_HANDLE),
-            .pSignalSemaphores = &vkSignaledSemaphore
+            .signalSemaphoreCount = static_cast<Uint32>(signaled.Size()),
+            .pSignalSemaphores = signaled.Data()
         };
 
+        VkFence vulkanFence = (fence != nullptr) ?
+            Details::ToImplementation_(fence)->GetVulkanFence() :
+            VK_NULL_HANDLE;
+
         KITSUNE_VK_THROW_IF_FAIL(
-            ::vkQueueSubmit(m_Queue, commandBuffers.Size(), &submitInfo,
-                            vkSignaledFence),
+            ::vkQueueSubmit(m_Queue, 1, &submitInfo, vulkanFence),
             "Failed to submit Vulkan command buffers to a queue.");
+    }
+
+    void VulkanCommandQueue::WaitIdle()
+    {
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkQueueWaitIdle(m_Queue),
+            "Failed to wait for the queue to be idle.");
     }
 }

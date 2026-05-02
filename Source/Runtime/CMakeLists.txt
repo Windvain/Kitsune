@@ -71,6 +71,10 @@ set(FILES
     "Foundation/Logging/LogSink.h"
 
     "Foundation/Maths/Clamp.h"
+    "Foundation/Maths/Color4.h"
+    "Foundation/Maths/Maximum.h"
+    "Foundation/Maths/Minimum.h"
+    "Foundation/Maths/Rect2.h"
     "Foundation/Maths/Vector2.h"
     "Foundation/Maths/VectorBase.h"
 
@@ -130,11 +134,13 @@ set(FILES
     "GraphicsCore/CommandList.h"
     "GraphicsCore/CommandQueue.h"
     "GraphicsCore/Fence.h"
+    "GraphicsCore/GpuDevice.cpp"
     "GraphicsCore/GpuDevice.h"
     "GraphicsCore/GpuInstance.cpp"
     "GraphicsCore/GpuInstance.h"
     "GraphicsCore/RenderPipeline.h"
     "GraphicsCore/RenderSurface.h"
+    "GraphicsCore/SwapChain.h"
     "GraphicsCore/Semaphore.h"
     "GraphicsCore/ShaderModule.h"
     "GraphicsCore/Texture.h"
@@ -184,6 +190,8 @@ if (KITSUNE_BUILD_VULKAN_BACKEND)
         "GraphicsCore/Vulkan/VulkanSemaphore.h"
         "GraphicsCore/Vulkan/VulkanShaderModule.cpp"
         "GraphicsCore/Vulkan/VulkanShaderModule.h"
+        "GraphicsCore/Vulkan/VulkanSwapChain.cpp"
+        "GraphicsCore/Vulkan/VulkanSwapChain.h"
         "GraphicsCore/Vulkan/VulkanTexture.cpp"
         "GraphicsCore/Vulkan/VulkanTexture.h"
         "GraphicsCore/Vulkan/VulkanUtilities.h"
@@ -229,12 +237,6 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
             "Foundation/Msvc/MsvcSystemInformation.cpp")
     else()
         list(APPEND FILES "Foundation/Windows/WindowsSystemInformation.cpp")
-    endif()
-
-    if (KITSUNE_BUILD_VULKAN_BACKEND)
-        list(APPEND FILES
-            "GraphicsCore/Vulkan/Windows/WindowsVulkanRenderSurface.cpp"
-        )
     endif()
 
     list(APPEND COMPILER_DEFS

@@ -141,6 +141,17 @@ namespace Kitsune::Details
         return filePointer.QuadPart;
     }
 
+    Usize FileObject::Size() const
+    {
+        LARGE_INTEGER size;
+        HANDLE handle = *reinterpret_cast<const HANDLE*>(m_Buffer);
+
+        if (!::GetFileSizeEx(handle, &size))
+            throw SystemException("Failed to get file size.");
+
+        return static_cast<Usize>(size.QuadPart);
+    }
+
     bool FileObject::IsOpen() const
     {
         HANDLE handle = *reinterpret_cast<const HANDLE*>(m_Buffer);

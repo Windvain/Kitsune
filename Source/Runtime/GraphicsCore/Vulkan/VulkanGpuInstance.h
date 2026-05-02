@@ -11,7 +11,7 @@ namespace Kitsune
     namespace Details
     {
         [[nodiscard]]
-        LogSeverity VulkanToEngine_(VkDebugUtilsMessageSeverityFlagsEXT severity);
+        LogSeverity ToLogSeverity_(VkDebugUtilsMessageSeverityFlagsEXT severity);
     }
 
     class VulkanGpuDevice;
@@ -87,7 +87,9 @@ namespace Kitsune
             const Array<const char*>& deviceExtensions);
 
         [[nodiscard]]
-        static bool DeviceSupportsFeatures_(VkPhysicalDevice device);
+        static bool DeviceSupportsFeatures_(
+            VkPhysicalDevice device,
+            GpuDeviceFeature features);
 
     private:
         static constexpr Uint32 s_VulkanApiVersion = VK_API_VERSION_1_3;

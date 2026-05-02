@@ -5,22 +5,24 @@ namespace Kitsune
 {
     namespace Details
     {
-        VkFence GetVulkanHandle_(const SharedPtr<Fence>& fence)
+        VkFenceCreateFlags ToVkFenceCreateFlags_(FenceFlag flags)
         {
-            if (fence == nullptr)
-                return VK_NULL_HANDLE;
+            return bool(flags & FenceFlag::Signaled) ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
+        }
 
-            return DynamicPointerCast<VulkanFence>(fence)->GetVulkanFence();
+        SharedPtr<VulkanFence> ToImplementation_(const SharedPtr<Fence>& fence)
+        {
+            return DynamicPointerCast<VulkanFence>(fence);
         }
     }
 
-    VulkanFence::VulkanFence(VulkanGpuDevice& device)
+    VulkanFence::VulkanFence(VulkanGpuDevice& device, FenceFlag flags)
         : m_Device(device)
     {
         VkFenceCreateInfo createInfo = {
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
             .pNext = nullptr,
-            .flags = VK_FENCE_CREATE_SIGNALED_BIT
+            .flags = Details::ToVkFenceCreateFlags_(flags)
         };
 
         KITSUNE_VK_THROW_IF_FAIL(

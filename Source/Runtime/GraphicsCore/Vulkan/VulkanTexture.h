@@ -1,35 +1,51 @@
 #pragma once
 
+#include "Foundation/Memory/SharedPtr.h"
+
 #include "GraphicsCore/Texture.h"
 #include "GraphicsCore/Vulkan/VulkanUtilities.h"
 
-#include "Foundation/Memory/SharedPtr.h"
-
 namespace Kitsune
 {
-    namespace Details
-    {
-        [[nodiscard]] TextureFormat VulkanToEngine_(VkFormat format);
-        [[nodiscard]] VkFormat EngineToVulkan_(TextureFormat format);
-
-        [[nodiscard]] VkImageViewType EngineToVulkan_(TextureViewDimension dimension);
-
-        [[nodiscard]] VkImageLayout EngineToVulkan_(TextureUsage textureUsage);
-
-        [[nodiscard]]
-        VkImage GetVulkanHandle_(const SharedPtr<Texture>& texture);
-
-        [[nodiscard]]
-        VkImageView GetVulkanHandle_(const SharedPtr<TextureView>& texture);
-    }
+    class VulkanTexture;
+    class VulkanTextureView;
 
     class VulkanGpuDevice;
+
+    namespace Details
+    {
+        [[nodiscard]] TextureFormat ToTextureFormat_(VkFormat format);
+        [[nodiscard]] VkFormat ToVkFormat_(TextureFormat format);
+
+        [[nodiscard]]
+        SharedPtr<VulkanTexture> ToImplementation_(const SharedPtr<Texture>& texture);
+
+        [[nodiscard]]
+        SharedPtr<VulkanTextureView> ToImplementation_(
+            const SharedPtr<TextureView>& textureView);
+
+        [[nodiscard]]
+        VkImageViewType ToVkImageViewType_(TextureViewType type);
+
+        [[nodiscard]]
+        VkComponentMapping ToVkComponentMapping_(TextureViewComponentMapping mapping);
+
+        [[nodiscard]]
+        VkImageLayout ToVkImageLayout_(TextureLayout layout);
+    }
 
     class VulkanTexture : public Texture
     {
     public:
-        VulkanTexture(VkImage image);
+        VulkanTexture(VkImage image, const Vector2<Uint32>& size);
         ~VulkanTexture() override;
+
+    public:
+        [[nodiscard]]
+        inline Vector2<Uint32> GetSize() const override
+        {
+            return m_Size;
+        }
 
     public:
         [[nodiscard]]
@@ -39,8 +55,10 @@ namespace Kitsune
         }
 
     private:
-        VkDevice m_Device = VK_NULL_HANDLE;
-        VkImage m_Image = VK_NULL_HANDLE;
+        VulkanGpuDevice* m_Device = nullptr;
+        VkImage m_Image;
+
+        Vector2<Uint32> m_Size;
     };
 
     class VulkanTextureView : public TextureView
@@ -55,6 +73,13 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
+        inline Texture* GetTexture() const override
+        {
+            return m_Texture;
+        }
+
+    public:
+        [[nodiscard]]
         inline VkImageView GetVulkanImageView() const
         {
             return m_ImageView;
@@ -63,7 +88,7 @@ namespace Kitsune
     private:
         VulkanGpuDevice& m_Device;
 
-        SharedPtr<VulkanTexture> m_Texture;
+        VulkanTexture* m_Texture;       // Don't keep a SharedPtr.
         VkImageView m_ImageView = VK_NULL_HANDLE;
     };
 }

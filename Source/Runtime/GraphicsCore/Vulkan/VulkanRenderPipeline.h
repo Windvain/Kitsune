@@ -5,16 +5,24 @@
 
 namespace Kitsune
 {
+    class VulkanGpuDevice;
+    class VulkanRenderPipeline;
+
     namespace Details
     {
-        [[nodiscard]] VkPrimitiveTopology EngineToVulkan_(PrimitiveTopology topology);
-        [[nodiscard]] VkPolygonMode EngineToVulkan_(PolygonFillMode fillMode);
+        [[nodiscard]]
+        VkPrimitiveTopology ToVkPrimitiveTopology_(PrimitiveTopology topology);
 
         [[nodiscard]]
-        VkPipeline GetVulkanHandle_(const SharedPtr<RenderPipeline>& pipeline);
-    }
+        VkPolygonMode ToVkPolygonMode_(PolygonFillMode fillMode);
 
-    class VulkanGpuDevice;
+        [[nodiscard]] VkCullModeFlags ToVkCullMode_(CullMode cullMode);
+        [[nodiscard]] VkFrontFace ToVkFrontFace_(FrontFace frontFace);
+
+        [[nodiscard]]
+        SharedPtr<VulkanRenderPipeline> ToImplementation_(
+            const SharedPtr<RenderPipeline>& pipeline);
+    }
 
     class VulkanRenderPipeline : public RenderPipeline
     {
@@ -32,48 +40,21 @@ namespace Kitsune
             return m_Pipeline;
         }
 
-    private:
-        [[nodiscard]]
+    public:
+        // Pipeline layouts have not yet been implemented, make dummy ones
+        // instead. TODO!
+        void CreateDummyLayout_();
+        void DestroyDummyLayout_();
+
+        // Helper function for creating shader stages.
         static VkPipelineShaderStageCreateInfo CreateShaderStageInfo_(
             const SharedPtr<ShaderModule>& module,
             VkShaderStageFlagBits shaderFlag);
 
-        [[nodiscard]]
-        static VkPipelineDynamicStateCreateInfo CreateDynamicStateInfo_();
-
-        [[nodiscard]]
-        static VkPipelineVertexInputStateCreateInfo CreateVertexInputInfo_();
-
-        [[nodiscard]]
-        static VkPipelineInputAssemblyStateCreateInfo CreateInputAssemblyInfo_(
-            PrimitiveTopology topology);
-
-        [[nodiscard]]
-        static VkPipelineViewportStateCreateInfo CreateViewportState_(
-            Uint32 viewportCount, Uint32 scissorCount);
-
-        [[nodiscard]]
-        static VkPipelineRasterizationStateCreateInfo CreateRasterizationState_(
-            PolygonFillMode polygonMode);
-
-        [[nodiscard]]
-        static VkPipelineMultisampleStateCreateInfo CreateMultisampleState_();
-
-        [[nodiscard]]
-        static VkPipelineColorBlendAttachmentState CreateColorBlendAttachment_();
-
-        [[nodiscard]]
-        static VkPipelineColorBlendStateCreateInfo CreateColorBlendState_(
-            VkPipelineColorBlendAttachmentState* attachments,
-            Uint32 attachmentCount);
-
-    private:
-        void CreatePipelineLayout_();
-
     private:
         VulkanGpuDevice& m_Device;
 
-        VkPipelineLayout m_Layout;
-        VkPipeline m_Pipeline;
+        VkPipelineLayout m_Layout = VK_NULL_HANDLE;
+        VkPipeline m_Pipeline = VK_NULL_HANDLE;
     };
 }

@@ -30,10 +30,19 @@ namespace Kitsune
                             //  is considered a front face.
     };
 
+    // Specifies which face is culled.
+    enum class CullMode
+    {
+        None,
+        Front,
+        Back
+    };
+
     // Specifies how the rasterizer should fill a face.
     enum class PolygonFillMode
     {
-        Wireframe,      //< Fills only the edges and leaves the interior be.
+        Wireframe,      //< Fills only the edges and leaves the interior be. Requires
+                        //  the WireframeRendering device extension to be enabled.
         Solid           //< Fills the entire interior of a face.
     };
 
@@ -41,12 +50,15 @@ namespace Kitsune
     struct RenderPipelineSpecifications
     {
         PrimitiveTopology Topology;
+
         PolygonFillMode FillMode;
+        FrontFace FrontFace;
+        CullMode CullMode;
 
         SharedPtr<ShaderModule> VertexShader;
         SharedPtr<ShaderModule> FragmentShader;
 
-        TextureFormat RenderTargetFormat;
+        TextureFormat Format;
     };
 
     // Contains all the configurations for drawing geometry.

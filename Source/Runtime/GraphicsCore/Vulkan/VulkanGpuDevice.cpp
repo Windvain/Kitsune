@@ -3,41 +3,28 @@
 #include "GraphicsCore/Vulkan/VulkanFence.h"
 #include "GraphicsCore/Vulkan/VulkanSemaphore.h"
 
+#include "GraphicsCore/Vulkan/VulkanTexture.h"
+#include "GraphicsCore/Vulkan/VulkanSwapChain.h"
 #include "GraphicsCore/Vulkan/VulkanCommandList.h"
 #include "GraphicsCore/Vulkan/VulkanCommandQueue.h"
 
-#include "GraphicsCore/Vulkan/VulkanTexture.h"
 #include "GraphicsCore/Vulkan/VulkanShaderModule.h"
+#include "GraphicsCore/Vulkan/VulkanRenderSurface.h"
 #include "GraphicsCore/Vulkan/VulkanRenderPipeline.h"
 
 namespace Kitsune
 {
-    namespace Details
-    {
-        VkPhysicalDevice GetPhysicalDeviceHandle_(const SharedPtr<GpuDevice>& device)
-        {
-            return DynamicPointerCast<VulkanGpuDevice>(
-                device)->GetVulkanPhysicalDevice();
-        }
-
-        VkDevice GetVulkanHandle_(const SharedPtr<GpuDevice>& device)
-        {
-            return DynamicPointerCast<VulkanGpuDevice>(device)->GetVulkanDevice();
-        }
-    }
-
     VulkanGpuDevice::VulkanGpuDevice(
         VkPhysicalDevice physicalDevice,
         const Array<VkDeviceQueueCreateInfo>& queueInfos,
-        const Array<const char*>& extensions)
-        : m_PhysicalDevice(physicalDevice)
+        const Array<const char*>& extensions,
+        GpuDeviceFeature features)
+        : m_PhysicalDevice(physicalDevice), m_Features(features)
     {
-        VkPhysicalDeviceFeatures features = { /* ... */ };
+        VkPhysicalDeviceFeatures deviceFeatures = { /* ... */ };
 
-        // Wireframe rendering is only used when debugging.
-#if !defined(KITSUNE_BUILD_PRODUCTION)
-        features.fillModeNonSolid = VK_TRUE;
-#endif
+        if (bool(features & GpuDeviceFeature::WireframeRendering))
+            deviceFeatures.fillModeNonSolid = VK_TRUE;
 
         VkPhysicalDeviceVulkan13Features vulkan13Features = { /* ... */ };
         vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -55,7 +42,7 @@ namespace Kitsune
             .ppEnabledLayerNames = nullptr,     // Deprecated.
             .enabledExtensionCount = static_cast<Uint32>(extensions.Size()),
             .ppEnabledExtensionNames = extensions.Data(),
-            .pEnabledFeatures = &features
+            .pEnabledFeatures = &deviceFeatures
         };
 
         KITSUNE_VK_THROW_IF_FAIL(
@@ -82,34 +69,23 @@ namespace Kitsune
         ::vkDestroyDevice(m_Device, nullptr);
     }
 
-    SharedPtr<CommandQueue> VulkanGpuDevice::GetQueue(
+    SharedPtr<CommandQueue> VulkanGpuDevice::GetCommandQueue(
         Uint32 index, Uint32 queueIndex) const
     {
         return m_CommandQueues[index][queueIndex];
     }
 
-    void VulkanGpuDevice::WaitIdle()
-    {
-        KITSUNE_VK_THROW_IF_FAIL(
-            ::vkDeviceWaitIdle(m_Device),
-            "Failed to wait until the device is idle.");
-    }
-
-    SharedPtr<Fence> VulkanGpuDevice::CreateFence()
-    {
-        return MakeShared<VulkanFence>(*this);
-    }
-
-    SharedPtr<Semaphore> VulkanGpuDevice::MakeSemaphore()
-    {
-        return MakeShared<VulkanSemaphore>(*this);
-    }
-
     SharedPtr<CommandPool> VulkanGpuDevice::CreateCommandPool(
-        const SharedPtr<CommandQueue>& queue)
+        const SharedPtr<CommandQueue>& commandQueue)
     {
         return MakeShared<VulkanCommandPool>(
-            *this, DynamicPointerCast<VulkanCommandQueue>(queue));
+            *this,
+            Details::ToImplementation_(commandQueue));
+    }
+
+    SharedPtr<Fence> VulkanGpuDevice::CreateFence(FenceFlag flags)
+    {
+        return MakeShared<VulkanFence>(*this, flags);
     }
 
     SharedPtr<RenderPipeline> VulkanGpuDevice::CreateRenderPipeline(
@@ -118,19 +94,36 @@ namespace Kitsune
         return MakeShared<VulkanRenderPipeline>(*this, specifications);
     }
 
-    SharedPtr<ShaderModule> VulkanGpuDevice::CreateShaderModule(
-        const Byte* shaderSource, Usize sourceSize)
+    SharedPtr<Semaphore> VulkanGpuDevice::MakeSemaphore()
     {
-        return MakeShared<VulkanShaderModule>(*this, shaderSource, sourceSize);
+        return MakeShared<VulkanSemaphore>(*this);
+    }
+
+    SharedPtr<SwapChain> VulkanGpuDevice::CreateSwapChain(
+        const SharedPtr<RenderSurface>& surface,
+        const SharedPtr<CommandQueue>& presentQueue,
+        const SwapChainConfiguration& configuration)
+    {
+        return MakeShared<VulkanSwapChain>(
+            *this,
+            Details::ToImplementation_(surface),
+            Details::ToImplementation_(presentQueue),
+            configuration);
     }
 
     SharedPtr<TextureView> VulkanGpuDevice::CreateTextureView(
         const SharedPtr<Texture>& texture,
         const TextureViewSpecifications& specifications)
     {
+        auto vulkanTexture = Details::ToImplementation_(texture);
         return MakeShared<VulkanTextureView>(
             *this,
-            DynamicPointerCast<VulkanTexture>(texture),
+            vulkanTexture,
             specifications);
+    }
+
+    SharedPtr<ShaderModule> VulkanGpuDevice::CreateShaderModule(Array<Byte>&& shaderCode)
+    {
+        return MakeShared<VulkanShaderModule>(*this, Move(shaderCode));
     }
 }

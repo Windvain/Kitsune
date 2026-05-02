@@ -7,15 +7,6 @@
 
 namespace Kitsune
 {
-    namespace Details
-    {
-        [[nodiscard]]
-        VkPhysicalDevice GetPhysicalDeviceHandle_(const SharedPtr<GpuDevice>& device);
-
-        [[nodiscard]]
-        VkDevice GetVulkanHandle_(const SharedPtr<GpuDevice>& device);
-    }
-
     class VulkanCommandQueue;
 
     class VulkanGpuDevice : public GpuDevice
@@ -24,42 +15,51 @@ namespace Kitsune
         VulkanGpuDevice(
             VkPhysicalDevice physicalDevice,
             const Array<VkDeviceQueueCreateInfo>& queueInfos,
-            const Array<const char*>& extensions);
+            const Array<const char*>& extensions,
+            GpuDeviceFeature features);
 
         ~VulkanGpuDevice() override;
 
     public:
         [[nodiscard]]
-        SharedPtr<CommandQueue> GetQueue(
+        SharedPtr<CommandQueue> GetCommandQueue(
             Uint32 index, Uint32 queueIndex) const override;
 
-    public:
-        void WaitIdle();
-
-    public:
         [[nodiscard]]
-        SharedPtr<Fence> CreateFence() override;
-
-        [[nodiscard]]
-        SharedPtr<Semaphore> MakeSemaphore() override;
+        inline GpuDeviceFeature GetFeatures() const override
+        {
+            return m_Features;
+        }
 
     public:
         [[nodiscard]]
         SharedPtr<CommandPool> CreateCommandPool(
-            const SharedPtr<CommandQueue>& queue) override;
+            const SharedPtr<CommandQueue>& commandQueue) override;
+
+        [[nodiscard]]
+        SharedPtr<Fence> CreateFence(FenceFlag flags) override;
 
         [[nodiscard]]
         SharedPtr<RenderPipeline> CreateRenderPipeline(
             const RenderPipelineSpecifications& specifications) override;
 
         [[nodiscard]]
-        SharedPtr<ShaderModule> CreateShaderModule(
-            const Byte* shaderSource, Usize sourceSize) override;
+        SharedPtr<Semaphore> MakeSemaphore() override;
+
+        [[nodiscard]]
+        SharedPtr<SwapChain> CreateSwapChain(
+            const SharedPtr<RenderSurface>& surface,
+            const SharedPtr<CommandQueue>& presentQueue,
+            const SwapChainConfiguration& configuration) override;
 
         [[nodiscard]]
         SharedPtr<TextureView> CreateTextureView(
             const SharedPtr<Texture>& texture,
             const TextureViewSpecifications& specifications) override;
+
+    public:
+        [[nodiscard]]
+        SharedPtr<ShaderModule> CreateShaderModule(Array<Byte>&& shaderCode) override;
 
     public:
         [[nodiscard]]
@@ -78,6 +78,7 @@ namespace Kitsune
         VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
         VkDevice m_Device = VK_NULL_HANDLE;
 
+        GpuDeviceFeature m_Features;
         Array<Array<SharedPtr<VulkanCommandQueue>>> m_CommandQueues;
     };
 }

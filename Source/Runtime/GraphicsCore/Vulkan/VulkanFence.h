@@ -1,23 +1,27 @@
 #pragma once
 
+#include "Foundation/Memory/SharedPtr.h"
+
 #include "GraphicsCore/Fence.h"
 #include "GraphicsCore/Vulkan/VulkanUtilities.h"
 
-#include "Foundation/Memory/SharedPtr.h"
-
 namespace Kitsune
 {
+    class VulkanFence;
+    class VulkanGpuDevice;
+
     namespace Details
     {
-        [[nodiscard]] VkFence GetVulkanHandle_(const SharedPtr<Fence>& fence);
-    }
+        [[nodiscard]] VkFenceCreateFlags ToVkFenceCreateFlags_(FenceFlag flags);
 
-    class VulkanGpuDevice;
+        [[nodiscard]]
+        SharedPtr<VulkanFence> ToImplementation_(const SharedPtr<Fence>& fence);
+    }
 
     class VulkanFence : public Fence
     {
     public:
-        VulkanFence(VulkanGpuDevice& device);
+        VulkanFence(VulkanGpuDevice& device, FenceFlag flags);
         ~VulkanFence() override;
 
     public:
