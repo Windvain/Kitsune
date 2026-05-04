@@ -12,7 +12,9 @@
 
 namespace Kitsune
 {
+    class GpuBuffer;
     class CommandList;
+
     class RenderPipeline;
 
     // Specifies the level of a command list.
@@ -77,9 +79,16 @@ namespace Kitsune
     public:
         virtual void BindRenderPipeline(const SharedPtr<RenderPipeline>& pipeline) = 0;
 
+        virtual void BindVertexBuffers(const Array<SharedPtr<GpuBuffer>>& buffers) = 0;
+        virtual void BindIndexBuffer(const SharedPtr<GpuBuffer>& buffer) = 0;
+
     public:
-        virtual void Draw(Uint32 vertexCount, Uint32 instanceCount,
-                          Uint32 firstVertex, Uint32 firstInstance) = 0;
+        virtual void CopyBuffer(const SharedPtr<GpuBuffer>& destination,
+                                const SharedPtr<GpuBuffer>& source,
+                                Usize bytes) = 0;
+
+        virtual void Draw(Uint32 vertexCount, Uint32 instanceCount) = 0;
+        virtual void DrawIndexed(Uint32 indexCount, Uint32 instanceCount) = 0;
 
         virtual void Reset() = 0;
 

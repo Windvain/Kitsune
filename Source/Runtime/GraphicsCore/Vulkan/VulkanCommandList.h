@@ -76,9 +76,16 @@ namespace Kitsune
     public:
         void BindRenderPipeline(const SharedPtr<RenderPipeline>& pipeline) override;
 
+        void BindVertexBuffers(const Array<SharedPtr<GpuBuffer>>& buffers) override;
+        void BindIndexBuffer(const SharedPtr<GpuBuffer>& buffer) override;
+
     public:
-        void Draw(Uint32 vertexCount, Uint32 instanceCount,
-                  Uint32 firstVertex, Uint32 firstInstance) override;
+        void CopyBuffer(const SharedPtr<GpuBuffer>& destination,
+                        const SharedPtr<GpuBuffer>& source,
+                        Uint64 bytes) override;
+
+        void Draw(Uint32 vertexCount, Uint32 instanceCount) override;
+        void DrawIndexed(Uint32 indexCount, Uint32 instanceCount) override;
 
         void Reset() override;
 

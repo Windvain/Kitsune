@@ -33,6 +33,10 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
+        SharedPtr<GpuBuffer> CreateBuffer(
+            const GpuBufferSpecifications& specifications) override;
+
+        [[nodiscard]]
         SharedPtr<CommandPool> CreateCommandPool(
             const SharedPtr<CommandQueue>& commandQueue) override;
 
@@ -63,6 +67,15 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
+        VkDeviceMemory AllocateMemory(
+            VkDeviceSize allocSize,
+            Uint32 supportedMemoryTypes,
+            VkMemoryPropertyFlags flags);
+
+        void FreeMemory(VkDeviceMemory deviceMemory);
+
+    public:
+        [[nodiscard]]
         inline VkPhysicalDevice GetVulkanPhysicalDevice() const
         {
             return m_PhysicalDevice;
@@ -75,8 +88,14 @@ namespace Kitsune
         }
 
     private:
+        [[nodiscard]]
+        Uint32 GetMemoryTypeIndex_(Uint32 typeFilter, VkMemoryPropertyFlags flags);
+
+    private:
         VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
         VkDevice m_Device = VK_NULL_HANDLE;
+
+        VkPhysicalDeviceMemoryProperties m_MemoryProperties{ /* ... */ };
 
         GpuDeviceFeature m_Features;
         Array<Array<SharedPtr<VulkanCommandQueue>>> m_CommandQueues;

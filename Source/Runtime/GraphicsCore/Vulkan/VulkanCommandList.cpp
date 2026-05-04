@@ -2,6 +2,7 @@
 
 #include "GraphicsCore/Vulkan/VulkanTexture.h"
 #include "GraphicsCore/Vulkan/VulkanGpuDevice.h"
+#include "GraphicsCore/Vulkan/VulkanGpuBuffer.h"
 
 #include "GraphicsCore/Vulkan/VulkanCommandQueue.h"
 #include "GraphicsCore/Vulkan/VulkanRenderPipeline.h"
@@ -232,11 +233,53 @@ namespace Kitsune
             Details::ToImplementation_(pipeline)->GetVulkanPipeline());
     }
 
-    void VulkanCommandList::Draw(Uint32 vertexCount, Uint32 instanceCount,
-                                 Uint32 firstVertex, Uint32 firstInstance)
+    void VulkanCommandList::BindVertexBuffers(
+        const Array<SharedPtr<GpuBuffer>>& buffers)
     {
-        ::vkCmdDraw(m_CommandBuffer, vertexCount, instanceCount,
-                    firstVertex, firstInstance);
+        Array<VkBuffer> vulkanBuffers;
+        for (const SharedPtr<GpuBuffer>& buffer : buffers)
+            vulkanBuffers.PushBack(Details::ToImplementation_(buffer)->GetVulkanBuffer());
+
+        Array<VkDeviceSize> offsets(vulkanBuffers.Size(), 0);
+        ::vkCmdBindVertexBuffers(m_CommandBuffer, 0, vulkanBuffers.Size(),
+                                 vulkanBuffers.Data(), offsets.Data());
+    }
+
+    void VulkanCommandList::BindIndexBuffer(const SharedPtr<GpuBuffer>& buffer)
+    {
+        ::vkCmdBindIndexBuffer(
+            m_CommandBuffer,
+            Details::ToImplementation_(buffer)->GetVulkanBuffer(),
+            0,
+            VK_INDEX_TYPE_UINT32);
+    }
+
+    void VulkanCommandList::CopyBuffer(const SharedPtr<GpuBuffer>& destination,
+                                       const SharedPtr<GpuBuffer>& source,
+                                       Usize bytes)
+    {
+        VkBufferCopy region = {
+            .srcOffset = 0,
+            .dstOffset = 0,
+            .size = bytes
+        };
+
+        ::vkCmdCopyBuffer(
+            m_CommandBuffer,
+            Details::ToImplementation_(source)->GetVulkanBuffer(),
+            Details::ToImplementation_(destination)->GetVulkanBuffer(),
+            1,
+            &region);
+    }
+
+    void VulkanCommandList::Draw(Uint32 vertexCount, Uint32 instanceCount)
+    {
+        ::vkCmdDraw(m_CommandBuffer, vertexCount, instanceCount, 0, 0);
+    }
+
+    void VulkanCommandList::DrawIndexed(Uint32 indexCount, Uint32 instanceCount)
+    {
+        ::vkCmdDrawIndexed(m_CommandBuffer, indexCount, instanceCount, 0, 0, 0);
     }
 
     void VulkanCommandList::Reset()

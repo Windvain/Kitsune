@@ -4,7 +4,9 @@
 #include "GraphicsCore/Vulkan/VulkanSemaphore.h"
 
 #include "GraphicsCore/Vulkan/VulkanTexture.h"
+#include "GraphicsCore/Vulkan/VulkanGpuBuffer.h"
 #include "GraphicsCore/Vulkan/VulkanSwapChain.h"
+
 #include "GraphicsCore/Vulkan/VulkanCommandList.h"
 #include "GraphicsCore/Vulkan/VulkanCommandQueue.h"
 
@@ -21,6 +23,11 @@ namespace Kitsune
         GpuDeviceFeature features)
         : m_PhysicalDevice(physicalDevice), m_Features(features)
     {
+        // Get the physical device's memory properties, will be used for allocation
+        // of resources.
+        ::vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &m_MemoryProperties);
+
+        // And then, device initialization.
         VkPhysicalDeviceFeatures deviceFeatures = { /* ... */ };
 
         if (bool(features & GpuDeviceFeature::WireframeRendering))
@@ -75,6 +82,12 @@ namespace Kitsune
         return m_CommandQueues[index][queueIndex];
     }
 
+    SharedPtr<GpuBuffer> VulkanGpuDevice::CreateBuffer(
+        const GpuBufferSpecifications& specifications)
+    {
+        return MakeShared<VulkanGpuBuffer>(*this, specifications);
+    }
+
     SharedPtr<CommandPool> VulkanGpuDevice::CreateCommandPool(
         const SharedPtr<CommandQueue>& commandQueue)
     {
@@ -125,5 +138,48 @@ namespace Kitsune
     SharedPtr<ShaderModule> VulkanGpuDevice::CreateShaderModule(Array<Byte>&& shaderCode)
     {
         return MakeShared<VulkanShaderModule>(*this, Move(shaderCode));
+    }
+
+    VkDeviceMemory VulkanGpuDevice::AllocateMemory(
+        VkDeviceSize allocSize,
+        Uint32 supportedMemoryTypes,
+        VkMemoryPropertyFlags flags)
+    {
+        VkMemoryAllocateInfo allocationInfo = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .allocationSize = allocSize,
+            .memoryTypeIndex = GetMemoryTypeIndex_(supportedMemoryTypes, flags)
+        };
+
+        VkDeviceMemory deviceMemory;
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkAllocateMemory(m_Device, &allocationInfo, nullptr, &deviceMemory),
+            "Failed to allocate memory from the GPU.");
+
+        return deviceMemory;
+    }
+
+    void VulkanGpuDevice::FreeMemory(VkDeviceMemory deviceMemory)
+    {
+        ::vkFreeMemory(m_Device, deviceMemory, nullptr);
+    }
+
+    Uint32 VulkanGpuDevice::GetMemoryTypeIndex_(
+        Uint32 typeFilter,
+        VkMemoryPropertyFlags flags)
+    {
+        for (Uint32 index = 0; index < m_MemoryProperties.memoryTypeCount; ++index)
+        {
+            VkMemoryType memoryType = m_MemoryProperties.memoryTypes[index];
+            if ((typeFilter & (1 << index)) &&
+                ((memoryType.propertyFlags & flags) == flags))
+            {
+                return index;
+            }
+        }
+
+        throw SystemException(
+            "Failed to find a suitable memory type for a GPU resource allocation.");
     }
 }

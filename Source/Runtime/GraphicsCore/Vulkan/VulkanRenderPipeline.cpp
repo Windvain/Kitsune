@@ -70,6 +70,60 @@ namespace Kitsune
             KITSUNE_UNREACHABLE();
         }
 
+        VkVertexInputRate ToVkVertexInputRate_(VertexInputRate inputRate)
+        {
+            switch (inputRate)
+            {
+            case VertexInputRate::PerVertex:
+                return VK_VERTEX_INPUT_RATE_VERTEX;
+            case VertexInputRate::PerInstance:
+                return VK_VERTEX_INPUT_RATE_INSTANCE;
+            }
+
+            KITSUNE_UNREACHABLE();
+        }
+
+        VkFormat ToVkFormat_(VertexType vertexType)
+        {
+            switch (vertexType)
+            {
+            case VertexType::Int32:
+                return VK_FORMAT_R32_SINT;
+            case VertexType::Uint32:
+                return VK_FORMAT_R32_UINT;
+            case VertexType::Float:
+                return VK_FORMAT_R32_SFLOAT;
+            case VertexType::Double:
+                return VK_FORMAT_R64_SFLOAT;
+            case VertexType::Vec2Int32:
+                return VK_FORMAT_R32G32_SINT;
+            case VertexType::Vec2Uint32:
+                return VK_FORMAT_R32G32_UINT;
+            case VertexType::Vec2Float:
+                return VK_FORMAT_R32G32_SFLOAT;
+            case VertexType::Vec2Double:
+                return VK_FORMAT_R64G64_SFLOAT;
+            case VertexType::Vec3Int32:
+                return VK_FORMAT_R32G32B32_SINT;
+            case VertexType::Vec3Uint32:
+                return VK_FORMAT_R32G32B32_UINT;
+            case VertexType::Vec3Float:
+                return VK_FORMAT_R32G32B32_SFLOAT;
+            case VertexType::Vec3Double:
+                return VK_FORMAT_R64G64B64_SFLOAT;
+            case VertexType::Vec4Int32:
+                return VK_FORMAT_R32G32B32A32_SINT;
+            case VertexType::Vec4Uint32:
+                return VK_FORMAT_R32G32B32A32_UINT;
+            case VertexType::Vec4Float:
+                return VK_FORMAT_R32G32B32A32_SFLOAT;
+            case VertexType::Vec4Double:
+                return VK_FORMAT_R64G64B64A64_SFLOAT;
+            }
+
+            KITSUNE_UNREACHABLE();
+        }
+
         SharedPtr<VulkanRenderPipeline> ToImplementation_(
             const SharedPtr<RenderPipeline>& pipeline)
         {
@@ -113,14 +167,18 @@ namespace Kitsune
             .pDynamicStates = dynamicStates.Data()
         };
 
+        auto vertexBindings = GetVertexBindings_(specifications.VertexInput.Bindings);
+        auto vertexAttributes =
+            GetVertexAttributes_(specifications.VertexInput.Attributes);
+
         VkPipelineVertexInputStateCreateInfo inputState = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .vertexBindingDescriptionCount = 0,
-            .pVertexBindingDescriptions = nullptr,
-            .vertexAttributeDescriptionCount = 0,
-            .pVertexAttributeDescriptions = nullptr
+            .vertexBindingDescriptionCount = Uint32(vertexBindings.Size()),
+            .pVertexBindingDescriptions = vertexBindings.Data(),
+            .vertexAttributeDescriptionCount = Uint32(vertexAttributes.Size()),
+            .pVertexAttributeDescriptions = vertexAttributes.Data()
         };
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
@@ -289,5 +347,38 @@ namespace Kitsune
             .pName = entryPoint,
             .pSpecializationInfo = nullptr
         };
+    }
+
+    Array<VkVertexInputBindingDescription> VulkanRenderPipeline::GetVertexBindings_(
+        const Array<VertexBindingDescription>& descriptions)
+    {
+        Array<VkVertexInputBindingDescription> vulkanDescriptions;
+        for (const auto& bindingDesc : descriptions)
+        {
+            vulkanDescriptions.PushBack({
+                .binding = bindingDesc.Binding,
+                .stride = bindingDesc.Stride,
+                .inputRate = Details::ToVkVertexInputRate_(bindingDesc.InputRate)
+            });
+        }
+
+        return vulkanDescriptions;
+    }
+
+    Array<VkVertexInputAttributeDescription> VulkanRenderPipeline::GetVertexAttributes_(
+        const Array<VertexAttributeDescription>& descriptions)
+    {
+        Array<VkVertexInputAttributeDescription> vulkanDescriptions;
+        for (const auto& attribDesc : descriptions)
+        {
+            vulkanDescriptions.PushBack({
+                .location = attribDesc.Location,
+                .binding = attribDesc.Binding,
+                .format = Details::ToVkFormat_(attribDesc.Type),
+                .offset = attribDesc.Offset
+            });
+        }
+
+        return vulkanDescriptions;
     }
 }

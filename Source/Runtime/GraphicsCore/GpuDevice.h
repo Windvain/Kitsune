@@ -1,13 +1,15 @@
 #pragma once
 
 #include "GraphicsCore/Fence.h"
+#include "GraphicsCore/GpuBuffer.h"
+
 #include "GraphicsCore/SwapChain.h"
 #include "GraphicsCore/RenderPipeline.h"
 
 #include "Foundation/Memory/SharedPtr.h"
 #include "Foundation/Containers/Array.h"
-
 #include "Foundation/String/StringView.h"
+
 #include "Foundation/Utilities/EnumFlags.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
@@ -53,6 +55,10 @@ namespace Kitsune
         virtual GpuDeviceFeature GetFeatures() const = 0;
 
     public:
+        [[nodiscard]]
+        virtual SharedPtr<GpuBuffer> CreateBuffer(
+            const GpuBufferSpecifications& specifications) = 0;
+
         [[nodiscard]]
         virtual SharedPtr<CommandPool> CreateCommandPool(
             const SharedPtr<CommandQueue>& commandQueue) = 0;

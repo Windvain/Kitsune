@@ -6,6 +6,12 @@
 
 using namespace Kitsune;
 
+struct Vertex
+{
+    Vector2<float> Position;
+    Color4<float> Color;
+};
+
 class Sandbox : public Application
 {
 public:
@@ -46,9 +52,34 @@ public:
                 .PresentMode = PresentMode::Mailbox,
             });
 
-        SharedPtr<ShaderModule> shaderModule = m_Device->CreateShaderModule("./Triangle.spv");
+        SharedPtr<ShaderModule> shaderModule =
+            m_Device->CreateShaderModule("./Triangle.spv");
+
+        VertexInputDescription vertexInputDescription = {
+            .Bindings = {{
+                .Binding = 0,
+                .Stride = sizeof(Vertex),
+                .InputRate = VertexInputRate::PerVertex
+            }},
+            .Attributes = {
+                {
+                    .Location = 0,
+                    .Binding = 0,
+                    .Type = VertexType::Vec2Float,
+                    .Offset = offsetof(Vertex, Position)
+                },
+                {
+                    .Location = 1,
+                    .Binding = 0,
+                    .Type = VertexType::Vec4Float,
+                    .Offset = offsetof(Vertex, Color)
+                }
+            }
+        };
+
         m_RenderPipeline = m_Device->CreateRenderPipeline({
             .Topology = PrimitiveTopology::TriangleList,
+            .VertexInput = Move(vertexInputDescription),
             .FillMode = PolygonFillMode::Solid,
             .FrontFace = FrontFace::Clockwise,
             .CullMode = CullMode::Back,
@@ -57,10 +88,10 @@ public:
             .Format = TextureFormat::R8G8B8A8Srgb
         });
 
-        m_CommandPool = m_Device->CreateCommandPool(m_GraphicsQueue);
+        m_GraphicsCommandPool = m_Device->CreateCommandPool(m_GraphicsQueue);
         for (Uint32 index = 0; index < MaxInFlightFrames; ++index)
         {
-            m_CommandLists.PushBack(m_CommandPool->AllocateCommandList(
+            m_CommandLists.PushBack(m_GraphicsCommandPool->AllocateCommandList(
                 CommandListLevel::Primary));
 
             m_AcquireSemaphore.PushBack(m_Device->MakeSemaphore());
@@ -83,6 +114,56 @@ public:
 
             m_DrawFinishedSemaphore.PushBack(m_Device->MakeSemaphore());
         }
+
+        SharedPtr<GpuBuffer> tempVertexBuffer = m_Device->CreateBuffer({
+            .Size = KITSUNE_ARRAY_SIZE(Vertices) * sizeof(Vertex),
+            .Usage = GpuBufferUsage::VertexBuffer | GpuBufferUsage::TransferSource
+        });
+
+        SharedPtr<GpuBuffer> tempIndexBuffer = m_Device->CreateBuffer({
+            .Size = KITSUNE_ARRAY_SIZE(Indices) * sizeof(Uint32),
+            .Usage = GpuBufferUsage::IndexBuffer | GpuBufferUsage::TransferSource
+        });
+
+        m_VertexBuffer = m_Device->CreateBuffer({
+            .Size = KITSUNE_ARRAY_SIZE(Vertices) * sizeof(Vertex),
+            .Usage = GpuBufferUsage::VertexBuffer | GpuBufferUsage::TransferDestination
+        });
+
+        m_IndexBuffer = m_Device->CreateBuffer({
+            .Size = KITSUNE_ARRAY_SIZE(Indices) * sizeof(Uint32),
+            .Usage = GpuBufferUsage::IndexBuffer | GpuBufferUsage::TransferDestination
+        });
+
+        void* vertBuffer = tempVertexBuffer->Map();
+        std::memcpy(vertBuffer, Vertices, KITSUNE_ARRAY_SIZE(Vertices) * sizeof(Vertex));
+        tempVertexBuffer->Unmap();
+
+        void* indexBuffer = tempIndexBuffer->Map();
+        std::memcpy(indexBuffer, Indices, KITSUNE_ARRAY_SIZE(Indices) * sizeof(Uint32));
+        tempIndexBuffer->Unmap();
+
+        SharedPtr<CommandList> copyCommandList =
+            m_GraphicsCommandPool->AllocateCommandList(CommandListLevel::Primary);
+
+        copyCommandList->Begin();
+        {
+            copyCommandList->CopyBuffer(
+                m_VertexBuffer, tempVertexBuffer,
+                KITSUNE_ARRAY_SIZE(Vertices) * sizeof(Vertex));
+
+            copyCommandList->CopyBuffer(
+                m_IndexBuffer, tempIndexBuffer,
+                KITSUNE_ARRAY_SIZE(Indices) * sizeof(Uint32));
+        }
+        copyCommandList->End();
+
+        m_GraphicsQueue->Submit(
+            { copyCommandList },
+            { .Waited = { /* ... */ }, .Signaled = { /* ... */ } },
+            nullptr);
+
+        m_GraphicsQueue->WaitIdle();
     }
 
     void OnUpdate() override
@@ -166,6 +247,9 @@ public:
             };
 
             commandList->BindRenderPipeline(m_RenderPipeline);
+            commandList->BindVertexBuffers({ m_VertexBuffer });
+            commandList->BindIndexBuffer(m_IndexBuffer);
+
             commandList->SetViewport(
                 Rect2<float>({ 0.0f, 0.0f }, extent),
                 0.0f,
@@ -180,7 +264,7 @@ public:
 
             commandList->BeginRendering(backBufferView, renderingInfo);
             {
-                commandList->Draw(3, 1, 0, 0);
+                commandList->DrawIndexed(KITSUNE_ARRAY_SIZE(Indices), 1);
             }
             commandList->EndRendering();
             commandList->TextureMemoryBarrier({{
@@ -196,6 +280,17 @@ public:
     static constexpr Uint32 FrameCount = 3;
     static constexpr Uint32 MaxInFlightFrames = 2;
 
+    static inline Vertex Vertices[4] = {
+        {{ -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f }},
+        {{  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f, 1.0f }},
+        {{  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f, 1.0f }},
+        {{ -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f, 1.0f }}
+    };
+
+    static inline Uint32 Indices[] = {
+        0, 1, 2, 2, 3, 0
+    };
+
 private:
     SharedPtr<GpuInstance> m_GpuInstance;
     SharedPtr<RenderSurface> m_Surface;
@@ -205,7 +300,10 @@ private:
     SharedPtr<SwapChain> m_SwapChain;
     SharedPtr<RenderPipeline> m_RenderPipeline;
 
-    SharedPtr<CommandPool> m_CommandPool;
+    SharedPtr<GpuBuffer> m_VertexBuffer;
+    SharedPtr<GpuBuffer> m_IndexBuffer;
+
+    SharedPtr<CommandPool> m_GraphicsCommandPool;
     Array<SharedPtr<CommandList>> m_CommandLists;
     Array<SharedPtr<TextureView>> m_BackBufferViews;
 

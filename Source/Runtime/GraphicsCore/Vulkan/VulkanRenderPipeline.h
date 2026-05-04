@@ -13,11 +13,12 @@ namespace Kitsune
         [[nodiscard]]
         VkPrimitiveTopology ToVkPrimitiveTopology_(PrimitiveTopology topology);
 
-        [[nodiscard]]
-        VkPolygonMode ToVkPolygonMode_(PolygonFillMode fillMode);
-
         [[nodiscard]] VkCullModeFlags ToVkCullMode_(CullMode cullMode);
         [[nodiscard]] VkFrontFace ToVkFrontFace_(FrontFace frontFace);
+        [[nodiscard]] VkPolygonMode ToVkPolygonMode_(PolygonFillMode fillMode);
+
+        [[nodiscard]] VkVertexInputRate ToVkVertexInputRate_(VertexInputRate inputRate);
+        [[nodiscard]] VkFormat ToVkFormat_(VertexType vertexType);
 
         [[nodiscard]]
         SharedPtr<VulkanRenderPipeline> ToImplementation_(
@@ -47,9 +48,18 @@ namespace Kitsune
         void DestroyDummyLayout_();
 
         // Helper function for creating shader stages.
+        [[nodiscard]]
         static VkPipelineShaderStageCreateInfo CreateShaderStageInfo_(
             const SharedPtr<ShaderModule>& module,
             VkShaderStageFlagBits shaderFlag);
+
+        [[nodiscard]]
+        static Array<VkVertexInputBindingDescription> GetVertexBindings_(
+            const Array<VertexBindingDescription>& descriptions);
+
+        [[nodiscard]]
+        static Array<VkVertexInputAttributeDescription> GetVertexAttributes_(
+            const Array<VertexAttributeDescription>& descriptions);
 
     private:
         VulkanGpuDevice& m_Device;
