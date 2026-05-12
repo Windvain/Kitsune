@@ -7,30 +7,30 @@
 
 namespace Kitsune
 {
-    // A 2-dimensional mathematical vector class.
+    // A 3-dimensional mathematical vector class.
     template<typename T>
-    class Vector<T, 2>
+    class Vector<T, 3>
     {
     public:
         inline Vector()
-            : X(T()), Y(T())
+            : X(T()), Y(T()), Z(T())
         {
         }
 
-        inline Vector(const T& paramX, const T& paramY)
-            : X(paramX), Y(paramY)
-        {
-        }
-
-        template<typename U>
-        inline Vector(const Vector<U, 2>& vector)
-            : X(vector.X), Y(vector.Y)
+        inline Vector(const T& paramX, const T& paramY, const T& paramZ)
+            : X(paramX), Y(paramY), Z(paramZ)
         {
         }
 
         template<typename U>
-        inline Vector(Vector<U, 2>&& vector)
-            : X(Move(vector.X)), Y(Move(vector.Y))
+        inline Vector(const Vector<U, 3>& vector)
+            : X(vector.X), Y(vector.Y), Z(vector.Z)
+        {
+        }
+
+        template<typename U>
+        inline Vector(Vector<U, 3>&& vector)
+            : X(Move(vector.X)), Y(Move(vector.Y)), Z(Move(vector.Z))
         {
         }
 
@@ -44,19 +44,21 @@ namespace Kitsune
         inline Vector& operator=(Vector&&) = default;
 
         template<typename U>
-        inline Vector& operator=(const Vector<U, 2>& vector)
+        inline Vector& operator=(const Vector<U, 3>& vector)
         {
             X = vector.X;
             Y = vector.Y;
+            Z = vector.Z;
 
             return *this;
         }
 
         template<typename U>
-        inline Vector& operator=(Vector<U, 2>&& vector)
+        inline Vector& operator=(Vector<U, 3>&& vector)
         {
             X = Move(vector.X);
             Y = Move(vector.Y);
+            Z = Move(vector.Z);
 
             return *this;
         }
@@ -68,6 +70,7 @@ namespace Kitsune
             {
             case 0: return X;
             case 1: return Y;
+            case 2: return Z;
             default:
                 throw OutOfRangeException();
             }
@@ -78,6 +81,7 @@ namespace Kitsune
             {
             case 0: return X;
             case 1: return Y;
+            case 2: return Z;
             default:
                 throw OutOfRangeException();
             }
@@ -90,7 +94,7 @@ namespace Kitsune
 
         inline Vector operator-() const
         {
-            return Vector(-X, -Y);
+            return Vector(-X, -Y, -Z);
         }
 
     public:
@@ -98,6 +102,7 @@ namespace Kitsune
         {
             X += vector.X;
             Y += vector.Y;
+            Z += vector.Z;
 
             return *this;
         }
@@ -106,6 +111,7 @@ namespace Kitsune
         {
             X -= vector.X;
             Y -= vector.Y;
+            Z -= vector.Z;
 
             return *this;
         }
@@ -114,6 +120,7 @@ namespace Kitsune
         {
             X *= vector.X;
             Y *= vector.Y;
+            Z *= vector.Z;
 
             return *this;
         }
@@ -122,6 +129,7 @@ namespace Kitsune
         {
             X /= vector.X;
             Y /= vector.Y;
+            Z /= vector.Z;
 
             return *this;
         }
@@ -130,6 +138,7 @@ namespace Kitsune
         {
             X *= scalar;
             Y *= scalar;
+            Z *= scalar;
 
             return *this;
         }
@@ -138,6 +147,7 @@ namespace Kitsune
         {
             X /= scalar;
             Y /= scalar;
+            Z /= scalar;
 
             return *this;
         }
@@ -179,31 +189,33 @@ namespace Kitsune
         }
 
     public:
-        union { T X, R, U; };
-        union { T Y, G, V; };
+        union { T X, R; };
+        union { T Y, G; };
+        union { T Z, B; };
     };
 
     template<typename T>
-    inline Vector<T, 2> operator*(const T& scalar, const Vector<T, 2>& vector)
+    inline Vector<T, 3> operator*(const T& scalar, const Vector<T, 3>& vector)
     {
         return (vector * scalar);
     }
 
     template<typename T>
-    inline Vector<T, 2> operator/(const T& scalar, const Vector<T, 2>& vector)
+    inline Vector<T, 3> operator/(const T& scalar, const Vector<T, 3>& vector)
     {
-        return (Vector<T, 2>(scalar) /= vector);
+        return (Vector<T, 3>(scalar) /= vector);
     }
 
     template<typename T, typename U>
-    inline bool operator==(const Vector<T, 2>& vector1, const Vector<U, 2>& vector2)
+    inline bool operator==(const Vector<T, 3>& vector1, const Vector<U, 3>& vector2)
     {
-        return ((vector1.X == vector2.X) && (vector1.Y == vector2.Y));
+        return ((vector1.X == vector2.X) && (vector1.Y == vector2.Y) &&
+                (vector1.Z == vector2.Z));
     }
 
     template<typename T>
-    using Vector2 = Vector<T, 2>;
+    using Vector3 = Vector<T, 3>;
 
     template<typename T>
-    using Point2 = Vector<T, 2>;
+    using Point3 = Vector<T, 3>;
 }

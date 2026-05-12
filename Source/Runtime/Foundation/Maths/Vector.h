@@ -4,9 +4,9 @@
 
 namespace Kitsune
 {
-    // Base class for all mathematics vectors.
+    // Base class for all mathematical vectors.
     template<typename T, Usize N>
-    class VectorBase
+    class Vector
     {
     };
 }

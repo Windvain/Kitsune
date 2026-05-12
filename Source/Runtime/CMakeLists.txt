@@ -75,8 +75,10 @@ set(FILES
     "Foundation/Maths/Maximum.h"
     "Foundation/Maths/Minimum.h"
     "Foundation/Maths/Rect2.h"
+    "Foundation/Maths/Vector.h"
     "Foundation/Maths/Vector2.h"
-    "Foundation/Maths/VectorBase.h"
+    "Foundation/Maths/Vector3.h"
+    "Foundation/Maths/Vector4.h"
 
     "Foundation/Memory/AddressOf.h"
     "Foundation/Memory/Allocator.h"
@@ -155,12 +157,18 @@ set(COMPILER_OPTIONS "")
 set(COMPILER_DEFS "")
 set(LINKED_LIBRARIES "")
 
-# CpuId.h should only be included on x86_64 targets.
-#
-# On Windows, CMAKE_SYSTEM_PROCESSOR is defined as "AMD64" on x86_64 platforms.
-# On other platforms, CMake calls "uname -m", which returns "x86_64" if running on
-# a 64-bit x86 system.
-if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+set(INHERITED_COMPILER_OPTIONS "")
+set(INHERITED_COMPILER_DEFS "")
+
+# When targeting Windows platforms, there are two identifiers used for x86_64 targets.
+# A GNU ABI target will define "x86_64", while an MSVC ABI will define "x64".
+if ("x64" IN_LIST CMAKE_CXX_COMPILER_ARCHITECTURE_ID OR "x86_64" IN_LIST CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
+    set(KITSUNE_TARGET_X86_64 1)
+endif()
+
+# CpuId.h should only be included on x86_64 targets. Contains the use of the CPUID
+# instruction, which is specific to the x86 architecture.
+if (DEFINED KITSUNE_TARGET_X86_64)
     list(APPEND FILES
         "Foundation/Utilities/CpuId.h"
     )
@@ -295,6 +303,12 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         # /Ox: Optimize for speed.
         "$<$<CONFIG:Production>:/MD;/Ox>"
     )
+
+    # Intrinsics are used in header files, which means that all executables using
+    # this library will also require this flag to compile successfully.
+    if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND DEFINED KITSUNE_TARGET_X86_64)
+        list(APPEND INHERITED_COMPILER_OPTIONS "/arch:AVX2")
+    endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND FILES
         "Foundation/Clang/ClangBacktrace.cpp"
@@ -337,10 +351,20 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # /Ox: Optimize level 3 optimizations.
         "$<$<CONFIG:Production>:-O3>"
     )
+
+    # Intrinsics are used in header files, which means that all executables using
+    # this library will also require this flag to compile successfully.
+    if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND DEFINED KITSUNE_TARGET_X86_64)
+        list(APPEND INHERITED_COMPILER_OPTIONS "-mavx2")
+    endif()
 else()
     message(FATAL_ERROR
         "${CMAKE_CXX_COMPILER_ID} is unsupported for compiling Kitsune. Please use one of the listed supported compilers."
     )
+endif()
+
+if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS)
+    list(APPEND INHERITED_COMPILER_DEFS "KITSUNE_ENABLE_SIMD_OPTIMIZATIONS=1")
 endif()
 
 append_if_debug_terminal_enabled(COMPILER_DEFS "KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING=1")
@@ -356,7 +380,10 @@ add_library(KitsuneEngine STATIC ${FILES})
 set_target_properties(KitsuneEngine PROPERTIES FOLDER "Engine")
 
 target_compile_options(KitsuneEngine PRIVATE ${COMPILER_OPTIONS})
+target_compile_options(KitsuneEngine PUBLIC ${INHERITED_COMPILER_OPTIONS})
+
 target_compile_definitions(KitsuneEngine PRIVATE ${COMPILER_DEFS})
+target_compile_definitions(KitsuneEngine PUBLIC ${INHERITED_COMPILER_DEFS})
 
 target_include_directories(KitsuneEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(KitsuneEngine PRIVATE

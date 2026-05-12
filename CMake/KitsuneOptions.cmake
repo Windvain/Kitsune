@@ -27,3 +27,9 @@ option(
     "Builds the Vulkan rendering backend."
     TRUE
 )
+
+option(
+    KITSUNE_ENABLE_SIMD_OPTIMIZATIONS
+    "Builds the engine with SIMD optimizations enabled on Matrix/Vector code."
+    TRUE
+)
