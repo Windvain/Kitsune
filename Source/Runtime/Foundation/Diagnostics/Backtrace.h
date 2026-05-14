@@ -91,7 +91,7 @@ namespace Kitsune
             Uint32 skipCount = 0, Uint32 maxDepth = Uint32(-1)) noexcept;
 
         [[nodiscard]]
-        inline static bool IsSupported()
+        constexpr static bool IsSupported()
         {
 #if defined(KITSUNE_SUPPORTS_BACKTRACES)
             return true;

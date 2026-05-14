@@ -1,4 +1,4 @@
-set(FILES
+add_library(KitsuneEngine STATIC
     "Application/Null/NullDisplayManager.h"
     "Application/Null/NullScreen.h"
     "Application/Null/NullWindow.h"
@@ -40,7 +40,7 @@ set(FILES
 
     "Foundation/Containers/Array.h"
     "Foundation/Containers/Pair.h"
-    "Foundation/Containers/Set.h"
+    "Foundation/Containers/TreeSet.h"
 
     "Foundation/Diagnostics/Assert.cpp"
     "Foundation/Diagnostics/Assert.h"
@@ -71,7 +71,6 @@ set(FILES
     "Foundation/Logging/LogSink.h"
 
     "Foundation/Maths/Clamp.h"
-    "Foundation/Maths/Color4.h"
     "Foundation/Maths/Maximum.h"
     "Foundation/Maths/Minimum.h"
     "Foundation/Maths/Rect2.h"
@@ -153,34 +152,19 @@ set(FILES
     "Launch/UniversalMain.cpp"
 )
 
-set(COMPILER_OPTIONS "")
-set(COMPILER_DEFS "")
-set(LINKED_LIBRARIES "")
-
-set(INHERITED_COMPILER_OPTIONS "")
-set(INHERITED_COMPILER_DEFS "")
-
-# When targeting Windows platforms, there are two identifiers used for x86_64 targets.
-# A GNU ABI target will define "x86_64", while an MSVC ABI will define "x64".
-if ("x64" IN_LIST CMAKE_CXX_COMPILER_ARCHITECTURE_ID OR "x86_64" IN_LIST CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
-    set(KITSUNE_TARGET_X86_64 1)
-endif()
-
 # CpuId.h should only be included on x86_64 targets. Contains the use of the CPUID
 # instruction, which is specific to the x86 architecture.
-if (DEFINED KITSUNE_TARGET_X86_64)
-    list(APPEND FILES
-        "Foundation/Utilities/CpuId.h"
-    )
+if (${KITSUNE_TARGET_ARCHITECTURE} STREQUAL "x86_64")
+    target_sources(KitsuneEngine PRIVATE "Foundation/Utilities/CpuId.h")
 endif()
 
-if (KITSUNE_BUILD_VULKAN_BACKEND)
+if (KITSUNE_ENABLE_VULKAN_BACKEND)
     find_package(Vulkan REQUIRED)
 
-    list(APPEND COMPILER_DEFS "KITSUNE_HAS_VULKAN_BACKEND=1")
-    list(APPEND LINKED_LIBRARIES Vulkan::Vulkan)
+    target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_ENABLE_VULKAN_BACKEND=1")
+    target_link_libraries(KitsuneEngine PRIVATE Vulkan::Vulkan)
 
-    list(APPEND FILES
+    target_sources(KitsuneEngine PRIVATE
         "GraphicsCore/Vulkan/VulkanCommandList.cpp"
         "GraphicsCore/Vulkan/VulkanCommandList.h"
         "GraphicsCore/Vulkan/VulkanCommandQueue.cpp"
@@ -209,21 +193,23 @@ if (KITSUNE_BUILD_VULKAN_BACKEND)
     )
 endif()
 
-# Can't make these any shorter, because.. CMake...
-macro(append_if_backtrace_supported var value)
-    # if ((config != Production) || (KITSUNE_OVERRIDE_BACKTRACE_SUPPORT))
-    #     list(APPEND ${var} ${value})
-    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${KITSUNE_OVERRIDE_BACKTRACE_SUPPORT}>>:${value}>")
-endmacro()
+set_target_properties(KitsuneEngine PROPERTIES FOLDER "Engine")
+target_include_directories(KitsuneEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-macro(append_if_debug_terminal_enabled var value)
-    # if ((config != Production) || (KITSUNE_SHOW_TERMINAL))
-    #     list(APPEND ${var} ${value})
-    list(APPEND ${var} "$<$<OR:$<NOT:$<CONFIG:Production>>,$<BOOL:${KITSUNE_ENABLE_TERMINAL_FOR_DEBUGGING}>>:${value}>")
-endmacro()
+if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS)
+    target_compile_definitions(KitsuneEngine PUBLIC "KITSUNE_ENABLE_SIMD_OPTIMIZATIONS=1")
+endif()
+
+target_compile_definitions(KitsuneEngine PUBLIC
+    "KITSUNE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}"
+    "KITSUNE_VERSION_MINOR=${PROJECT_VERSION_MINOR}"
+    "KITSUNE_VERSION_PATCH=${PROJECT_VERSION_PATCH}"
+
+    "KITSUNE_BUILD_$<UPPER_CASE:$<CONFIG>>=1"
+)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
-    list(APPEND FILES
+    target_sources(KitsuneEngine PRIVATE
         "Application/Windows/WindowsDisplayManager.cpp"
         "Application/Windows/WindowsDisplayManager.h"
         "Application/Windows/WindowsScreen.cpp"
@@ -241,16 +227,18 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Launch/Windows/WindowsEntry.cpp"
     )
 
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        list(APPEND FILES
-            "Foundation/Msvc/MsvcBacktrace.cpp"
-            "Foundation/Msvc/MsvcInterlocked.inl"
-            "Foundation/Msvc/MsvcSystemInformation.cpp")
-    else()
-        list(APPEND FILES "Foundation/Windows/WindowsSystemInformation.cpp")
+    # Include WindowsSystemInformation.cpp for compilers other than MSVC, b.c. the
+    # implementation of SystemInformation uses the WMI API, which MinGW-Clang does not
+    # support as of writing this. (May 2026, Clang 20.1.8)
+    if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        target_sources(KitsuneEngine PRIVATE "Foundation/Windows/WindowsSystemInformation.cpp")
     endif()
 
-    list(APPEND COMPILER_DEFS
+    target_link_libraries(KitsuneEngine PRIVATE
+        "SHcore.lib"        # Used for DPI support, for example GetDpiForMonitor().
+    )
+
+    target_compile_definitions(KitsuneEngine PRIVATE
         # Enable the usage of "wide" functions in the Win32 API.
         "UNICODE=1"
         "_UNICODE=1"
@@ -264,14 +252,19 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    append_if_backtrace_supported(LINKED_LIBRARIES "dbghelp.lib")
-    list(APPEND LINKED_LIBRARIES
-        # Used for querying WMI which is used in getting information about the system.
-        "wbemuuid.lib"
+    target_sources(KitsuneEngine PRIVATE
+        "Foundation/Msvc/MsvcBacktrace.cpp"
+        "Foundation/Msvc/MsvcInterlocked.inl"
+        "Foundation/Msvc/MsvcSystemInformation.cpp"
     )
 
-    append_if_backtrace_supported(COMPILER_DEFS "KITSUNE_SUPPORTS_BACKTRACES=1")
-    list(APPEND COMPILER_OPTIONS
+    target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_ENABLE_BACKTRACES=1")
+    target_link_libraries(KitsuneEngine PRIVATE
+        "wbemuuid.lib"      # Used for querying WMI which is used in getting information about the system.
+        "dbghelp.lib"       # Used in the backtrace code for retrieving stack traces.
+    )
+
+    target_compile_options(KitsuneEngine PRIVATE
         "/Zc:wchar_t"                 # Treat wchar_t as a native type.
         "/Zc:preprocessor"            # Use a C++ standard conforming preprocessor.
 
@@ -288,7 +281,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "/external:W0"                # Ignore external file warnings & errors.
     )
 
-    list(APPEND COMPILER_OPTIONS
+    target_compile_options(KitsuneEngine PRIVATE
         # /Zi: Create a seperate PDB file with symbols.
         # /MDd: Link to the debug runtime library.
         # /Od: Disable optimizations.
@@ -307,10 +300,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Intrinsics are used in header files, which means that all executables using
     # this library will also require this flag to compile successfully.
     if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND DEFINED KITSUNE_TARGET_X86_64)
-        list(APPEND INHERITED_COMPILER_OPTIONS "/arch:AVX2")
+        target_compile_options(KitsuneEngine PUBLIC "/arch:AVX2")
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    list(APPEND FILES
+    target_sources(KitsuneEngine PRIVATE
         "Foundation/Clang/ClangBacktrace.cpp"
         "Foundation/Clang/ClangInterlocked.inl"
     )
@@ -320,17 +313,17 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         OPTIONAL
     )
 
-    if (NOT LIBBACKTRACE_LIBRARY)
-        message(STATUS "libbacktrace FOUND: FALSE")
-        message(WARNING "Dependency libbacktrace required for obtaining backtraces was not found. Backtraces will be disabled.")
-    else()
+    if (LIBBACKTRACE_LIBRARY)
         message(STATUS "libbacktrace FOUND: TRUE")
 
-        append_if_backtrace_supported(LINKED_LIBRARIES "${LIBBACKTRACE_LIBRARY}")
-        append_if_backtrace_supported(COMPILER_DEFS "KITSUNE_SUPPORTS_BACKTRACES=1")
+        target_link_libraries(KitsuneEngine PRIVATE ${LIBBACKTRACE_LIBRARY})
+        target_compile_definitions(KitsuneEngine PRIVATE "KITSUNE_ENABLE_BACKTRACES=1")
+    else()
+        message(STATUS "libbacktrace FOUND: FALSE")
+        message(WARNING "Dependency libbacktrace required for obtaining backtraces was not found. Backtraces will be disabled.")
     endif()
 
-    list(APPEND COMPILER_OPTIONS
+    target_compile_options(KitsuneEngine PRIVATE
         "-Wall"                          # Enable all warnings about construction.
         "-Wextra"                        # Enable warnings that aren"t enabled by -Wall.
         "-Werror"                        # Turn all warnings into errors.
@@ -339,7 +332,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         "-Wshadow"                       # Warn when a local declaration shadows another.
     )
 
-    list(APPEND COMPILER_OPTIONS
+    target_compile_options(KitsuneEngine PRIVATE
         # /-g: Generate debug info.
         # /O0: Disable optimizations.
         "$<$<CONFIG:Debug>:-g;-O0>"
@@ -355,38 +348,10 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # Intrinsics are used in header files, which means that all executables using
     # this library will also require this flag to compile successfully.
     if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND DEFINED KITSUNE_TARGET_X86_64)
-        list(APPEND INHERITED_COMPILER_OPTIONS "-mavx2")
+        target_compile_options(KitsuneEngine PUBLIC "-mavx2")
     endif()
 else()
     message(FATAL_ERROR
         "${CMAKE_CXX_COMPILER_ID} is unsupported for compiling Kitsune. Please use one of the listed supported compilers."
     )
 endif()
-
-if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS)
-    list(APPEND INHERITED_COMPILER_DEFS "KITSUNE_ENABLE_SIMD_OPTIMIZATIONS=1")
-endif()
-
-append_if_debug_terminal_enabled(COMPILER_DEFS "KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING=1")
-list(APPEND COMPILER_DEFS
-    "KITSUNE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}"
-    "KITSUNE_VERSION_MINOR=${PROJECT_VERSION_MINOR}"
-    "KITSUNE_VERSION_PATCH=${PROJECT_VERSION_PATCH}"
-
-    "KITSUNE_BUILD_$<UPPER_CASE:$<CONFIG>>=1"
-)
-
-add_library(KitsuneEngine STATIC ${FILES})
-set_target_properties(KitsuneEngine PROPERTIES FOLDER "Engine")
-
-target_compile_options(KitsuneEngine PRIVATE ${COMPILER_OPTIONS})
-target_compile_options(KitsuneEngine PUBLIC ${INHERITED_COMPILER_OPTIONS})
-
-target_compile_definitions(KitsuneEngine PRIVATE ${COMPILER_DEFS})
-target_compile_definitions(KitsuneEngine PUBLIC ${INHERITED_COMPILER_DEFS})
-
-target_include_directories(KitsuneEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(KitsuneEngine PRIVATE
-    ${LINKED_LIBRARIES}
-    "SHcore.lib"                    # DPI support, e.g. GetDpiForMonitor.
-)

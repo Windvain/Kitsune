@@ -13,13 +13,13 @@ namespace Kitsune
         {
         }
 
-        inline Rect2(const Vector2<T>& position, const Vector2<T>& size)
+        inline Rect2(const Point2<T>& position, const Vector2<T>& size)
             : Position(position), Size(size)
         {
         }
 
     public:
-        Vector2<T> Position;
+        Point2<T> Position;
         Vector2<T> Size;
     };
 }

@@ -5,7 +5,6 @@
 
 namespace Kitsune
 {
-#if defined(KITSUNE_SUPPORTS_BACKTRACES)
     KITSUNE_NOINLINE
     static Backtrace::ContainerType GuardedBacktraceCapture(
         Uint32 skipCount, Uint32 maxDepth) noexcept
@@ -86,14 +85,4 @@ namespace Kitsune
         ::SymCleanup(::GetCurrentProcess());
         return Backtrace(Move(backtraceArray));
     }
-
-#else
-    Backtrace Backtrace::Capture(Uint32 skipCount, Uint32 maxDepth) noexcept
-    {
-        KITSUNE_UNUSED(skipCount);
-        KITSUNE_UNUSED(maxDepth);
-
-        return Backtrace();
-    }
-#endif
 }

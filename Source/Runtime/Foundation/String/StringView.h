@@ -3,11 +3,10 @@
 #include <cwchar>
 #include <cstring>
 
-#include "Foundation/Common/Macros.h"
+#include "Foundation/Templates/Swap.h"
 #include "Foundation/Concepts/Character.h"
 
 #include "Foundation/Maths/Minimum.h"
-#include "Foundation/Templates/Swap.h"
 #include "Foundation/Algorithms/Find.h"
 
 #include "Foundation/Iterators/ReverseIterator.h"

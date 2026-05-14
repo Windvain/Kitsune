@@ -323,7 +323,7 @@ namespace Kitsune
     DWORD WindowsWindow::CalculateWindowStyles_(WindowFlags flags)
     {
         DWORD styles = WS_OVERLAPPEDWINDOW;
-        if ((flags & WindowFlags::ResizeDisabled) == WindowFlags::ResizeDisabled)
+        if (bool(flags & WindowFlags::ResizeDisabled))
             styles &= ~(WS_MAXIMIZEBOX | WS_SIZEBOX);
 
         return styles;

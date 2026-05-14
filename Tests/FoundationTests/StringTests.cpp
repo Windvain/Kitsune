@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "Foundation/String/String.h"
+#include "Foundation/Concepts/Container.h"
 
 using namespace Kitsune;
 
@@ -124,6 +125,10 @@ class StringTests : public ::testing::Test
 {
 public:
     using CharType = T;
+
+    static_assert(
+        Container<BasicString<T>>,
+        "BasicString does not satisfy the Container concept.");
 
 protected:
     StringTests() { /* ... */ }

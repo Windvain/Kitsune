@@ -69,7 +69,7 @@ namespace Kitsune::Algorithms
             for (; iter != end; ++iter, ++outBegin)
             {
                 Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
-                    AddressOf(*outBegin), Move(*iter));
+                    AddressOf(*outBegin), Kitsune::Move(*iter));
             }
 
             return outBegin;
@@ -93,7 +93,7 @@ namespace Kitsune::Algorithms
             for (; n > 0; ++iter, --n, ++outBegin)
             {
                 Memory::ConstructAt<typename IteratorTraits<Iter>::ValueType>(
-                    AddressOf(*outBegin), Move(*iter));
+                    AddressOf(*outBegin), Kitsune::Move(*iter));
             }
 
             return outBegin;

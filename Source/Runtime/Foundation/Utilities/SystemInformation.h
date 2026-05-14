@@ -58,6 +58,7 @@ namespace Kitsune
 
     private:
         friend class SystemInformation;
+        CpuInformation() = default;
 
     private:
         String m_Vendor;

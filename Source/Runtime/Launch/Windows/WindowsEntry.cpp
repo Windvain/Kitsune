@@ -1,6 +1,6 @@
 #include "Foundation/Common/Predefined.h"
 
-#if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN) && defined(KITSUNE_BUILD_DEBUG)
+#if defined(KITSUNE_COMPILER_SUPPORTS_CRTDBG) && defined(KITSUNE_BUILD_DEBUG)
     #define _CRTDBG_MAP_ALLOC
     #include <cstdlib>
     #include <crtdbg.h>
@@ -46,7 +46,7 @@ static void SetPerMonitorDpiAwareness()
     setThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 }
 
-#if defined(KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
 static bool TryCreateTerminal()
 {
     BOOL consoleAllocSuccess = ::AllocConsole();
@@ -98,7 +98,7 @@ static void DestroyTerminal()
 }
 #endif
 
-#if defined(KITSUNE_COMPILER_MSVC)
+#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
 static const char* FormatExceptionCode(DWORD code)
 {
     switch (code)
@@ -222,13 +222,13 @@ int WINAPI WinMain(
     // MinGW doesn't define the <crtdbg.h> header functions.
     // Enables debug heap allocations (ALLOC_MEM_DF) and automatically dump
     // memory leaks when the program exits (LEAK_CHECK_DF).
-#if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN) && defined(KITSUNE_BUILD_DEBUG)
+#if defined(KITSUNE_COMPILER_SUPPORTS_CRTDBG) && defined(KITSUNE_BUILD_DEBUG)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
     SetPerMonitorDpiAwareness();
 
-#if defined(KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
     if (!TryCreateTerminal())
         return EXIT_FAILURE;
 #endif
@@ -237,14 +237,13 @@ int WINAPI WinMain(
         returnValue = Kitsune::UniversalMain(__argc, __argv);
     else
     {
-        // Only MSVC has support for SEH exceptions.
-#if defined(KITSUNE_COMPILER_MSVC)
+#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
         __try
 #endif
         {
             returnValue = Kitsune::UniversalMain(__argc, __argv);
         }
-#if defined(KITSUNE_COMPILER_MSVC)
+#if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
         __except (ProcessSehException(GetExceptionInformation()))
         {
             KITSUNE_UNREACHABLE();
@@ -258,7 +257,7 @@ int WINAPI WinMain(
 #endif
     }
 
-#if defined(KITSUNE_TERMINAL_ENABLED_FOR_DEBUGGING)
+#if !defined(KITSUNE_BUILD_PRODUCTION)
     DestroyTerminal();
 #endif
 

@@ -1,7 +1,7 @@
 #include "GraphicsCore/GpuInstance.h"
 #include "Foundation/Logging/Logger.h"
 
-#if defined(KITSUNE_HAS_VULKAN_BACKEND)
+#if defined(KITSUNE_ENABLE_VULKAN_BACKEND)
     #include "GraphicsCore/Vulkan/VulkanGpuInstance.h"
 #endif
 
@@ -11,7 +11,7 @@ namespace Kitsune
     {
         switch (description.Backend)
         {
-#if defined(KITSUNE_HAS_VULKAN_BACKEND)
+#if defined(KITSUNE_ENABLE_VULKAN_BACKEND)
         case GraphicsApi::Vulkan:
             return MakeShared<VulkanGpuInstance>(description);
 #endif

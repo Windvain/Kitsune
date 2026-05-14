@@ -5,7 +5,7 @@
 #include "GraphicsCore/Vulkan/VulkanRenderSurface.h"
 
 #include "Foundation/Logging/Logger.h"
-#include "Foundation/Containers/Set.h"
+#include "Foundation/Containers/TreeSet.h"
 
 #include "Foundation/Diagnostics/Assert.h"
 #include "Foundation/Algorithms/Contains.h"
@@ -351,7 +351,7 @@ namespace Kitsune
                                                     familyProperties.Data());
 
         Array<VkDeviceQueueCreateInfo> queueCreateInfos;
-        Set<Uint32> uniqueFamilies;
+        TreeSet<Uint32> uniqueFamilies;
 
         for (auto& queueSpecifications : commandQueues)
         {

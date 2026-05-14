@@ -3,7 +3,7 @@
 #include "GraphicsCore/Texture.h"
 
 #include "Foundation/Maths/Rect2.h"
-#include "Foundation/Maths/Color4.h"
+#include "Foundation/Maths/Vector4.h"
 
 #include "Foundation/Memory/SharedPtr.h"
 #include "Foundation/Containers/Array.h"

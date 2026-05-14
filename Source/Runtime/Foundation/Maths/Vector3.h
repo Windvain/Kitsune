@@ -17,6 +17,11 @@ namespace Kitsune
         {
         }
 
+        inline Vector(const T& scalar)
+            : X(scalar), Y(scalar), Z(scalar)
+        {
+        }
+
         inline Vector(const T& paramX, const T& paramY, const T& paramZ)
             : X(paramX), Y(paramY), Z(paramZ)
         {
@@ -213,9 +218,7 @@ namespace Kitsune
                 (vector1.Z == vector2.Z));
     }
 
-    template<typename T>
-    using Vector3 = Vector<T, 3>;
-
-    template<typename T>
-    using Point3 = Vector<T, 3>;
+    template<typename T> using Vector3 = Vector<T, 3>;
+    template<typename T> using Point3 = Vector<T, 3>;
+    template<typename T> using Color3 = Vector<T, 3>;
 }

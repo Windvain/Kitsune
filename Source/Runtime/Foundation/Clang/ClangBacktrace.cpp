@@ -1,6 +1,6 @@
 #include "Foundation/Diagnostics/Backtrace.h"
 
-#if defined(KITSUNE_SUPPORTS_BACKTRACES)
+#if defined(KITSUNE_ENABLE_BACKTRACES)
     #include <cstdlib>
     #include <cxxabi.h>
     #include <backtrace.h>
@@ -11,7 +11,7 @@
 
 namespace Kitsune
 {
-#if defined(KITSUNE_SUPPORTS_BACKTRACES)
+#if defined(KITSUNE_ENABLE_BACKTRACES)
     struct BacktraceData
     {
         Uint32 CurrentDepth;

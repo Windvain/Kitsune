@@ -17,6 +17,11 @@ namespace Kitsune
         {
         }
 
+        inline Vector(const T& scalar)
+            : X(scalar), Y(scalar)
+        {
+        }
+
         inline Vector(const T& paramX, const T& paramY)
             : X(paramX), Y(paramY)
         {
@@ -179,8 +184,8 @@ namespace Kitsune
         }
 
     public:
-        union { T X, R, U; };
-        union { T Y, G, V; };
+        union { T X, U; };
+        union { T Y, V; };
     };
 
     template<typename T>
@@ -201,9 +206,6 @@ namespace Kitsune
         return ((vector1.X == vector2.X) && (vector1.Y == vector2.Y));
     }
 
-    template<typename T>
-    using Vector2 = Vector<T, 2>;
-
-    template<typename T>
-    using Point2 = Vector<T, 2>;
+    template<typename T> using Vector2 = Vector<T, 2>;
+    template<typename T> using Point2 = Vector<T, 2>;
 }

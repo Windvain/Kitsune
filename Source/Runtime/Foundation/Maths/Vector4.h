@@ -8,6 +8,11 @@
 #include "Foundation/Templates/Move.h"
 #include "Foundation/Diagnostics/OutOfRangeException.h"
 
+// If anonymous structs are not defined, don't use SIMD optimizations.
+#if !defined(KITSUNE_COMPILER_SUPPORTS_ANONYMOUS_STRUCTS)
+    #undef KITSUNE_ENABLE_SIMD_OPTIMIZATIONS
+#endif
+
 #if defined(KITSUNE_ARCH_X86_64) && defined(KITSUNE_ENABLE_SIMD_OPTIMIZATIONS)
     // We expect x86_64 targets to support AVX2, b.c. as of April 2026,
     // 95.29% of all computers support AVX2.
@@ -413,6 +418,11 @@ namespace Kitsune
         {
         }
 
+        inline Vector(const T& scalar)
+            : X(scalar), Y(scalar), Z(scalar), W(scalar)
+        {
+        }
+
         inline Vector(const T& paramX, const T& paramY, const T& paramZ,
                       const T& paramW)
             : X(paramX), Y(paramY), Z(paramZ), W(paramW)
@@ -590,11 +600,9 @@ namespace Kitsune
             vector1, vector2);
     }
 
-    template<typename T>
-    using Vector4 = Vector<T, 4>;
-
-    template<typename T>
-    using Point4 = Vector<T, 4>;
+    template<typename T> using Vector4 = Vector<T, 4>;
+    template<typename T> using Point4 = Vector<T, 4>;
+    template<typename T> using Color4 = Vector<T, 4>;
 }
 
 KITSUNE_POP_COMPILER_WARNINGS()

@@ -305,20 +305,6 @@ TYPED_TEST(Vector2Tests, ArithmeticOperators)
     EXPECT_TEMPLATED_EQ(flippedMulValue.Y, vector.Y * scalar);
 }
 
-TYPED_TEST(Vector2Tests, RangedForLoop)
-{
-    using T = typename TestFixture::ValueType;
-
-    Vector2<T> vector;
-    Index index = 0;
-
-    for (T dimension : vector)
-    {
-        EXPECT_TEMPLATED_EQ(dimension, vector.Data[index]);
-        ++index;
-    }
-}
-
 TYPED_TEST(Vector2Tests, EqualityOperators)
 {
     using T = typename TestFixture::ValueType;

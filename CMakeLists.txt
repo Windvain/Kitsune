@@ -43,6 +43,7 @@ if (KITSUNE_BUILD_TEST_EXECUTABLES)
 endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneOptions.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneUtilities.cmake")
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/External")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Source/Runtime")
