@@ -24,49 +24,60 @@ endif()
 
 # ========== FoundationTests ========================================]
 add_executable(FoundationTests ${TEST_EXE_TYPE}
-    "FoundationTests/AddressOfTests.cpp"
-    "FoundationTests/AdvanceTests.cpp"
-    "FoundationTests/ArrayTests.cpp"
-    "FoundationTests/BackInsertIteratorTests.cpp"
-    "FoundationTests/BacktraceFrameTests.cpp"
-    "FoundationTests/ContainsTests.cpp"
-    "FoundationTests/CopyTests.cpp"
-    "FoundationTests/CountTests.cpp"
-    "FoundationTests/DecodeTests.cpp"
-    "FoundationTests/DestroyTests.cpp"
-    "FoundationTests/DistanceTests.cpp"
-    "FoundationTests/EncodeTests.cpp"
-    "FoundationTests/EqualTests.cpp"
-    "FoundationTests/FillTests.cpp"
-    "FoundationTests/FindTests.cpp"
-    "FoundationTests/ForEachTests.cpp"
-    "FoundationTests/FunctorTests.cpp"
+    "FoundationTests/Algorithms/AdvanceTests.cpp"
+    "FoundationTests/Algorithms/ContainsTests.cpp"
+    "FoundationTests/Algorithms/CopyTests.cpp"
+    "FoundationTests/Algorithms/CountTests.cpp"
+    "FoundationTests/Algorithms/DestroyTests.cpp"
+    "FoundationTests/Algorithms/DistanceTests.cpp"
+    "FoundationTests/Algorithms/EqualTests.cpp"
+    "FoundationTests/Algorithms/FillTests.cpp"
+    "FoundationTests/Algorithms/FindTests.cpp"
+    "FoundationTests/Algorithms/ForEachTests.cpp"
+    "FoundationTests/Algorithms/MoveTests.cpp"
+    "FoundationTests/Algorithms/ReplaceTests.cpp"
+    "FoundationTests/Algorithms/ReverseTests.cpp"
+    "FoundationTests/Algorithms/SwapTests.cpp"
+    "FoundationTests/Algorithms/UninitializedTests.cpp"
+
+    "FoundationTests/Containers/ArrayTests.cpp"
+    "FoundationTests/Containers/PairTests.cpp"
+    "FoundationTests/Containers/TreeSetTests.cpp"
+
+    "FoundationTests/Diagnostics/BacktraceFrameTests.cpp"
+    "FoundationTests/Diagnostics/SourceLocationTests.cpp"
+
+    "FoundationTests/Include/TestContainer.h"
+    "FoundationTests/Include/TestIterators.h"
+    "FoundationTests/Include/TestStrings.h"
+
+    "FoundationTests/Iterators/BackInsertIteratorTests.cpp"
+    "FoundationTests/Iterators/ToAddressTests.cpp"
+
+    "FoundationTests/Maths/Vector2Tests.cpp"
+
+    "FoundationTests/Memory/AddressOfTests.cpp"
+    "FoundationTests/Memory/ScopedPtrTests.cpp"
+    "FoundationTests/Memory/SharedPtrTests.cpp"
+
+    "FoundationTests/String/DecodeTests.cpp"
+    "FoundationTests/String/EncodeTests.cpp"
+    "FoundationTests/String/StringTests.cpp"
+    "FoundationTests/String/StringViewTests.cpp"
+    "FoundationTests/String/TranscodeTests.cpp"
+    "FoundationTests/String/Utf8EncodingTests.cpp"
+    "FoundationTests/String/Utf16EncodingTests.cpp"
+    "FoundationTests/String/Utf32EncodingTests.cpp"
+    "FoundationTests/String/ValidTests.cpp"
+
+    "FoundationTests/Utilities/FunctorTests.cpp"
+
     "FoundationTests/Main.cpp"
-    "FoundationTests/MoveTests.cpp"
-    "FoundationTests/PairTests.cpp"
-    "FoundationTests/ReplaceTests.cpp"
-    "FoundationTests/ReverseTests.cpp"
-    "FoundationTests/ScopedPtrTests.cpp"
-    "FoundationTests/SharedPtrTests.cpp"
-    "FoundationTests/SourceLocationTests.cpp"
-    "FoundationTests/StringTests.cpp"
-    "FoundationTests/StringViewTests.cpp"
-    "FoundationTests/SwapTests.cpp"
-    "FoundationTests/TestContainer.h"
-    "FoundationTests/TestIterators.h"
-    "FoundationTests/TestStrings.h"
-    "FoundationTests/ToAddressTests.cpp"
-    "FoundationTests/TranscodeTests.cpp"
-    "FoundationTests/TreeSetTests.cpp"
-    "FoundationTests/UninitializedTests.cpp"
-    "FoundationTests/Utf8EncodingTests.cpp"
-    "FoundationTests/Utf16EncodingTests.cpp"
-    "FoundationTests/Utf32EncodingTests.cpp"
-    "FoundationTests/ValidTests.cpp"
-    "FoundationTests/Vector2Tests.cpp"
 )
 
 add_test(FoundationTests COMMAND FoundationTests)
+
+target_include_directories(FoundationTests PRIVATE "FoundationTests/Include/")
 set_target_properties(FoundationTests PROPERTIES FOLDER "Tests")
 
 # ========== SystemInformationTests ========================================]

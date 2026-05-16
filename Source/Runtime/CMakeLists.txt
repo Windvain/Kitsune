@@ -142,9 +142,9 @@ add_library(KitsuneEngine STATIC
     "GraphicsCore/GpuInstance.h"
     "GraphicsCore/RenderPipeline.h"
     "GraphicsCore/RenderSurface.h"
-    "GraphicsCore/SwapChain.h"
     "GraphicsCore/Semaphore.h"
     "GraphicsCore/ShaderModule.h"
+    "GraphicsCore/SwapChain.h"
     "GraphicsCore/Texture.h"
 
     "Launch/EngineLoop.cpp"
@@ -299,7 +299,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 
     # Intrinsics are used in header files, which means that all executables using
     # this library will also require this flag to compile successfully.
-    if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND DEFINED KITSUNE_TARGET_X86_64)
+    if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND ${KITSUNE_TARGET_ARCHITECTURE} STREQUAL "x86_64")
         target_compile_options(KitsuneEngine PUBLIC "/arch:AVX2")
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -347,7 +347,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
     # Intrinsics are used in header files, which means that all executables using
     # this library will also require this flag to compile successfully.
-    if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND DEFINED KITSUNE_TARGET_X86_64)
+    if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND ${KITSUNE_TARGET_ARCHITECTURE} STREQUAL "x86_64")
         target_compile_options(KitsuneEngine PUBLIC "-mavx2")
     endif()
 else()
