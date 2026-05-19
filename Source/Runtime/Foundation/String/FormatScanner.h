@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cinttypes>
 #include "Foundation/Common/Macros.h"
 
 #include "Foundation/Maths/Minimum.h"
@@ -33,83 +32,88 @@ namespace Kitsune
 
     public:
         template<OutputIterator<const CharType&> OutputIter, Usize ArgCount>
-        inline static FormatResult<OutputIter> Format(
+        inline static FormatResult<OutputIter> FormatSingle(
             const FormatArgumentPack<ArgCount, OutputIter>& arguments,
-            StringView formatString,
+            StringView substring,
             OutputIter outputIter)
         {
-            if (formatString.IsEmpty())
-                return { formatString, outputIter };
-
-            auto leftBrace = formatString.Find('{');
-            auto rightBrace = formatString.Find('}');
+            auto leftBrace = substring.Find('{');
+            auto rightBrace = substring.Find('}');
 
             // Handle regular text.
-            if ((leftBrace != formatString.GetBegin()) &&
-                (rightBrace != formatString.GetBegin()))
+            if ((leftBrace != substring.GetBegin()) &&
+                (rightBrace != substring.GetBegin()))
             {
-                outputIter = Algorithms::Copy(
-                    formatString.GetBegin(), Maths::Minimum(leftBrace, rightBrace),
-                    outputIter);
-
-                formatString.RemovePrefix(leftBrace - formatString.GetBegin());
-                return { formatString, outputIter };
+                return {
+                    StringView(leftBrace, substring.GetEnd()),
+                    Algorithms::Copy(
+                        substring.GetBegin(),
+                        Maths::Minimum(leftBrace, rightBrace),
+                        outputIter)
+                };
             }
 
-            // Handle braces.
-            const Usize DoubleBracesSize = 2;
             if (leftBrace < rightBrace)
             {
-                bool isDoubleBrace = (leftBrace[1] == '{');
-                if ((rightBrace == formatString.GetEnd()) && !isDoubleBrace)
-                {
-                    throw FormatException(
-                        "Format string contains a hanging left brace.");
-                }
+                bool isDoubleBrace = ((leftBrace + 1) != substring.GetEnd()) &&
+                                     (leftBrace[1] == '{');
 
                 if (!isDoubleBrace)
                 {
-                    StringView formatArguments(leftBrace + 1, rightBrace);
-                    outputIter = HandleFormatting_(
-                        arguments, formatArguments, outputIter);
+                    if (rightBrace == substring.GetEnd())
+                    {
+                        throw FormatException(
+                            "Failed to format the specified format string, because the "
+                            "format string contains a hanging brace.");
+                    }
 
-                    formatString.RemovePrefix(formatArguments.Size() + 2);
+                    StringView argsView(leftBrace + 1, rightBrace);
+                    return {
+                        StringView(rightBrace + 1, substring.GetEnd()),
+                        HandleFormatting_(arguments, argsView, outputIter)
+                    };
                 }
                 else
                 {
-                    formatString.RemovePrefix(DoubleBracesSize);
-                    *outputIter++ = '{';
+                    return {
+                        StringView(leftBrace + 2, substring.GetEnd()),
+                        *outputIter++ = '{'
+                    };
                 }
             }
             else /* leftBrace > rightBrace */
             {
-                if (rightBrace[1] != '}')
+                if (((rightBrace + 1) != substring.GetEnd()) && (rightBrace[1] == '{'))
                 {
                     throw FormatException(
-                        "Format string contains a hanging right brace.");
+                        "Failed to format the specified format string, because the "
+                        "format string contains a hanging brace.");
                 }
 
-                formatString.RemovePrefix(DoubleBracesSize);
-                *outputIter++ = '}';
+                return {
+                    StringView(rightBrace + 2, substring.GetEnd()),
+                    *outputIter++ = '}'
+                };
             }
 
-            return { formatString, outputIter };
+            return { substring, outputIter };
         }
 
     private:
-        template<OutputIterator<const CharType&> OutputIter, Usize ArgCount>
+        template<OutputIterator<const char&> OutputIter, Usize ArgCount>
         inline static OutputIter HandleFormatting_(
             const FormatArgumentPack<ArgCount, OutputIter>& arguments,
-            StringView formatArguments,
+            StringView argsView,
             OutputIter outputIter)
         {
-            char* indexEnd;
-            auto index = static_cast<Index>(
-                std::strtoumax(formatArguments.Data(), &indexEnd, 10));
+            StringView indexSubstring(argsView.GetBegin(), argsView.Find(':'));
+            Index index = GetIndex_(indexSubstring);
 
-            formatArguments.RemovePrefix(indexEnd - formatArguments.GetBegin());
+            argsView.RemovePrefix(indexSubstring.Size());
+            if (!argsView.IsEmpty())
+                argsView.RemovePrefix(1);
 
-            FormatContext<OutputIter> context(formatArguments, outputIter);
+            FormatContext<OutputIter> context(argsView, outputIter);
             arguments[index].Visit([&](const auto value) -> void
             {
                 using ValueType = std::remove_cvref_t<decltype(value)>;
@@ -120,13 +124,25 @@ namespace Kitsune
                 if constexpr (isHandleType)
                     outputIter = value.Format(context);
                 else
-                {
-                    using FormatterType = Formatter<ValueType, CharType>;
-                    outputIter = FormatterType::Format(value, context);
-                }
+                    outputIter = Formatter<ValueType, CharType>::Format(value, context);
             });
 
             return outputIter;
+        }
+
+        inline static Index GetIndex_(StringView indexView)
+        {
+            Index index = 0;
+            for (char digit : indexView)
+            {
+                if ((digit < '0') || (digit > '9'))
+                    throw FormatException("The format string contains an invalid index.");
+
+                index *= 10;
+                index += (digit - '0');
+            }
+
+            return index;
         }
     };
 }

@@ -396,8 +396,8 @@ TEST(TreeSetTests, Equal)
 {
     TreeSet<int> set = { 123, 92, 91, 11, -34, -3, 0 };
     TreeSet<int> equalSet = { 123, 92, 91, 11, -34, -3, 0 };
-    TreeSet<int> inequalSet = { 123, 92, 91, 11, -34, -3, 1 };
+    TreeSet<int> unequalSet = { 123, 92, 91, 11, -34, -3, 1 };
 
     EXPECT_TRUE(set == equalSet);
-    EXPECT_FALSE(set == inequalSet);
+    EXPECT_FALSE(set == unequalSet);
 }

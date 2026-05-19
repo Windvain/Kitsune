@@ -37,7 +37,7 @@ TEST(PairTests, DefaultConstructor)
     EXPECT_EQ(pair.Second, 0);
 }
 
-TEST(PairTests, ValueConstrutor)
+TEST(PairTests, ValueConstructor)
 {
     Pair<int, float> pair(int(32), 3.4f);
     EXPECT_EQ(pair.First, 32);
@@ -121,8 +121,8 @@ TEST(PairTests, Equal)
 {
     Pair<int, long> pair = { 3, 4 };
     Pair<long long, short> equalPair = { 3, 4 };
-    Pair<short, char> inequalPair = { 4, 5 };
+    Pair<short, char> unequalPair = { 4, 5 };
 
     EXPECT_TRUE(pair == equalPair);
-    EXPECT_FALSE(pair == inequalPair);
+    EXPECT_FALSE(pair == unequalPair);
 }

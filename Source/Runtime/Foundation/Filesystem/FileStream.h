@@ -207,7 +207,7 @@ namespace Kitsune
             while (data != dataEnd)
             {
                 Usize writeCount = Maths::Minimum(
-                    dataCount,
+                    static_cast<Usize>(dataEnd - data),
                     static_cast<Usize>(bufferEnd - m_WritePosition));
 
                 std::memcpy(

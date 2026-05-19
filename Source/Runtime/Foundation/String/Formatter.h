@@ -105,7 +105,7 @@ namespace Kitsune
             if (specs.Contains('b') || specs.Contains('B'))
                 base = 2;
             else if (specs.Contains('o') || specs.Contains('O'))
-                base = 4;
+                base = 8;
             else if (specs.Contains('d') || specs.Contains('D'))
                 base = 10;
             else if (specs.Contains('x') || specs.Contains('X'))
@@ -210,7 +210,7 @@ namespace Kitsune
             const FormatContext<Iter>& context)
         {
             auto value = static_cast<long double>(floatNum);
-            int count = std::snprintf(nullptr, 0, "%Lf", value) - 1;
+            int count = std::snprintf(nullptr, 0, "%Lf", value);
 
             String str(static_cast<Usize>(count), '\0');
             std::snprintf(str.Data(), count, "%Lf", value);
@@ -230,7 +230,7 @@ namespace Kitsune
             T* pointer,
             const FormatContext<Iter>& context)
         {
-            auto pointerInt = *reinterpret_cast<Uintptr*>(&pointer);
+            auto pointerInt = reinterpret_cast<Uintptr>(pointer);
             FormatContext<Iter> modifiedContext("0#x", context.GetOutput());
 
             return Formatter<Uintptr, char>::Format(pointerInt, modifiedContext);

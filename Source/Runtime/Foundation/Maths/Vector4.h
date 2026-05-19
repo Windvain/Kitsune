@@ -577,7 +577,7 @@ namespace Kitsune
             struct { T X, Y, Z, W; };
             struct { T R, G, B, A; };
 
-            BaseType_::StorageType m_Storage;
+            typename BaseType_::StorageType m_Storage;
         };
     };
 

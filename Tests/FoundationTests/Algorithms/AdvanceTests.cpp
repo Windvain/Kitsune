@@ -11,10 +11,6 @@ class AdvanceTests : public ::testing::Test
 protected:
     using IteratorType = T;
     using ValueType = typename IteratorTraits<T>::ValueType;
-
-protected:
-    AdvanceTests() { /* ... */ }
-    ~AdvanceTests() { /* ... */ }
 };
 
 using AdvanceTestsImpl =

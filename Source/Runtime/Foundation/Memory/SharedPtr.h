@@ -259,7 +259,7 @@ namespace Kitsune
         }
 
         inline SharedPtr(SharedPtr&& pointer)
-            : m_Pointer(pointer.m_Pointer),
+            : m_Pointer(Exchange(pointer.m_Pointer, nullptr)),
               m_Data(Exchange(pointer.m_Data, nullptr))
         {
         }
@@ -267,7 +267,7 @@ namespace Kitsune
         template<typename U>
             requires std::is_convertible_v<U*, T*>
         SharedPtr(SharedPtr<U, Mode>&& pointer)
-            : m_Pointer(pointer.m_Pointer),
+            : m_Pointer(Exchange(pointer.m_Pointer, nullptr)),
               m_Data(Exchange(pointer.m_Data, nullptr))
         {
         }
@@ -383,7 +383,7 @@ namespace Kitsune
         template<typename U>
         inline SharedPtr& InternalAssign_(const SharedPtr<U, Mode>& pointer)
         {
-            if (m_Pointer != pointer.m_Pointer)
+            if (static_cast<const void*>(this) != static_cast<const void*>(&pointer))
                 SharedPtr(pointer).Swap(*this);
 
             return *this;
@@ -392,7 +392,7 @@ namespace Kitsune
         template<typename U>
         inline SharedPtr& InternalAssign_(SharedPtr<U, Mode>&& pointer)
         {
-            if (m_Pointer != pointer.m_Pointer)
+            if (static_cast<const void*>(this) != static_cast<const void*>(&pointer))
                 SharedPtr(Move(pointer)).Swap(*this);
 
             return *this;
@@ -547,14 +547,14 @@ namespace Kitsune
         }
 
         inline WeakPtr(WeakPtr&& pointer)
-            : m_Pointer(pointer.m_Pointer),
+            : m_Pointer(Exchange(pointer.m_Pointer, nullptr)),
               m_Data(Exchange(pointer.m_Data, nullptr))
         {
         }
 
         template<typename U>
         inline WeakPtr(WeakPtr<U, Mode>&& pointer)
-            : m_Pointer(pointer.m_Pointer),
+            : m_Pointer(Exchange(pointer.m_Pointer, nullptr)),
               m_Data(Exchange(pointer.m_Data, nullptr))
         {
         }
@@ -591,7 +591,10 @@ namespace Kitsune
         template<typename U>
         inline WeakPtr& operator=(const SharedPtr<U>& pointer)
         {
-            if (m_Pointer != pointer.m_Pointer)
+            const auto* otherData = static_cast<const void*>(pointer.m_Data);
+            const auto* otherPointer = static_cast<const void*>(pointer.m_Pointer);
+
+            if ((m_Data != otherData) || (m_Pointer != otherPointer))
                 WeakPtr(pointer).Swap(*this);
 
             return *this;
@@ -603,6 +606,7 @@ namespace Kitsune
             if (m_Data != nullptr)
                 m_Data->ReleaseWeakOwnership();
 
+            m_Pointer = nullptr;
             m_Data = nullptr;
         }
 
@@ -641,7 +645,7 @@ namespace Kitsune
         template<typename U>
         inline WeakPtr& InternalAssign_(const WeakPtr<U, Mode>& pointer)
         {
-            if (m_Pointer != pointer.m_Pointer)
+            if (static_cast<const void*>(this) != static_cast<const void*>(&pointer))
                 WeakPtr(pointer).Swap(*this);
 
             return *this;
@@ -650,7 +654,7 @@ namespace Kitsune
         template<typename U>
         inline WeakPtr& InternalAssign_(WeakPtr<U, Mode>&& pointer)
         {
-            if (m_Pointer != pointer.m_Pointer)
+            if (static_cast<const void*>(this) != static_cast<const void*>(&pointer))
                 WeakPtr(Move(pointer)).Swap(*this);
 
             return *this;

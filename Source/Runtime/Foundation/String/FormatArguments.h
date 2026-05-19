@@ -255,9 +255,14 @@ namespace Kitsune
             BasicStringView<Char> String{ /* ... */ };
             CustomTypeHandle Custom;
         } m_SharedData;
+
+        static_assert(
+            sizeof(m_SharedData) == sizeof(BasicStringView<Char>),
+            "This is an implementation bug. The FormatArgument class is not being "
+            "zero-initialized correctly.");
     };
 
-    template<Character Char, Usize ArgCount, OutputIterator<const Char&> OutputIter>
+    template<Character Char, Usize ArgsCount, OutputIterator<const Char&> OutputIter>
     class BasicFormatArgumentPack
     {
     public:
@@ -276,7 +281,7 @@ namespace Kitsune
         [[nodiscard]]
         inline Usize GetCount() const
         {
-            return ArgCount;
+            return ArgsCount;
         }
 
         [[nodiscard]]
@@ -287,7 +292,7 @@ namespace Kitsune
 
     public:
         // Keep this publicly accessible, we need it for aggregate initialization.
-        BasicFormatArgument<Char, OutputIter> m_Arguments[ArgCount];
+        BasicFormatArgument<Char, OutputIter> m_Arguments[ArgsCount];
     };
 
     template<Character Char, OutputIterator<const Char&> OutputIter>
@@ -297,8 +302,9 @@ namespace Kitsune
         using FormatArgumentType = BasicFormatArgument<Char, OutputIter>;
 
     public:
-        inline const FormatArgumentType& operator[](Index /* index */) const
+        inline const FormatArgumentType& operator[](Index index) const
         {
+            KITSUNE_UNUSED(index);
             throw OutOfRangeException();
         }
 
@@ -316,9 +322,17 @@ namespace Kitsune
         }
     };
 
+    template<OutputIterator<const char&> OutputIter, typename... Args>
+    inline auto MakeFormatArgumentPack(Args&&... args)
+    {
+        return BasicFormatArgumentPack<char, sizeof...(Args), OutputIter>{
+            Forward<Args>(args)...
+        };
+    }
+
     template<OutputIterator<const char&> OutputIter>
     using FormatArgument = BasicFormatArgument<char, OutputIter>;
 
-    template<Usize ArgCount, OutputIterator<const char&> OutputIter>
-    using FormatArgumentPack = BasicFormatArgumentPack<char, ArgCount, OutputIter>;
+    template<Usize ArgsCount, OutputIterator<const char&> OutputIter>
+    using FormatArgumentPack = BasicFormatArgumentPack<char, ArgsCount, OutputIter>;
 }

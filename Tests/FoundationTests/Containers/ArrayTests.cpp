@@ -109,7 +109,7 @@ TEST(ArrayTests, DefaultConstructor)
 
 TEST(ArrayTests, AllocatorConstructor)
 {
-    TestAllocator allocator = TestAllocator(23);
+    TestAllocator allocator(23);
     auto copied = Array<int, TestAllocator>(allocator);
 
     EXPECT_EQ(allocator.Id, 23);
@@ -121,7 +121,7 @@ TEST(ArrayTests, AllocatorConstructor)
 
 TEST(ArrayTests, CapacityConstructor)
 {
-    TestAllocator allocator = TestAllocator(23);
+    TestAllocator allocator(23);
     auto array = Array<int, TestAllocator>(100, allocator);
 
     EXPECT_EQ(allocator.Id, 23);
@@ -189,7 +189,7 @@ TEST(ArrayTests, CopyConstructor)
     std::vector<int> vector = { 23, 2, 65, 12, 98 };
 
     Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(33));
-    auto copy = array;
+    Array<int, TestAllocator> copy = array;     // NOLINT: Unnecessary copy construction.
 
     EXPECT_EQ(array.GetAllocator().Id, 33);
     EXPECT_EQ(copy.GetAllocator().Id, 33);
@@ -265,7 +265,7 @@ TEST(ArrayTests, MoveAssign)
 
 TEST(ArrayTests, InitializerListAssign)
 {
-    TestAllocator allocator = TestAllocator(42);
+    TestAllocator allocator(42);
 
     std::vector<int> vector = { 1, 2, 3, 4, 4, 1, 2 };
     Array<int, TestAllocator> array({ 1, 2, 3, 52, 21 }, allocator);
@@ -677,7 +677,9 @@ TEST(ArrayTests, RemoveUnsorted)
 
     for (Usize i = 0; i < vector.size(); ++i)
     {
-        EXPECT_NE(Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]), array.GetEnd());
+        EXPECT_NE(Algorithms::Find(
+            array.GetBegin(), array.GetEnd(), vector[i]),
+            array.GetEnd());
     }
 
     array.Clear();
@@ -696,18 +698,22 @@ TEST(ArrayTests, RemoveUnsortedRange)
     EXPECT_EQ(array.Size(), vector.size());
     for (std::size_t i = 0; i < array.Size(); ++i)
     {
-        EXPECT_NE(Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]), array.GetEnd());
+        EXPECT_NE(
+            Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]),
+            array.GetEnd());
     }
 
-    array.Remove(array.GetBegin(), array.GetBegin());
+    array.RemoveUnsorted(array.GetBegin(), array.GetBegin());
 
     EXPECT_EQ(array.Size(), vector.size());
     for (std::size_t i = 0; i < array.Size(); ++i)
     {
-        EXPECT_NE(Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]), array.GetEnd());
+        EXPECT_NE(
+            Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]),
+            array.GetEnd());
     }
 
-    array.Remove(array.GetBegin(), array.GetEnd());
+    array.RemoveUnsorted(array.GetBegin(), array.GetEnd());
     EXPECT_EQ(array.Size(), 0);
 
     Array<int> array2 = { 54, 92, 172, 5 };
