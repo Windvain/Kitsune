@@ -10,10 +10,7 @@ namespace Kitsune
     template<typename T>
     concept Deleter =
         std::default_initializable<T> &&
-        std::copy_constructible<T> &&
-
-        std::is_copy_assignable_v<T> &&
-        std::is_move_assignable_v<T> &&
+        std::copyable<T> &&
 
         requires (T deleter)
         {

@@ -1,14 +1,15 @@
 #pragma once
 
-#include "Foundation/Templates/IsAnyOf.h"
+#include "Foundation/Meta/RemoveCv.h"
+#include "Foundation/Concepts/AnyOf.h"
 
 namespace Kitsune
 {
     // Describes a C++ native character type. Could be `char`, `wchar_t`, `char8_t`,
     // `char16_t` or `char32_t`.
     template<typename T>
-    concept Character = IsAnyOf<std::remove_cv_t<T>, char, wchar_t,
-                                char8_t, char16_t, char32_t>;
+    concept Character = AnyOf<RemoveCv<T>, char, wchar_t,
+                              char8_t, char16_t, char32_t>;
 
     // Describes a character which has a size of 8 bits, and that can be
     // used for storing UTF-8 code units.

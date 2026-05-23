@@ -32,6 +32,7 @@ add_library(KitsuneEngine STATIC
     "Foundation/Common/Predefined.h"
     "Foundation/Common/Types.h"
 
+    "Foundation/Concepts/AnyOf.h"
     "Foundation/Concepts/Character.h"
     "Foundation/Concepts/Comparable.h"
     "Foundation/Concepts/Container.h"
@@ -116,7 +117,6 @@ add_library(KitsuneEngine STATIC
 
     "Foundation/Templates/Exchange.h"
     "Foundation/Templates/Forward.h"
-    "Foundation/Templates/IsAnyOf.h"
     "Foundation/Templates/Move.h"
     "Foundation/Templates/Swap.h"
 

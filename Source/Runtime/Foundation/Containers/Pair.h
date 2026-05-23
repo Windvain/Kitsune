@@ -3,6 +3,7 @@
 #include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Forward.h"
 
+#include "Foundation/Concepts/Swappable.h"
 #include "Foundation/Concepts/Comparable.h"
 
 namespace Kitsune
@@ -26,21 +27,22 @@ namespace Kitsune
         }
 
         template<typename T2, typename U2>
-            requires std::constructible_from<T, T2> && std::constructible_from<U, U2>
+            requires std::is_constructible_v<T, T2> && std::is_constructible_v<U, U2>
         inline Pair(T2&& value1, U2&& value2)
             : First(Forward<T2>(value1)), Second(Forward<U2>(value2))
         {
         }
 
         template<typename T2, typename U2>
-            requires std::constructible_from<T, T2> && std::constructible_from<U, U2>
+            requires std::is_constructible_v<T, const T2&> &&
+                     std::is_constructible_v<U, const U2&>
         inline Pair(const Pair<T2, U2>& pair)
             : First(pair.First), Second(pair.Second)
         {
         }
 
         template<typename T2, typename U2>
-            requires std::constructible_from<T, T2> && std::constructible_from<U, U2>
+            requires std::is_constructible_v<T, T2> && std::is_constructible_v<U, U2>
         inline Pair(Pair<T2, U2>&& pair)
             : First(Move(pair.First)), Second(Move(pair.Second))
         {
@@ -54,7 +56,8 @@ namespace Kitsune
         Pair& operator=(Pair&&) = default;
 
         template<typename T2, typename U2>
-            requires std::constructible_from<T, T2> && std::constructible_from<U, U2>
+            requires std::is_assignable_v<T&, const T2&> &&
+                     std::is_assignable_v<U&, const U2&>
         inline Pair& operator=(const Pair<T2, U2>& pair)
         {
             First = pair.First;
@@ -64,7 +67,8 @@ namespace Kitsune
         }
 
         template<typename T2, typename U2>
-            requires std::constructible_from<T, T2> && std::constructible_from<U, U2>
+            requires std::is_assignable_v<T&, T2> &&
+                     std::is_assignable_v<U&, U2>
         inline Pair& operator=(Pair<T2, U2>&& pair)
         {
             First = Move(pair.First);
@@ -75,6 +79,7 @@ namespace Kitsune
 
     public:
         inline void Swap(Pair& pair)
+            requires Swappable<T> && Swappable<U>
         {
             Kitsune::Swap(First, pair.First);
             Kitsune::Swap(Second, pair.Second);

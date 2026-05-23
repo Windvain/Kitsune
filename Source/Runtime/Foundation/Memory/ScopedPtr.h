@@ -11,6 +11,7 @@
 
 #include "Foundation/Templates/Swap.h"
 #include "Foundation/Templates/Exchange.h"
+#include "Foundation/Concepts/Invocable.h"
 
 namespace Kitsune
 {
@@ -30,10 +31,9 @@ namespace Kitsune
             "A reference type cannot be pointed to and therefore is not valid.");
 
         static_assert(
-            std::is_convertible_v<T*, typename Del::ValueType*>,
+            Invocable<Del, T*>,
             "The specified deleter cannot be used to delete an object of "
-            "type T, because T* is not implicitly convertible to a pointer "
-            "to the deleter's value type.");
+            "type T.");
 
     public:
         inline ScopedPtr()
@@ -94,8 +94,8 @@ namespace Kitsune
         }
 
         template<typename U, Deleter OtherDel>
-        inline ScopedPtr& operator=(ScopedPtr<U, OtherDel>&& pointer)
             requires std::is_convertible_v<U*, T*>
+        inline ScopedPtr& operator=(ScopedPtr<U, OtherDel>&& pointer)
         {
             Reset(pointer.Release());
             GetDeleter() = Move(pointer.GetDeleter());

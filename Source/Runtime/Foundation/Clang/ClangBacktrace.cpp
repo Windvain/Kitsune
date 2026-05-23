@@ -29,7 +29,7 @@ namespace Kitsune
     }
 
     static int BacktraceCallback(
-        void* untypedData, std::uintptr_t pc, const char* filename,
+        void* untypedData, Uintptr pc, const char* filename,
         int line, const char* mangledName)
     {
         auto* data = reinterpret_cast<BacktraceData*>(untypedData);

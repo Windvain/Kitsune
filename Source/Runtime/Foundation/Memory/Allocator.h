@@ -11,7 +11,7 @@ namespace Kitsune
     template<typename T>
     concept Allocator =
         std::default_initializable<T> &&
-        std::copy_constructible<T> &&
+        std::copyable<T> &&
 
         Equatable<const T, const T> &&
         requires (T& alloc, void* pointer, Usize size, Usize align)

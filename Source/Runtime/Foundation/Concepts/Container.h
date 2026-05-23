@@ -1,8 +1,6 @@
 #pragma once
 
 #include <concepts>
-#include <type_traits>
-
 #include "Foundation/Common/Types.h"
 
 #include "Foundation/Concepts/Swappable.h"
@@ -16,8 +14,7 @@ namespace Kitsune
     template<typename T>
     concept Container =
         std::default_initializable<T> &&
-        std::copy_constructible<T> &&
-        std::is_copy_assignable_v<T> &&
+        std::copyable<T> &&
 
         Equatable<const T, const T> &&
         Swappable<T> &&
