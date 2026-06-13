@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Foundation/Meta/RemoveCv.h"
 #include "Foundation/Concepts/AnyOf.h"
 
 namespace Kitsune
@@ -8,7 +7,7 @@ namespace Kitsune
     // Describes a C++ native character type. Could be `char`, `wchar_t`, `char8_t`,
     // `char16_t` or `char32_t`.
     template<typename T>
-    concept Character = AnyOf<RemoveCv<T>, char, wchar_t,
+    concept Character = AnyOf<std::remove_cv_t<T>, char, wchar_t,
                               char8_t, char16_t, char32_t>;
 
     // Describes a character which has a size of 8 bits, and that can be

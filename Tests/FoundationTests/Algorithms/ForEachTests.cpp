@@ -1,58 +1,69 @@
-#include "Foundation/Algorithms/ForEach.h"
-
 #include <gtest/gtest.h>
 #include "TestContainer.h"
 
-using namespace Kitsune;
-using namespace Kitsune::Testing;
+#include "Foundation/Algorithms/ForEach.h"
 
-TEST(ForEachTests, ForEach)
+namespace
 {
-    ForwardTestContainer<int, 7> container = { 1, 65, 3, 87, 878, 1, 33 };
-    std::vector<int> vec = { 1, 65, 3, 87, 878, 1, 33 };
+    using namespace Kitsune;
+    using Testing::ForwardTestContainer;
 
-    int iterations = 0;
-    Algorithms::ForEach(container.GetBegin(), container.GetEnd(),
-                        [&](int element)
-                        {
-                            EXPECT_EQ(element, vec[iterations]);
-                            ++iterations;
-                        });
+    // Algorithms::ForEach(Iter, Iter, Func)
+    TEST(ForEachTest, ForEach)
+    {
+        ForwardTestContainer<int, 7> container = { 1, 65, 3, 87, 878, 1, 33 };
+        int iterations = 0;
 
-    EXPECT_EQ(iterations, 7);
-}
+        const auto function = [&](int element) -> void
+        {
+            EXPECT_EQ(element, container[iterations]);
+            ++iterations;
+        };
 
-TEST(ForEachTests, ForEachN)
-{
-    ForwardTestContainer<int, 7> container = { 1, 65, 3, 87, 878, 1, 33 };
-    std::vector<int> vec = { 1, 65, 3, 87, 878, 1, 33 };
+        Algorithms::ForEach(container.GetBegin(), container.GetEnd(), function);
+        EXPECT_EQ(iterations, 7);
+    }
 
-    int iterations = 0;
-    Algorithms::ForEachN(container.GetBegin(), 5,
-                         [&](int element)
-                         {
-                             EXPECT_EQ(element, vec[iterations]);
-                             ++iterations;
-                         });
+    // Algorithms::ForEachN(Iter, Size, Func)
+    TEST(ForEachTest, ForEachN)
+    {
+        ForwardTestContainer<int, 7> container = { 1, 65, 3, 87, 878, 1, 33 };
+        int iterations = 0;
 
-    EXPECT_EQ(iterations, 5);
-}
+        const auto function = [&](int element) -> void
+        {
+            EXPECT_EQ(element, container[iterations]);
+            ++iterations;
+        };
 
-TEST(ForEachTests, ForEachIf)
-{
-    ForwardTestContainer<int, 7> container = { 1, 65, 3, 87, 878, 1, 33 };
-    std::vector<int> vec = { 878 };
+        Algorithms::ForEachN(container.GetBegin(), 7, function);
+        EXPECT_EQ(iterations, 7);
+    }
 
-    auto predicate = [](int element) -> bool { return (element % 2) == 0; };
+    // Algorithms::ForEachIf(Iter, Size, Pred, Func)
+    TEST(ForEachTest, ForEachIf)
+    {
+        ForwardTestContainer<int, 7> container = { 1, 65, 3, 87, 878, 1, 33 };
+        std::vector expected = { 878 };
 
-    int iterations = 0;
-    Algorithms::ForEachIf(container.GetBegin(), container.GetEnd(),
-                          predicate,
-                          [&](int element)
-                          {
-                              EXPECT_EQ(element, vec[iterations]);
-                              ++iterations;
-                          });
+        int iterations = 0;
+        const auto function = [&](int element) -> void
+        {
+            EXPECT_EQ(element, expected[iterations]);
+            ++iterations;
+        };
 
-    EXPECT_EQ(iterations, 1);
+        const auto predicate = [](int element) -> bool
+        {
+            return ((element % 2) == 0);
+        };
+
+        Algorithms::ForEachIf(
+            container.GetBegin(),
+            container.GetEnd(),
+            predicate,
+            function);
+
+        EXPECT_EQ(iterations, 1);
+    }
 }

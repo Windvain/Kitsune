@@ -1,9 +1,7 @@
 #include "Foundation/Filesystem/FileStream.h"
-
 #include <Windows.h>
-#include "Foundation/String/TranscodePresets.h"
 
-#include "Foundation/Diagnostics/Assert.h"
+#include "Foundation/String/TranscodePresets.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune::Details
@@ -34,7 +32,7 @@ namespace Kitsune::Details
         case FileOpenMode::OpenOrCreate:
             return OPEN_ALWAYS;
         case FileOpenMode::CreateNew:
-            return CREATE_ALWAYS;
+            return CREATE_NEW;
         case FileOpenMode::Truncate:
             return TRUNCATE_EXISTING;
         }
@@ -42,9 +40,32 @@ namespace Kitsune::Details
         KITSUNE_UNREACHABLE();
     }
 
+    static String GetFullPath(StringView path)
+    {
+        WideString widePath = Utf8ToUtf16<char, wchar_t>(path);
+        DWORD length = ::GetFullPathNameW(widePath.Raw(), 0, nullptr, nullptr);
+
+        if (length == 0)
+        {
+            throw SystemException(
+                "Failed to convert the path from a relative "
+                "path to an absolute path.");
+        }
+
+        WideString tempBuffer(length - 1, '\0');
+        ::GetFullPathNameW(widePath.Data(), length, tempBuffer.Data(), nullptr);
+
+        // HACK: GetFullPathNameW() doesn't return the **exact** length of the string,
+        // rather just an estimate that fits the string.
+        // Recalculate the size before returning.
+        WideString absolutePath(tempBuffer.Data());
+        return Utf16ToUtf8<wchar_t, char>(absolutePath);
+    }
+
     // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init)
-    // m_OpenMode and m_AccessMode are not initialized if the constructor
-    // fails to open the file.
+    // m_OpenMode and m_AccessMode are initialized when Open() is called. When the
+    // file object is first created, it does not own any file descriptors/handles,
+    // and therefore shouldn't initialize those variables.
     FileObject::FileObject()
     {
         static_assert(
@@ -56,7 +77,8 @@ namespace Kitsune::Details
 
     FileObject::FileObject(FileObject&& fileObject)
         : m_OpenMode(fileObject.m_OpenMode),
-          m_AccessMode(fileObject.m_AccessMode)
+          m_AccessMode(fileObject.m_AccessMode),
+          m_Name(Move(fileObject.m_Name))
     {
         std::memcpy(m_Buffer, fileObject.m_Buffer, s_BufferSize);
         *reinterpret_cast<HANDLE*>(fileObject.m_Buffer) = INVALID_HANDLE_VALUE;
@@ -76,6 +98,7 @@ namespace Kitsune::Details
 
         m_OpenMode = fileObject.m_OpenMode;
         m_AccessMode = fileObject.m_AccessMode;
+        m_Name = Move(fileObject.m_Name);
 
         return *this;
     }
@@ -88,7 +111,16 @@ namespace Kitsune::Details
         DWORD writtenCount_;
 
         if (m_OpenMode == FileOpenMode::Append)
-            Seek(0, SeekOrigin::End);
+        {
+            LARGE_INTEGER filePointer_;
+            LARGE_INTEGER zero = { .QuadPart = 0 };
+
+            if (!::SetFilePointerEx(handle, zero, &filePointer_, FILE_END))
+            {
+                throw SystemException(
+                    "Failed to set the file pointer to the end of the file.");
+            }
+        }
 
         if (!::WriteFile(handle, data, static_cast<DWORD>(dataCount), &writtenCount_,
                          nullptr))
@@ -197,14 +229,12 @@ namespace Kitsune::Details
         if (IsOpen())
             return false;
 
-        // Sanitize file access mode.
+        // Append and Truncate imply that the file is writable to.
+        if (((openMode == FileOpenMode::Append) ||
+             (openMode == FileOpenMode::Truncate)) &&
+            (accessMode == FileAccessMode::Read))
         {
-            bool assumeWritable =
-                (openMode == FileOpenMode::Append) ||
-                (openMode == FileOpenMode::Truncate);
-
-            if (assumeWritable && (accessMode == FileAccessMode::Read))
-                accessMode = FileAccessMode::ReadWrite;
+            return false;
         }
 
         DWORD desiredAccess = GetDesiredAccess(accessMode);
@@ -229,6 +259,8 @@ namespace Kitsune::Details
 
         m_OpenMode = openMode;
         m_AccessMode = accessMode;
+
+        m_Name = GetFullPath(filePath);
 
         return true;
     }

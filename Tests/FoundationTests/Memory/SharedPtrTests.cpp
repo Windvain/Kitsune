@@ -107,11 +107,23 @@ namespace
         }
 
         NotingAllocator(const NotingAllocator&) = default;
+        NotingAllocator& operator=(const NotingAllocator&) = default;
+
         NotingAllocator(NotingAllocator&& allocator)
             : m_Allocated(std::exchange(allocator.m_Allocated, nullptr)),
               m_Freed(std::exchange(allocator.m_Freed, nullptr))
         {
             allocator.Moved = true;
+        }
+
+        NotingAllocator& operator=(NotingAllocator&& allocator)
+        {
+            m_Allocated = std::exchange(allocator.m_Allocated, nullptr);
+            m_Freed = std::exchange(allocator.m_Freed, nullptr);
+
+            allocator.Moved = true;
+
+            return *this;
         }
 
         ~NotingAllocator() = default;

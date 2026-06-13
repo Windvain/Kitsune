@@ -1,163 +1,203 @@
-#include "Foundation/Algorithms/Uninitialized.h"
-
 #include <cstring>
 #include <gtest/gtest.h>
 
-#include "TestStrings.h"
 #include "TestContainer.h"
-
-using namespace Kitsune;
-using namespace Kitsune::Testing;
+#include "Foundation/Algorithms/Advance.h"
+#include "Foundation/Algorithms/Uninitialized.h"
 
 namespace
 {
-    class A
+    using namespace Kitsune;
+    using Testing::ForwardNonOwningTestContainer;
+
+    class UninitializedTest : public ::testing::Test
     {
-    public:
-        A() = default;
-        explicit A(int x)
-            : Value(x)
+    protected:
+        inline void SetUp() override
         {
+            StringContainer = CreateContainer<std::string, 5>();
+            PointerContainer = CreateContainer<std::shared_ptr<int>, 5>();
         }
 
-        A(const A&) = default;
-        A(A&& object)
+        inline void TearDown() override
         {
-            Value = std::exchange(object.Value, 0);
+            DestroyContainer(StringContainer);
+            DestroyContainer(PointerContainer);
         }
 
-    public:
-        int Value = 0;
+    private:
+        template<typename T, Usize S>
+        inline ForwardNonOwningTestContainer<T, S> CreateContainer()
+        {
+            auto* pointer = static_cast<T*>(std::malloc(sizeof(T) * S));
+            if (pointer == nullptr)
+                throw std::bad_alloc();
+
+            std::memset((void*)pointer, 0b01010101, S * sizeof(T));
+            return ForwardNonOwningTestContainer<T, S>(pointer);
+        }
+
+        template<typename T, Usize S>
+        inline void DestroyContainer(ForwardNonOwningTestContainer<T, S> container)
+        {
+            std::free(container.m_Array);
+        }
+
+    protected:
+        ForwardNonOwningTestContainer<std::string, 5> StringContainer;
+        ForwardNonOwningTestContainer<std::shared_ptr<int>, 5> PointerContainer;
     };
-}
 
-class UninitializedTests : public testing::Test
-{
-protected:
-    template<typename T, Usize S>
-    ForwardNonOwningTestContainer<T, S> CreateContainer()
+    // Algorithms::UninitializedCopy(Iter, Iter, OutIter)
+    TEST_F(UninitializedTest, UninitializedCopy)
     {
-        auto* pointer = static_cast<T*>(std::malloc(sizeof(T) * S));
-        if (pointer == nullptr)
-            throw std::bad_alloc();
+        std::shared_ptr<int> array[5] = {
+            std::make_shared<int>(10),
+            std::make_shared<int>(1140),
+            std::make_shared<int>(210),
+            std::make_shared<int>(1560),
+            std::make_shared<int>(2011),
+        };
 
-        std::memset((void*)pointer, 0b01010101, S * sizeof(T));
-        return ForwardNonOwningTestContainer<T, S>(pointer);
+        auto iterator = Algorithms::UninitializedCopy(
+            array,
+            array + KITSUNE_ARRAY_SIZE(array),
+            PointerContainer.GetBegin());
+
+        EXPECT_EQ(iterator, PointerContainer.GetEnd());
+
+        for (int index = 0; index < StringContainer.Size(); ++index)
+        {
+            EXPECT_EQ(PointerContainer[index], array[index]);
+            EXPECT_EQ(PointerContainer[index].use_count(), 2);
+        }
+
+        std::destroy_n(PointerContainer.m_Array, PointerContainer.Size());
     }
 
-    template<typename T, Usize S>
-    void DestroyContainer(ForwardNonOwningTestContainer<T, S> container)
+    // Algorithms::UninitializedCopyN(Iter, Size, OutIter)
+    TEST_F(UninitializedTest, UninitializedCopyN)
     {
-        std::free(container.m_Array);
+        std::shared_ptr<int> array[5] = {
+            std::make_shared<int>(10),
+            std::make_shared<int>(1140),
+            std::make_shared<int>(210),
+            std::make_shared<int>(1560),
+            std::make_shared<int>(2011),
+        };
+
+        auto iterator = Algorithms::UninitializedCopyN(
+            array,
+            KITSUNE_ARRAY_SIZE(array),
+            PointerContainer.GetBegin());
+
+        EXPECT_EQ(iterator, PointerContainer.GetEnd());
+
+        for (int index = 0; index < PointerContainer.Size(); ++index)
+        {
+            EXPECT_EQ(PointerContainer[index], array[index]);
+            EXPECT_EQ(PointerContainer[index].use_count(), 2);
+        }
+
+        std::destroy_n(PointerContainer.m_Array, PointerContainer.Size());
     }
-};
 
-TEST_F(UninitializedTests, UninitializedCopy)
-{
-    std::string array[5] = { "Hello", "there", "this", "is", "text" };
-    auto container = this->CreateContainer<std::string, 5>();
+    // Algorithms::UninitializedMove(Iter, Iter, OutIter)
+    TEST_F(UninitializedTest, UninitializedMove)
+    {
+        int valueArray[5] = { 10, 1140, 210, 1560, 2011 };
+        std::shared_ptr<int> array[5] = {
+            std::make_shared<int>(10),
+            std::make_shared<int>(1140),
+            std::make_shared<int>(210),
+            std::make_shared<int>(1560),
+            std::make_shared<int>(2011),
+        };
 
-    auto it = Algorithms::UninitializedCopy(array, array + 5, container.GetBegin());
-    EXPECT_EQ(it, container.GetEnd());
+        auto iterator = Algorithms::UninitializedMove(
+            array,
+            array + KITSUNE_ARRAY_SIZE(array),
+            PointerContainer.GetBegin());
 
-    std::string* begin = container.m_Array;
-    EXPECT_GENERAL_STREQ(begin[0].c_str(), "Hello");
-    EXPECT_GENERAL_STREQ(begin[1].c_str(), "there");
-    EXPECT_GENERAL_STREQ(begin[2].c_str(), "this");
-    EXPECT_GENERAL_STREQ(begin[3].c_str(), "is");
-    EXPECT_GENERAL_STREQ(begin[4].c_str(), "text");
+        EXPECT_EQ(iterator, PointerContainer.GetEnd());
 
-    std::destroy_n(container.m_Array, 5);
-    this->DestroyContainer(container);
-}
+        for (int index = 0; index < PointerContainer.Size(); ++index)
+        {
+            EXPECT_EQ(*PointerContainer[index], valueArray[index]);
+            EXPECT_EQ(PointerContainer[index].use_count(), 1);
+            EXPECT_EQ(array[index], nullptr);
+        }
 
-TEST_F(UninitializedTests, UninitializedCopyN)
-{
-    std::string array[5] = { "Hello", "there", "this", "is", "text" };
-    auto container = this->CreateContainer<std::string, 5>();
+        std::destroy_n(PointerContainer.m_Array, PointerContainer.Size());
+    }
 
-    auto it = Algorithms::UninitializedCopyN(array, 5, container.GetBegin());
-    EXPECT_EQ(it, container.GetEnd());
+    // Algorithms::UninitializedMoveN(Iter, Size, OutIter)
+    TEST_F(UninitializedTest, UninitializedMoveN)
+    {
+        int valueArray[5] = { 10, 1140, 210, 1560, 2011 };
+        std::shared_ptr<int> array[5] = {
+            std::make_shared<int>(10),
+            std::make_shared<int>(1140),
+            std::make_shared<int>(210),
+            std::make_shared<int>(1560),
+            std::make_shared<int>(2011),
+        };
 
-    std::string* begin = container.m_Array;
-    EXPECT_GENERAL_STREQ(begin[0].c_str(), "Hello");
-    EXPECT_GENERAL_STREQ(begin[1].c_str(), "there");
-    EXPECT_GENERAL_STREQ(begin[2].c_str(), "this");
-    EXPECT_GENERAL_STREQ(begin[3].c_str(), "is");
-    EXPECT_GENERAL_STREQ(begin[4].c_str(), "text");
+        auto iterator = Algorithms::UninitializedMoveN(
+            array,
+            KITSUNE_ARRAY_SIZE(array),
+            PointerContainer.GetBegin());
 
-    std::destroy_n(container.m_Array, 5);
-    this->DestroyContainer(container);
-}
+        EXPECT_EQ(iterator, PointerContainer.GetEnd());
 
-TEST_F(UninitializedTests, UninitializedMove)
-{
-    A array[5] = { A(2), A(543), A(123), A(340), A(11) };
-    auto container = this->CreateContainer<A, 5>();
+        for (int index = 0; index < PointerContainer.Size(); ++index)
+        {
+            EXPECT_EQ(*PointerContainer[index], valueArray[index]);
+            EXPECT_EQ(PointerContainer[index].use_count(), 1);
+            EXPECT_EQ(array[index], nullptr);
+        }
 
-    auto it = Algorithms::UninitializedMove(array, array + 5, container.GetBegin());
-    EXPECT_EQ(it, container.GetEnd());
+        std::destroy_n(PointerContainer.m_Array, PointerContainer.Size());
+    }
 
-    for (Index index = 0; index < 5; ++index)
-        EXPECT_EQ(array[index].Value, 0);
+    // Algorithms::UninitializedFill(Iter, Iter, const T&)
+    TEST_F(UninitializedTest, UninitializedFill)
+    {
+        std::shared_ptr<int> pointer = std::make_shared<int>(5);
+        auto endIterator = PointerContainer.GetBegin();
 
-    A* begin = container.m_Array;
-    EXPECT_EQ(begin[0].Value, 2);
-    EXPECT_EQ(begin[1].Value, 543);
-    EXPECT_EQ(begin[2].Value, 123);
-    EXPECT_EQ(begin[3].Value, 340);
-    EXPECT_EQ(begin[4].Value, 11);
+        Algorithms::Advance(endIterator, PointerContainer.Size());
+        Algorithms::UninitializedFill(
+            PointerContainer.GetBegin(),
+            endIterator,
+            pointer);
 
-    std::destroy_n(container.m_Array, 5);
-    this->DestroyContainer(container);
-}
+        for (int index = 0; index < PointerContainer.Size(); ++index)
+        {
+            EXPECT_EQ(PointerContainer[index], pointer);
+            EXPECT_EQ(PointerContainer[index].use_count(), 6);
+        }
 
-TEST_F(UninitializedTests, UninitializedMoveN)
-{
-    A array[5] = { A(2), A(543), A(123), A(340), A(11) };
-    auto container = this->CreateContainer<A, 5>();
+        std::destroy_n(PointerContainer.m_Array, PointerContainer.Size());
+    }
 
-    auto it = Algorithms::UninitializedMoveN(array, 5, container.GetBegin());
-    EXPECT_EQ(it, container.GetEnd());
+    // Algorithms::UninitializedFillN(Iter, Size, const T&)
+    TEST_F(UninitializedTest, UninitializedFillN)
+    {
+        std::shared_ptr<int> pointer = std::make_shared<int>(5);
+        auto iterator = Algorithms::UninitializedFillN(
+            PointerContainer.GetBegin(),
+            PointerContainer.Size(),
+            pointer);
 
-    for (Index index = 0; index < 5; ++index)
-        EXPECT_EQ(array[index].Value, 0);
+        EXPECT_EQ(iterator, PointerContainer.GetEnd());
 
-    A* begin = container.m_Array;
-    EXPECT_EQ(begin[0].Value, 2);
-    EXPECT_EQ(begin[1].Value, 543);
-    EXPECT_EQ(begin[2].Value, 123);
-    EXPECT_EQ(begin[3].Value, 340);
-    EXPECT_EQ(begin[4].Value, 11);
+        for (int index = 0; index < PointerContainer.Size(); ++index)
+        {
+            EXPECT_EQ(PointerContainer[index], pointer);
+            EXPECT_EQ(PointerContainer[index].use_count(), 6);
+        }
 
-    std::destroy_n(container.m_Array, 5);
-    this->DestroyContainer(container);
-}
-
-TEST_F(UninitializedTests, UninitializedFill)
-{
-    auto container = this->CreateContainer<std::string, 5>();
-    Algorithms::UninitializedFill(container.GetBegin(), container.GetEnd(),
-                                  "Some string");
-
-    for (Index index = 0; index < 5; ++index)
-        EXPECT_EQ(container[index], "Some string");
-
-    std::destroy_n(container.m_Array, 5);
-    this->DestroyContainer(container);
-}
-
-TEST_F(UninitializedTests, UninitializedFillN)
-{
-    auto container = this->CreateContainer<std::string, 5>();
-    auto iter = Algorithms::UninitializedFillN(container.GetBegin(), 5,
-                                  "Some string");
-
-    EXPECT_EQ(iter, container.GetEnd());
-
-    for (Index index = 0; index < 5; ++index)
-        EXPECT_EQ(container[index], "Some string");
-
-    std::destroy_n(container.m_Array, 5);
-    this->DestroyContainer(container);
+        std::destroy_n(PointerContainer.m_Array, PointerContainer.Size());
+    }
 }

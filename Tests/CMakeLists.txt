@@ -47,11 +47,16 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/Diagnostics/BacktraceFrameTests.cpp"
     "FoundationTests/Diagnostics/SourceLocationTests.cpp"
 
+    "FoundationTests/Filesystem/FileStreamTests.cpp"
+
     "FoundationTests/Include/TestContainer.h"
     "FoundationTests/Include/TestIterators.h"
     "FoundationTests/Include/TestStrings.h"
+    "FoundationTests/Include/TrackingAllocator.h"
 
     "FoundationTests/Iterators/BackInsertIteratorTests.cpp"
+    "FoundationTests/Iterators/IteratorTraitsTests.cpp"
+    "FoundationTests/Iterators/ReverseIteratorTests.cpp"
     "FoundationTests/Iterators/ToAddressTests.cpp"
 
     "FoundationTests/Maths/Vector2Tests.cpp"

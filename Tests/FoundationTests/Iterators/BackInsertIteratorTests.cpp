@@ -1,10 +1,10 @@
-#include "Foundation/Iterators/BackInsertIterator.h"
 #include <gtest/gtest.h>
-
-using namespace Kitsune;
+#include "Foundation/Iterators/BackInsertIterator.h"
 
 namespace
 {
+    using namespace Kitsune;
+
     class MyContainer
     {
     public:
@@ -14,81 +14,114 @@ namespace
         using ConstIterator = const int*;
 
     public:
-        void PushBack(int x)
+        MyContainer() = default;
+        MyContainer(const MyContainer&) = default;
+
+        MyContainer& operator=(const MyContainer&) = default;
+
+    public:
+        [[nodiscard]]
+        inline Iterator GetBegin()
         {
-            Vector.push_back(x);
+            return m_Vector.data();
         }
 
-        Usize Size() const
+        [[nodiscard]]
+        inline ConstIterator GetBegin() const
         {
-            return Vector.size();
+            return m_Vector.data();
         }
 
-        bool IsEmpty() const
+        [[nodiscard]]
+        inline Iterator GetEnd()
         {
-            return Vector.empty();
+            return m_Vector.data() + m_Vector.size();
+        }
+
+        [[nodiscard]]
+        inline ConstIterator GetEnd() const
+        {
+            return m_Vector.data() + m_Vector.size();
         }
 
     public:
-        // Unused.
-        int* GetBegin()
+        inline void PushBack(int element)
         {
-            return nullptr;
-        }
-
-        const int* GetBegin() const
-        {
-            return nullptr;
-        }
-
-        int* GetEnd()
-        {
-            return nullptr;
-        }
-
-        const int* GetEnd() const
-        {
-            return nullptr;
-        }
-
-        void Swap(MyContainer& container)
-        {
-            Vector.swap(container.Vector);
-        }
-
-        bool operator==(const MyContainer&) const
-        {
-            return true;
+            m_Vector.push_back(element);
         }
 
     public:
-        std::vector<int> Vector;
+        [[nodiscard]]
+        inline Usize Size() const
+        {
+            return m_Vector.size();
+        }
+
+        [[nodiscard]]
+        inline bool IsEmpty() const
+        {
+            return m_Vector.empty();
+        }
+
+        [[nodiscard]]
+        inline std::vector<int>& GetVector()
+        {
+            return m_Vector;
+        }
+
+        [[nodiscard]]
+        inline const std::vector<int>& GetVector() const
+        {
+            return m_Vector;
+        }
+
+        inline void Swap(MyContainer& container)
+        {
+            m_Vector.swap(container.m_Vector);
+        }
+
+    public:
+        inline bool operator==(const MyContainer& container) const
+        {
+            return m_Vector == container.m_Vector;
+        }
+
+    private:
+        std::vector<int> m_Vector;
     };
-}
 
-TEST(BackInsertIteratorTests, DefaultConstructor)
-{
-    BackInsertIterator<MyContainer> it{};
-    EXPECT_EQ(it.GetContainer(), nullptr);
-}
+    static_assert(
+        BackInsertableContainer<MyContainer>,
+        "MyContainer does not satisfy the requirements for Container.");
 
-TEST(BackInsertIteratorTests, ContainerConstructor)
-{
-    MyContainer container;
-    BackInsertIterator<MyContainer> it(container);
+    // BackInsertIterator<Container>::BackInsertIterator()
+    TEST(BackInsertIteratorTest, DefaultConstructor)
+    {
+        BackInsertIterator<MyContainer> iterator{};
+        EXPECT_EQ(iterator.GetContainer(), nullptr);
+    }
 
-    EXPECT_EQ(it.GetContainer(), &container);
-}
+    // BackInsertIterator<Container>::BackInsertIterator(Container&)
+    TEST(BackInsertIteratorTest, ContainerConstructor)
+    {
+        MyContainer container;
+        BackInsertIterator<MyContainer> iterator(container);
 
-TEST(BackInsertIteratorTests, Assign)
-{
-    MyContainer container;
-    BackInsertIterator<MyContainer> it(container);
+        EXPECT_EQ(iterator.GetContainer(), &container);
+    }
 
-    it = 27;
-    it = 3;
+    // BackInsertIterator<Container>::operator=(const ValueType&)
+    TEST(BackInsertIteratorTest, Assign)
+    {
+        MyContainer container;
+        BackInsertIterator<MyContainer> iterator(container);
 
-    EXPECT_EQ(container.Vector.size(), 2);
-    EXPECT_EQ(container.Vector[0], 27);
-    EXPECT_EQ(container.Vector[1], 3);
+        iterator = 27;
+        iterator = 3;
+
+        std::vector<int> expected = { 27, 3 };
+        EXPECT_EQ(container.GetVector(), expected);
+    }
+
+    /* operator++(), operator++(int), and operator*() are no-ops. */
 }

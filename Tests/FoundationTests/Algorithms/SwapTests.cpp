@@ -1,92 +1,89 @@
-#include "Foundation/Templates/Swap.h"
-#include "Foundation/Algorithms/Swap.h"
-
 #include <gtest/gtest.h>
 #include "TestContainer.h"
 
-using namespace Kitsune;
-using namespace Kitsune::Testing;
+#include "Foundation/Templates/Swap.h"
+#include "Foundation/Algorithms/Swap.h"
 
 namespace
 {
-    class A
+    using namespace Kitsune;
+    using namespace Kitsune::Testing;
+
+    class SwapMemberObject
     {
     public:
-        explicit A(int value)
+        inline explicit SwapMemberObject(int value)
             : Value(value)
         {
         }
 
-        void Swap(A& object)
+        // Swaps the two values and increment them by one.
+        inline void Swap(SwapMemberObject& object)
         {
-            Value = 2;
-            object.Value = 2;
+            ++Value;
+            ++object.Value;
+
+            std::swap(Value, object.Value);
         }
 
     public:
-        int Value;
+        int Value = 0;
     };
 
-    class B
+    // Swap(const T&, const T&) -> x.Swap(const T&)
+    TEST(SwapTests, SwapWithMemberFunction)
     {
-    public:
-        explicit B(int value)
-            : Value(value)
-        {
-        }
+        int value1 = 283;
+        int value2 = 123;
 
-        B(B&& object)
-        {
-            Value = object.Value;
-        }
+        SwapMemberObject object1(value1);
+        SwapMemberObject object2(value2);
 
-        B& operator=(B&& object)
-        {
-            Value = object.Value;
-            return *this;
-        }
+        Swap(object1, object2);
 
-    public:
-        int Value;
-    };
-}
+        EXPECT_EQ(object1.Value, value2 + 1);
+        EXPECT_EQ(object2.Value, value1 + 1);
+    }
 
-TEST(SwapTests, SwapWithMemberFunction)
-{
-    A object1(283);
-    A object2(123);
+    // Swap(const T&, const T&) -> Move(x)
+    TEST(SwapTests, SwapWithoutMemberFunction)
+    {
+        int value1 = 283;
+        int value2 = 123;
 
-    Swap(object1, object2);
+        Swap(value1, value2);
 
-    EXPECT_EQ(object1.Value, 2);
-    EXPECT_EQ(object2.Value, 2);
-}
+        EXPECT_EQ(value1, 123);
+        EXPECT_EQ(value2, 283);
+    }
 
-TEST(SwapTests, SwapWithMoves)
-{
-    B object1(283);
-    B object2(123);
+    // Algorithms::Swap(Iter, Iter, OutIter)
+    TEST(SwapTests, SwapAlgorithm)
+    {
+        ForwardTestContainer<SwapMemberObject, 4> container = {
+            SwapMemberObject(23),
+            SwapMemberObject(32),
+            SwapMemberObject(12),
+            SwapMemberObject(234)
+        };
 
-    Swap(object1, object2);
+        ForwardTestContainer<SwapMemberObject, 4> output = {
+            SwapMemberObject(234),
+            SwapMemberObject(76),
+            SwapMemberObject(91),
+            SwapMemberObject(444)
+        };
 
-    EXPECT_EQ(object1.Value, 123);
-    EXPECT_EQ(object2.Value, 283);
-}
+        Algorithms::Swap(container.GetBegin(), container.GetEnd(), output.GetBegin());
 
-TEST(SwapTests, SwapAlgorithm)
-{
-    ForwardTestContainer<B, 4> container = { B(23), B(32), B(12), B(234) };
-    ForwardTestContainer<B, 4> output = { B(234), B(76), B(91), B(444) };
+        EXPECT_EQ(container[0].Value, 235);
+        EXPECT_EQ(container[1].Value, 77);
+        EXPECT_EQ(container[2].Value, 92);
+        EXPECT_EQ(container[3].Value, 445);
 
-    Algorithms::Swap(container.GetBegin(), container.GetEnd(), output.GetBegin());
-
-    EXPECT_EQ(container[0].Value, 234);
-    EXPECT_EQ(container[1].Value, 76);
-    EXPECT_EQ(container[2].Value, 91);
-    EXPECT_EQ(container[3].Value, 444);
-
-    EXPECT_EQ(output[0].Value, 23);
-    EXPECT_EQ(output[1].Value, 32);
-    EXPECT_EQ(output[2].Value, 12);
-    EXPECT_EQ(output[3].Value, 234);
+        EXPECT_EQ(output[0].Value, 24);
+        EXPECT_EQ(output[1].Value, 33);
+        EXPECT_EQ(output[2].Value, 13);
+        EXPECT_EQ(output[3].Value, 235);
+    }
 }

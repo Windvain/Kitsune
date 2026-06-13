@@ -1,21 +1,26 @@
-#include "Foundation/Iterators/ToAddress.h"
-
 #include <gtest/gtest.h>
 #include "TestIterators.h"
 
-using namespace Kitsune;
-using namespace Kitsune::Testing;
+#include "Foundation/Iterators/ToAddress.h"
 
-TEST(ToAddressTests, Pointer)
+namespace
 {
-    int myInteger = 10;
-    EXPECT_EQ(ToAddress(&myInteger), &myInteger);
-}
+    using namespace Kitsune;
+    using Testing::ForwardIterator;
 
-TEST(ToAddressTests, Iterator)
-{
-    int myInteger = 10;
-    ForwardIterator<int> iter(&myInteger);
+    // ToAddress(T*)
+    TEST(ToAddressTests, Pointer)
+    {
+        int myInteger = 10;
+        EXPECT_EQ(ToAddress(&myInteger), &myInteger);
+    }
 
-    EXPECT_EQ(ToAddress(iter), &myInteger);
+    // ToAddress(Iter)
+    TEST(ToAddressTests, Iterator)
+    {
+        int myInteger = 10;
+        ForwardIterator<int> iter(&myInteger);
+
+        EXPECT_EQ(ToAddress(iter), &myInteger);
+    }
 }

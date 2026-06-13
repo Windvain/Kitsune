@@ -23,73 +23,73 @@ namespace Kitsune
     }
 
     // The base concept of an iterator.
-    template<typename It>
+    template<typename Iter>
     concept Iterator =
-        std::default_initializable<It> &&
-        std::copyable<It> &&
-        requires (It iterator)
+        std::default_initializable<Iter> &&
+        std::copyable<Iter> &&
+        requires (Iter iterator)
         {
             { *iterator  } -> Details::CanReference_;
-            { ++iterator } -> std::same_as<It&>;
-            { iterator++ } -> std::same_as<It>;
+            { ++iterator } -> std::same_as<Iter&>;
+            { iterator++ } -> std::same_as<Iter>;
 
-            typename IteratorTraits<It>::ValueType;
-            typename IteratorTraits<It>::DifferenceType;
+            typename IteratorTraits<Iter>::ValueType;
+            typename IteratorTraits<Iter>::DifferenceType;
         };
 
     // Describes an iterator which provides a mechanism for writing/outputting.
-    template<typename It, typename T>
+    template<typename Iter, typename T>
     concept OutputIterator =
-        Iterator<It> &&
-        requires (It iterator, T&& val)
+        Iterator<Iter> &&
+        requires (Iter iterator, T&& val)
         {
             *(iterator++) = Forward<T>(val);
         };
 
     // Describes an iterator which provides a mechanism for reading data.
-    template<typename It>
+    template<typename Iter>
     concept InputIterator =
-        Iterator<It> &&
-        requires (It iterator)
+        Iterator<Iter> &&
+        requires (Iter iterator)
         {
-            { *iterator } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
+            { *iterator } -> std::same_as<typename IteratorTraits<Iter>::ValueType&>;
         };
 
     // Describes an `InputIterator` which can be compared with itself.
-    template<typename It>
-    concept ForwardIterator = InputIterator<It> &&
-                              Equatable<const It, const It>;
+    template<typename Iter>
+    concept ForwardIterator = InputIterator<Iter> &&
+                              Equatable<const Iter, const Iter>;
 
     // Describes a `ForwardIterator` which can be incremented and decremented.
-    template<typename It>
+    template<typename Iter>
     concept BidirectionalIterator =
-        ForwardIterator<It> &&
-        requires (It iterator)
+        ForwardIterator<Iter> &&
+        requires (Iter iterator)
         {
-            { --iterator } -> std::same_as<It&>;
-            { iterator-- } -> std::same_as<It>;
+            { --iterator } -> std::same_as<Iter&>;
+            { iterator-- } -> std::same_as<Iter>;
         };
 
     // Describes a `BidirectionalIterator` which provides constant time
     // advancement of the iterator.
-    template<typename It>
+    template<typename Iter>
     concept RandomAccessIterator =
-        BidirectionalIterator<It> &&
-        Comparable<const It, const It> &&
-        requires (It iter, const It const_iter,
-                  typename IteratorTraits<It>::DifferenceType n)
+        BidirectionalIterator<Iter> &&
+        Comparable<const Iter, const Iter> &&
+        requires (Iter iter, const Iter const_iter,
+                  typename IteratorTraits<Iter>::DifferenceType n)
         {
-            { iter += n } -> std::same_as<It&>;
-            { const_iter + n } -> std::same_as<It>;
-            { n + const_iter } -> std::same_as<It>;
-            { iter -= n } -> std::same_as<It&>;
-            { const_iter - n } -> std::same_as<It>;
+            { iter += n } -> std::same_as<Iter&>;
+            { const_iter + n } -> std::same_as<Iter>;
+            { n + const_iter } -> std::same_as<Iter>;
+            { iter -= n } -> std::same_as<Iter&>;
+            { const_iter - n } -> std::same_as<Iter>;
             { const_iter - const_iter } -> std::same_as<decltype(n)>;
 
-            { const_iter[n] } -> std::same_as<typename IteratorTraits<It>::ValueType&>;
+            { const_iter[n] } -> std::same_as<typename IteratorTraits<Iter>::ValueType&>;
 
             {
                 ToAddress(const_iter)
-            } -> std::same_as<typename IteratorTraits<It>::ValueType*>;
+            } -> std::same_as<typename IteratorTraits<Iter>::ValueType*>;
         };
 }

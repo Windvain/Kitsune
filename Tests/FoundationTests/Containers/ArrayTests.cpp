@@ -1,827 +1,1194 @@
-#include "Foundation/Containers/Array.h"
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "TestContainer.h"
-#include "Foundation/Algorithms/Find.h"
-#include "Foundation/Concepts/Container.h"
+#include "TrackingAllocator.h"
 
-using namespace Kitsune;
-using namespace Kitsune::Testing;
+#include "Foundation/Containers/Array.h"
+#include "Foundation/Concepts/Container.h"
 
 namespace
 {
-    class NotingAllocator
-    {
-    public:
-        NotingAllocator() = default;
-        NotingAllocator(void** allocator, void** freed)
-            : m_Allocated(allocator), m_Freed(freed)
-        {
-        }
+    using namespace Kitsune;
+    using Testing::ForwardTestContainer, Testing::TrackingAllocator;
 
-        NotingAllocator(const NotingAllocator&) = default;
-        NotingAllocator(NotingAllocator&& allocator)
-            : m_Allocated(std::exchange(allocator.m_Allocated, nullptr)),
-              m_Freed(std::exchange(allocator.m_Freed, nullptr))
-        {
-        }
-
-        ~NotingAllocator() = default;
-
-    public:
-        void* Allocate(Usize size, Usize align = __STDCPP_DEFAULT_NEW_ALIGNMENT__)
-        {
-            void* ptr = Memory::Allocate(size, align);
-            if (m_Allocated)
-                *m_Allocated = ptr;
-
-            return ptr;
-        }
-
-        void Free(void* ptr, Usize size)
-        {
-            if (m_Freed)
-                *m_Freed = ptr;
-
-            Memory::Free(ptr, size);
-        }
-
-    private:
-        void** m_Allocated = nullptr;
-        void** m_Freed = nullptr;
-    };
-
-    [[maybe_unused]]
-    bool operator==(const NotingAllocator&, const NotingAllocator&)
-    {
-        return true;
-    }
-
-    class TestAllocator : public Kitsune::GlobalAllocator
+    class TestAllocator : public GlobalAllocator
     {
     public:
         TestAllocator() = default;
-        explicit TestAllocator(int id)
+        inline TestAllocator(int id)
             : Id(id)
         {
         }
 
+        TestAllocator(const TestAllocator&) = default;
         TestAllocator(TestAllocator&& allocator)
             : Id(std::exchange(allocator.Id, 0))
         {
         }
 
-        TestAllocator& operator=(TestAllocator&& a)
-        {
-            Id = std::exchange(a.Id, 0);
-            return *this;
-        }
-
         ~TestAllocator() = default;
 
     public:
-        TestAllocator(const TestAllocator&) = default;
-        TestAllocator& operator=(const TestAllocator&) = default;
-
-    public:
-        bool operator==(const TestAllocator& allocator) const
+        TestAllocator& operator=(const TestAllocator& allocator)
         {
-            return (Id == allocator.Id);
+            Id = allocator.Id;
+            return *this;
+        }
+
+        TestAllocator& operator=(TestAllocator&& allocator)
+        {
+            Id = std::exchange(allocator.Id, 0);
+            return *this;
         }
 
     public:
         int Id = 0;
     };
-}
 
-static_assert(
-    Container<Array<int>>,
-    "Array does not satisfy the Container concept.");
+    static_assert(
+        Container<Array<std::string>>,
+        "The Array<T, Alloc> class does not satisfy the requirements for being a Container.");
 
-TEST(ArrayTests, DefaultConstructor)
-{
-    Array<int> array;
-
-    EXPECT_EQ(array.Size(), 0);
-    EXPECT_EQ(array.Capacity(), 0);
-    EXPECT_EQ(array.Data(), nullptr);
-}
-
-TEST(ArrayTests, AllocatorConstructor)
-{
-    TestAllocator allocator(23);
-    auto copied = Array<int, TestAllocator>(allocator);
-
-    EXPECT_EQ(allocator.Id, 23);
-    EXPECT_EQ(copied.Data(), nullptr);
-    EXPECT_EQ(copied.GetAllocator().Id, 23);
-    EXPECT_GE(copied.Capacity(), 0);
-    EXPECT_EQ(copied.Size(), 0);
-}
-
-TEST(ArrayTests, CapacityConstructor)
-{
-    TestAllocator allocator(23);
-    auto array = Array<int, TestAllocator>(100, allocator);
-
-    EXPECT_EQ(allocator.Id, 23);
-    EXPECT_EQ(array.GetAllocator().Id, 23);
-    EXPECT_GE(array.Capacity(), 100);
-    EXPECT_EQ(array.Size(), 0);
-
-    auto empty = Array<int, TestAllocator>(0, TestAllocator(12));
-    EXPECT_EQ(empty.GetAllocator().Id, 12);
-    EXPECT_EQ(empty.Capacity(), 0);
-    EXPECT_EQ(empty.Size(), 0);
-    EXPECT_EQ(empty.Data(), nullptr);
-}
-
-TEST(ArrayTests, FillConstructor)
-{
-    TestAllocator allocator(22);
-    Array<int, TestAllocator> array(6, int(97), allocator);
-
-    EXPECT_EQ(allocator.Id, 22);
-    EXPECT_EQ(array.GetAllocator().Id, 22);
-
-    EXPECT_EQ(array.Size(), 6);
-
-    for (int element : array)
-        EXPECT_EQ(element, 97);
-}
-
-TEST(ArrayTests, RangeConstructor)
-{
-    TestAllocator allocator(22);
-    std::vector<int> vector = { 1, 2, 3, 4, 56 };
-
-    ForwardTestContainer<int, 5> container({ 1, 2, 3, 4, 56 });
-    Array<int, TestAllocator> array(
-        container.GetBegin(), container.GetEnd(), allocator);
-
-    EXPECT_EQ(allocator.Id, 22);
-    EXPECT_EQ(array.GetAllocator().Id, 22);
-
-    EXPECT_EQ(array.Size(), 5);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-}
-
-TEST(ArrayTests, InitializerListConstructor)
-{
-    TestAllocator allocator(22);
-
-    std::vector<int> vector = { 1, 2, 3, 4, 56 };
-    Array<int, TestAllocator> array({ 1, 2, 3, 4, 56 }, allocator);
-
-    EXPECT_EQ(allocator.Id, 22);
-    EXPECT_EQ(array.GetAllocator().Id, 22);
-
-    EXPECT_EQ(array.Size(), 5);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-}
-
-TEST(ArrayTests, CopyConstructor)
-{
-    std::vector<int> vector = { 23, 2, 65, 12, 98 };
-
-    Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(33));
-    Array<int, TestAllocator> copy = array;     // NOLINT: Unnecessary copy construction.
-
-    EXPECT_EQ(array.GetAllocator().Id, 33);
-    EXPECT_EQ(copy.GetAllocator().Id, 33);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
+    // Array<T, Alloc>::Array()
+    TEST(ArrayTest, DefaultConstructor)
     {
-        EXPECT_EQ(array[i], vector[i]);
-        EXPECT_EQ(copy[i], vector[i]);
-    }
-}
+        Array<int, TrackingAllocator> array;
+        EXPECT_EQ(array.GetAllocator().AllocationCount(), 0);
 
-TEST(ArrayTests, MoveConstructor)
-{
-    Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(33));
-    std::vector<int> vector = { 23, 2, 65, 12, 98 };
-
-    auto movedArray = std::move(array);
-
-    EXPECT_EQ(movedArray.Size(), 5);
-    for (std::size_t i = 0; i < movedArray.Size(); ++i)
-        EXPECT_EQ(movedArray[i], vector[i]);
-
-    EXPECT_EQ(array.Size(), 0);
-
-    EXPECT_EQ(array.GetAllocator().Id, 0);
-    EXPECT_EQ(movedArray.GetAllocator().Id, 33);
-}
-
-TEST(ArrayTests, Destructor)
-{
-    int* allocated = (int*)32;
-    int* freed = (int*)3;
-
-    {
-        auto array = Array<int, NotingAllocator>(
-            { 3, 43, 451, 598, 1 },
-            NotingAllocator((void**)&allocated, (void**)&freed));
+        EXPECT_EQ(array.Size(), 0);
+        EXPECT_EQ(array.Capacity(), 0);
+        EXPECT_EQ(array.Data(), nullptr);
     }
 
-    EXPECT_EQ(allocated, freed);
-}
-
-TEST(ArrayTests, CopyAssign)
-{
-    Array<int, TestAllocator> array({ 1, 34, 65, 234, 123 }, TestAllocator(321));
-    Array<int, TestAllocator> copiedArray({ 234, 54 }, TestAllocator(32));
-
-    array = copiedArray;
-
-    EXPECT_EQ(array.GetAllocator(), copiedArray.GetAllocator());
-    EXPECT_EQ(array.Size(), copiedArray.Size());
-
-    for (Usize i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(copiedArray[i], array[i]);
-}
-
-TEST(ArrayTests, MoveAssign)
-{
-    Array<int, TestAllocator> array({ 1, 2, 3, 52, 21 }, TestAllocator(32));
-
-    TestAllocator allocator = TestAllocator(74);
-    Array<int, TestAllocator> movedArray({ 1, 25, 124, 13 }, allocator);
-
-    std::vector<int> vector = { 1, 25, 124, 13 };
-    array = std::move(movedArray);
-
-    EXPECT_EQ(array.GetAllocator(), allocator);
-    EXPECT_EQ(array.Size(), 4);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-}
-
-TEST(ArrayTests, InitializerListAssign)
-{
-    TestAllocator allocator(42);
-
-    std::vector<int> vector = { 1, 2, 3, 4, 4, 1, 2 };
-    Array<int, TestAllocator> array({ 1, 2, 3, 52, 21 }, allocator);
-
-    array = { 1, 2, 3, 4, 4, 1, 2 };
-
-    EXPECT_EQ(array.GetAllocator(), allocator);
-    EXPECT_EQ(array.Size(), 7);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    array = { /* ... */ };
-
-    EXPECT_EQ(array.GetAllocator(), allocator);
-    EXPECT_EQ(array.Size(), 0);
-}
-
-TEST(ArrayTests, Subscript)
-{
-    Array<int> array = { 1, 2, 3, 45, 21 };
-    for (Index i = 0; i < 5; ++i)
-        EXPECT_EQ(&array[i], &array.Data()[i]);
-
-    EXPECT_THROW(array[5], OutOfRangeException);
-}
-
-TEST(ArrayTests, FrontBack)
-{
-    Array<int> array = { 1, 2, 43, 123, 451, 123 };
-    Array<int> empty(53);
-
-    EXPECT_EQ(&array.Front(), array.Data());
-    EXPECT_EQ(&array.Back(), array.Data() + array.Size() - 1);
-
-    EXPECT_THROW(KITSUNE_UNUSED(empty.Back()), OutOfRangeException);
-    EXPECT_THROW(KITSUNE_UNUSED(empty.Front()), OutOfRangeException);
-}
-
-TEST(ArrayTests, IsEmpty)
-{
-    Array<int> array = { 1, 2, 323, 432, 123 };
-    Array<int> empty(52);
-
-    ASSERT_EQ(array.Size(), 5);
-    ASSERT_EQ(empty.Size(), 0);
-
-    EXPECT_FALSE(array.IsEmpty());
-    EXPECT_TRUE(empty.IsEmpty());
-}
-
-TEST(ArrayTests, Iterators)
-{
-    Array<int> array = { 54, 12, 390, 16 };
-
-    EXPECT_EQ(ToAddress(array.GetBegin()), array.Data());
-    EXPECT_EQ(ToAddress(array.GetReverseBegin()), &array.Back());
-
-    EXPECT_EQ(array.GetEnd(), array.GetBegin() + array.Size());
-    EXPECT_EQ(array.GetReverseEnd(), array.GetReverseBegin() + array.Size());
-}
-
-TEST(ArrayTests, Reserve)
-{
-    Array<int> array = { 32, 5, 12, 54 };
-    std::vector<int> vector = { 32, 5, 12, 54 };
-
-    Usize prevCapacity = array.Capacity();
-    array.Reserve(1);
-
-    EXPECT_GE(array.Capacity(), prevCapacity);
-    EXPECT_EQ(array.Size(), 4);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    array.Reserve(4);
-
-    EXPECT_GE(array.Capacity(), prevCapacity);
-    EXPECT_EQ(array.Size(), 4);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    array.Reserve(12);
-
-    EXPECT_GE(array.Capacity(), 12);
-    EXPECT_EQ(array.Size(), 4);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-}
-
-TEST(ArrayTests, ShrinkToFit)
-{
-    Array<int> array = { 1, 2, 334, 532 };
-    std::vector<int> vector = { 1, 2, 334, 532 };
-
-    array.Reserve(100);
-
-    ASSERT_GE(array.Capacity(), 100);
-    array.ShrinkToFit();
-
-    EXPECT_EQ(array.Size(), 4);
-    EXPECT_EQ(array.Capacity(), 4);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-}
-
-TEST(ArrayTests, Resize)
-{
-    Array<int> array = { 938, 123, 12, 499, 72 };
-    array.Resize(array.Size());     // No-op
-
-    int expected1[5] = { 938, 123, 12, 499, 72 };
-    EXPECT_EQ(array.Size(), 5);
-
-    for (Index i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array.Data()[i], expected1[i]);
-
-    array.Resize(3);    // Truncates array.
-
-    int expected2[3] = { 938, 123, 12 };
-    EXPECT_EQ(array.Size(), 3);
-
-    for (Index i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array.Data()[i], expected2[i]);
-
-    array.Resize(6);    // Extends array.
-
-    int expected3[6] = { 938, 123, 12, 0, 0, 0 };
-    EXPECT_EQ(array.Size(), 6);
-
-    for (Index i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array.Data()[i], expected3[i]);
-
-    array.Resize(8, int(9));        // Extends array with int(9).
-
-    int expected4[8] = { 938, 123, 12, 0, 0, 0, 9, 9 };
-    EXPECT_EQ(array.Size(), 8);
-
-    for (Index i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array.Data()[i], expected4[i]);
-}
-
-TEST(ArrayTests, Clear)
-{
-    Array<int> array = { 32, 654, 123, 32, 983, 435 };
-    array.Clear();
-
-    EXPECT_EQ(array.Size(), 0);
-}
-
-TEST(ArrayTests, InsertCopy)
-{
-    Array<int> array = { 32, 54, 12, 9834, 9 };
-    std::vector<int> vector = { 3, 32, 54, 12, 9834, 9 };
-
-    int value1(3);
-    auto iter = array.Insert(array.GetBegin(), value1);
-
-    EXPECT_EQ(iter, array.GetBegin());
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    std::vector<int> vec2 = { 3, 32, 54, 4, 12, 9834, 9 };
-
-    int value2(4);
-    auto iter2 = array.Insert(array.GetBegin() + 3, value2);
-
-    EXPECT_EQ(iter2, array.GetBegin() + 3);
-    EXPECT_TRUE(array[3]);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec2[i]);
-
-    std::vector<int> vec3 = { 3, 32, 54, 4, 12, 9834, 9, 5 };
-
-    int value3(5);
-    auto iter3 = array.Insert(array.GetEnd(), value3);
-
-    EXPECT_EQ(iter3, array.GetEnd() - 1);
-    EXPECT_TRUE(array.Back());
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec3[i]);
-
-    int value4(4);
-    EXPECT_THROW(array.Insert(array.GetEnd() + 1, value4), OutOfRangeException);
-}
-
-TEST(ArrayTests, InsertMove)
-{
-    Array<int> array = { 32, 54, 12, 9834, 9 };
-    std::vector<int> vector = { 3, 32, 54, 12, 9834, 9 };
-
-    auto iter = array.Insert(array.GetBegin(), int(3));
-    EXPECT_EQ(iter, array.GetBegin());
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    std::vector<int> vec2 = { 3, 32, 54, 4, 12, 9834, 9 };
-    auto iter2 = array.Insert(array.GetBegin() + 3, int(4));
-
-    EXPECT_EQ(iter2, array.GetBegin() + 3);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec2[i]);
-
-    std::vector<int> vec3 = { 3, 32, 54, 4, 12, 9834, 9, 5 };
-    auto iter3 = array.Insert(array.GetEnd(), 5);
-
-    EXPECT_EQ(iter3, array.GetEnd() - 1);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec3[i]);
-
-    EXPECT_THROW(array.Insert(array.GetEnd() + 1, int(4)), OutOfRangeException);
-}
-
-TEST(ArrayTests, InsertFill)
-{
-    Array<int> array = { 54, 657, 123, 677 };
-    std::vector<int> vector = { 4, 4, 4, 4, 4, 4, 4, 54, 657, 123, 677 };
-
-    auto iter = array.Insert(array.GetBegin(), 7, int(4));
-    EXPECT_EQ(iter, array.GetBegin());
-
-    EXPECT_EQ(array.Size(), vector.size());
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    std::vector<int> vec2 = { 4, 4, 4, 4, 4, 4, 4, 54, 657, 123, 677, 2, 2, 2 };
-    auto iter2 = array.Insert(array.GetEnd(), 3, int(2));
-
-    EXPECT_EQ(iter2, array.GetBegin() + 11);
-    EXPECT_EQ(array.Size(), vec2.size());
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec2[i]);
-
-    std::vector<int> vec3 = { 4, 4, 4, 4, 4, 4, 4, 54, 0, 0, 657, 123, 677, 2, 2, 2 };
-    auto iter3 = array.Insert(array.GetBegin() + 8, 2, int(0));
-
-    EXPECT_EQ(iter3, array.GetBegin() + 8);
-    EXPECT_EQ(array.Size(), vec3.size());
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec3[i]);
-
-    auto iter4 = array.Insert(array.GetBegin() + 2, 0, int(342));
-    EXPECT_EQ(iter4, array.GetBegin() + 2);
-
-    EXPECT_EQ(array.Size(), vec3.size());
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec3[i]);
-
-    EXPECT_THROW(array.Insert(array.GetBegin() - 1, 2, int(5)), OutOfRangeException);
-}
-
-TEST(ArrayTests, InsertRange)
-{
-    Array<int> array;
-    ForwardTestContainer<int, 3> range1({ 43, 6, 5 });
-
-    auto iter = array.Insert(array.GetBegin(), range1.GetBegin(), range1.GetEnd());
-
-    EXPECT_EQ(iter, &array.Front());
-    EXPECT_EQ(array.Size(), 3);
-
-    EXPECT_EQ(array[0], 43);
-    EXPECT_EQ(array[1], 6);
-    EXPECT_EQ(array[2], 5);
-
-    ForwardTestContainer<int, 2> range2({ 3, 55 });
-    auto iter2 = array.Insert(array.GetBegin() + 1, range2.GetBegin(), range2.GetEnd());
-
-    std::vector<int> vec2 = { 43, 3, 55, 6, 5 };
-
-    EXPECT_EQ(iter2, &array.Front() + 1);
-    EXPECT_EQ(array.Size(), 5);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec2[i]);
-
-    auto iter3 = array.Insert(array.GetBegin(), (int*)nullptr, (int*)nullptr);
-    EXPECT_EQ(iter3, array.GetBegin());
-    EXPECT_EQ(array.Size(), 5);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec2[i]);
-
-    ForwardTestContainer<int, 2> range3({ 45, 65 });
-
-    auto iter4 = array.Insert(array.GetEnd(), range3.GetBegin(), range3.GetEnd());
-    std::vector<int> vec4 = { 43, 3, 55, 6, 5, 45, 65 };
-
-    auto expectedIt4 = array.GetEnd();
-    --expectedIt4; --expectedIt4;
-
-    EXPECT_EQ(iter4, expectedIt4);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec4[i]);
-
-    ASSERT_NE(array.GetEnd(), nullptr);
-
-    ForwardTestContainer<int, 2> range4({ 65, 9 });
-    EXPECT_THROW(array.Insert(
-        array.GetBegin() - 1,
-        range4.GetBegin(), range4.GetEnd()), OutOfRangeException);
-}
-
-TEST(ArrayTests, InsertInitializerList)
-{
-    Array<int> array;
-    auto iter = array.Insert(array.GetBegin(), { 43, 6, 5 });
-
-    EXPECT_EQ(iter, &array.Front());
-    EXPECT_EQ(array.Size(), 3);
-
-    EXPECT_EQ(array[0], 43);
-    EXPECT_EQ(array[1], 6);
-    EXPECT_EQ(array[2], 5);
-
-    auto iter2 = array.Insert(array.GetBegin() + 1, { 3, 55 });
-    std::vector<int> vec2 = { 43, 3, 55, 6, 5 };
-
-    EXPECT_EQ(iter2, &array.Front() + 1);
-    EXPECT_EQ(array.Size(), 5);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec2[i]);
-
-    auto iter3 = array.Insert(array.GetBegin(), {  });
-    EXPECT_EQ(iter3, array.GetBegin());
-    EXPECT_EQ(array.Size(), 5);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec2[i]);
-
-    auto iter4 = array.Insert(array.GetEnd(), { 45, 65 });
-    std::vector<int> vec4 = { 43, 3, 55, 6, 5, 45, 65 };
-
-    auto expectedIt4 = array.GetEnd();
-    --expectedIt4; --expectedIt4;
-
-    EXPECT_EQ(iter4, expectedIt4);
-
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vec4[i]);
-
-    ASSERT_NE(array.GetEnd(), nullptr);
-    EXPECT_THROW(array.Insert(array.GetBegin() - 1, { 65, 9 }), OutOfRangeException);
-}
-
-TEST(ArrayTests, Remove)
-{
-    Array<int> array = { 54, 657, 123, 677 };
-    array.Remove(array.GetBegin() + 2);
-
-    EXPECT_EQ(array.Size(), 3);
-
-    EXPECT_EQ(array[0], 54);
-    EXPECT_EQ(array[1], 657);
-    EXPECT_EQ(array[2], 677);
-
-    array.Clear();
-    ASSERT_EQ(array.Size(), 0);
-
-    EXPECT_THROW(array.Remove(array.GetEnd()), OutOfRangeException);
-}
-
-TEST(ArrayTests, RemoveRange)
-{
-    Array<int> array = { 54, 657, 123, 677, 65, 11, 540 };
-    std::vector<int> vector = { 54, 657, 123, 540 };
-
-    array.Remove(array.GetBegin() + 3, array.GetEnd() - 1);
-
-    EXPECT_EQ(array.Size(), vector.size());
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    array.Remove(array.GetBegin(), array.GetBegin());
-
-    EXPECT_EQ(array.Size(), vector.size());
-    for (std::size_t i = 0; i < array.Size(); ++i)
-        EXPECT_EQ(array[i], vector[i]);
-
-    array.Remove(array.GetBegin(), array.GetEnd());
-    EXPECT_EQ(array.Size(), 0);
-
-    Array<int> array2 = { 54, 92, 172, 5 };
-    EXPECT_THROW(array2.Remove(
-        array2.GetBegin(), array2.GetEnd() + 1), OutOfRangeException);
-}
-
-TEST(ArrayTests, RemoveUnsorted)
-{
-    Array<int> array = { 54, 657, 123, 677 };
-    std::vector<int> vector = { 657, 123, 677 };
-
-    array.RemoveUnsorted(array.GetBegin());
-    EXPECT_EQ(array.Size(), 3);
-
-    for (Usize i = 0; i < vector.size(); ++i)
+    // Array<T, Alloc>::Array(const Alloc&)
+    TEST(ArrayTest, AllocatorConstructor)
     {
-        EXPECT_NE(Algorithms::Find(
-            array.GetBegin(), array.GetEnd(), vector[i]),
-            array.GetEnd());
+        TestAllocator allocator(23);
+        Array<int, TestAllocator> array(allocator);
+
+        EXPECT_EQ(array.GetAllocator().Id, allocator.Id);
+
+        EXPECT_EQ(array.Size(), 0);
+        EXPECT_EQ(array.Capacity(), 0);
+        EXPECT_EQ(array.Data(), nullptr);
     }
 
-    array.Clear();
-    ASSERT_EQ(array.Size(), 0);
-
-    EXPECT_THROW(array.RemoveUnsorted(array.GetEnd()), OutOfRangeException);
-}
-
-TEST(ArrayTests, RemoveUnsortedRange)
-{
-    Array<int> array = { 54, 657, 123, 677, 65, 11, 540 };
-    std::vector<int> vector = { 54, 657, 11, 540 };
-
-    array.RemoveUnsorted(array.GetBegin() + 2, array.GetEnd() - 2);
-
-    EXPECT_EQ(array.Size(), vector.size());
-    for (std::size_t i = 0; i < array.Size(); ++i)
+    // Array<T, Alloc>::Array(Usize)
+    TEST(ArrayTest, CapacityConstructor)
     {
-        EXPECT_NE(
-            Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]),
-            array.GetEnd());
+        Array<int, TrackingAllocator> array(100);
+        Usize capacity = array.GetAllocator().AllocationSize(array.Data());
+
+        EXPECT_EQ(array.Size(), 0);
+        EXPECT_EQ(array.GetAllocator().AllocationCount(), 1);
+
+        EXPECT_EQ(array.Capacity(), capacity / sizeof(int));
+        EXPECT_GE(capacity, 100 * sizeof(int));
+
+        Array<int, TestAllocator> array2(100, TestAllocator(12));
+        EXPECT_EQ(array2.Size(), 0);
+        EXPECT_GE(array2.Capacity(), 100);
+        EXPECT_EQ(array2.GetAllocator().Id, 12);
+
+        Array<int, TrackingAllocator> empty(0);
+        EXPECT_EQ(empty.Size(), 0);
+        EXPECT_GE(empty.Capacity(), 0);
+        EXPECT_EQ(empty.GetAllocator().AllocationCount(), 0);
     }
 
-    array.RemoveUnsorted(array.GetBegin(), array.GetBegin());
-
-    EXPECT_EQ(array.Size(), vector.size());
-    for (std::size_t i = 0; i < array.Size(); ++i)
+    // Array<T, Alloc>::Array(Usize, const T&)
+    TEST(ArrayTest, FillConstructor)
     {
-        EXPECT_NE(
-            Algorithms::Find(array.GetBegin(), array.GetEnd(), vector[i]),
-            array.GetEnd());
+        Array<int, TrackingAllocator> array(20, int(97));
+        Usize capacity = array.GetAllocator().AllocationSize(array.Data());
+
+        EXPECT_EQ(array.Size(), 20);
+        EXPECT_EQ(array.Capacity(), capacity / sizeof(int));
+        EXPECT_GE(capacity, 20 * sizeof(int));
+
+        for (int index = 0; index < 20; ++index)
+            EXPECT_EQ(array.Data()[index], 97);
+
+        Array<int, TestAllocator> array2(14, int(33), TestAllocator(4));
+        EXPECT_EQ(array2.GetAllocator().Id, 4);
+
+        EXPECT_EQ(array2.Size(), 14);
+        EXPECT_GE(array2.Capacity(), 14);
+
+        for (int index = 0; index < 14; ++index)
+            EXPECT_EQ(array2.Data()[index], 33);
     }
 
-    array.RemoveUnsorted(array.GetBegin(), array.GetEnd());
-    EXPECT_EQ(array.Size(), 0);
-
-    Array<int> array2 = { 54, 92, 172, 5 };
-    EXPECT_THROW(array2.RemoveUnsorted(
-        array2.GetBegin(), array2.GetEnd() + 1), OutOfRangeException);
-}
-
-TEST(ArrayTests, PushBackCopy)
-{
-    Array<int> array = { 453, 431 };
-    int x = 534;
-
-    array.PushBack(x);
-
-    EXPECT_EQ(array.Size(), 3);
-    EXPECT_EQ(array[0], 453);
-    EXPECT_EQ(array[1], 431);
-    EXPECT_EQ(array[2], 534);
-}
-
-TEST(ArrayTests, PushBackMove)
-{
-    Array<int> array = { 453, 431 };
-    array.PushBack(int(534));
-
-    EXPECT_EQ(array.Size(), 3);
-    EXPECT_EQ(array[0], 453);
-    EXPECT_EQ(array[1], 431);
-    EXPECT_EQ(array[2], 534);
-}
-
-TEST(ArrayTests, EmplaceBack)
-{
-    Array<int> array = { 453, 431 };
-    int& back = array.EmplaceBack(534);
-
-    EXPECT_EQ(&back, &array.Back());
-
-    EXPECT_EQ(array.Size(), 3);
-    EXPECT_EQ(array[0], 453);
-    EXPECT_EQ(array[1], 431);
-    EXPECT_EQ(array[2], 534);
-}
-
-TEST(ArrayTests, PopBack)
-{
-    Array<int> array = { 43, 675, 123 };
-    array.PopBack();
-
-    EXPECT_EQ(array.Size(), 2);
-    EXPECT_EQ(array[0], 43);
-    EXPECT_EQ(array[1], 675);
-
-    array.PopBack();
-    array.PopBack();
-
-    EXPECT_EQ(array.Size(), 0);
-    EXPECT_THROW(array.PopBack(), OutOfRangeException);
-}
-
-TEST(ArrayTests, RangedForLoop)
-{
-    Array<int> array = { 544, 123, 12, 7 };
-    std::vector<int> vector = { 544, 123, 12, 7 };
-
-    int index = 0;
-    for (int element : array)
+    // Array<T, Alloc>::Array(Iter, Iter)
+    TEST(ArrayTest, RangeConstructor)
     {
-        EXPECT_EQ(element, vector[index]);
-        ++index;
+        ForwardTestContainer<int, 5> source = { 23, 4, 1, 343, 9 };
+
+        Array<int, TrackingAllocator> array(source.GetBegin(), source.GetEnd());
+        Usize capacity = array.GetAllocator().AllocationSize(array.Data());
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_EQ(array.Capacity(), capacity / sizeof(int));
+        EXPECT_GE(capacity, source.Size() * sizeof(int));
+
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array.Data()[index], source[index]);
+
+        Array<int, TestAllocator> array2(
+            source.GetBegin(), source.GetEnd(),
+            TestAllocator(7));
+
+        EXPECT_GE(array2.GetAllocator().Id, 7);
+
+        EXPECT_EQ(array2.Size(), 5);
+        EXPECT_GE(array2.Capacity(), 5);
+
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array2.Data()[index], source[index]);
     }
-}
 
-TEST(ArrayTests, Equal)
-{
-    Array<int> array = { 12, 23, 23, 54, 64 };
-    Array<int> array2 = { 12, 23, 23, 54, 64 };
+    // Array<T, Alloc>::Array(std::initializer_list<T>)
+    TEST(ArrayTest, InitializerListConstructor)
+    {
+        std::vector<int> source = { 23, 4, 1, 343, 9 };
 
-    Array<int> diffContents = { 12, 22, 23, 54, 64 };
-    Array<int> diffSize = { 12, 23, 23, 54, 64, 72 };
+        Array<int, TrackingAllocator> array = { 23, 4, 1, 343, 9 };
+        Usize capacity = array.GetAllocator().AllocationSize(array.Data());
 
-    EXPECT_TRUE(array == array2);
-    EXPECT_FALSE(array == diffSize);
-    EXPECT_FALSE(array == diffContents);
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_GE(array.Capacity(), capacity / sizeof(int));
+        EXPECT_GE(capacity, source.size() * sizeof(int));
 
-    EXPECT_FALSE(array != array2);
-    EXPECT_TRUE(array != diffSize);
-    EXPECT_TRUE(array != diffContents);
-}
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array.Data()[index], source[index]);
 
-TEST(ArrayTests, Swap)
-{
-    Array<int> array1 = { 14, 23, 4343, 121 };
-    Array<int> array2 = { 32, 54, 11, 43, 11 };
+        Array<int, TestAllocator> array2({ 23, 4, 1, 343, 9 }, TestAllocator(7));
+        EXPECT_GE(array2.GetAllocator().Id, 7);
 
-    array1.Swap(array2);
+        EXPECT_EQ(array2.Size(), 5);
+        EXPECT_GE(array2.Capacity(), 5);
 
-    EXPECT_EQ(array1.Size(), 5);
-    EXPECT_EQ(array2.Size(), 4);
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array2.Data()[index], source[index]);
+    }
 
-    EXPECT_EQ(array1[0], 32);
-    EXPECT_EQ(array1[1], 54);
-    EXPECT_EQ(array1[2], 11);
-    EXPECT_EQ(array1[3], 43);
-    EXPECT_EQ(array1[4], 11);
+    // Array<T, Alloc>::Array(const Array&)
+    TEST(ArrayTest, CopyConstructor)
+    {
+        Array<std::shared_ptr<int>, TrackingAllocator> array = {
+            std::make_shared<int>(23),
+            std::make_shared<int>(2),
+            std::make_shared<int>(65),
+            std::make_shared<int>(12),
+            std::make_shared<int>(98)
+        };
 
-    EXPECT_EQ(array2[0], 14);
-    EXPECT_EQ(array2[1], 23);
-    EXPECT_EQ(array2[2], 4343);
-    EXPECT_EQ(array2[3], 121);
+        Array<std::shared_ptr<int>, TrackingAllocator> copy = array;
+
+        Usize capacity = array.GetAllocator().AllocationSize(array.Data());
+        Usize copyCapacity = copy.GetAllocator().AllocationSize(copy.Data());
+
+        EXPECT_GE(capacity, 5 * sizeof(std::shared_ptr<int>));
+        EXPECT_GE(copyCapacity, 5 * sizeof(std::shared_ptr<int>));
+
+        EXPECT_EQ(array.Capacity(), capacity / sizeof(std::shared_ptr<int>));
+        EXPECT_EQ(copy.Capacity(), copyCapacity / sizeof(std::shared_ptr<int>));
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_EQ(copy.Size(), 5);
+
+        std::vector<int> expected = { 23, 2, 65, 12, 98 };
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+            EXPECT_EQ(*copy.Data()[index], expected[index]);
+
+            EXPECT_EQ(array.Data()[index].use_count(), 2);
+            EXPECT_EQ(copy.Data()[index].use_count(), 2);
+        }
+    }
+
+    // Array<T, Alloc>::Array(const Array&)
+    TEST(ArrayTest, CopyConstructorCopiesAllocator)
+    {
+        Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(324));
+
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+        Array<int, TestAllocator> copy = array;
+        EXPECT_EQ(array.GetAllocator().Id, 324);
+        EXPECT_EQ(array.GetAllocator(), copy.GetAllocator());
+    }
+
+    // Array<T, Alloc>::Array(Array&&)
+    TEST(ArrayTest, MoveConstructor)
+    {
+        Array<std::shared_ptr<int>, TrackingAllocator> array = {
+            std::make_shared<int>(39),
+            std::make_shared<int>(12),
+            std::make_shared<int>(45),
+            std::make_shared<int>(44),
+            std::make_shared<int>(94)
+        };
+
+        Array<std::shared_ptr<int>, TrackingAllocator> move = std::move(array);
+        Usize capacity = move.GetAllocator().AllocationSize(move.Data());
+
+        EXPECT_GE(capacity, 5 * sizeof(std::shared_ptr<int>));
+        EXPECT_EQ(move.Capacity(), capacity / sizeof(std::shared_ptr<int>));
+        EXPECT_EQ(array.Capacity(), 0);
+
+        EXPECT_EQ(move.Size(), 5);
+        EXPECT_EQ(array.Size(), 0);
+
+        std::vector<int> expected = { 39, 12, 45, 44, 94 };
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(move.Data()[index].use_count(), 1);
+            EXPECT_EQ(*move.Data()[index], expected[index]);
+        }
+    }
+
+    // Array<T, Alloc>::Array(Array&&)
+    TEST(ArrayTest, MoveConstructorMovesAllocator)
+    {
+        Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(324));
+        Array<int, TestAllocator> move = std::move(array);
+
+        EXPECT_EQ(array.GetAllocator().Id, 0);
+        EXPECT_EQ(move.GetAllocator().Id, 324);
+    }
+
+    // Array<T, Alloc>::~Array()
+    TEST(ArrayTest, Destructor)
+    {
+        // TODO: Find a way to test the destructor.
+        EXPECT_TRUE(true);
+    }
+
+    // Array<T, Alloc>::operator=(const Array<T, Alloc>&)
+    TEST(ArrayTest, CopyAssign)
+    {
+        Array<std::shared_ptr<int>, TrackingAllocator> array = {
+            std::make_shared<int>(12),
+            std::make_shared<int>(55),
+            std::make_shared<int>(1),
+            std::make_shared<int>(96),
+            std::make_shared<int>(111)
+        };
+
+        Array<std::shared_ptr<int>, TrackingAllocator> copy = {
+            std::make_shared<int>(34),
+            std::make_shared<int>(65),
+            std::make_shared<int>(3),
+        };
+
+        copy = array;
+
+        Usize capacity = array.GetAllocator().AllocationSize(array.Data());
+        Usize copyCapacity = copy.GetAllocator().AllocationSize(copy.Data());
+
+        EXPECT_EQ(copy.Size(), 5);
+        EXPECT_EQ(array.Size(), 5);
+
+        EXPECT_GE(copyCapacity, 5 * sizeof(std::shared_ptr<int>));
+        EXPECT_EQ(copy.Capacity(), copyCapacity / sizeof(std::shared_ptr<int>));
+
+        EXPECT_GE(capacity, 5 * sizeof(std::shared_ptr<int>));
+        EXPECT_EQ(array.Capacity(), capacity / sizeof(std::shared_ptr<int>));
+
+        std::vector<int> expected = { 12, 55, 1, 96, 111 };
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+            EXPECT_EQ(*copy.Data()[index], expected[index]);
+
+            EXPECT_EQ(array.Data()[index], copy.Data()[index]);
+            EXPECT_EQ(array.Data()[index].use_count(), 2);
+            EXPECT_EQ(copy.Data()[index].use_count(), 2);
+        }
+    }
+
+    // Array<T, Alloc>::operator=(const Array<T, Alloc>&)
+    TEST(ArrayTest, CopyAssignCopiesAllocator)
+    {
+        Array<int, TestAllocator> array({ 1, 32, 561, 12 }, TestAllocator(34));
+        Array<int, TestAllocator> copy({ 32948, 1283, 1282 }, TestAllocator(4341));
+
+        copy = array;
+
+        EXPECT_EQ(array.GetAllocator().Id, 34);
+        EXPECT_EQ(copy.GetAllocator().Id, 34);
+    }
+
+    // Array<T, Alloc>::operator=(Array<T, Alloc>&&)
+    TEST(ArrayTest, MoveAssign)
+    {
+        ForwardTestContainer<std::shared_ptr<int>, 5> source = {
+            std::make_shared<int>(12),
+            std::make_shared<int>(55),
+            std::make_shared<int>(1),
+            std::make_shared<int>(96),
+            std::make_shared<int>(111)
+        };
+
+        Array<std::shared_ptr<int>, TrackingAllocator> array(
+            source.GetBegin(), source.GetEnd());
+
+        Array<std::shared_ptr<int>, TrackingAllocator> move = {
+            std::make_shared<int>(34),
+            std::make_shared<int>(65),
+            std::make_shared<int>(3),
+        };
+
+        move = std::move(array);
+
+        Usize capacity = move.GetAllocator().AllocationSize(move.Data());
+
+        EXPECT_EQ(move.Size(), 5);
+        EXPECT_EQ(array.Size(), 0);
+
+        EXPECT_EQ(array.Capacity(), 0);
+        EXPECT_GE(capacity, 5 * sizeof(std::shared_ptr<int>));
+        EXPECT_EQ(move.Capacity(), capacity / sizeof(std::shared_ptr<int>));
+
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(move.Data()[index], source[index]);
+    }
+
+    // Array<T, Alloc>::operator=(Array<T, Alloc>&&)
+    TEST(ArrayTest, MoveAssignMovesAllocator)
+    {
+        Array<int, TestAllocator> array({ 49, 132, 59, 555, 1 }, TestAllocator(442));
+        Array<int, TestAllocator> move = std::move(array);
+
+        EXPECT_EQ(move.GetAllocator().Id, 442);
+        EXPECT_EQ(array.GetAllocator().Id, 0);
+    }
+
+    // Array<T, Alloc>::operator=(std::initializer_list<T>)
+    TEST(ArrayTest, InitializerListAssign)
+    {
+        Array<int, TrackingAllocator> array = { 34, 65, 3 };
+        array = { 421, 4556, 3291, 9451 };
+
+        Usize copyCapacity = array.GetAllocator().AllocationSize(array.Data());
+
+        EXPECT_EQ(array.Size(), 4);
+        EXPECT_GE(copyCapacity, 4 * sizeof(int));
+        EXPECT_EQ(array.Capacity(), copyCapacity / sizeof(int));
+
+        std::vector<int> expected = { 421, 4556, 3291, 9451 };
+        for (int index = 0; index < 4; ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    // Array<T, Alloc>::operator[](Index)
+    TEST(ArrayTest, Subscript)
+    {
+        Array<int> array = { 1, 2, 3, 45, 21 };
+        const Array<int> constArray = { 1, 2, 3, 45, 21 };
+
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(&array[index], &array.Data()[index]);
+            EXPECT_EQ(&constArray[index], &constArray.Data()[index]);
+        }
+
+        EXPECT_THROW(array[5], OutOfRangeException);
+        EXPECT_THROW(constArray[5], OutOfRangeException);
+    }
+
+    // Array<T, Alloc>::Front()
+    // Array<T, Alloc>::Back()
+    TEST(ArrayTest, FrontBack)
+    {
+        Array<int> array = { 1, 2, 43, 123, 451, 123 };
+        const Array<int> constArray = { 1, 2, 43, 123, 451, 123 };
+
+        Array<int> empty(53);
+        const Array<int> constEmpty(53);
+
+        EXPECT_EQ(&array.Front(), array.Data());
+        EXPECT_EQ(&array.Back(), array.Data() + array.Size() - 1);
+
+        EXPECT_EQ(&constArray.Front(), constArray.Data());
+        EXPECT_EQ(&constArray.Back(), constArray.Data() + constArray.Size() - 1);
+
+        EXPECT_THROW(KITSUNE_UNUSED(empty.Back()), OutOfRangeException);
+        EXPECT_THROW(KITSUNE_UNUSED(empty.Front()), OutOfRangeException);
+
+        EXPECT_THROW(KITSUNE_UNUSED(constEmpty.Back()), OutOfRangeException);
+        EXPECT_THROW(KITSUNE_UNUSED(constEmpty.Front()), OutOfRangeException);
+    }
+
+    /* Tests expect Array<T, Alloc>::Data(), Array<T, Alloc>::GetAllocator(),
+     * Array<T, Alloc>::Size(), and Array<T, Alloc>::Capacity() to work properly.
+     */
+
+    // Array<T, Alloc>::IsEmpty()
+    TEST(ArrayTest, IsEmpty)
+    {
+        Array<int> array = { 843, 12, 11 };
+        Array<int> empty(12);
+
+        ASSERT_EQ(array.Size(), 3);
+        ASSERT_EQ(empty.Size(), 0);
+
+        EXPECT_FALSE(array.IsEmpty());
+        EXPECT_TRUE(empty.IsEmpty());
+    }
+
+    // Array<T, Alloc>::GetBegin()
+    // Array<T, Alloc>::GetEnd()
+    // Array<T, Alloc>::GetReverseBegin()
+    // Array<T, Alloc>::GetReverseEnd()
+    TEST(ArrayTest, Iterators)
+    {
+        Array<int> array = { 54, 12, 390, 16 };
+        const Array<int> constArray = { 54, 12, 390, 16 };
+
+        EXPECT_EQ(ToAddress(array.GetBegin()), array.Data());
+        EXPECT_EQ(ToAddress(array.GetReverseBegin()), &array.Back());
+        EXPECT_EQ(ToAddress(constArray.GetBegin()), constArray.Data());
+        EXPECT_EQ(ToAddress(constArray.GetReverseBegin()), &constArray.Back());
+
+        EXPECT_EQ(array.GetEnd(), array.GetBegin() + array.Size());
+        EXPECT_EQ(array.GetReverseEnd(), array.GetReverseBegin() + array.Size());
+
+        EXPECT_EQ(constArray.GetEnd(), constArray.GetBegin() + constArray.Size());
+        EXPECT_EQ(
+            constArray.GetReverseEnd(),
+            constArray.GetReverseBegin() + constArray.Size());
+    }
+
+    // Array<T, Alloc>::Resize(Usize)
+    TEST(ArrayTest, Reserve)
+    {
+        Array<int> array = { 43, 565, 12, 54, 1 };
+
+        ASSERT_LT(array.Capacity(), 100);
+        array.Reserve(100);
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_GE(array.Capacity(), 100);
+
+        std::vector<int> expected = { 43, 565, 12, 54, 1 };
+        for (int index = 0; index < expected.size(); ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    // Array<T, Alloc>::Reserve(Usize)
+    TEST(ArrayTest, ReserveLessThanCapacity)
+    {
+        Array<int> array = { 43, 565, 12, 54, 1, 45, 12 };
+        Usize capacity = array.Capacity();
+
+        // Reserve less than the capacity.
+        ASSERT_GE(array.Capacity(), 7);
+        array.Reserve(4);
+
+        EXPECT_EQ(array.Size(), 7);
+        EXPECT_GE(array.Capacity(), capacity);
+
+        std::vector<int> expected = { 43, 565, 12, 54, 1, 45, 12 };
+        for (int index = 0; index < expected.size(); ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+
+        // Reserve exactly the capacity.
+        array.Reserve(capacity);
+
+        EXPECT_EQ(array.Size(), 7);
+        EXPECT_GE(array.Capacity(), capacity);
+
+        for (int index = 0; index < expected.size(); ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    // Array<T, Alloc>::ShrinkToFit()
+    TEST(ArrayTest, ShrinkToFit)
+    {
+        Array<int> array = { 123, 56, 12, 7 };
+        if (array.Capacity() == array.Size())
+            array.Reserve(9);
+
+        array.ShrinkToFit();
+        EXPECT_EQ(array.Size(), 4);
+        EXPECT_EQ(array.Capacity(), 4);
+
+        std::vector<int> expected = { 123, 56, 12, 7 };
+        for (int index = 0; index < 4; ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    /* Array<T, Alloc>::Resize(Usize count) is an alias for Resize(count, T()). */
+
+    // Array<T, Alloc>::Resize(Usize)
+    TEST(ArrayTest, ResizeNoOp)
+    {
+        Array<int> array = { 45, 1238, 1238, 945, 1 };
+        array.Resize(array.Size());
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_GE(array.Capacity(), array.Size());
+
+        std::vector<int> expected = { 45, 1238, 1238, 945, 1 };
+        for (int index = 0; index < expected.size(); ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    // Array<T, Alloc>::Resize(Usize)
+    TEST(ArrayTest, ResizeTruncation)
+    {
+        Array<int> array = { 45, 1238, 1238, 945, 1 };
+        array.Resize(3);
+
+        EXPECT_EQ(array.Size(), 3);
+        EXPECT_GE(array.Capacity(), 3);
+
+        std::vector<int> expected = { 45, 1238, 1238 };
+        for (int index = 0; index < expected.size(); ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    // Array<T, Alloc>::Resize(Usize, T)
+    TEST(ArrayTest, ResizeFill)
+    {
+        Array<int> array = { 45, 1238, 1238, 945, 1 };
+        array.Resize(7, int(431));
+
+        EXPECT_EQ(array.Size(), 7);
+        EXPECT_GE(array.Capacity(), 7);
+
+        std::vector<int> expected = { 45, 1238, 1238, 945, 1, 431, 431 };
+        for (int index = 0; index < expected.size(); ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    // Array<T, Alloc>::Swap(Array<T, Alloc>&)
+    TEST(ArrayTest, Swap)
+    {
+        Array<int, TestAllocator> array({ 23, 5, 1, 3, 65 }, TestAllocator(21));
+        Array<int, TestAllocator> array2({ 22, 12, 23, 5, 1, 3, 65 }, TestAllocator(11));
+
+        array.Swap(array2);
+
+        EXPECT_EQ(array.GetAllocator().Id, 11);
+        EXPECT_EQ(array2.GetAllocator().Id, 21);
+
+        EXPECT_EQ(array.Size(), 7);
+        EXPECT_EQ(array2.Size(), 5);
+
+        EXPECT_GE(array.Capacity(), 7);
+        EXPECT_GE(array2.Capacity(), 5);
+
+        std::vector<int> expected = { 22, 12, 23, 5, 1, 3, 65 };
+        std::vector<int> expected2 = { 23, 5, 1, 3, 65 };
+
+        for (int index = 0; index < 7; ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array2.Data()[index], expected2[index]);
+    }
+
+    // Array<T, Alloc>::Clear()
+    TEST(ArrayTest, Clear)
+    {
+        Array<int> array = { 32, 654, 123, 32, 983, 435 };
+        array.Clear();
+
+        EXPECT_EQ(array.Size(), 0);
+    }
+
+    // Array<T, Alloc>::Assign(Iter, Iter)
+    TEST(ArrayTest, AssignRange)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        const ForwardTestContainer<std::shared_ptr<int>, 7> container = {
+            std::make_shared<int>(1),
+            std::make_shared<int>(2),
+            std::make_shared<int>(4),
+            std::make_shared<int>(3),
+            std::make_shared<int>(67),
+            std::make_shared<int>(1),
+            std::make_shared<int>(1)
+        };
+
+        array.Assign(container.GetBegin(), container.GetEnd());
+
+        EXPECT_EQ(array.Size(), 7);
+        EXPECT_GE(array.Capacity(), 7);
+
+        for (int index = 0; index < 7; ++index)
+        {
+            EXPECT_EQ(array.Data()[index].use_count(), 2);
+            EXPECT_EQ(array.Data()[index], container[index]);
+        }
+    }
+
+    /* Array<T, Alloc>::Assign(std::initializer_list<T>) is tested by
+     * operator=(std::initializer_list<T>). Skipped.
+     */
+
+    // Array<T, Alloc>::Assign(Usize, const T&)
+    TEST(ArrayTest, AssignFill)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        std::shared_ptr<int> pointer = std::make_shared<int>(343);
+        array.Assign(10, pointer);
+
+        EXPECT_EQ(array.Size(), 10);
+        EXPECT_GE(array.Capacity(), 10);
+
+        for (int index = 0; index < 10; ++index)
+        {
+            EXPECT_EQ(array.Data()[index].use_count(), 11);
+            EXPECT_EQ(array.Data()[index], pointer);
+        }
+    }
+
+    /* Array<T, Alloc>::Insert(Iter, const T&) and Array<T, Alloc>::Insert(Iter, T&&) is
+     * implemented with calls to Emplace(Iter, Args&&...). Skipped.
+     */
+
+    TEST(ArrayTest, InsertFill)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        std::shared_ptr<int> pointer = std::make_shared<int>(343);
+        auto iterator = array.Insert(array.GetBegin() + 2, 10, pointer);
+
+        EXPECT_EQ(iterator, array.GetBegin() + 2);
+
+        EXPECT_EQ(array.Size(), 14);
+        EXPECT_GE(array.Capacity(), 14);
+
+        std::vector<int> expected = { 493, 12, 343, 343, 343, 343, 343,
+                                      343, 343, 343, 343, 343, 54, 931 };
+
+        for (int index = 0; index < 14; ++index)
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+
+        for (int index = 2; index < 12; ++index)
+        {
+            EXPECT_EQ(array.Data()[index], pointer);
+            EXPECT_EQ(array.Data()[index].use_count(), 11);
+        }
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Insert(array.GetBegin() - 1, 4, pointer)),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Insert(array.GetEnd() + 1, 4, pointer)),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, InsertFillEnd)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        std::shared_ptr<int> pointer = std::make_shared<int>(343);
+        auto iterator = array.Insert(array.GetEnd(), 10, pointer);
+
+        EXPECT_EQ(iterator, array.GetBegin() + 4);
+
+        EXPECT_EQ(array.Size(), 14);
+        EXPECT_GE(array.Capacity(), 14);
+
+        std::vector<int> expected = { 493, 12, 54, 931, 343, 343, 343, 343, 343,
+                                      343, 343, 343, 343, 343 };
+
+        for (int index = 0; index < 14; ++index)
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+
+        for (int index = 4; index < 14; ++index)
+        {
+            EXPECT_EQ(array.Data()[index], pointer);
+            EXPECT_EQ(array.Data()[index].use_count(), 11);
+         }
+    }
+
+    TEST(ArrayTest, InsertRange)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        ForwardTestContainer<std::shared_ptr<int>, 4> container = {
+            std::make_shared<int>(343),
+            std::make_shared<int>(124),
+            std::make_shared<int>(973),
+            std::make_shared<int>(120),
+        };
+
+        auto iterator = array.Insert(
+            array.GetBegin() + 1,
+            container.GetBegin(), container.GetEnd());
+
+        EXPECT_EQ(iterator, array.GetBegin() + 1);
+
+        EXPECT_EQ(array.Size(), 8);
+        EXPECT_GE(array.Capacity(), 8);
+
+        std::vector<int> expected = { 493, 343, 124, 973, 120, 12, 54, 931 };
+        for (int index = 0; index < 8; ++index)
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+
+        for (int index = 1; index < 5; ++index)
+        {
+            EXPECT_EQ(array.Data()[index], container[index - 1]);
+            EXPECT_EQ(array.Data()[index].use_count(), 2);
+        }
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Insert(
+                array.GetBegin() - 1,
+                container.GetBegin(), container.GetEnd())),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Insert(
+                array.GetEnd() + 1,
+                container.GetBegin(), container.GetEnd())),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, InsertRangeEnd)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        ForwardTestContainer<std::shared_ptr<int>, 4> container = {
+            std::make_shared<int>(343),
+            std::make_shared<int>(124),
+            std::make_shared<int>(973),
+            std::make_shared<int>(120),
+        };
+
+        auto iterator = array.Insert(
+            array.GetEnd(),
+            container.GetBegin(), container.GetEnd());
+
+        EXPECT_EQ(iterator, array.GetBegin() + 4);
+
+        EXPECT_EQ(array.Size(), 8);
+        EXPECT_GE(array.Capacity(), 8);
+
+        std::vector<int> expected = { 493, 12, 54, 931, 343, 124, 973, 120 };
+        for (int index = 0; index < 8; ++index)
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+
+        for (int index = 4; index < 8; ++index)
+        {
+            EXPECT_EQ(array.Data()[index], container[index - 4]);
+            EXPECT_EQ(array.Data()[index].use_count(), 2);
+        }
+    }
+
+    TEST(ArrayTest, InsertInitializerList)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        auto iterator = array.Insert(
+            array.GetBegin() + 1,
+            {
+                std::make_shared<int>(343),
+                std::make_shared<int>(124),
+                std::make_shared<int>(973),
+                std::make_shared<int>(120)
+            });
+
+        EXPECT_EQ(iterator, array.GetBegin() + 1);
+
+        EXPECT_EQ(array.Size(), 8);
+        EXPECT_GE(array.Capacity(), 8);
+
+        std::vector<int> expected = { 493, 343, 124, 973, 120, 12, 54, 931 };
+        for (int index = 0; index < 8; ++index)
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Insert(
+                array.GetBegin() - 1,
+                { std::shared_ptr<int>() })),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Insert(
+                array.GetEnd() + 1,
+                { std::shared_ptr<int>() })),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, InsertInitializerListEnd)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(493),
+            std::make_shared<int>(12),
+            std::make_shared<int>(54),
+            std::make_shared<int>(931)
+        };
+
+        auto iterator = array.Insert(
+            array.GetEnd(),
+            {
+                std::make_shared<int>(343),
+                std::make_shared<int>(124),
+                std::make_shared<int>(973),
+                std::make_shared<int>(120),
+            });
+
+        EXPECT_EQ(iterator, array.GetBegin() + 4);
+
+        EXPECT_EQ(array.Size(), 8);
+        EXPECT_GE(array.Capacity(), 8);
+
+        std::vector<int> expected = { 493, 12, 54, 931, 343, 124, 973, 120 };
+        for (int index = 0; index < 8; ++index)
+            EXPECT_EQ(*array.Data()[index], expected[index]);
+    }
+
+    TEST(ArrayTest, Emplace)
+    {
+        Array<std::string> array = {
+            "ipsum ",
+            "dolor ",
+            "sit ",
+            "amet",
+        };
+
+        std::vector<char> container = { 'L', 'o', 'r', 'e', 'm', ' ' };
+        auto iterator = array.Emplace(array.GetBegin(), container.begin(), container.end());
+
+        EXPECT_EQ(iterator, array.GetBegin());
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_GE(array.Capacity(), 5);
+
+        std::vector<std::string> expected = {
+            "Lorem ",
+            "ipsum ",
+            "dolor ",
+            "sit ",
+            "amet"
+        };
+
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Emplace(
+                array.GetBegin() - 1,
+                container.begin(), container.end())),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            KITSUNE_UNUSED(array.Emplace(
+                array.GetEnd() + 1,
+                container.begin(), container.end())),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, Remove)
+    {
+        Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
+        array.Remove(array.GetBegin() + 3);
+
+        EXPECT_EQ(array.Size(), 6);
+        EXPECT_GE(array.Capacity(), 6);
+
+        std::vector<int> expected = { 12, 4, 65, 11, 85, 33 };
+        for (int index = 0; index < 6; ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+
+        EXPECT_THROW(
+            array.Remove(array.GetBegin() - 1),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.Remove(array.GetEnd()),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, RemoveRange)
+    {
+        Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
+        array.Remove(array.GetBegin() + 3, array.GetEnd() - 2);
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_GE(array.Capacity(), 5);
+
+        std::vector<int> expected = { 12, 4, 65, 85, 33 };
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+
+        // One iterator inside, one iterator outside.
+        EXPECT_THROW(
+            array.Remove(array.GetBegin() - 1, array.GetBegin()),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.Remove(array.GetEnd() - 1, array.GetEnd() + 1),
+            OutOfRangeException);
+
+        // Both iterators outside.
+        EXPECT_THROW(
+            array.Remove(array.GetBegin() - 2, array.GetBegin() - 1),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.Remove(array.GetEnd(), array.GetEnd() + 1),
+            OutOfRangeException);
+
+        // One iterator inside, one iterator outside, but flipped.
+        EXPECT_THROW(
+            array.Remove(array.GetBegin(), array.GetBegin() - 1),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.Remove(array.GetEnd() + 1, array.GetEnd() - 1),
+            OutOfRangeException);
+
+        // Both iterators outside, but flipped.
+        EXPECT_THROW(
+            array.Remove(array.GetBegin() - 1, array.GetBegin() - 2),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.Remove(array.GetEnd() + 1, array.GetEnd()),
+            OutOfRangeException);
+
+        // Flipped iterators, but in range.
+        EXPECT_THROW(
+            array.Remove(array.GetEnd(), array.GetBegin()),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, RemoveUnsorted)
+    {
+        Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
+        array.RemoveUnsorted(array.GetBegin() + 3);
+
+        EXPECT_EQ(array.Size(), 6);
+        EXPECT_GE(array.Capacity(), 6);
+
+        std::vector<int> expected = { 12, 4, 65, 11, 85, 33 };
+        for (int index = 0; index < 6; ++index)
+            EXPECT_EQ(std::count(array.Data(), array.Data() + 6, expected[index]), 1);
+
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetBegin() - 1),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetEnd()),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, RemoveUnsortedRange)
+    {
+        Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
+        array.RemoveUnsorted(array.GetBegin() + 3, array.GetEnd() - 2);
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_GE(array.Capacity(), 5);
+
+        std::vector<int> expected = { 12, 4, 65, 85, 33 };
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(std::count(array.Data(), array.Data() + 5, expected[index]), 1);
+
+        // One iterator inside, one iterator outside.
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetBegin() - 1, array.GetBegin()),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetEnd() - 1, array.GetEnd() + 1),
+            OutOfRangeException);
+
+        // Both iterators outside.
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetBegin() - 2, array.GetBegin() - 1),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetEnd(), array.GetEnd() + 1),
+            OutOfRangeException);
+
+        // One iterator inside, one iterator outside, but flipped.
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetBegin(), array.GetBegin() - 1),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetEnd() + 1, array.GetEnd() - 1),
+            OutOfRangeException);
+
+        // Both iterators outside, but flipped.
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetBegin() - 1, array.GetBegin() - 2),
+            OutOfRangeException);
+
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetEnd() + 1, array.GetEnd()),
+            OutOfRangeException);
+
+        // Flipped iterators, but in range.
+        EXPECT_THROW(
+            array.RemoveUnsorted(array.GetEnd(), array.GetBegin()),
+            OutOfRangeException);
+    }
+
+    TEST(ArrayTest, PushBackCopy)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(543),
+            std::make_shared<int>(2),
+            std::make_shared<int>(12),
+            std::make_shared<int>(6),
+            std::make_shared<int>(8),
+            std::make_shared<int>(123)
+        };
+
+        std::shared_ptr<int> pointer = std::make_shared<int>(234);
+        array.PushBack(pointer);
+
+        EXPECT_EQ(array.Size(), 7);
+        EXPECT_GE(array.Capacity(), 7);
+
+        std::vector<int> expected = { 543, 2, 12, 6, 8, 123, 234 };
+        for (int index = 0; index < 6; ++index)
+            EXPECT_EQ(*array[index], expected[index]);
+
+        EXPECT_EQ(array.Data()[6], pointer);
+    }
+
+    TEST(ArrayTest, PushBackMove)
+    {
+        Array<std::shared_ptr<int>> array = {
+            std::make_shared<int>(543),
+            std::make_shared<int>(2),
+            std::make_shared<int>(12),
+            std::make_shared<int>(6),
+            std::make_shared<int>(8),
+            std::make_shared<int>(123)
+        };
+
+        array.PushBack(std::make_shared<int>(234));
+
+        EXPECT_EQ(array.Size(), 7);
+        EXPECT_GE(array.Capacity(), 7);
+
+        std::vector<int> expected = { 543, 2, 12, 6, 8, 123, 234 };
+        for (int index = 0; index < 6; ++index)
+            EXPECT_EQ(*array[index], expected[index]);
+
+        EXPECT_EQ(array.Data()[6].use_count(), 1);
+    }
+
+    TEST(ArrayTest, EmplaceBack)
+    {
+        Array<std::string> array = {
+            "Lorem ",
+            "ipsum ",
+            "dolor ",
+            "sit ",
+        };
+
+        std::vector<char> amet = { 'a', 'm', 'e', 't' };
+        array.EmplaceBack(amet.begin(), amet.end());
+
+        EXPECT_EQ(array.Size(), 5);
+        EXPECT_GE(array.Capacity(), 5);
+
+        std::vector<std::string> expected = {
+            "Lorem ",
+            "ipsum ",
+            "dolor ",
+            "sit ",
+            "amet"
+        };
+
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(array[index], expected[index]);
+    }
+
+    TEST(ArrayTest, PopBack)
+    {
+        Array<int> array = { 23, 324, 7, 1, 5, 9, 1 };
+        array.PopBack();
+
+        EXPECT_EQ(array.Size(), 6);
+        EXPECT_GE(array.Capacity(), 6);
+
+        std::vector<int> expected = { 23, 324, 7, 1, 5, 9 };
+        for (int index = 0; index < 6; ++index)
+            EXPECT_EQ(array.Data()[index], expected[index]);
+    }
+
+    TEST(ArrayTest, RangedForLoop)
+    {
+        Array<int> array = { 544, 123, 12, 7 };
+        int index = 0;
+
+        for (const int& element : array)
+        {
+            EXPECT_EQ(&element, array.Data() + index);
+            ++index;
+        }
+    }
+
+    TEST(ArrayTest, Equal)
+    {
+        Array<int> array = { 12, 23, 23, 54, 64 };
+        Array<int> array2 = { 12, 23, 23, 54, 64 };
+
+        Array<int> diffContents = { 12, 22, 23, 54, 64 };
+        Array<int> diffSize = { 12, 23, 23, 54, 64, 72 };
+
+        EXPECT_TRUE(array == array2);
+        EXPECT_FALSE(array == diffSize);
+        EXPECT_FALSE(array == diffContents);
+
+        EXPECT_FALSE(array != array2);
+        EXPECT_TRUE(array != diffSize);
+        EXPECT_TRUE(array != diffContents);
+    }
 }

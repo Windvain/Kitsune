@@ -3,16 +3,21 @@
 
 namespace
 {
-    class A
+    using namespace Kitsune;
+
+    class AddressOverloaded
     {
     public:
-        inline A* operator&() const
+        // Don't be an idiot and override this.
+        // NOLINTBEGIN(google-runtime-operator)
+        inline AddressOverloaded* operator&() const
         {
-            return (A*)(std::uintptr_t)0xDEADC0DE;
+            return reinterpret_cast<AddressOverloaded*>(std::uintptr_t(0xDEADC0DE));
         }
+        // NOLINTEND(google-runtime-operator)
     };
 
-    class B
+    class ArbitraryClass
     {
     public:
         int X;
@@ -20,22 +25,23 @@ namespace
         float Z;
         double W;
     };
-}
 
-using namespace Kitsune;
+    // AddressOf(T&) -> x.operator& != std::addressof(x)
+    TEST(AddressOfTests, AddressOperatorOverload)
+    {
+        auto* object = new AddressOverloaded();
+        EXPECT_EQ(AddressOf(*object), object);
 
-TEST(AddressOfTests, AddressOperatorOverload)
-{
-    A* object = new A();
-    EXPECT_EQ(AddressOf(*object), object);
+        delete object;
+    }
 
-    delete object;
-}
+    // AddressOf(T&) -> x.operator& == std::addressof(x)
+    TEST(AddressOfTests, NormalUseCase)
+    {
+        auto* object = new ArbitraryClass();
+        EXPECT_EQ(AddressOf(*object), object);
 
-TEST(AddressOfTests, NormalUseCase)
-{
-    B* object = new B();
-    EXPECT_EQ(AddressOf(*object), object);
+        delete object;
+    }
 
-    delete object;
 }

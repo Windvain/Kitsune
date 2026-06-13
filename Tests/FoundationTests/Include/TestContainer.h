@@ -7,85 +7,109 @@
 
 namespace Kitsune::Testing
 {
-    template<Iterator Iter, std::size_t S>
+    template<
+        Iterator Iter, Iterator ConstIter,
+        std::size_t ArraySize, bool IsOwning = true>
     class TestContainer
     {
     public:
         using ValueType = typename Kitsune::IteratorTraits<Iter>::ValueType;
+        using StorageType = std::conditional_t<
+            IsOwning,
+            ValueType[ArraySize],
+            ValueType*>;
+
+        using Iterator = Iter;
+        using ConstIterator = ConstIter;
 
     public:
-        Iter GetBegin() { return Iter(m_Array); }
-        Iter GetEnd()   { return Iter(m_Array + S); }
+        [[nodiscard]] inline Iterator GetBegin() { return Iterator(m_Array); }
+        [[nodiscard]] inline Iterator GetEnd() { return Iterator(m_Array + ArraySize); }
+
+        [[nodiscard]]
+        inline ConstIterator GetBegin() const
+        {
+            return ConstIterator(m_Array);
+        }
+
+        [[nodiscard]]
+        inline ConstIterator GetEnd() const
+        {
+            return ConstIterator(m_Array + ArraySize);
+        }
 
     public:
-        ValueType& operator[](std::size_t index)
+        inline ValueType& operator[](std::size_t index)
         {
             return m_Array[index];
         }
 
-        const ValueType& operator[](std::size_t index) const
+        inline const ValueType& operator[](std::size_t index) const
         {
             return m_Array[index];
         }
 
     public:
-        Iter begin() { return GetBegin(); }
-        Iter end()   { return GetEnd(); }
+        [[nodiscard]]
+        inline Usize Size() const
+        {
+            return ArraySize;
+        }
+
+        [[nodiscard]]
+        inline bool IsEmpty() const
+        {
+            return (Size() == 0);
+        }
 
     public:
-        ValueType m_Array[S] = { /* ... */ };
+        inline Iterator begin() { return GetBegin(); }
+        inline ConstIterator begin() const { return GetBegin(); }
+
+        inline Iterator end() { return GetEnd(); }
+        inline ConstIterator end() const { return GetEnd(); }
+
+    public:
+        // Keep this member public, it is needed for aggregate initialization.
+        StorageType m_Array;
     };
 
-    template<typename T, std::size_t S>
-    using ForwardTestContainer = TestContainer<ForwardIterator<T>, S>;
+    template<typename T, std::size_t Size>
+    using ForwardTestContainer = TestContainer<
+        ForwardIterator<T>,
+        ForwardIterator<const T>,
+        Size>;
 
-    template<typename T, std::size_t S>
-    using BidirectionalTestContainer = TestContainer<BidirectionalIterator<T>, S>;
+    template<typename T, std::size_t Size>
+    using BidirectionalTestContainer = TestContainer<
+        BidirectionalIterator<T>,
+        BidirectionalIterator<const T>,
+        Size>;
 
-    template<typename T, std::size_t S>
-    using RandomAccessTestContainer = TestContainer<RandomAccessIterator<T>, S>;
+    template<typename T, std::size_t Size>
+    using RandomAccessTestContainer = TestContainer<
+        RandomAccessIterator<T>,
+        RandomAccessIterator<const T>,
+        Size>;
 
-    template<Iterator Iter, std::size_t S>
-    class NonOwningTestContainer
-    {
-    public:
-        using ValueType = typename Kitsune::IteratorTraits<Iter>::ValueType;
+    template<typename T, std::size_t Size>
+    using ForwardNonOwningTestContainer = TestContainer<
+        ForwardIterator<T>,
+        ForwardIterator<const T>,
+        Size,
+        false>;
 
-    public:
-        NonOwningTestContainer(ValueType* array)
-            : m_Array(array)
-        {
-        }
+    template<typename T, std::size_t Size>
+    using BidirectionalNonOwningTestContainer = TestContainer<
+        BidirectionalIterator<T>,
+        BidirectionalIterator<const T>,
+        Size,
+        false>;
 
-    public:
-        Iter GetBegin() { return Iter(m_Array); }
-        Iter GetEnd()   { return Iter(m_Array + S); }
-
-    public:
-        ValueType& operator[](std::size_t index)
-        {
-            return m_Array[index];
-        }
-
-        const ValueType& operator[](std::size_t index) const
-        {
-            return m_Array[index];
-        }
-
-    public:
-        Iter begin() { return GetBegin(); }
-        Iter end()   { return GetEnd(); }
-
-    public:
-        ValueType* m_Array;
-    };
-
-    template<typename T, std::size_t S>
-    using ForwardNonOwningTestContainer = NonOwningTestContainer<ForwardIterator<T>, S>;
-
-    template<typename T, std::size_t S>
-    using BidirectionalNonOwningTestContainer = NonOwningTestContainer<BidirectionalIterator<T>, S>;
-
-    template<typename T, std::size_t S>
-    using RandomAccessNonOwningTestContainer = NonOwningTestContainer<RandomAccessIterator<T>, S>;
+    template<typename T, std::size_t Size>
+    using RandomAccessNonOwningTestContainer = TestContainer<
+        RandomAccessIterator<T>,
+        RandomAccessIterator<const T>,
+        Size,
+        false>;
 }

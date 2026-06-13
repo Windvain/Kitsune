@@ -8,6 +8,9 @@
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
+#include "Foundation/Diagnostics/Assert.h"
+#include "Foundation/Diagnostics/SystemException.h"
+
 namespace Kitsune
 {
     // The access requested when opening a file.
@@ -25,10 +28,8 @@ namespace Kitsune
         Append,         //< The file is opened with the write pointer locked to
                         //  the end of the file.
         Truncate,       //< Opens a file and removes all of its contents.
-        CreateNew,      //< Creates a file if it doesn't exist, and throws
-                        //  if the file exists.
-        Open,           //< Opens a file if it exists, and throws if
-                        //  it doesn't.
+        CreateNew,      //< Creates a file if and only if it doesn't exist.
+        Open,           //< Opens a file if and only if it exists.
         OpenOrCreate    //< Opens a file if it exists, and creates a file
                         //  if it doesn't.
     };
@@ -69,6 +70,13 @@ namespace Kitsune
             [[nodiscard]]
             Usize GetPosition() const;
 
+            [[nodiscard]]
+            inline String GetName() const
+            {
+                KITSUNE_ASSERT(IsOpen(), "Failed to get the path of this stream.");
+                return m_Name;
+            }
+
         private:
             static constexpr Usize s_BufferSize = 16;
 
@@ -79,6 +87,8 @@ namespace Kitsune
 
             FileOpenMode m_OpenMode;
             FileAccessMode m_AccessMode;
+
+            String m_Name;
         };
     }
 
@@ -97,7 +107,8 @@ namespace Kitsune
                                FileOpenMode openMode = FileOpenMode::Open)
             : BasicFileStream()
         {
-            KITSUNE_UNUSED(Open(filePath, accessMode, openMode));
+            if (!Open(filePath, accessMode, openMode))
+                throw SystemException("Failed to open the specified file.");
         }
 
         inline BasicFileStream(BasicFileStream&& fileStream)
@@ -273,19 +284,28 @@ namespace Kitsune
                     "with FileOpenMode::Append, the file stream will not be seekable.");
             }
 
+            // Flush anything we were writing before we move the file pointer.
+            if (IsWritable())
+                Flush();
+
             Byte* newPosition = m_SeekPosition + offset;
-            if ((origin == SeekOrigin::Current) && (newPosition >= m_Buffer) &&
-                (newPosition < m_ReadPosition))
+            if ((origin != SeekOrigin::Current) || (newPosition < m_Buffer) ||
+                (newPosition >= m_ReadPosition))
+            {
+                m_FileObject.Seek(offset, origin);
+                m_ReadPosition = m_SeekPosition = m_Buffer;
+            }
+            else
             {
                 // We are in the range already read by the stream, just set
                 // the pointer!
                 m_SeekPosition = newPosition;
-                return GetPosition() + offset;      // TODO: Still a syscall!
             }
 
-            return m_FileObject.Seek(offset, origin);
+            return GetPosition();
         }
 
+        [[nodiscard]]
         inline Usize Length() const override
         {
             if (!IsOpen())
@@ -354,6 +374,9 @@ namespace Kitsune
     public:
         inline void Flush() override
         {
+            if (!IsWritable())
+                throw LogicException("Cannot flush a read stream.");
+
             m_FileObject.Write(m_Buffer, m_WritePosition - m_Buffer);
             m_WritePosition = m_Buffer;
         }
@@ -368,7 +391,17 @@ namespace Kitsune
                     "file. Did you forget to call Open()?");
             }
 
-            return m_FileObject.GetPosition();
+            Usize pos = m_FileObject.GetPosition();
+            if (m_WritePosition != m_Buffer)
+                return pos + (m_WritePosition - m_Buffer);
+
+            return pos - (m_ReadPosition - m_SeekPosition);
+        }
+
+        [[nodiscard]]
+        inline String GetPath() const
+        {
+            return m_FileObject.GetName();
         }
 
         inline void Swap(BasicFileStream& stream)

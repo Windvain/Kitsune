@@ -3,6 +3,8 @@
 #include "Foundation/Common/Types.h"
 #include "Foundation/Concepts/Container.h"
 
+#include "Foundation/Memory/AddressOf.h"
+
 namespace Kitsune
 {
     template<typename T>
@@ -26,7 +28,7 @@ namespace Kitsune
     public:
         BackInsertIterator() = default;
         inline explicit BackInsertIterator(Container& container)
-            : m_Container(&container)
+            : m_Container(AddressOf(container))
         {
         }
 
@@ -54,7 +56,11 @@ namespace Kitsune
         }
 
     public:
-        inline Container* GetContainer() const { return m_Container; }
+        [[nodiscard]]
+        inline Container* GetContainer() const
+        {
+            return m_Container;
+        }
 
     private:
         Container* m_Container = nullptr;

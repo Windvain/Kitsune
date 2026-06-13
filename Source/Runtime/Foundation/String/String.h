@@ -97,8 +97,8 @@ namespace Kitsune
         {
         }
 
-        template<ForwardIterator It>
-        inline BasicString(It begin, It end,
+        template<ForwardIterator Iter>
+        inline BasicString(Iter begin, Iter end,
                            const Alloc& allocator = Alloc())
             : BasicString(Algorithms::Distance(begin, end), allocator)
         {
@@ -434,8 +434,8 @@ namespace Kitsune
             *Algorithms::UninitializedFillN(m_Pointer, count, character) = T();
         }
 
-        template<ForwardIterator It>
-        inline void Assign(It begin, It end)
+        template<ForwardIterator Iter>
+        inline void Assign(Iter begin, Iter end)
         {
             if (m_Size > Capacity())
                 BasicString(m_Size, Move(m_Allocator)).Swap(*this);
@@ -520,8 +520,8 @@ namespace Kitsune
             Insert(index, BasicStringView<T>(string));
         }
 
-        template<ForwardIterator It>
-        inline void Insert(Index index, It begin, It end)
+        template<ForwardIterator Iter>
+        inline void Insert(Index index, Iter begin, Iter end)
         {
             if ((index < 0) || (index > Size()))
                 throw OutOfRangeException();
@@ -603,8 +603,8 @@ namespace Kitsune
             m_Size = newSize;
         }
 
-        template<ForwardIterator It>
-        inline void Append(It begin, It end)
+        template<ForwardIterator Iter>
+        inline void Append(Iter begin, Iter end)
         {
             Usize newSize = Size() + Algorithms::Distance(begin, end);
             if (Capacity() < newSize)

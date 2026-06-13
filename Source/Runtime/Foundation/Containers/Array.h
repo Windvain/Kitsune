@@ -55,9 +55,8 @@ namespace Kitsune
             if (capacity == 0)
                 return;
 
-            Usize adjustedCapacity = s_AllocationFactor * capacity;
-            void* data = m_Allocator.Allocate(
-                adjustedCapacity * sizeof(T), alignof(T));
+            capacity *= s_AllocationFactor;
+            void* data = m_Allocator.Allocate(capacity * sizeof(T), alignof(T));
 
             m_Begin = m_End = static_cast<T*>(data);
             m_StorageEnd = m_Begin + capacity;
@@ -70,8 +69,8 @@ namespace Kitsune
         }
 
 
-        template<ForwardIterator It>
-        inline Array(It begin, It end, const Alloc& alloc = Alloc())
+        template<ForwardIterator Iter>
+        inline Array(Iter begin, Iter end, const Alloc& alloc = Alloc())
             : Array(Algorithms::Distance(begin, end), alloc)
         {
             m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
@@ -102,7 +101,7 @@ namespace Kitsune
                 return;
 
             Algorithms::Destroy(m_Begin, m_End);
-            m_Allocator.Free(m_Begin, Capacity());
+            m_Allocator.Free(m_Begin, Capacity() * sizeof(T));
         }
 
     public:
@@ -313,10 +312,10 @@ namespace Kitsune
             m_End = m_Begin;
         }
 
-        template<ForwardIterator It>
-        inline void Assign(It begin, It end)
+        template<ForwardIterator Iter>
+        inline void Assign(Iter begin, Iter end)
         {
-            Usize size = static_cast<Usize>(Algorithms::Distance(begin, end));
+            auto size = static_cast<Usize>(Algorithms::Distance(begin, end));
 
             if (Capacity() >= size)
                 Algorithms::Destroy(m_Begin, m_End);
@@ -360,10 +359,10 @@ namespace Kitsune
             return pos - count;
         }
 
-        template<ForwardIterator It>
-        inline Iterator Insert(Iterator pos, It begin, It end)
+        template<ForwardIterator Iter>
+        inline Iterator Insert(Iterator pos, Iter begin, Iter end)
         {
-            typename IteratorTraits<It>::DifferenceType rangeLen = 0;
+            typename IteratorTraits<Iter>::DifferenceType rangeLen = 0;
             for (; begin != end; ++begin, ++pos, ++rangeLen)
                 pos = Insert(pos, *begin);
 
@@ -416,11 +415,8 @@ namespace Kitsune
             if (begin == end)
                 return;
 
-            if ((begin < GetBegin()) || (begin >= GetEnd()) ||
-                (end < GetBegin()) || (end > GetEnd()))
-            {
+            if ((begin > end) || (begin < GetBegin()) || (end > GetEnd()))
                 throw OutOfRangeException();
-            }
 
             Ptrdiff removedSize = end - begin;
             Algorithms::Destroy(begin, end);
@@ -444,11 +440,8 @@ namespace Kitsune
             if (begin == end)
                 return;
 
-            if ((begin < GetBegin()) || (begin >= GetEnd()) ||
-                (end < GetBegin()) || (end > GetEnd()))
-            {
+            if ((begin > end) || (begin < GetBegin()) || (end > GetEnd()))
                 throw OutOfRangeException();
-            }
 
             Ptrdiff removedSize = end - begin;
             Algorithms::Destroy(begin, end);
@@ -509,7 +502,7 @@ namespace Kitsune
             Algorithms::UninitializedMoveN(m_Begin, moveCount, pointer);
             Algorithms::Destroy(m_Begin, m_End);
 
-            m_Allocator.Free(m_Begin, Capacity());
+            m_Allocator.Free(m_Begin, Capacity() * sizeof(T));
 
             m_Begin = pointer;
             m_End = m_Begin + moveCount;

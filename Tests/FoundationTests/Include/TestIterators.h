@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "Foundation/Iterators/Iterator.h"
 
 namespace Kitsune::Testing
 {
@@ -13,7 +14,7 @@ namespace Kitsune::Testing
 
     public:
         ForwardIterator() = default;
-        explicit ForwardIterator(T* pointer)
+        inline explicit ForwardIterator(T* pointer)
             : m_Pointer(pointer)
         {
         }
@@ -25,13 +26,13 @@ namespace Kitsune::Testing
         ForwardIterator& operator=(const ForwardIterator&) = default;
 
     public:
-        ForwardIterator& operator++()
+        inline ForwardIterator& operator++()
         {
             ++m_Pointer;
             return *this;
         }
 
-        ForwardIterator operator++(int)
+        inline ForwardIterator operator++(int)
         {
             ForwardIterator iter = *this;
             ++(*this);
@@ -40,19 +41,22 @@ namespace Kitsune::Testing
         }
 
     public:
-        T& operator*() const { return *m_Pointer; }
-        T* operator->() const { return m_Pointer; }
+        inline T& operator*() const { return *m_Pointer; }
+        inline T* operator->() const { return m_Pointer; }
 
-        T* Pointer() const { return m_Pointer; }
-
+        [[nodiscard]] inline T* Pointer() const { return m_Pointer; }
+        inline operator T*() const
+        {
+            return m_Pointer;
+        }
     public:
-        bool operator==(const ForwardIterator& iter) const
+        inline bool operator==(const ForwardIterator& iter) const
         {
             return (Pointer() == iter.Pointer());
         }
 
     private:
-        T* m_Pointer;
+        T* m_Pointer = nullptr;
     };
 
     template<typename T>
@@ -64,50 +68,54 @@ namespace Kitsune::Testing
 
     public:
         BidirectionalIterator() = default;
-        explicit BidirectionalIterator(T* pointer)
+        inline explicit BidirectionalIterator(T* pointer)
             : m_Pointer(pointer)
         {
         }
 
     public:
-        BidirectionalIterator& operator++()
+        inline BidirectionalIterator& operator++()
         {
             ++m_Pointer;
             return *this;
         }
 
-        BidirectionalIterator operator++(int) const
+        inline BidirectionalIterator operator++(int) const
         {
-            BidirectionalIterator iter;
+            BidirectionalIterator iter = *this;
             return (++iter);
         }
 
-        BidirectionalIterator& operator--()
+        inline BidirectionalIterator& operator--()
         {
             --m_Pointer;
             return *this;
         }
 
-        BidirectionalIterator operator--(int) const
+        inline BidirectionalIterator operator--(int) const
         {
-            BidirectionalIterator iter;
+            BidirectionalIterator iter = *this;
             return (--iter);
         }
 
     public:
-        T& operator*() const { return *m_Pointer; }
-        T* operator->() const { return m_Pointer; }
+        inline T& operator*() const { return *m_Pointer; }
+        inline T* operator->() const { return m_Pointer; }
 
-        T* Pointer() const { return m_Pointer; }
+        [[nodiscard]] inline T* Pointer() const { return m_Pointer; }
+        inline operator T*() const
+        {
+            return m_Pointer;
+        }
 
     public:
-        bool operator==(const BidirectionalIterator& iter) const
+        inline bool operator==(const BidirectionalIterator& iter) const
         {
             return (Pointer() == iter.Pointer());
         }
 
     private:
-        T* m_Pointer;
+        T* m_Pointer = nullptr;
     };
 
     template<typename T>
@@ -119,111 +127,130 @@ namespace Kitsune::Testing
 
     public:
         RandomAccessIterator() = default;
-        explicit RandomAccessIterator(T* pointer)
+        inline explicit RandomAccessIterator(T* pointer)
             : m_Pointer(pointer)
         {
         }
 
     public:
-        RandomAccessIterator& operator++()
+        inline RandomAccessIterator& operator++()
         {
             ++m_Pointer;
             return *this;
         }
 
-        RandomAccessIterator operator++(int) const
+        inline RandomAccessIterator operator++(int) const
         {
-            RandomAccessIterator iter;
+            RandomAccessIterator iter = *this;
             return (++iter);
         }
 
-        RandomAccessIterator& operator--()
+        inline RandomAccessIterator& operator--()
         {
             --m_Pointer;
             return *this;
         }
 
-        RandomAccessIterator operator--(int) const
+        inline RandomAccessIterator operator--(int) const
         {
-            RandomAccessIterator iter;
+            RandomAccessIterator iter = *this;
             return (--iter);
         }
 
-        RandomAccessIterator& operator+=(DifferenceType offset)
+        inline RandomAccessIterator& operator+=(DifferenceType offset)
         {
             m_Pointer += offset;
             return *this;
         }
 
-        RandomAccessIterator operator+(DifferenceType offset) const
+        inline RandomAccessIterator operator+(DifferenceType offset) const
         {
-            RandomAccessIterator iter;
+            RandomAccessIterator iter = *this;
             return (iter += offset);
         }
 
-        RandomAccessIterator& operator-=(DifferenceType offset)
+        inline RandomAccessIterator& operator-=(DifferenceType offset)
         {
             m_Pointer -= offset;
             return *this;
         }
 
-        RandomAccessIterator operator-(DifferenceType offset) const
+        inline RandomAccessIterator operator-(DifferenceType offset) const
         {
-            RandomAccessIterator iter;
+            RandomAccessIterator iter = *this;
             return (iter -= offset);
         }
 
-        T& operator[](DifferenceType index)
+        inline DifferenceType operator-(RandomAccessIterator iterator) const
         {
-            return m_Pointer[index];
+            return (m_Pointer - iterator.m_Pointer);
         }
 
-        const T& operator[](DifferenceType index) const
+        inline T& operator[](DifferenceType index) const
         {
             return m_Pointer[index];
         }
 
     public:
-        T& operator*() const { return *m_Pointer; }
-        T* operator->() const { return m_Pointer; }
+        inline T& operator*() const { return *m_Pointer; }
+        inline T* operator->() const { return m_Pointer; }
 
-        T* Pointer() const { return m_Pointer; }
+        [[nodiscard]] inline T* Pointer() const { return m_Pointer; }
+        inline operator T*() const
+        {
+            return m_Pointer;
+        }
 
     public:
-        bool operator==(const RandomAccessIterator& iter) const
+        inline bool operator==(const RandomAccessIterator& iter) const
         {
             return (Pointer() == iter.Pointer());
         }
 
-        bool operator>(const RandomAccessIterator& iter) const
+        inline bool operator>(const RandomAccessIterator& iter) const
         {
             return (Pointer() > iter.Pointer());
         }
 
-        bool operator<(const RandomAccessIterator& iter) const
+        inline bool operator<(const RandomAccessIterator& iter) const
         {
             return (Pointer() < iter.Pointer());
         }
 
-        bool operator>=(const RandomAccessIterator& iter) const
+        inline bool operator>=(const RandomAccessIterator& iter) const
         {
             return (Pointer() >= iter.Pointer());
         }
 
-        bool operator<=(const RandomAccessIterator& iter) const
+        inline bool operator<=(const RandomAccessIterator& iter) const
         {
             return (Pointer() <= iter.Pointer());
         }
 
     private:
-        T* m_Pointer;
+        T* m_Pointer = nullptr;
     };
 
     template<typename T>
-    RandomAccessIterator<T> operator+(
+    inline RandomAccessIterator<T> operator+(
         std::ptrdiff_t offset, const RandomAccessIterator<T>& iter)
     {
         RandomAccessIterator<T> copy = iter;
         return (copy += offset);
     }
+
+    static_assert(
+        Kitsune::ForwardIterator<ForwardIterator<int>>,
+        "The test forward iterator doesn't satisfy the conditions of "
+        "ForwardIterator.");
+
+    static_assert(
+        Kitsune::BidirectionalIterator<BidirectionalIterator<int>>,
+        "The test bidirectional iterator doesn't satisfy the conditions of "
+        "BidirectionalIterator.");
+
+    static_assert(
+        Kitsune::RandomAccessIterator<RandomAccessIterator<int>>,
+        "The test random access iterator doesn't satisfy the conditions of "
+        "RandomAccessIterator.");
 }

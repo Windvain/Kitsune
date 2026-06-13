@@ -97,12 +97,17 @@
     #define KITSUNE_ARCH_32_BIT 1
 #endif
 
+// The compiler supports the use of anonymous structs as an extension.
 #if defined(KITSUNE_COMPILER_MSVC) || defined(KITSUNE_COMPILER_CLANG) || \
     defined(KITSUNE_COMPILER_GCC)
     #define KITSUNE_COMPILER_SUPPORTS_ANONYMOUS_STRUCTS 1
 #endif
 
 #if defined(KITSUNE_COMPILER_MSVC)
+    // The compiler supports the Microsoft C Runtime debug library. (crtdbg.h)
     #define KITSUNE_COMPILER_SUPPORTS_CRTDBG 1
+
+    // The compiler supports the usage of SEH (Structured Exception Handling) keywords,
+    // i.e. __try and __finally.
     #define KITSUNE_COMPILER_SUPPORTS_SEH 1
 #endif

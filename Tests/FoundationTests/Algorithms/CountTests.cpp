@@ -1,27 +1,32 @@
-#include "Foundation/Algorithms/Count.h"
-
 #include <gtest/gtest.h>
 #include "TestContainer.h"
 
-using namespace Kitsune;
-using namespace Kitsune::Testing;
+#include "Foundation/Algorithms/Count.h"
 
-TEST(CountTests, Count)
+namespace
 {
-    ForwardTestContainer<int, 8> container = { 3, 4, 11, 6, 23, 11, 12, 11 };
-    auto count = Algorithms::Count(container.GetBegin(), container.GetEnd(), 11);
+    using namespace Kitsune;
+    using Testing::ForwardTestContainer;
 
-    EXPECT_EQ(count, 3);
-}
+    // Algorithms::Count(Iter, Iter, const T&)
+    TEST(CountTest, Count)
+    {
+        ForwardTestContainer<int, 8> container = { 3, 4, 11, 6, 23, 11, 12, 11 };
+        EXPECT_EQ(
+            Algorithms::Count(container.GetBegin(), container.GetEnd(), 11),
+            3);
+    }
 
-TEST(CountTests, CountIf)
-{
-    ForwardTestContainer<int, 8> container = { 3, 4, 11, 6, 23, 11, 12, 11 };
-    auto count = Algorithms::CountIf(container.GetBegin(), container.GetEnd(),
-        [](int elem) -> bool
-        {
-            return (elem % 2) != 0;
-        });
+    // Algorithms::CountIf(Iter, Iter, Pred)
+    TEST(CountTests, CountIf)
+    {
+        ForwardTestContainer<int, 8> container = { 3, 4, 11, 6, 23, 11, 12, 11 };
+        auto count = Algorithms::CountIf(container.GetBegin(), container.GetEnd(),
+            [](int element) -> bool
+            {
+                return ((element % 2) != 0);
+            });
 
-    EXPECT_EQ(count, 5);
+        EXPECT_EQ(count, 5);
+    }
 }

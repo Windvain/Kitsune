@@ -46,8 +46,8 @@ namespace Kitsune
         {
         }
 
-        template<RandomAccessIterator It>
-        inline BasicStringView(It begin, It end)
+        template<RandomAccessIterator Iter>
+        inline BasicStringView(Iter begin, Iter end)
             : m_Pointer(ToAddress(begin)), m_Size(end - begin)
         {
         }
@@ -151,8 +151,11 @@ namespace Kitsune
         [[nodiscard]]
         inline bool EndsWith(BasicStringView<T> string)
         {
-            return (Size() >= string.Size()) &&
-                   (BasicStringView<T>(m_Pointer + (Size() - string.Size())) == string);
+            if (Size() < string.Size())
+                return false;
+
+            BasicStringView end(m_Pointer + (Size() - string.Size()), string.Size());
+            return (end == string);
         }
 
         [[nodiscard]]

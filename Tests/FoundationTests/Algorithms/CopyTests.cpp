@@ -1,131 +1,173 @@
+#include <memory>
 #include <gtest/gtest.h>
-
 #include "TestContainer.h"
-#include "TestIterators.h"
 
 #include "Foundation/Algorithms/Copy.h"
 
 namespace
 {
-    class A
+    using namespace Kitsune;
+    using Testing::ForwardTestContainer, Testing::BidirectionalTestContainer;
+
+    class CopyTest : public ::testing::Test
     {
-    public:
-        A() = default;
-        explicit A(int x)
-            : Value(x)
+    protected:
+        using Type = std::shared_ptr<int>;
+        using ContainerType = ForwardTestContainer<Type, 5>;
+
+    protected:
+        template<Usize N>
+        inline ForwardTestContainer<Type, N> MakeContainer()
         {
+            ForwardTestContainer<Type, N> container;
+            for (Usize index = 0; index < N; ++index)
+                container[index] = std::make_shared<int>(index * index);
+
+            return container;
         }
-
-        A(const A& object)
-            : Value(object.Value + 1)
-        {
-        }
-
-    public:
-        A& operator=(const A& object)
-        {
-            Value = object.Value + 1;
-            return *this;
-        }
-
-    public:
-        int Value;
-    };
-}
-
-using namespace Kitsune;
-using namespace Kitsune::Testing;
-
-TEST(CopyTests, Copy)
-{
-    ForwardTestContainer<A, 5> container = { A(2), A(3), A(1), A(4), A(6) };
-    ForwardTestContainer<A, 5> destContainer = { A(54), A(1), A(2), A(6), A(3) };
-
-    auto it = Algorithms::Copy(container.GetBegin(), container.GetEnd(),
-                               destContainer.GetBegin());
-
-    EXPECT_EQ(it, destContainer.GetEnd());
-
-    EXPECT_EQ(container[0].Value, 2);
-    EXPECT_EQ(container[1].Value, 3);
-    EXPECT_EQ(container[2].Value, 1);
-    EXPECT_EQ(container[3].Value, 4);
-    EXPECT_EQ(container[4].Value, 6);
-
-    EXPECT_EQ(destContainer[0].Value, 3);
-    EXPECT_EQ(destContainer[1].Value, 4);
-    EXPECT_EQ(destContainer[2].Value, 2);
-    EXPECT_EQ(destContainer[3].Value, 5);
-    EXPECT_EQ(destContainer[4].Value, 7);
-}
-
-TEST(CopyTests, CopyN)
-{
-    ForwardTestContainer<A, 5> container = { A(2), A(3), A(1), A(4), A(6) };
-    ForwardTestContainer<A, 5> destContainer = { A(54), A(1), A(2), A(6), A(3) };
-
-    auto it = Algorithms::CopyN(container.GetBegin(), 5, destContainer.GetBegin());
-    EXPECT_EQ(it, destContainer.GetEnd());
-
-    EXPECT_EQ(container[0].Value, 2);
-    EXPECT_EQ(container[1].Value, 3);
-    EXPECT_EQ(container[2].Value, 1);
-    EXPECT_EQ(container[3].Value, 4);
-    EXPECT_EQ(container[4].Value, 6);
-
-    EXPECT_EQ(destContainer[0].Value, 3);
-    EXPECT_EQ(destContainer[1].Value, 4);
-    EXPECT_EQ(destContainer[2].Value, 2);
-    EXPECT_EQ(destContainer[3].Value, 5);
-    EXPECT_EQ(destContainer[4].Value, 7);
-}
-
-TEST(CopyTests, CopyIf)
-{
-    ForwardTestContainer<A, 5> container = { A(2), A(3), A(1), A(4), A(6) };
-    ForwardTestContainer<A, 3> destContainer = { A(54), A(1), A(3) };
-
-    auto predicate = [](const A& object) -> bool
-    {
-        return (object.Value % 2) == 0;
     };
 
-    auto it = Algorithms::CopyIf(container.GetBegin(), container.GetEnd(),
-                                 destContainer.GetBegin(),
-                                 predicate);
+    // Algorithms::Copy(Iter, Iter, OutIter)
+    TEST_F(CopyTest, Copy)
+    {
+        ContainerType source = {
+            std::make_shared<int>(20),
+            std::make_shared<int>(32),
+            std::make_shared<int>(14),
+            std::make_shared<int>(698),
+            std::make_shared<int>(1),
+        };
 
-    EXPECT_EQ(it, destContainer.GetEnd());
+        for (int index = 0; index < 5; ++index)
+            ASSERT_EQ(source[index].use_count(), 1);
 
-    EXPECT_EQ(container[0].Value, 2);
-    EXPECT_EQ(container[1].Value, 3);
-    EXPECT_EQ(container[2].Value, 1);
-    EXPECT_EQ(container[3].Value, 4);
-    EXPECT_EQ(container[4].Value, 6);
+        ContainerType destination = MakeContainer<5>();
+        auto iterator = Algorithms::Copy(
+            source.GetBegin(),
+            source.GetEnd(),
+            destination.GetBegin());
 
-    EXPECT_EQ(destContainer[0].Value, 3);
-    EXPECT_EQ(destContainer[1].Value, 5);
-    EXPECT_EQ(destContainer[2].Value, 7);
-}
+        EXPECT_EQ(iterator, destination.GetEnd());
 
-TEST(CopyTests, CopyBackwards)
-{
-    BidirectionalTestContainer<A, 5> container = { A(2), A(3), A(1), A(4), A(6) };
-    BidirectionalTestContainer<A, 5> destContainer = { A(54), A(1), A(2), A(6), A(3) };
+        std::vector<int> expected = { 20, 32, 14, 698, 1 };
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(source[index].use_count(), 2);
+            EXPECT_EQ(destination[index].use_count(), 2);
 
-    auto it = Algorithms::CopyBackwards(container.GetBegin(), container.GetEnd(),
-                                        destContainer.GetEnd());
+            EXPECT_EQ(*source[index], expected[index]);
+            EXPECT_EQ(*destination[index], expected[index]);
+        }
+    }
 
-    EXPECT_EQ(it, destContainer.GetBegin());
+    // Algorithms::CopyN(Iter, Size, OutIter)
+    TEST_F(CopyTest, CopyN)
+    {
+        ContainerType source = {
+            std::make_shared<int>(20),
+            std::make_shared<int>(32),
+            std::make_shared<int>(14),
+            std::make_shared<int>(698),
+            std::make_shared<int>(1),
+        };
 
-    EXPECT_EQ(container[0].Value, 2);
-    EXPECT_EQ(container[1].Value, 3);
-    EXPECT_EQ(container[2].Value, 1);
-    EXPECT_EQ(container[3].Value, 4);
-    EXPECT_EQ(container[4].Value, 6);
+        for (int index = 0; index < 5; ++index)
+            ASSERT_EQ(source[index].use_count(), 1);
 
-    EXPECT_EQ(destContainer[0].Value, 3);
-    EXPECT_EQ(destContainer[1].Value, 4);
-    EXPECT_EQ(destContainer[2].Value, 2);
-    EXPECT_EQ(destContainer[3].Value, 5);
-    EXPECT_EQ(destContainer[4].Value, 7);
+        ContainerType destination = MakeContainer<5>();
+        auto iterator = Algorithms::CopyN(
+            source.GetBegin(),
+            5,
+            destination.GetBegin());
+
+        EXPECT_EQ(iterator, destination.GetEnd());
+
+        std::vector<int> expected = { 20, 32, 14, 698, 1 };
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(source[index].use_count(), 2);
+            EXPECT_EQ(destination[index].use_count(), 2);
+
+            EXPECT_EQ(*source[index], expected[index]);
+            EXPECT_EQ(*destination[index], expected[index]);
+        }
+    }
+
+    // Algorithms::CopyIf(Iter, Iter, OutIter, Pred)
+    TEST_F(CopyTest, CopyIf)
+    {
+        ContainerType source = {
+            std::make_shared<int>(20),
+            std::make_shared<int>(32),
+            std::make_shared<int>(14),
+            std::make_shared<int>(698),
+            std::make_shared<int>(1),
+        };
+
+        for (int index = 0; index < 5; ++index)
+            ASSERT_EQ(source[index].use_count(), 1);
+
+        ForwardTestContainer<Type, 4> destination = MakeContainer<4>();
+        const auto predicate = [](const Type& pointer) -> bool
+        {
+            return ((*pointer % 2) == 0);
+        };
+
+        auto iterator = Algorithms::CopyIf(
+            source.GetBegin(),
+            source.GetEnd(),
+            destination.GetBegin(),
+            predicate);
+
+        EXPECT_EQ(iterator, destination.GetEnd());
+
+        std::vector<int> sourceExpected = { 20, 32, 14, 698, 1 };
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(source[index].use_count(), 2);
+            EXPECT_EQ(*source[index], sourceExpected[index]);
+        }
+
+        std::vector<int> destExpected = { 20, 32, 14, 698 };
+        for (int index = 0; index < 4; ++index)
+        {
+            EXPECT_EQ(destination[index].use_count(), 2);
+            EXPECT_EQ(*destination[index], destExpected[index]);
+        }
+    }
+
+    // Algorithms::CopyBackwards(Iter, Iter, OutIter)
+    TEST_F(CopyTest, CopyBackwards)
+    {
+        BidirectionalTestContainer<Type, 5> source = {
+            std::make_shared<int>(20),
+            std::make_shared<int>(32),
+            std::make_shared<int>(14),
+            std::make_shared<int>(698),
+            std::make_shared<int>(1),
+        };
+
+        BidirectionalTestContainer<Type, 5> destination = {
+            std::make_shared<int>(1134),
+            std::make_shared<int>(220),
+            std::make_shared<int>(123232),
+            std::make_shared<int>(34245),
+            std::make_shared<int>(16988),
+        };
+
+        auto iterator = Algorithms::CopyBackwards(
+            source.GetBegin(), source.GetEnd(), destination.GetEnd());
+
+        EXPECT_EQ(iterator, destination.GetBegin());
+
+        std::vector<int> expected = { 20, 32, 14, 698, 1 };
+        for (int index = 0; index < 5; ++index)
+        {
+            EXPECT_EQ(source[index].use_count(), 2);
+            EXPECT_EQ(destination[index].use_count(), 2);
+
+            EXPECT_EQ(*source[index], expected[index]);
+            EXPECT_EQ(*destination[index], expected[index]);
+        }
+    }
 }
