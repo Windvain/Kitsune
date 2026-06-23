@@ -121,8 +121,9 @@ namespace Kitsune
                 m_SharedData.Buffer :
                 string.m_Pointer;
 
-            // Leave the moved string in an undefined state.
+            // Leave the moved string in a state where IsEmpty() is true.
             string.m_Pointer = string.m_SharedData.Buffer;
+            string.m_Size = 0;
         }
 
         inline BasicString(std::initializer_list<T> initList,
@@ -170,6 +171,8 @@ namespace Kitsune
                 m_SharedData.Buffer : string.m_Pointer;
 
             string.m_Pointer = string.m_SharedData.Buffer;
+            string.m_Size = 0;
+
             return *this;
         }
 
@@ -272,14 +275,6 @@ namespace Kitsune
         {
             BasicString copy = *this;
             copy += string;
-
-            return copy;
-        }
-
-        inline BasicString operator+(std::initializer_list<T> initList)
-        {
-            BasicString copy = *this;
-            copy += initList;
 
             return copy;
         }
@@ -409,7 +404,7 @@ namespace Kitsune
         [[nodiscard]]
         inline ReverseConstIterator GetReverseBegin() const
         {
-            return ReverseIterator(GetEnd());
+            return ReverseConstIterator(GetEnd());
         }
 
         [[nodiscard]]
@@ -421,7 +416,7 @@ namespace Kitsune
         [[nodiscard]]
         inline ReverseConstIterator GetReverseEnd() const
         {
-            return ReverseIterator(GetBegin());
+            return ReverseConstIterator(GetBegin());
         }
 
     public:
@@ -437,10 +432,11 @@ namespace Kitsune
         template<ForwardIterator Iter>
         inline void Assign(Iter begin, Iter end)
         {
-            if (m_Size > Capacity())
-                BasicString(m_Size, Move(m_Allocator)).Swap(*this);
+            auto distance = Algorithms::Distance(begin, end);
+            if (distance > Capacity())
+                BasicString(distance, Move(m_Allocator)).Swap(*this);
 
-            m_Size = Algorithms::Distance(begin, end);
+            m_Size = distance;
             *Algorithms::UninitializedCopy(begin, end, m_Pointer) = T();
         }
 
@@ -456,12 +452,10 @@ namespace Kitsune
             // No need to use Capacity(), we already know that the
             // string is allocated on the heap.
             if (!IsStorageLocal())
-                m_Allocator.Free(m_Pointer, m_SharedData.Capacity + 1);
+                m_Allocator.Free(m_Pointer, (m_SharedData.Capacity + 1) * sizeof(T));
 
-            m_Size = 0;
             m_Pointer = m_SharedData.Buffer;
-
-            m_Pointer[0] = T();
+            Clear();
         }
 
         inline void Insert(Index index, const T* string)
@@ -471,25 +465,12 @@ namespace Kitsune
 
         inline void Insert(Index index, const T* string, Usize size)
         {
-            Insert(index, BasicStringView<T>(string, size));
+            Insert(index, string, string + size);
         }
 
         inline void Insert(Index index, BasicStringView<T> string)
         {
-            if ((index < 0) || (index > Size()))
-                throw OutOfRangeException();
-
-            Usize newSize = Size() + string.Size();
-            if (newSize > Capacity())
-                Reserve(newSize);
-
-            T* position = Data() + index;
-
-            std::memmove(position + string.Size(), position,
-                         (GetEnd() - position + 1) * sizeof(T));
-
-            std::memcpy(position, string.Data(), string.Size() * sizeof(T));
-            m_Size = newSize;
+            Insert(index, string.GetBegin(), string.GetEnd());
         }
 
         inline void Insert(Index index, T character)
@@ -507,9 +488,10 @@ namespace Kitsune
                 Reserve(newSize);
 
             T* position = Data() + index;
-
-            std::memmove(position + count, position,
-                         (GetEnd() - position + 1) * sizeof(T));
+            std::memmove(
+                position + count,
+                position,
+                (GetEnd() - position + 1) * sizeof(T));
 
             Algorithms::UninitializedFillN(position, count, character);
             m_Size = newSize;
@@ -533,11 +515,17 @@ namespace Kitsune
                 Reserve(newSize);
 
             T* position = Data() + index;
+            std::memmove(
+                position + count,
+                position,
+                (GetEnd() - position + 1) * sizeof(T));
 
-            std::memmove(position + count, position,
-                         (GetEnd() - position + 1) * sizeof(T));
+            // Small optimization for contiguous buffers.
+            if constexpr (AnyOf<Iter, T*, const T*>)
+                std::memcpy(position, begin, count * sizeof(T));
+            else
+                Algorithms::UninitializedCopy(begin, end, position);
 
-            Algorithms::UninitializedCopy(begin, end, position);
             m_Size = newSize;
         }
 
@@ -735,34 +723,35 @@ namespace Kitsune
     public:
         inline void Reserve(Usize newCapacity)
         {
-            if (newCapacity < Capacity())
+            if (newCapacity <= Capacity())
                 return;
 
-            // Create a copy of the current string with a larger capacity
-            // and swap with *this.
-            BasicString newString(newCapacity);
+            newCapacity *= s_AllocationFactor;
 
-            std::memcpy(newString.m_Pointer, Raw(), (Size() + 1) * sizeof(T));
-            newString.m_Size = Size();
+            T* pointer = static_cast<T*>(
+                m_Allocator.Allocate((newCapacity + 1) * sizeof(T)));
 
-            newString.Swap(*this);
+            std::memcpy(pointer, Raw(), (Size() + 1) * sizeof(T));
+
+            if (!IsStorageLocal())
+                m_Allocator.Free(m_Pointer, (Capacity() + 1) * sizeof(T));
+
+            m_SharedData.Capacity = newCapacity;
+            m_Pointer = pointer;
         }
 
-        inline void Shrink(Usize newCapacity)
+        inline void ShrinkToFit()
         {
-            if (IsStorageLocal() || (newCapacity < Size()) ||
-                (newCapacity >= Capacity()))
-            {
+            if (IsStorageLocal() || (Size() == Capacity()))
                 return;
-            }
 
-            if (newCapacity < s_SmallBufferSize)
+            if (Size() < s_SmallBufferSize)
             {
                 Usize capacity = m_SharedData.Capacity;
                 std::memcpy(
                     m_SharedData.Buffer, m_Pointer, (Size() + 1) * sizeof(T));
 
-                m_Allocator.Free(m_Pointer, capacity);
+                m_Allocator.Free(m_Pointer, (capacity + 1) * sizeof(T));
                 m_Pointer = m_SharedData.Buffer;
             }
             else
@@ -770,19 +759,14 @@ namespace Kitsune
                 // No need to align allocations, all character types should
                 // be trivial and therefore align to alignof(std::max_align_t).
                 T* pointer = static_cast<T*>(
-                    m_Allocator.Allocate((newCapacity + 1) * sizeof(T)));
+                    m_Allocator.Allocate((Size() + 1) * sizeof(T)));
 
                 std::memcpy(pointer, m_Pointer, (Size() + 1) * sizeof(T));
-                m_Allocator.Free(m_Pointer, m_SharedData.Capacity);
+                m_Allocator.Free(m_Pointer, (m_SharedData.Capacity + 1) * sizeof(T));
 
                 m_Pointer = pointer;
-                m_SharedData.Capacity = newCapacity;
+                m_SharedData.Capacity = Size();
             }
-        }
-
-        inline void ShrinkToFit()
-        {
-            Shrink(Size());
         }
 
     public:

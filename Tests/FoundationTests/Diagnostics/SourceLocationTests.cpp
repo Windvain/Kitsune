@@ -19,7 +19,7 @@ namespace
     TEST(SourceLocationTest, Current)
     {
         SourceLocation location = SourceLocation::Current();
-        EXPECT_EQ(location.Line(), 19);
+        EXPECT_EQ(location.Line(), 21);
 
         /* The outputs of FileName() and FunctionName() differ between compilers. */
     }

@@ -15,13 +15,13 @@ namespace
         using ValueType = typename IteratorTraits<T>::ValueType;
     };
 
-    using AdvanceTestsTypes =
+    using AdvanceTestTypes =
         ::testing::Types<
             Testing::ForwardIterator<int>,
             Testing::BidirectionalIterator<float>,
             Testing::RandomAccessIterator<long>>;
 
-    TYPED_TEST_SUITE(AdvanceTest, AdvanceTestsTypes);
+    TYPED_TEST_SUITE(AdvanceTest, AdvanceTestTypes);
 
     // Algorithms::Advance(Iter&, DifferenceType(x > 0))
     TYPED_TEST(AdvanceTest, AdvanceForwards)

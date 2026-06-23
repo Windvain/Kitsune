@@ -199,7 +199,7 @@ namespace Kitsune
             inline static bool CompareEqual(const Vec& vector1, const Vec& vector2)
             {
                 return (_mm_movemask_epi8(
-                    _mm_cmpeq_epi32(vector1.m_Data, vector2.m_Data)) == 0xFFFF);
+                    _mm_cmpeq_epi32(vector1.m_Storage, vector2.m_Storage)) == 0xFFFF);
             }
 
             inline static Vec Add(const Vec& vector1, const Vec& vector2)
@@ -223,7 +223,7 @@ namespace Kitsune
             inline static Vec Multiply(const Vec& vector1, const Vec& vector2)
             {
                 Vec product;
-                product.m_Storage = _mm_mul_epi32(
+                product.m_Storage = _mm_mullo_epi32(
                     vector1.m_Storage,
                     vector2.m_Storage);
 
@@ -242,7 +242,7 @@ namespace Kitsune
             inline static Vec Multiply(const Vec& vector, T scalar)
             {
                 Vec product;
-                product.m_Storage = _mm_mul_epi32(
+                product.m_Storage = _mm_mullo_epi32(
                     vector.m_Storage,
                     _mm_set1_epi32(scalar));
 
@@ -274,7 +274,7 @@ namespace Kitsune
             inline static bool CompareEqual(const Vec& vector1, const Vec& vector2)
             {
                 return (_mm256_movemask_pd(
-                    _mm256_cmpeq_pd(vector1.m_Storage, vector2.m_Storage)) == 0xF);
+                    _mm256_cmp_pd(vector1.m_Storage, vector2.m_Storage, 0)) == 0xF);
             }
 
             inline static Vec Add(const Vec& vector1, const Vec& vector2)
@@ -315,17 +315,17 @@ namespace Kitsune
                 return quotient;
             }
 
-            inline static Vec Multiply(const Vec& vector, float scalar)
+            inline static Vec Multiply(const Vec& vector, double scalar)
             {
                 Vec product;
                 product.m_Storage = _mm256_mul_pd(
                     vector.m_Storage,
-                    _mm_set1_ps(scalar));
+                    _mm256_set1_pd(scalar));
 
                 return product;
             }
 
-            inline static Vec Divide(const Vec& vector, float scalar)
+            inline static Vec Divide(const Vec& vector, double scalar)
             {
                 return Multiply(vector, 1 / scalar);
             }
@@ -374,12 +374,8 @@ namespace Kitsune
 
             inline static Vec Multiply(const Vec& vector1, const Vec& vector2)
             {
-                Vec product;
-                product.m_Storage = _mm256_mul_epi64(
-                    vector1.m_Storage,
-                    vector2.m_Storage);
-
-                return product;
+                // _mm256_mullo_epi64 was only added with AVX512VL.
+                return Vector4Base<T, Vec, false, false>::Multiply(vector1, vector2);
             }
 
             inline static Vec Divide(const Vec& vector1, const Vec& vector2)
@@ -389,12 +385,8 @@ namespace Kitsune
 
             inline static Vec Multiply(const Vec& vector, T scalar)
             {
-                Vec product;
-                product.m_Storage = _mm256_mul_epi64(
-                    vector.m_Storage,
-                    _mm256_set1_epi64x(scalar));
-
-                return product;
+                // _mm256_mullo_epi64 was only added with AVX512VL.
+                return Vector4Base<T, Vec, false, false>::Multiply(vector, Vec(scalar));
             }
 
             inline static Vec Divide(const Vec& vector, T scalar)
@@ -598,6 +590,25 @@ namespace Kitsune
     {
         return Details::Vector4Base<T, Vector<T, 4>>::CompareEqual(
             vector1, vector2);
+    }
+
+    namespace Maths
+    {
+        template<typename T>
+        inline T Dot(const Vector<T, 4>& vector1, const Vector<T, 4>& vector2)
+        {
+            Vector<T, 4> vector = vector1 * vector2;
+            return vector.X + vector.Y + vector.Z + vector.W;
+        }
+
+#if defined(KITSUNE_ARCH_X86_64) && defined(KITSUNE_ENABLE_SIMD_OPTIMIZATIONS)
+        inline float Dot(const Vector<float, 4>& vector1,
+                         const Vector<float, 4>& vector2)
+        {
+            __m128 data = _mm_dp_ps(vector1.m_Storage, vector2.m_Storage, 0xFF);
+            return _mm_cvtss_f32(data);
+        }
+#endif
     }
 
     template<typename T> using Vector4 = Vector<T, 4>;

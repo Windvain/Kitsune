@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "TestContainer.h"
+#include "StatefulAllocator.h"
 #include "TrackingAllocator.h"
 
 #include "Foundation/Containers/Array.h"
@@ -10,45 +11,13 @@
 namespace
 {
     using namespace Kitsune;
-    using Testing::ForwardTestContainer, Testing::TrackingAllocator;
-
-    class TestAllocator : public GlobalAllocator
-    {
-    public:
-        TestAllocator() = default;
-        inline TestAllocator(int id)
-            : Id(id)
-        {
-        }
-
-        TestAllocator(const TestAllocator&) = default;
-        TestAllocator(TestAllocator&& allocator)
-            : Id(std::exchange(allocator.Id, 0))
-        {
-        }
-
-        ~TestAllocator() = default;
-
-    public:
-        TestAllocator& operator=(const TestAllocator& allocator)
-        {
-            Id = allocator.Id;
-            return *this;
-        }
-
-        TestAllocator& operator=(TestAllocator&& allocator)
-        {
-            Id = std::exchange(allocator.Id, 0);
-            return *this;
-        }
-
-    public:
-        int Id = 0;
-    };
+    using Testing::ForwardTestContainer, Testing::TrackingAllocator,
+          Testing::StatefulAllocator;
 
     static_assert(
         Container<Array<std::string>>,
-        "The Array<T, Alloc> class does not satisfy the requirements for being a Container.");
+        "The Array<T, Alloc> class does not satisfy the requirements for being a "
+        "Container.");
 
     // Array<T, Alloc>::Array()
     TEST(ArrayTest, DefaultConstructor)
@@ -64,10 +33,10 @@ namespace
     // Array<T, Alloc>::Array(const Alloc&)
     TEST(ArrayTest, AllocatorConstructor)
     {
-        TestAllocator allocator(23);
-        Array<int, TestAllocator> array(allocator);
+        StatefulAllocator allocator(23);
+        Array<int, StatefulAllocator> array(allocator);
 
-        EXPECT_EQ(array.GetAllocator().Id, allocator.Id);
+        EXPECT_EQ(array.GetAllocator().GetId(), allocator.GetId());
 
         EXPECT_EQ(array.Size(), 0);
         EXPECT_EQ(array.Capacity(), 0);
@@ -86,10 +55,10 @@ namespace
         EXPECT_EQ(array.Capacity(), capacity / sizeof(int));
         EXPECT_GE(capacity, 100 * sizeof(int));
 
-        Array<int, TestAllocator> array2(100, TestAllocator(12));
+        Array<int, StatefulAllocator> array2(100, StatefulAllocator(12));
         EXPECT_EQ(array2.Size(), 0);
         EXPECT_GE(array2.Capacity(), 100);
-        EXPECT_EQ(array2.GetAllocator().Id, 12);
+        EXPECT_EQ(array2.GetAllocator().GetId(), 12);
 
         Array<int, TrackingAllocator> empty(0);
         EXPECT_EQ(empty.Size(), 0);
@@ -110,8 +79,8 @@ namespace
         for (int index = 0; index < 20; ++index)
             EXPECT_EQ(array.Data()[index], 97);
 
-        Array<int, TestAllocator> array2(14, int(33), TestAllocator(4));
-        EXPECT_EQ(array2.GetAllocator().Id, 4);
+        Array<int, StatefulAllocator> array2(14, int(33), StatefulAllocator(4));
+        EXPECT_EQ(array2.GetAllocator().GetId(), 4);
 
         EXPECT_EQ(array2.Size(), 14);
         EXPECT_GE(array2.Capacity(), 14);
@@ -135,11 +104,11 @@ namespace
         for (int index = 0; index < 5; ++index)
             EXPECT_EQ(array.Data()[index], source[index]);
 
-        Array<int, TestAllocator> array2(
+        Array<int, StatefulAllocator> array2(
             source.GetBegin(), source.GetEnd(),
-            TestAllocator(7));
+            StatefulAllocator(7));
 
-        EXPECT_GE(array2.GetAllocator().Id, 7);
+        EXPECT_GE(array2.GetAllocator().GetId(), 7);
 
         EXPECT_EQ(array2.Size(), 5);
         EXPECT_GE(array2.Capacity(), 5);
@@ -163,8 +132,8 @@ namespace
         for (int index = 0; index < 5; ++index)
             EXPECT_EQ(array.Data()[index], source[index]);
 
-        Array<int, TestAllocator> array2({ 23, 4, 1, 343, 9 }, TestAllocator(7));
-        EXPECT_GE(array2.GetAllocator().Id, 7);
+        Array<int, StatefulAllocator> array2({ 23, 4, 1, 343, 9 }, StatefulAllocator(7));
+        EXPECT_GE(array2.GetAllocator().GetId(), 7);
 
         EXPECT_EQ(array2.Size(), 5);
         EXPECT_GE(array2.Capacity(), 5);
@@ -212,11 +181,11 @@ namespace
     // Array<T, Alloc>::Array(const Array&)
     TEST(ArrayTest, CopyConstructorCopiesAllocator)
     {
-        Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(324));
+        Array<int, StatefulAllocator> array({ 23, 2, 65, 12, 98 }, StatefulAllocator(324));
 
         // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-        Array<int, TestAllocator> copy = array;
-        EXPECT_EQ(array.GetAllocator().Id, 324);
+        Array<int, StatefulAllocator> copy = array;
+        EXPECT_EQ(array.GetAllocator().GetId(), 324);
         EXPECT_EQ(array.GetAllocator(), copy.GetAllocator());
     }
 
@@ -252,11 +221,11 @@ namespace
     // Array<T, Alloc>::Array(Array&&)
     TEST(ArrayTest, MoveConstructorMovesAllocator)
     {
-        Array<int, TestAllocator> array({ 23, 2, 65, 12, 98 }, TestAllocator(324));
-        Array<int, TestAllocator> move = std::move(array);
+        Array<int, StatefulAllocator> array({ 23, 2, 65, 12, 98 }, StatefulAllocator(324));
+        Array<int, StatefulAllocator> move = std::move(array);
 
-        EXPECT_EQ(array.GetAllocator().Id, 0);
-        EXPECT_EQ(move.GetAllocator().Id, 324);
+        EXPECT_EQ(array.GetAllocator().GetId(), 0);
+        EXPECT_EQ(move.GetAllocator().GetId(), 324);
     }
 
     // Array<T, Alloc>::~Array()
@@ -312,13 +281,13 @@ namespace
     // Array<T, Alloc>::operator=(const Array<T, Alloc>&)
     TEST(ArrayTest, CopyAssignCopiesAllocator)
     {
-        Array<int, TestAllocator> array({ 1, 32, 561, 12 }, TestAllocator(34));
-        Array<int, TestAllocator> copy({ 32948, 1283, 1282 }, TestAllocator(4341));
+        Array<int, StatefulAllocator> array({ 1, 32, 561, 12 }, StatefulAllocator(34));
+        Array<int, StatefulAllocator> copy({ 32948, 1283, 1282 }, StatefulAllocator(4341));
 
         copy = array;
 
-        EXPECT_EQ(array.GetAllocator().Id, 34);
-        EXPECT_EQ(copy.GetAllocator().Id, 34);
+        EXPECT_EQ(array.GetAllocator().GetId(), 34);
+        EXPECT_EQ(copy.GetAllocator().GetId(), 34);
     }
 
     // Array<T, Alloc>::operator=(Array<T, Alloc>&&)
@@ -359,11 +328,11 @@ namespace
     // Array<T, Alloc>::operator=(Array<T, Alloc>&&)
     TEST(ArrayTest, MoveAssignMovesAllocator)
     {
-        Array<int, TestAllocator> array({ 49, 132, 59, 555, 1 }, TestAllocator(442));
-        Array<int, TestAllocator> move = std::move(array);
+        Array<int, StatefulAllocator> array({ 49, 132, 59, 555, 1 }, StatefulAllocator(442));
+        Array<int, StatefulAllocator> move = std::move(array);
 
-        EXPECT_EQ(move.GetAllocator().Id, 442);
-        EXPECT_EQ(array.GetAllocator().Id, 0);
+        EXPECT_EQ(move.GetAllocator().GetId(), 442);
+        EXPECT_EQ(array.GetAllocator().GetId(), 0);
     }
 
     // Array<T, Alloc>::operator=(std::initializer_list<T>)
@@ -568,13 +537,13 @@ namespace
     // Array<T, Alloc>::Swap(Array<T, Alloc>&)
     TEST(ArrayTest, Swap)
     {
-        Array<int, TestAllocator> array({ 23, 5, 1, 3, 65 }, TestAllocator(21));
-        Array<int, TestAllocator> array2({ 22, 12, 23, 5, 1, 3, 65 }, TestAllocator(11));
+        Array<int, StatefulAllocator> array({ 23, 5, 1, 3, 65 }, StatefulAllocator(21));
+        Array<int, StatefulAllocator> array2({ 22, 12, 23, 5, 1, 3, 65 }, StatefulAllocator(11));
 
         array.Swap(array2);
 
-        EXPECT_EQ(array.GetAllocator().Id, 11);
-        EXPECT_EQ(array2.GetAllocator().Id, 21);
+        EXPECT_EQ(array.GetAllocator().GetId(), 11);
+        EXPECT_EQ(array2.GetAllocator().GetId(), 21);
 
         EXPECT_EQ(array.Size(), 7);
         EXPECT_EQ(array2.Size(), 5);
@@ -599,6 +568,18 @@ namespace
         array.Clear();
 
         EXPECT_EQ(array.Size(), 0);
+    }
+
+    // Array<T, Alloc>::Reset()
+    TEST(ArrayTest, Reset)
+    {
+        Array<int> array = { 32, 654, 123, 32, 983, 435 };
+        array.Reset();
+
+        EXPECT_EQ(array.Size(), 0);
+        EXPECT_EQ(array.Capacity(), 0);
+
+        EXPECT_EQ(array.Data(), nullptr);
     }
 
     // Array<T, Alloc>::Assign(Iter, Iter)
@@ -664,6 +645,7 @@ namespace
      * implemented with calls to Emplace(Iter, Args&&...). Skipped.
      */
 
+    // Array<T, Alloc>::Insert(Iter, Usize, const T&)
     TEST(ArrayTest, InsertFill)
     {
         Array<std::shared_ptr<int>> array = {
@@ -702,6 +684,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::Insert(Iter[== GetEnd()], Usize, const T&)
     TEST(ArrayTest, InsertFillEnd)
     {
         Array<std::shared_ptr<int>> array = {
@@ -732,6 +715,7 @@ namespace
          }
     }
 
+    // Array<T, Alloc>::Insert(Iter, InputIter, InputIter)
     TEST(ArrayTest, InsertRange)
     {
         Array<std::shared_ptr<int>> array = {
@@ -780,6 +764,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::Insert(Iter, InputIter, InputIter)
     TEST(ArrayTest, InsertRangeEnd)
     {
         Array<std::shared_ptr<int>> array = {
@@ -816,6 +801,7 @@ namespace
         }
     }
 
+    // Array<T, Alloc>::Insert(Iter, std::initializer_list<T>)
     TEST(ArrayTest, InsertInitializerList)
     {
         Array<std::shared_ptr<int>> array = {
@@ -857,6 +843,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::Insert(Iter, std::initializer_list<T>)
     TEST(ArrayTest, InsertInitializerListEnd)
     {
         Array<std::shared_ptr<int>> array = {
@@ -885,6 +872,7 @@ namespace
             EXPECT_EQ(*array.Data()[index], expected[index]);
     }
 
+    // Array<T, Alloc>::Emplace(Iter, Args&&...)
     TEST(ArrayTest, Emplace)
     {
         Array<std::string> array = {
@@ -926,6 +914,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::Remove(Iter)
     TEST(ArrayTest, Remove)
     {
         Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
@@ -947,6 +936,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::Remove(Iter, Iter)
     TEST(ArrayTest, RemoveRange)
     {
         Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
@@ -1001,6 +991,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::RemoveUnsorted(Iter)
     TEST(ArrayTest, RemoveUnsorted)
     {
         Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
@@ -1022,6 +1013,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::RemoveUnsorted(Iter, Iter)
     TEST(ArrayTest, RemoveUnsortedRange)
     {
         Array<int> array = { 12, 4, 65, 1, 11, 85, 33 };
@@ -1076,6 +1068,7 @@ namespace
             OutOfRangeException);
     }
 
+    // Array<T, Alloc>::PushBack(const T&)
     TEST(ArrayTest, PushBackCopy)
     {
         Array<std::shared_ptr<int>> array = {
@@ -1100,6 +1093,7 @@ namespace
         EXPECT_EQ(array.Data()[6], pointer);
     }
 
+    // Array<T, Alloc>::PushBack(T&&)
     TEST(ArrayTest, PushBackMove)
     {
         Array<std::shared_ptr<int>> array = {
@@ -1123,6 +1117,7 @@ namespace
         EXPECT_EQ(array.Data()[6].use_count(), 1);
     }
 
+    // Array<T, Alloc>::EmplaceBack(Args&&...)
     TEST(ArrayTest, EmplaceBack)
     {
         Array<std::string> array = {
@@ -1150,6 +1145,7 @@ namespace
             EXPECT_EQ(array[index], expected[index]);
     }
 
+    // Array<T, Alloc>::PopBack()
     TEST(ArrayTest, PopBack)
     {
         Array<int> array = { 23, 324, 7, 1, 5, 9, 1 };
@@ -1163,6 +1159,8 @@ namespace
             EXPECT_EQ(array.Data()[index], expected[index]);
     }
 
+    // Array<T, Alloc>::begin()
+    // Array<T, Alloc>::end()
     TEST(ArrayTest, RangedForLoop)
     {
         Array<int> array = { 544, 123, 12, 7 };
@@ -1175,6 +1173,7 @@ namespace
         }
     }
 
+    // operator==(const Array<T, Alloc>&, const Array<T, Alloc>&)
     TEST(ArrayTest, Equal)
     {
         Array<int> array = { 12, 23, 23, 54, 64 };

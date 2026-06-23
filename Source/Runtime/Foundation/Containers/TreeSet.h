@@ -9,6 +9,7 @@
 #include "Foundation/Templates/Exchange.h"
 #include "Foundation/Utilities/Comparators.h"
 
+#include "Foundation/Memory/AddressOf.h"
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 

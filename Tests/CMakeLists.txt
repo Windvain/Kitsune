@@ -49,9 +49,11 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
 
     "FoundationTests/Filesystem/FileStreamTests.cpp"
 
+    "FoundationTests/Include/PushBackContainer.h"
+    "FoundationTests/Include/StatefulAllocator.h"
+    "FoundationTests/Include/StringEqualAssert.h"
     "FoundationTests/Include/TestContainer.h"
     "FoundationTests/Include/TestIterators.h"
-    "FoundationTests/Include/TestStrings.h"
     "FoundationTests/Include/TrackingAllocator.h"
 
     "FoundationTests/Iterators/BackInsertIteratorTests.cpp"
@@ -60,20 +62,19 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/Iterators/ToAddressTests.cpp"
 
     "FoundationTests/Maths/Vector2Tests.cpp"
+    "FoundationTests/Maths/Vector3Tests.cpp"
+    "FoundationTests/Maths/Vector4Tests.cpp"
 
     "FoundationTests/Memory/AddressOfTests.cpp"
     "FoundationTests/Memory/ScopedPtrTests.cpp"
     "FoundationTests/Memory/SharedPtrTests.cpp"
 
-    "FoundationTests/String/DecodeTests.cpp"
-    "FoundationTests/String/EncodeTests.cpp"
+    "FoundationTests/String/EncodingHelperTests.cpp"
     "FoundationTests/String/StringTests.cpp"
     "FoundationTests/String/StringViewTests.cpp"
-    "FoundationTests/String/TranscodeTests.cpp"
     "FoundationTests/String/Utf8EncodingTests.cpp"
     "FoundationTests/String/Utf16EncodingTests.cpp"
     "FoundationTests/String/Utf32EncodingTests.cpp"
-    "FoundationTests/String/ValidTests.cpp"
 
     "FoundationTests/Utilities/FunctorTests.cpp"
 

@@ -41,10 +41,7 @@ namespace Kitsune
     public:
         inline void operator()(ValueType* pointer)
         {
-            if constexpr (!std::is_void_v<ValueType>)
-                Memory::Delete(pointer);
-
-            KITSUNE_UNUSED(pointer);
+            Memory::Delete(pointer);
         }
     };
 }

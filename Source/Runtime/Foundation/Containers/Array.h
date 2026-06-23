@@ -111,11 +111,12 @@ namespace Kitsune
                 return *this;
 
             if (m_Allocator != array.GetAllocator())
-                Array().Swap(*this);
+            {
+                Reset();
+                m_Allocator = array.GetAllocator();
+            }
 
-            m_Allocator = array.GetAllocator();
             Assign(array.GetBegin(), array.GetEnd());
-
             return *this;
         }
 
@@ -245,7 +246,7 @@ namespace Kitsune
         [[nodiscard]]
         inline ReverseConstIterator GetReverseBegin() const
         {
-            return ReverseIterator(m_End);
+            return ReverseConstIterator(m_End);
         }
 
         [[nodiscard]]
@@ -257,7 +258,7 @@ namespace Kitsune
         [[nodiscard]]
         inline ReverseConstIterator GetReverseEnd() const
         {
-            return ReverseIterator(m_Begin);
+            return ReverseConstIterator(m_Begin);
         }
 
     public:
@@ -266,12 +267,12 @@ namespace Kitsune
             if (newCapacity <= Capacity())
                 return;
 
-            ReallocateExact_(newCapacity);
+            Reallocate_(newCapacity * s_AllocationFactor);
         }
 
         inline void ShrinkToFit()
         {
-            ReallocateExact_(Size());
+            Reallocate_(Size());
         }
 
         inline void Resize(Usize count)
@@ -312,6 +313,17 @@ namespace Kitsune
             m_End = m_Begin;
         }
 
+        inline void Reset()
+        {
+            if (m_Begin == nullptr)
+                return;
+
+            m_Allocator.Free(m_Begin, Capacity() * sizeof(T));
+            Algorithms::Destroy(m_Begin, m_End);
+
+            m_StorageEnd = m_End = m_Begin = nullptr;
+        }
+
         template<ForwardIterator Iter>
         inline void Assign(Iter begin, Iter end)
         {
@@ -320,7 +332,7 @@ namespace Kitsune
             if (Capacity() >= size)
                 Algorithms::Destroy(m_Begin, m_End);
             else
-                Array(size, Move(m_Allocator)).Swap(*this);
+                Reserve(size);
 
             m_End = Algorithms::UninitializedCopy(begin, end, m_Begin);
         }
@@ -335,79 +347,76 @@ namespace Kitsune
             if (Capacity() >= count)
                 Algorithms::Destroy(m_Begin, m_End);
             else
-                Array(count, Move(m_Allocator)).Swap(*this);
+                Reserve(count);
 
             m_End = Algorithms::UninitializedFillN(m_Begin, count, value);
         }
 
     public:
-        inline Iterator Insert(Iterator pos, const T& value)
+        inline Iterator Insert(Iterator position, const T& value)
         {
-            return Emplace(pos, value);
+            return Emplace(position, value);
         }
 
-        inline Iterator Insert(Iterator pos, T&& value)
+        inline Iterator Insert(Iterator position, T&& value)
         {
-            return Emplace(pos, Move(value));
+            return Emplace(position, Move(value));
         }
 
-        inline Iterator Insert(Iterator pos, Usize count, const T& value)
+        inline Iterator Insert(Iterator position, Usize count, const T& value)
         {
-            for (Usize i = 0; i != count; ++i, ++pos)
-                pos = Insert(pos, value);
+            for (Usize i = 0; i != count; ++i, ++position)
+                position = Insert(position, value);
 
-            return pos - count;
+            return position - count;
         }
 
         template<ForwardIterator Iter>
-        inline Iterator Insert(Iterator pos, Iter begin, Iter end)
+        inline Iterator Insert(Iterator position, Iter begin, Iter end)
         {
             typename IteratorTraits<Iter>::DifferenceType rangeLen = 0;
-            for (; begin != end; ++begin, ++pos, ++rangeLen)
-                pos = Insert(pos, *begin);
+            for (; begin != end; ++begin, ++position, ++rangeLen)
+                position = Insert(position, *begin);
 
-            return pos - rangeLen;
+            return position - rangeLen;
         }
 
-        inline Iterator Insert(Iterator pos, std::initializer_list<T> initList)
+        inline Iterator Insert(Iterator position, std::initializer_list<T> initList)
         {
-            return Insert(pos, initList.begin(), initList.end());
+            return Insert(position, initList.begin(), initList.end());
         }
 
         template<typename... Args>
-        inline Iterator Emplace(Iterator pos, Args&&... args)
+        inline Iterator Emplace(Iterator position, Args&&... args)
         {
-            if ((pos < GetBegin()) || (pos > GetEnd()))
+            if ((position < GetBegin()) || (position > GetEnd()))
                 throw OutOfRangeException();
 
             Usize newSize = Size() + 1;
-            if (Capacity() < newSize)
-            {
-                Index index = pos - GetBegin();
-                Reallocate_(newSize);
+            Index index = position - GetBegin();
 
-                pos = GetBegin() + index;
-            }
+            Reserve(newSize);
+            position = GetBegin() + index;
 
             // Shift the elements of the range [pos, GetEnd()] starting from the end.
             auto sourceShift = GetReverseBegin();
             auto destShift = ReverseIterator(m_Begin + newSize);
 
-            for (; sourceShift != ReverseIterator(pos); ++sourceShift, ++destShift)
+            for (; sourceShift != ReverseIterator(position); ++sourceShift, ++destShift)
             {
                 Memory::ConstructAt<T>(AddressOf(*destShift), Move(*sourceShift));
                 Memory::DestroyAt(AddressOf(*sourceShift));
             }
 
-            Memory::ConstructAt<T>(AddressOf(*pos), Forward<Args>(args)...);
+            Memory::ConstructAt<T>(AddressOf(*position), Forward<Args>(args)...);
 
             ++m_End;
-            return pos;
+            return position;
         }
 
-        inline void Remove(Iterator pos)
+        inline void Remove(Iterator position)
         {
-            return Remove(pos, pos + 1);
+            return Remove(position, position + 1);
         }
 
         inline void Remove(Iterator begin, Iterator end)
@@ -430,9 +439,9 @@ namespace Kitsune
             m_End -= removedSize;
         }
 
-        inline void RemoveUnsorted(Iterator pos)
+        inline void RemoveUnsorted(Iterator position)
         {
-            RemoveUnsorted(pos, pos + 1);
+            RemoveUnsorted(position, position + 1);
         }
 
         inline void RemoveUnsorted(Iterator begin, Iterator end)
@@ -466,9 +475,7 @@ namespace Kitsune
         template<typename... Args>
         inline T& EmplaceBack(Args&&... args)
         {
-            Usize newSize = Size() + 1;
-            if (newSize > Capacity())
-                Reallocate_(newSize);
+            Reserve(Size() + 1);
 
             Memory::ConstructAt<T>(m_End, Forward<Args>(args)...);
             return *(m_End++);
@@ -492,7 +499,7 @@ namespace Kitsune
         inline ConstIterator end() const { return GetEnd(); }
 
     private:
-        inline void ReallocateExact_(Usize newCapacity)
+        inline void Reallocate_(Usize newCapacity)
         {
             T* pointer = static_cast<T*>(m_Allocator.Allocate(
                 newCapacity * sizeof(T), alignof(T)));
@@ -502,17 +509,12 @@ namespace Kitsune
             Algorithms::UninitializedMoveN(m_Begin, moveCount, pointer);
             Algorithms::Destroy(m_Begin, m_End);
 
-            m_Allocator.Free(m_Begin, Capacity() * sizeof(T));
+            if (m_Begin != nullptr)
+                m_Allocator.Free(m_Begin, Capacity() * sizeof(T));
 
             m_Begin = pointer;
             m_End = m_Begin + moveCount;
             m_StorageEnd = m_Begin + newCapacity;
-        }
-
-        inline void Reallocate_(Usize newCapacity)
-        {
-            Usize adjustedCapacity = s_AllocationFactor * newCapacity;
-            ReallocateExact_(adjustedCapacity);
         }
 
     private:

@@ -26,9 +26,8 @@ namespace Kitsune
         using DeleterType = Del;
 
         static_assert(
-            !std::is_reference_v<T>,
-            "The type of the pointer must be a valid type. "
-            "A reference type cannot be pointed to and therefore is not valid.");
+            !std::is_reference_v<T> && !std::is_void_v<T>,
+            "The type of the pointer must be a valid type.");
 
         static_assert(
             Invocable<Del, T*>,

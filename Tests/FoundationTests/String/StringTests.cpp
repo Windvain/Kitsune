@@ -1,1354 +1,1219 @@
 #include <gtest/gtest.h>
+#include "TestContainer.h"
+
+#include "StringEqualAssert.h"
+
+#include "StatefulAllocator.h"
+#include "TrackingAllocator.h"
+
 #include "Foundation/String/String.h"
 #include "Foundation/Concepts/Container.h"
 
-using namespace Kitsune;
-
 namespace
 {
-    // Basically a GlobalAllocator with an integer for identification.
-    class IdentifiableAllocator
-    {
-    public:
-        IdentifiableAllocator()
-            : m_Id(0)
-        {
-        }
-
-        IdentifiableAllocator(Uint64 id)
-            : m_Id(id)
-        {
-        }
-
-        IdentifiableAllocator(const IdentifiableAllocator& allocator)
-            : m_Id(allocator.m_Id)
-        {
-        }
-
-        IdentifiableAllocator(IdentifiableAllocator&& allocator)
-            : m_Id(std::exchange(allocator.m_Id, 0))
-        {
-        }
-
-    public:
-        IdentifiableAllocator& operator=(const IdentifiableAllocator& allocator)
-        {
-            m_Id = allocator.m_Id;
-            return *this;
-        }
-
-        IdentifiableAllocator& operator=(IdentifiableAllocator&& allocator)
-        {
-            m_Id = std::exchange(allocator.m_Id, 0);
-            return *this;
-        }
-
-    public:
-        void* Allocate(Usize bytes)
-        {
-            return m_Allocator.Allocate(bytes);
-        }
-
-        void* Allocate(Usize bytes, Usize alignment)
-        {
-            return m_Allocator.Allocate(bytes, alignment);
-        }
-
-        void Free(void* pointer, Usize bytes)
-        {
-            m_Allocator.Free(pointer, bytes);
-        }
-
-    public:
-        bool operator==(const IdentifiableAllocator& allocator) const
-        {
-            return m_Id == allocator.m_Id;
-        }
-
-    private:
-        Uint64 m_Id;
-        GlobalAllocator m_Allocator;
-    };
-
-    static_assert(Allocator<IdentifiableAllocator>,
-                  "IdentifiableAllocator does not meet the requirements of "
-                  "Allocator<T>.");
+    using namespace Kitsune;
+    using Testing::StatefulAllocator, Testing::TrackingAllocator,
+          Testing::ForwardNonOwningTestContainer;
 
     template<typename T>
-    class MyForwardIterator
+    class StringTest : public ::testing::Test
     {
-    public:
-        using ValueType = T;
-        using DifferenceType = Ptrdiff;
+    protected:
+        using CharType = T;
+        using StringType = BasicString<T>;
 
-    public:
-        MyForwardIterator(T* pointer = nullptr)
-            : m_Pointer(pointer)
+        static_assert(
+            Container<BasicString<T>>,
+            "BasicString<T> does not satisfy the requirements of the Container "
+            "concept.");
+
+        [[nodiscard]]
+        inline std::basic_string<T> GetEncodedString(
+            const char* string,
+            std::size_t size)
         {
+            std::basic_string<T> convString;
+            for (std::size_t index = 0; index < size; ++index)
+            {
+                assert(string[index] <= 127);
+                convString.push_back(static_cast<T>(string[index]));
+            }
+
+            return convString;
         }
 
-        MyForwardIterator(const MyForwardIterator<T>&) = default;
-        MyForwardIterator<T>& operator=(const MyForwardIterator<T>&) = default;
-
-    public:
-        T& operator*() const { return *m_Pointer; }
-        MyForwardIterator<T>& operator++()
+        [[nodiscard]]
+        inline std::basic_string<T> GetEncodedString(const char* string)
         {
-            ++m_Pointer;
-            return *this;
+            return GetEncodedString(string, std::strlen(string));
         }
-
-        MyForwardIterator<T> operator++(int)
-        {
-            MyForwardIterator<T> copy = *this;
-            ++m_Pointer;
-
-            return copy;
-        }
-
-    public:
-        bool operator==(MyForwardIterator<T> iter) const
-        {
-            return m_Pointer == iter.m_Pointer;
-        }
-
-    private:
-        T* m_Pointer;
     };
 
-    static_assert(ForwardIterator<MyForwardIterator<char>>,
-                  "MyForwardIterator<T> doesn't satisfy the requirements of a ForwardIterator.");
-}
+    using StringTestTypes =
+        ::testing::Types<char, wchar_t, char8_t, char16_t, char32_t>;
 
-template<typename T>
-class StringTests : public ::testing::Test
-{
-public:
-    using CharType = T;
+    TYPED_TEST_SUITE(StringTest, StringTestTypes);
 
-    static_assert(
-        Container<BasicString<T>>,
-        "BasicString does not satisfy the Container concept.");
-
-protected:
-    StringTests() { /* ... */ }
-    ~StringTests() { /* ... */ }
-
-protected:
-    const T* GetCString()
+    // BasicString<T, Alloc>::BasicString()
+    TYPED_TEST(StringTest, DefaultConstructor)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Hello there, I am a string!";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"I am a wide string! How about you?";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"I am a UTF-8 string... The new kid on the block..";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Hey UTF-32, look at us old strings...";
-        else
-            return U"Yeah... we're ooooolllldddd...";
+        using T = typename TestFixture::CharType;
+        BasicString<T, StatefulAllocator> string;
+
+        EXPECT_EQ(string.Size(), 0);
+        EXPECT_EQ(string.Data()[0], T());
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 0);
+        EXPECT_TRUE(string.IsStorageLocal());
     }
 
-    const T* GetShortCString()
+    // BasicString<T, Alloc>::BasicString(const Alloc&)
+    TYPED_TEST(StringTest, AllocatorConstructor)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Hello World!";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Wiidde";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Hello there..";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"..uhh..";
-        else
-            return U"uhh";
+        using T = typename TestFixture::CharType;
+        BasicString<T, StatefulAllocator> string{ StatefulAllocator(72) };
+
+        EXPECT_EQ(string.Size(), 0);
+        EXPECT_EQ(string.Data()[0], T());
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 72);
+        EXPECT_TRUE(string.IsStorageLocal());
     }
 
-    const T* GetFoundString()
+    // BasicString<T, Alloc>::BasicString(Usize, const Alloc&)
+    TYPED_TEST(StringTest, OptimizedCapacityConstructor)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Mouse";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Mouse";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Mouse";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Mouse";
-        else
-            return U"Mouse";
+        using T = typename TestFixture::CharType;
+        BasicString<T, StatefulAllocator> string(
+            BasicString<T>::GetLocalCapacity(),
+            StatefulAllocator(642));
+
+        EXPECT_EQ(string.Size(), 0);
+        EXPECT_EQ(string.Data()[0], T());
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 642);
+
+        EXPECT_EQ(string.Capacity(), string.GetLocalCapacity());
+        EXPECT_TRUE(string.IsStorageLocal());
     }
 
-    const T* GetNotFoundString()
+    // BasicString<T, Alloc>::BasicString(Usize, const Alloc&)
+    TYPED_TEST(StringTest, OptimizedCapacityConstructorDoesNotAllocate)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Standee";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Lamp";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Cubes";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Phone Stand";
-        else
-            return U"Laptop";
+        using T = typename TestFixture::CharType;
+        BasicString<T, TrackingAllocator> string(BasicString<T>::GetLocalCapacity());
+
+        ASSERT_TRUE(string.IsStorageLocal());
+        EXPECT_EQ(string.GetAllocator().AllocationCount(), 0);
     }
 
-    const T* GetFindString()
+    // BasicString<T, Alloc>::BasicString(Usize, const Alloc&)
+    TYPED_TEST(StringTest, LargeCapacityConstructor)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Earphones Mouse Pen Eraser Remote";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Earphones Mouse Pen Eraser Remote";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Earphones Mouse Pen Eraser Remote";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Earphones Mouse Pen Eraser Remote";
-        else
-            return U"Earphones Mouse Pen Eraser Remote";
+        using T = typename TestFixture::CharType;
+
+        BasicString<T, StatefulAllocator> string(100, StatefulAllocator(2));
+        ASSERT_GT(100, BasicString<T>().GetLocalCapacity());
+
+        EXPECT_EQ(string.Size(), 0);
+        EXPECT_EQ(string.Data()[0], T());
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 2);
+
+        EXPECT_GE(string.Capacity(), 100);
+        EXPECT_FALSE(string.IsStorageLocal());
     }
-};
 
-using StringTestsImpl =
-    ::testing::Types<
-        char,
-        wchar_t,
-        char8_t,
-        char16_t,
-        char32_t>;
-
-TYPED_TEST_SUITE(StringTests, StringTestsImpl);
-
-// BasicString<T, Alloc>()
-TYPED_TEST(StringTests, DefaultConstructor)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T, IdentifiableAllocator> string;
-
-    EXPECT_EQ(string.Size(), 0);
-    EXPECT_EQ(string.Data()[0], T());
-
-    IdentifiableAllocator allocator{ /* ... */ };
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_TRUE(string.IsStorageLocal());
-}
-
-// BasicString<T, Alloc>(const Alloc& allocator)
-TYPED_TEST(StringTests, AllocatorConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 72;
-    BasicString<T, IdentifiableAllocator> string{IdentifiableAllocator(allocatorId)};
-
-    EXPECT_EQ(string.Size(), 0);
-    EXPECT_EQ(string.Data()[0], T());
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_TRUE(string.IsStorageLocal());
-}
-
-// BasicString<T, Alloc>(Usize capacity, const Alloc& allocator)
-TYPED_TEST(StringTests, OptimizedCapacityConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 642;
-    BasicString<T, IdentifiableAllocator> string(
-        BasicString<T>::GetLocalCapacity(),
-        IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Size(), 0);
-    EXPECT_EQ(string.Data()[0], T());
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_EQ(string.Capacity(), string.GetLocalCapacity());
-    EXPECT_TRUE(string.IsStorageLocal());
-}
-
-TYPED_TEST(StringTests, LargeCapacityConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Usize capacity = 100;
-    const Uint64 allocatorId = 2;
-
-    BasicString<T, IdentifiableAllocator> string(
-        capacity, IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Size(), 0);
-    EXPECT_EQ(string.Data()[0], T());
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_GE(string.Capacity(), capacity);
-    EXPECT_FALSE(string.IsStorageLocal());
-}
-
-// BasicString<T, Alloc>(Usize count, T character, const Alloc& allocator)
-TYPED_TEST(StringTests, FillConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 6512;
-    const Usize fillCount = 12;
-
-    const auto fillChar = static_cast<typename TestFixture::CharType>('f');
-
-    BasicString<T, IdentifiableAllocator> string(
-        fillCount, fillChar, IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Size(), fillCount);
-    EXPECT_GE(string.Capacity(), fillCount);
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    ASSERT_NE(fillCount, 0);
-    EXPECT_EQ(string.Data()[fillCount], T());
-
-    for (Index i = 0; i < fillCount - 1; ++i)
+    // BasicString<T, Alloc>::BasicString(Usize, const Alloc&)
+    TYPED_TEST(StringTest, LargeCapacityConstructorAllocatesMemory)
     {
-        EXPECT_EQ(string.Data()[i], fillChar);
+        using T = typename TestFixture::CharType;
+        BasicString<T, TrackingAllocator> string(100);
+
+        ASSERT_GT(100, BasicString<T>().GetLocalCapacity());
+        EXPECT_EQ(
+            string.GetAllocator().AllocationSize(string.Data()),
+            (string.Capacity() + 1) * sizeof(T));
     }
-}
 
-// BasicString<T, Alloc>(const T* string, Usize size, const Alloc& allocator)
-TYPED_TEST(StringTests, CstringSizeConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 124;
-    const T* cstring = this->GetCString();
-    const Usize stringSize = 5;
-
-    ASSERT_LE(stringSize, std::char_traits<T>::length(cstring));
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, stringSize, IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Size(), stringSize);
-    EXPECT_GE(string.Capacity(), stringSize);
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_EQ(string.Data()[stringSize], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        cstring, string.Data(), stringSize), 0);
-}
-
-// BasicString<T, Alloc>(const T* string, const Alloc& allocator)
-TYPED_TEST(StringTests, CstringConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 85;
-    const T* cstring = this->GetCString();
-
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, IdentifiableAllocator(allocatorId));
-
-    Usize length = std::char_traits<T>::length(cstring);
-
-    EXPECT_EQ(string.Size(), length);
-    EXPECT_GE(string.Capacity(), length);
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_EQ(string.Data()[length], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        cstring, string.Data(), length), 0);
-}
-
-// BasicString<T, Alloc>(It begin, It end, const Alloc& allocator)
-TYPED_TEST(StringTests, RangeConstructor)
-{
-    using T = typename TestFixture::CharType;
-    const Uint64 allocatorId = 65;
-
-    const T* cstring = this->GetCString();
-    Usize length = std::char_traits<T>::length(cstring);
-
-    MyForwardIterator<const T> beginIter(cstring);
-    MyForwardIterator<const T> endIter(cstring + length);
-
-    BasicString<T, IdentifiableAllocator> string(
-        beginIter, endIter, IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Size(), length);
-    EXPECT_GE(string.Capacity(), length);
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_EQ(string.Data()[length], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        cstring, string.Data(), length), 0);
-}
-
-// BasicString<T, Alloc>(const BasicString<T, Alloc>& string)
-TYPED_TEST(StringTests, OptimizedStringCopyConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 102;
-    const T* cstring = this->GetShortCString();
-
-    ASSERT_LE(std::char_traits<T>::length(cstring),
-              BasicString<T>().GetLocalCapacity());
-
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, IdentifiableAllocator(allocatorId));
-
-    BasicString<T, IdentifiableAllocator> copy(string);
-
-    EXPECT_EQ(copy.Size(), string.Size());
-    EXPECT_GE(copy.Capacity(), copy.Size());
-
-    EXPECT_EQ(copy.Capacity(), copy.GetLocalCapacity());
-    EXPECT_TRUE(copy.IsStorageLocal());
-
-    EXPECT_EQ(copy.GetAllocator(), string.GetAllocator());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        copy.Data(), string.Data(), copy.Size() + 1), 0);
-}
-
-TYPED_TEST(StringTests, LargeStringCopyConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 542;
-    const T* cstring = this->GetCString();
-
-    ASSERT_GT(std::char_traits<T>::length(cstring),
-              BasicString<T>().GetLocalCapacity());
-
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, IdentifiableAllocator(allocatorId));
-
-    BasicString<T, IdentifiableAllocator> copy(string);
-
-    EXPECT_EQ(copy.Size(), string.Size());
-    EXPECT_GE(copy.Capacity(), copy.Size());
-
-    EXPECT_FALSE(copy.IsStorageLocal());
-
-    EXPECT_EQ(copy.GetAllocator(), string.GetAllocator());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        copy.Data(), string.Data(), copy.Size() + 1), 0);
-}
-
-// BasicString<T, Alloc>(BasicString<T, Alloc>&& string)
-TYPED_TEST(StringTests, OptimizedStringMoveConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 17;
-    const T* cstring = this->GetShortCString();
-
-    ASSERT_LE(std::char_traits<T>::length(cstring),
-              BasicString<T>().GetLocalCapacity());
-
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, IdentifiableAllocator(allocatorId));
-
-    Usize size = string.Size();
-
-    BasicString<T, IdentifiableAllocator> move(std::move(string));
-
-    EXPECT_EQ(move.Size(), size);
-    EXPECT_GE(move.Capacity(), size);
-
-    EXPECT_EQ(move.Capacity(), move.GetLocalCapacity());
-    EXPECT_TRUE(move.IsStorageLocal());
-
-    EXPECT_EQ(move.GetAllocator(), IdentifiableAllocator(allocatorId));
-    EXPECT_EQ(string.GetAllocator(), IdentifiableAllocator());
-
-    EXPECT_EQ(move.Data()[move.Size()], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        move.Data(), cstring, move.Size()), 0);
-}
-
-TYPED_TEST(StringTests, LargeStringMoveConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 17;
-    const T* cstring = this->GetCString();
-
-    ASSERT_GT(std::char_traits<T>::length(cstring),
-              BasicString<T>().GetLocalCapacity());
-
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, IdentifiableAllocator(allocatorId));
-
-    Usize size = string.Size();
-    BasicString<T, IdentifiableAllocator> move(std::move(string));
-
-    EXPECT_EQ(move.Size(), size);
-    EXPECT_GE(move.Capacity(), size);
-
-    EXPECT_FALSE(move.IsStorageLocal());
-
-    EXPECT_EQ(move.GetAllocator(), IdentifiableAllocator(allocatorId));
-    EXPECT_EQ(string.GetAllocator(), IdentifiableAllocator());
-
-    EXPECT_EQ(move.Data()[move.Size()], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        move.Data(), cstring, move.Size()), 0);
-}
-
-// BasicString<T, Alloc>(std::initializer_list<T> initList, const Alloc& allocator)
-TYPED_TEST(StringTests, InitListConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 65;
-    std::initializer_list<T> initList{1, 2, 3, 4, 65, 122, 44 };
-
-    BasicString<T, IdentifiableAllocator> string(
-        initList, IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Size(), initList.size());
-    EXPECT_GE(string.Capacity(), initList.size());
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_EQ(string.Data()[initList.size()], T());
-    EXPECT_TRUE(std::equal(initList.begin(), initList.end(), string.Data()));
-}
-
-// BasicString<T, Alloc>(BasicStringView<T> stringView, const Alloc& allocator)
-TYPED_TEST(StringTests, StringViewConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 85;
-    const BasicStringView<T> stringView = this->GetCString();
-
-    BasicString<T, IdentifiableAllocator> string(
-        stringView, IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Size(), stringView.Size());
-    EXPECT_GE(string.Capacity(), stringView.Size());
-
-    IdentifiableAllocator allocator(allocatorId);
-    EXPECT_EQ(string.GetAllocator(), allocator);
-
-    EXPECT_EQ(string.Data()[stringView.Size()], T());
-    EXPECT_EQ(string.Raw(), stringView);
-}
-
-// BasicString<T, Alloc>& operator=(const BasicString<T, Alloc>& string)
-TYPED_TEST(StringTests, CopyAssignmentOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 542;
-    const T* cstring = this->GetCString();
-
-    ASSERT_GT(std::char_traits<T>::length(cstring),
-              BasicString<T>().GetLocalCapacity());
-
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, IdentifiableAllocator(allocatorId));
-
-    BasicString<T, IdentifiableAllocator> copy(
-        this->GetShortCString(), IdentifiableAllocator(234234));
-
-    copy = string;
-
-    EXPECT_EQ(copy.Size(), string.Size());
-    EXPECT_GE(copy.Capacity(), copy.Size());
-
-    EXPECT_FALSE(copy.IsStorageLocal());
-
-    EXPECT_EQ(copy.GetAllocator(), string.GetAllocator());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        copy.Data(), string.Data(), copy.Size() + 1), 0);
-}
-
-// BasicString<T, Alloc>& operator=(BasicString<T, Alloc>&& string)
-TYPED_TEST(StringTests, MoveAssignmentOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 17;
-    const T* cstring = this->GetCString();
-
-    ASSERT_GT(std::char_traits<T>::length(cstring),
-              BasicString<T>().GetLocalCapacity());
-
-    BasicString<T, IdentifiableAllocator> string(
-        cstring, IdentifiableAllocator(allocatorId));
-
-    Usize size = string.Size();
-    BasicString<T, IdentifiableAllocator> move(
-        this->GetShortCString(), IdentifiableAllocator(112));
-
-    move = std::move(string);
-
-    EXPECT_EQ(move.Size(), size);
-    EXPECT_GE(move.Capacity(), size);
-
-    EXPECT_FALSE(move.IsStorageLocal());
-
-    EXPECT_EQ(move.GetAllocator(), IdentifiableAllocator(allocatorId));
-    EXPECT_EQ(string.GetAllocator(), IdentifiableAllocator());
-
-    EXPECT_EQ(move.Data()[move.Size()], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        move.Data(), cstring, move.Size()), 0);
-}
-
-// BasicString<T, Alloc>& operator=(const T* string)
-TYPED_TEST(StringTests, CstringAssignmentOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 1327;
-    BasicString<T, IdentifiableAllocator> string(
-        this->GetCString(), IdentifiableAllocator(allocatorId));
-
-    Usize size = std::char_traits<T>::length(this->GetShortCString());
-    string = this->GetShortCString();
-
-    EXPECT_EQ(string.Size(), size);
-    EXPECT_GE(string.Capacity(), size);
-
-    EXPECT_EQ(string.GetAllocator(), IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Data()[string.Size()], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        string.Data(), this->GetShortCString(), string.Size()), 0);
-}
-
-// BasicString<T, Alloc>& operator=(T character)
-TYPED_TEST(StringTests, CharacterAssignmentOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 132132;
-    BasicString<T, IdentifiableAllocator> string(
-        this->GetCString(), IdentifiableAllocator(allocatorId));
-
-    auto character = static_cast<T>('t');
-    string = character;
-
-    EXPECT_EQ(string.Size(), 1);
-    EXPECT_EQ(string.GetAllocator(), IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Data()[0], character);
-    EXPECT_EQ(string.Data()[1], T());
-}
-
-// BasicString<T, Alloc>& operator=(std::initializer_list<T> initList)
-TYPED_TEST(StringTests, InitListAssignmentOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 1327123;
-    BasicString<T, IdentifiableAllocator> string(
-        this->GetCString(), IdentifiableAllocator(allocatorId));
-
-    std::initializer_list<T> initList{ 32, 5, 12, 66, 123, 22 };
-    string = initList;
-
-    EXPECT_EQ(string.Size(), initList.size());
-    EXPECT_GE(string.Capacity(), initList.size());
-
-    EXPECT_EQ(string.GetAllocator(), IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Data()[initList.size()], T());
-    EXPECT_TRUE(std::equal(initList.begin(), initList.end(), string.Data()));
-}
-
-// BasicString<T, Alloc>& operator=(BasicStringView<T> string)
-TYPED_TEST(StringTests, StringViewAssignmentOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    const Uint64 allocatorId = 132347;
-    BasicString<T, IdentifiableAllocator> string(
-        this->GetCString(), IdentifiableAllocator(allocatorId));
-
-    Usize size = std::char_traits<T>::length(this->GetShortCString());
-    string = BasicStringView<T>(this->GetShortCString());
-
-    EXPECT_EQ(string.Size(), size);
-    EXPECT_GE(string.Capacity(), size);
-
-    EXPECT_EQ(string.GetAllocator(), IdentifiableAllocator(allocatorId));
-
-    EXPECT_EQ(string.Data()[string.Size()], T());
-    EXPECT_EQ(std::char_traits<T>::compare(
-        string.Data(), this->GetShortCString(), string.Size()), 0);
-}
-
-// [const]T& operator[](Index index) [const]
-TYPED_TEST(StringTests, SubscriptOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicString<T> string;
-    for (Index i = 0; i < string.Size(); ++i)
+    // BasicString<T, Alloc>::BasicString(Usize, T, const Alloc&)
+    TYPED_TEST(StringTest, FillConstructor)
     {
-        EXPECT_EQ(string.Data()[i], string[i]);
+        using T = typename TestFixture::CharType;
+
+        const auto fillChar = static_cast<T>('f');
+        BasicString<T, StatefulAllocator> string(
+            12,
+            fillChar,
+            StatefulAllocator(6512));
+
+        EXPECT_EQ(string.Size(), 12);
+        EXPECT_GE(string.Capacity(), 12);
+        EXPECT_EQ(string.GetAllocator().GetId(), 6512);
+
+        EXPECT_EQ(string.Data()[12], T());
+
+        for (Index index = 0; index < 11; ++index)
+            EXPECT_EQ(string.Data()[index], fillChar);
     }
-}
 
-// operator BasicStringView<T>() const
-TYPED_TEST(StringTests, BasicStringViewCastOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicString<T> string = this->GetCString();
-    auto stringView = (BasicStringView<T>)string;
-
-    EXPECT_EQ(stringView.Data(), string.Raw());
-    EXPECT_EQ(stringView.Size(), string.Size());
-}
-
-// BasicString<T, Alloc>& operator+=(const BasicString<T, Alloc>& string)
-TYPED_TEST(StringTests, BasicStringAppendOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicString<T> string = this->GetCString();
-    BasicString<T> appendedString = this->GetShortCString();
-
-    std::basic_string<T> expectedOutput = string.Data();
-    expectedOutput += appendedString.Data();
-
-    Usize expectedSize = string.Size() + appendedString.Size();
-    string += appendedString;
-
-    EXPECT_EQ(string.Size(), expectedSize);
-    EXPECT_GE(string.Capacity(), expectedSize);
-
-    EXPECT_TRUE(std::equal(expectedOutput.begin(), expectedOutput.end(), string.Data()));
-}
-
-// BasicString<T, Alloc>& operator+=(T character)
-TYPED_TEST(StringTests, CharacterAppendOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicString<T> string = this->GetCString();
-    T character = static_cast<T>('h');
-
-    std::basic_string<T> expectedOutput = string.Data();
-    expectedOutput += character;
-
-    Usize expectedSize = string.Size() + 1;
-    string += character;
-
-    EXPECT_EQ(string.Size(), expectedSize);
-    EXPECT_GE(string.Capacity(), expectedSize);
-
-    EXPECT_TRUE(std::equal(expectedOutput.begin(), expectedOutput.end(), string.Data()));
-}
-
-// BasicString<T, Alloc>& operator+=(const T* string)
-TYPED_TEST(StringTests, CstringAppendOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicString<T> string = this->GetCString();
-    const T* appendedString = this->GetShortCString();
-
-    Usize appendedStringSize = std::char_traits<T>::length(appendedString);
-
-    std::basic_string<T> expectedOutput = string.Data();
-    expectedOutput += appendedString;
-
-    Usize expectedSize = string.Size() + appendedStringSize;
-    string += appendedString;
-
-    EXPECT_EQ(string.Size(), expectedSize);
-    EXPECT_GE(string.Capacity(), expectedSize);
-
-    EXPECT_TRUE(std::equal(expectedOutput.begin(), expectedOutput.end(), string.Data()));
-}
-
-// BasicString<T, Alloc>& operator+=(std::initializer_list initList)
-TYPED_TEST(StringTests, InitListAppendOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicString<T> string = this->GetCString();
-    std::initializer_list<T> initList{ 2, 3, 4, 5, 121, 2 };
-
-    std::basic_string<T> expectedOutput = string.Data();
-    expectedOutput += initList;
-
-    Usize expectedSize = string.Size() + initList.size();
-    string += initList;
-
-    EXPECT_EQ(string.Size(), expectedSize);
-    EXPECT_GE(string.Capacity(), expectedSize);
-
-    EXPECT_TRUE(std::equal(expectedOutput.begin(), expectedOutput.end(), string.Data()));
-}
-
-// BasicString<T, Alloc>& operator+=(BasicStringView<T> stringView)
-TYPED_TEST(StringTests, BasicStringViewAppendOperator)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicString<T> string = this->GetCString();
-    BasicStringView<T> appendedString = this->GetShortCString();
-
-    std::basic_string<T> expectedOutput = string.Data();
-    expectedOutput += appendedString.Data();
-
-    Usize expectedSize = string.Size() + appendedString.Size();
-    string += appendedString;
-
-    EXPECT_EQ(string.Size(), expectedSize);
-    EXPECT_GE(string.Capacity(), expectedSize);
-
-    EXPECT_TRUE(std::equal(expectedOutput.begin(), expectedOutput.end(), string.Data()));
-}
-
-/* operator+ is basically just the same as operator+=, skipping.. */
-
-// [const] T& Front() [const]
-// [const] T& Back() [const]
-TYPED_TEST(StringTests, FrontAndBackGetters)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string = this->GetCString();
-
-    EXPECT_EQ(string.Front(), string.Data()[0]);
-    EXPECT_EQ(string.Back(), string.Data()[string.Size() - 1]);
-}
-
-// [Iterator/ConstIterator] GetBegin() [const]
-// [Iterator/ConstIterator] GetEnd() [const]
-// [Iterator/ConstIterator] GetReverseBegin() [const]
-// [Iterator/ConstIterator] GetReverseEnd() [const]
-TYPED_TEST(StringTests, IteratorGetters)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string = this->GetCString();
-
-    EXPECT_EQ(*string.GetBegin(), string.Front());
-    EXPECT_EQ(string.GetEnd(), string.GetBegin() + string.Size());
-
-    EXPECT_EQ(*string.GetReverseBegin(), string.Back());
-    EXPECT_EQ(string.GetReverseEnd(), string.GetReverseBegin() + static_cast<Ptrdiff>(string.Size()));
-}
-
-// void Assign(Usize count, T character)
-TYPED_TEST(StringTests, FillAssign)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string(this->GetCString());
-
-    const T character = static_cast<T>('a');
-    string.Assign(56, character);
-
-    EXPECT_EQ(string.Size(), 56);
-    EXPECT_GE(string.Capacity(), 56);
-
-    EXPECT_EQ(string.Data()[56], T());
-    for (Index i = 0; i < 56; ++i)
+    // BasicString<T, Alloc>::BasicString(Usize, T, const Alloc&)
+    TYPED_TEST(StringTest, FillConstructorAllocatesMemory)
     {
-        EXPECT_EQ(string.Data()[i], character);
+        using T = typename TestFixture::CharType;
+
+        const auto fillChar = static_cast<T>('f');
+        BasicString<T, TrackingAllocator> string(17, fillChar);
+
+        ASSERT_GT(17, BasicString<T>().GetLocalCapacity());
+
+        EXPECT_EQ(
+            string.GetAllocator().AllocationSize(string.Data()),
+            (string.Capacity() + 1) * sizeof(T));
     }
-}
 
-// void Assign(It begin, It end)
-TYPED_TEST(StringTests, RangeAssign)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string(this->GetCString());
+    // BasicString<T, Alloc>::BasicString(const T*, Usize, const Alloc&)
+    TYPED_TEST(StringTest, CstringSizeConstructor)
+    {
+        using T = typename TestFixture::CharType;
 
-    const typename TestFixture::CharType* cstring = this->GetShortCString();
-    Usize length = std::char_traits<typename TestFixture::CharType>::length(cstring);
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!mmmmm");
+        BasicString<T, StatefulAllocator> string(
+            source.c_str(), 13, StatefulAllocator(124));
 
-    MyForwardIterator<const typename TestFixture::CharType> beginIter(cstring);
-    MyForwardIterator<const typename TestFixture::CharType> endIter(cstring + length);
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), 13);
+        EXPECT_EQ(string.GetAllocator().GetId(), 124);
 
-    string.Assign(beginIter, endIter);
+        EXPECT_EQ(string.Data()[13], T());
 
-    EXPECT_EQ(string.Size(), length);
-    EXPECT_GE(string.Capacity(), length);
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Data(), expected.data());
+    }
 
-    EXPECT_EQ(string.Data()[length], T());
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), cstring));
-}
+    // BasicString<T, Alloc>::BasicString(const T*, Usize, const Alloc&)
+    TYPED_TEST(StringTest, CstringSizeConstructorAllocatesMemory)
+    {
+        using T = typename TestFixture::CharType;
 
-// void Clear()
-TYPED_TEST(StringTests, Clear)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string(this->GetCString());
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hello, World! I am a long string.mmmmm");
 
-    string.Clear();
-    EXPECT_EQ(string.Size(), 0);
-    EXPECT_EQ(string.Data()[0], T());
-}
+        BasicString<T, TrackingAllocator> string(source.c_str(), 33);
+        ASSERT_GT(source.size(), BasicString<T>().GetLocalCapacity());
 
-// void Reset()
-TYPED_TEST(StringTests, Reset)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string(this->GetCString());
+        EXPECT_EQ(
+            string.GetAllocator().AllocationSize(string.Data()),
+            (string.Capacity() + 1) * sizeof(T));
+    }
 
-    string.Reset();
-    EXPECT_EQ(string.Capacity(), string.GetLocalCapacity());
+    // BasicString<T, Alloc>::BasicString(const T*, const Alloc&)
+    TYPED_TEST(StringTest, CstringConstructor)
+    {
+        using T = typename TestFixture::CharType;
 
-    EXPECT_EQ(string.Size(), 0);
-    EXPECT_EQ(string.Data()[0], T());
-}
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(124));
 
-/* Insert(index, const T* string) and Insert(index, const T* string,
- * Usize size) are both one-liners, skipping.
- * */
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), 13);
+        EXPECT_EQ(string.GetAllocator().GetId(), 124);
 
-// void Insert(Index index, BasicStringView<T> stringView)
-TYPED_TEST(StringTests, InsertBasicStringView)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_EQ(string.Data()[13], T());
 
-    BasicString<T> string = this->GetCString();
-    BasicStringView<T> insertedString = this->GetShortCString();
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Data(), expected.data());
+    }
 
-    string.Insert(5, insertedString);
+    // BasicString<T, Alloc>::BasicString(const T*, const Alloc&)
+    TYPED_TEST(StringTest, CstringConstructorAllocatesMemory)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hello, World! I am a long string.mmmmm");
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString.insert(5, insertedString.Data());
+        ASSERT_GT(source.size(), BasicString<T>().GetLocalCapacity());
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        BasicString<T, TrackingAllocator> string(source.c_str());
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        EXPECT_EQ(
+            string.GetAllocator().AllocationSize(string.Data()),
+            (string.Capacity() + 1) * sizeof(T));
+    }
 
-/* Insert(Index index, T character) is a one-liner, skipping.. */
+    // BasicString<T, Alloc>::BasicString(Iter, Iter, const Alloc&)
+    TYPED_TEST(StringTest, RangeConstructor)
+    {
+        using T = typename TestFixture::CharType;
 
-// void Insert(Index index, Usize count, T character)
-TYPED_TEST(StringTests, InsertFill)
-{
-    using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        ForwardNonOwningTestContainer<T, 13> container(source.data());
 
-    BasicString<T> string = this->GetCString();
-    T character = static_cast<T>('g');
+        BasicString<T, StatefulAllocator> string(
+            container.GetBegin(), container.GetEnd(),
+            StatefulAllocator(65));
 
-    string.Insert(string.Size(), 35, character);
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), 13);
+        EXPECT_EQ(string.GetAllocator().GetId(), 65);
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString += std::basic_string<T>(35, character);
+        EXPECT_EQ(string.Data()[13], T());
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        for (int index = 0; index < 13; ++index)
+            EXPECT_EQ(string.Data()[index], source[index]);
+    }
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+    // BasicString<T, Alloc>::BasicString(Iter, Iter, const Alloc&)
+    TYPED_TEST(StringTest, RangeConstructorAllocatesMemory)
+    {
+        using T = typename TestFixture::CharType;
 
-/* Insert(Index index, T character) is a one-liner, skipping.. */
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!mmmmmmmm");
+        ForwardNonOwningTestContainer<T, 21> container(source.data());
 
-// void Insert(Index index, It begin, It end)
-TYPED_TEST(StringTests, InsertRange)
-{
-    using T = typename TestFixture::CharType;
+        ASSERT_GT(source.size(), BasicString<T>().GetLocalCapacity());
 
-    BasicString<T> string = this->GetCString();
-    BasicStringView<T> insertedString = this->GetShortCString();
+        BasicString<T, TrackingAllocator> string(
+            container.GetBegin(), container.GetEnd());
 
-    string.Insert(string.Size(), insertedString.GetBegin(), insertedString.GetEnd());
+        EXPECT_EQ(
+            string.GetAllocator().AllocationSize(string.Data()),
+            (string.Capacity() + 1) * sizeof(T));
+    }
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString += insertedString.Data();
+    // BasicString<T, Alloc>::BasicString(const BasicString<T, Alloc>&)
+    TYPED_TEST(StringTest, OptimizedStringCopyConstructor)
+    {
+        using T = typename TestFixture::CharType;
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        std::basic_string<T> source = this->GetEncodedString("Hi");
+        BasicString<T, StatefulAllocator> string(source.data(), StatefulAllocator(102));
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        ASSERT_TRUE(string.IsStorageLocal());
 
-/* Insert(Index index, std::initializer_list initList) is a one-liner, skipping... */
+        BasicString<T, StatefulAllocator> copy = string;
+        EXPECT_EQ(copy.Size(), string.Size());
+        EXPECT_EQ(copy.Size(), 2);
 
-// void Remove(Index index)
-TYPED_TEST(StringTests, Remove)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_GE(copy.Capacity(), copy.Size());
+        EXPECT_EQ(copy.Capacity(), copy.GetLocalCapacity());
 
-    BasicString<T> string = this->GetCString();
-    string.Remove(2);
+        EXPECT_TRUE(copy.IsStorageLocal());
+        EXPECT_EQ(copy.GetAllocator(), string.GetAllocator());
+        EXPECT_EQ(copy.GetAllocator().GetId(), 102);
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString.erase(2, 1);
+        std::basic_string<T> expected = this->GetEncodedString("Hi");
+        EXPECT_GENERAL_STREQ(string.Data(), expected.data());
+        EXPECT_GENERAL_STREQ(copy.Data(), expected.data());
+    }
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+    // BasicString<T, Alloc>::BasicString(const BasicString<T, Alloc>&)
+    TYPED_TEST(StringTest, LargeStringCopyConstructor)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hello, World! I am a long string.");
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        ASSERT_GT(source.size(), BasicString<T>().GetLocalCapacity());
 
-/* Remove(Index index) is just Remove(index, 1), skipping.. */
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(542));
+        BasicString<T, StatefulAllocator> copy = string;
 
-// void Remove(Index beginPos, Usize count)
-TYPED_TEST(StringTests, RemoveRange)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_EQ(copy.Size(), string.Size());
+        EXPECT_EQ(copy.Size(), source.size());
 
-    BasicString<T> string = this->GetCString();
-    string.Remove(2, 3);
+        EXPECT_GE(copy.Capacity(), copy.Size());
+        EXPECT_FALSE(copy.IsStorageLocal());
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString.erase(2, 3);
+        EXPECT_EQ(copy.GetAllocator(), string.GetAllocator());
+        EXPECT_EQ(copy.GetAllocator().GetId(), 542);
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        EXPECT_GENERAL_STREQ(string.Data(), source.data());
+        EXPECT_GENERAL_STREQ(copy.Data(), source.data());
+    }
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+    // BasicString<T, Alloc>::BasicString(const BasicString<T, Alloc>&)
+    TYPED_TEST(StringTest, CopyConstructorAllocatesMemory)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World! Weeeee!");
+
+        BasicString<T, TrackingAllocator> string(source.c_str());
+        BasicString<T, TrackingAllocator> copy = string;
+
+        EXPECT_EQ(
+            copy.GetAllocator().AllocationSize(copy.Data()),
+            (copy.Capacity() + 1) * sizeof(T));
+    }
 
-// void PushBack(T character)
-TYPED_TEST(StringTests, PushBack)
-{
-    using T = typename TestFixture::CharType;
+    // BasicString<T, Alloc>::BasicString(BasicString<T, Alloc>&&)
+    TYPED_TEST(StringTest, OptimizedStringMoveConstructor)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hi");
+
+        ASSERT_LE(source.size(), BasicString<T>().GetLocalCapacity());
+
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
+        BasicString<T, StatefulAllocator> move(std::move(string));
+
+        EXPECT_EQ(move.Size(), source.size());
+        EXPECT_EQ(string.Size(), 0);
+
+        EXPECT_EQ(move.Capacity(), move.GetLocalCapacity());
+        EXPECT_TRUE(move.IsStorageLocal());
+
+        EXPECT_EQ(move.GetAllocator().GetId(), 17);
+        EXPECT_EQ(string.GetAllocator().GetId(), 0);
+
+        EXPECT_EQ(move.Data()[move.Size()], T());
+        EXPECT_GENERAL_STREQ(move.Data(), source.data());
+    }
+
+    // BasicString<T, Alloc>::BasicString(BasicString<T, Alloc>&&)
+    TYPED_TEST(StringTest, LargeStringMoveConstructor)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hello I am a long string!");
+
+        ASSERT_GT(source.size(), BasicString<T>().GetLocalCapacity());
+
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
+        BasicString<T, StatefulAllocator> move(std::move(string));
+
+        EXPECT_EQ(move.Size(), source.size());
+        EXPECT_EQ(string.Size(), 0);
+
+        EXPECT_GE(move.Capacity(), move.Size());
+        EXPECT_FALSE(move.IsStorageLocal());
+
+        EXPECT_EQ(move.GetAllocator().GetId(), 17);
+        EXPECT_EQ(string.GetAllocator().GetId(), 0);
+
+        EXPECT_EQ(move.Data()[move.Size()], T());
+        EXPECT_GENERAL_STREQ(move.Data(), source.data());
+    }
+
+    // BasicString<T, Alloc>::BasicString(std::initializer_list<T>, const Alloc&)
+    TYPED_TEST(StringTest, InitializerListConstructor)
+    {
+        using T = typename TestFixture::CharType;
+        BasicString<T, StatefulAllocator> string(
+            { 'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!' },
+            StatefulAllocator(65));
+
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), 13);
+        EXPECT_EQ(string.GetAllocator().GetId(), 65);
+
+        EXPECT_EQ(string.Data()[13], T());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        for (int index = 0; index < 13; ++index)
+            EXPECT_EQ(string.Data()[index], expected[index]);
+    }
+
+    // BasicString<T, Alloc>::BasicString(std::initializer_list<T>, const Alloc&)
+    TYPED_TEST(StringTest, InitializerListConstructorAllocatesMemory)
+    {
+        using T = typename TestFixture::CharType;
+        BasicString<T, TrackingAllocator> string({
+            'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!',
+            'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm'
+        });
+
+        ASSERT_FALSE(string.IsStorageLocal());
+        EXPECT_EQ(
+            string.GetAllocator().AllocationSize(string.Data()),
+            (string.Capacity() + 1) * sizeof(T));
+    }
+
+    // BasicString<T, Alloc>::BasicString(BasicStringView<T>, const Alloc&)
+    TYPED_TEST(StringTest, StringViewConstructor)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+
+        BasicStringView<T> stringView(source.data(), 5);
+        BasicString<T, StatefulAllocator> string(stringView, StatefulAllocator(65));
+
+        EXPECT_EQ(string.Size(), 5);
+        EXPECT_GE(string.Capacity(), 5);
+        EXPECT_EQ(string.GetAllocator().GetId(), 65);
+
+        EXPECT_EQ(string.Data()[5], T());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello");
+        for (int index = 0; index < 5; ++index)
+            EXPECT_EQ(string.Data()[index], expected[index]);
+    }
+
+    // BasicString<T, Alloc>::BasicString(BasicStringView<T>, const Alloc&)
+    TYPED_TEST(StringTest, StringViewConstructorAllocatesMemory)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hello, World! I am a long string!");
+
+        BasicStringView<T> stringView(source.data(), 16);
+        BasicString<T, TrackingAllocator> string(stringView);
+
+        ASSERT_FALSE(string.IsStorageLocal());
+        EXPECT_EQ(
+            string.GetAllocator().AllocationSize(string.Data()),
+            (string.Capacity() + 1) * sizeof(T));
+    }
+
+    // BasicString<T, Alloc>::operator=(const BasicString<T, Alloc>&)
+    TYPED_TEST(StringTest, CopyAssign)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString("Cow");
+
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(542));
+        BasicString<T, StatefulAllocator> copy(source2.c_str(), StatefulAllocator(32));
 
-    BasicString<T> string = this->GetCString();
-    T character = static_cast<T>('p');
+        copy = string;
+
+        EXPECT_EQ(copy.Size(), string.Size());
+        EXPECT_EQ(copy.Size(), source.size());
+        EXPECT_GE(copy.Capacity(), copy.Size());
+
+        EXPECT_EQ(copy.GetAllocator(), string.GetAllocator());
+        EXPECT_EQ(copy.GetAllocator().GetId(), 542);
+
+        EXPECT_GENERAL_STREQ(string.Data(), source.data());
+        EXPECT_GENERAL_STREQ(copy.Data(), source.data());
+    }
 
-    string.PushBack(character);
+    // BasicString<T, Alloc>::operator=(BasicString<T, Alloc>&&)
+    TYPED_TEST(StringTest, MoveAssign)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString("Rad!");
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString.push_back(character);
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
+        BasicString<T, StatefulAllocator> move(source2.c_str(), StatefulAllocator(123));
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        move = std::move(string);
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        EXPECT_EQ(move.Size(), source.size());
+        EXPECT_EQ(string.Size(), 0);
+        EXPECT_GE(move.Capacity(), move.Size());
 
-// void PopBack()
-TYPED_TEST(StringTests, PopBack)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_EQ(move.GetAllocator().GetId(), 17);
+        EXPECT_EQ(string.GetAllocator().GetId(), 0);
 
-    BasicString<T> string = this->GetCString();
-    string.PopBack();
+        EXPECT_EQ(move.Data()[move.Size()], T());
+        EXPECT_GENERAL_STREQ(move.Data(), source.data());
+    }
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString.pop_back();
+    // BasicString<T, Alloc>::operator=(const T*)
+    TYPED_TEST(StringTest, CstringAssign)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString("Rad!");
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
+        string = source2.c_str();
+
+        EXPECT_EQ(string.Size(), source2.size());
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 17);
+
+        EXPECT_EQ(string.Data()[string.Size()], T());
+        EXPECT_GENERAL_STREQ(string.Data(), source2.data());
+    }
+
+    // BasicString<T, Alloc>::operator=(T)
+    TYPED_TEST(StringTest, CharacterAssign)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString("R");
+
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
+        string = source2.front();
+
+        EXPECT_EQ(string.Size(), source2.size());
+        EXPECT_GE(string.Capacity(), string.Size());
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        EXPECT_EQ(string.GetAllocator().GetId(), 17);
+
+        EXPECT_EQ(string.Data()[0], source2.front());
+        EXPECT_EQ(string.Data()[1], T());
+    }
 
-// void Append(Usize count, T character)
-TYPED_TEST(StringTests, AppendFill)
-{
-    using T = typename TestFixture::CharType;
+    // BasicString<T, Alloc>::operator=(std::initializer_list<T>)
+    TYPED_TEST(StringTest, InitializerListAssign)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Weeee!");
+
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
+        string = {
+            'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!',
+            'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm', 'm'
+        };
+
+        EXPECT_EQ(string.Size(), 22);
+        EXPECT_GE(string.Capacity(), 22);
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 17);
 
-    BasicString<T> string = this->GetCString();
-    T character = static_cast<T>('q');
+        EXPECT_EQ(string.Data()[string.Size()], T());
 
-    string.Append(5, character);
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!mmmmmmmmm");
+        EXPECT_GENERAL_STREQ(string.Data(), expected.data());
+    }
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString.append(5, character);
+    // BasicString<T, Alloc>::operator=(BasicStringView<T>)
+    TYPED_TEST(StringTest, StringViewAssign)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString("Rad! Can't wait!");
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
+        string = BasicStringView<T>(source2.c_str(), 4);
+
+        EXPECT_EQ(string.Size(), 4);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 17);
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        EXPECT_EQ(string.Data()[string.Size()], T());
 
-// void Append(const T* string, Usize size)
-TYPED_TEST(StringTests, AppendSizedString)
-{
-    using T = typename TestFixture::CharType;
+        std::basic_string<T> expected = this->GetEncodedString("Rad!");
+        EXPECT_GENERAL_STREQ(string.Data(), expected.data());
+    }
 
-    BasicString<T> string = this->GetCString();
-    std::basic_string_view<T> stringView = this->GetShortCString();
+    // BasicString<T, Alloc>::operator[](Index)
+    TYPED_TEST(StringTest, Subscript)
+    {
+        using T = typename TestFixture::CharType;
 
-    string.Append(stringView.data(), stringView.size());
+        BasicString<T> string;
+        const BasicString<T> constString;
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString += stringView;
+        for (Index i = 0; i < string.Size(); ++i)
+        {
+            EXPECT_EQ(string.Data() + i, &string[i]);
+            EXPECT_EQ(constString.Data() + i, &constString[i]);
+        }
+    }
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+    // BasicString<T, Alloc>::operator BasicStringView<T>()
+    TYPED_TEST(StringTest, BasicStringViewCastOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        BasicString<T> string = source.c_str();
+        BasicStringView<T> stringView(string);
 
-// void Append(It begin, It end)
-TYPED_TEST(StringTests, AppendRange)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_EQ(stringView.Data(), string.Raw());
+        EXPECT_EQ(stringView.Size(), string.Size());
+    }
 
-    BasicString<T> string = this->GetCString();
-    BasicStringView<T> stringView = this->GetShortCString();
+    // BasicString<T, Alloc>::operator+=(const BasicString<T, Alloc>&)
+    // BasicString<T, Alloc>::operator+(const BasicString<T, Alloc>&)
+    TYPED_TEST(StringTest, StringAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Far far away, ");
+        std::basic_string<T> source2 = this->GetEncodedString(
+            "behind the word mountains, ");
 
-    string.Append(stringView.GetBegin(), stringView.GetEnd());
+        std::basic_string<T> source3 = this->GetEncodedString(
+            "there lived the blind texts.");
 
-    std::basic_string<T> expectedString = this->GetCString();
-    expectedString += stringView.Data();
+        BasicString<T> string = source.c_str();
+        BasicString<T> appendedString = source2.c_str();
+        BasicString<T> appendedString2 = source3.c_str();
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_GE(string.Capacity(), expectedString.size());
+        string += appendedString + appendedString2;
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        EXPECT_EQ(string.Size(), source.size() + source2.size() + source3.size());
+        EXPECT_GE(string.Capacity(), string.Size());
 
-// bool StartsWith(BasicStringView<T> stringView)
-// bool StartsWith(T character)
-// bool StartsWith(const T* string)
-TYPED_TEST(StringTests, StartsWith)
-{
-    using T = typename TestFixture::CharType;
+        std::basic_string<T> expectedOutput = this->GetEncodedString(
+            "Far far away, behind the word mountains, there lived the blind texts.");
 
-    BasicString<T> string = this->GetCString();
+        EXPECT_GENERAL_STREQ(string.Raw(), expectedOutput.c_str());
+    }
 
-    std::basic_string<T> expectedString = string.Data();
-    BasicStringView<T> matchingSubstring(expectedString.data(), expectedString.data() + 3);
-    BasicStringView<T> differingSubstring(expectedString.data() + 2, expectedString.data() + 3);
+    // BasicString<T, Alloc>::operator+=(T)
+    // BasicString<T, Alloc>::operator+(T)
+    TYPED_TEST(StringTest, CharacterAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, Worl");
 
-    EXPECT_TRUE(string.StartsWith(matchingSubstring));
-    EXPECT_FALSE(string.StartsWith(differingSubstring));
+        BasicString<T> string = source.c_str();
+        string += 'd';
 
-    EXPECT_TRUE(string.StartsWith(expectedString[0]));
-    EXPECT_FALSE(string.StartsWith('@'));
+        EXPECT_EQ(string.Size(), 12);
+        EXPECT_GE(string.Capacity(), string.Size());
 
-    EXPECT_TRUE(string.StartsWith(expectedString.substr(0, 4).data()));
-    EXPECT_FALSE(string.StartsWith(expectedString.substr(2, 4).data()));
-}
+        std::basic_string<T> expectedOutput = this->GetEncodedString("Hello, World");
+        EXPECT_GENERAL_STREQ(string.Raw(), expectedOutput.c_str());
 
-// bool EndsWith(BasicStringView<T> stringView)
-// bool EndsWith(T character)
-// bool EndsWith(const T* string)
-TYPED_TEST(StringTests, EndsWith)
-{
-    using T = typename TestFixture::CharType;
+        BasicString<T> result = string + '!';
 
-    BasicString<T> string = this->GetCString();
+        EXPECT_EQ(result.Size(), 13);
+        EXPECT_GE(result.Capacity(), string.Size());
 
-    std::basic_string<T> expectedString = string.Data();
-    BasicStringView<T> matchingSubstring(expectedString.data() + 3, expectedString.data() + expectedString.size());
-    BasicStringView<T> differingSubstring(expectedString.data() + 2, expectedString.data() + 3);
+        std::basic_string<T> expectedOutput2 = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(result.Raw(), expectedOutput2.c_str());
+    }
 
-    EXPECT_TRUE(string.EndsWith(matchingSubstring));
-    EXPECT_FALSE(string.EndsWith(differingSubstring));
+    // BasicString<T, Alloc>::operator+=(const T*)
+    // BasicString<T, Alloc>::operator+(const T*)
+    TYPED_TEST(StringTest, CstringAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Far far away, ");
+        std::basic_string<T> source2 = this->GetEncodedString(
+            "behind the word mountains, ");
 
-    EXPECT_TRUE(string.EndsWith(expectedString.back()));
-    EXPECT_FALSE(string.EndsWith(static_cast<T>('@')));
+        std::basic_string<T> source3 = this->GetEncodedString(
+            "there lived the blind texts.");
 
-    EXPECT_TRUE(string.EndsWith(expectedString.substr(expectedString.size() - 3, 3).data()));
-    EXPECT_FALSE(string.EndsWith(expectedString.substr(2, 4).data()));
-}
+        BasicString<T> string = source.c_str();
+        string += source2.c_str();
 
-// bool Contains(BasicStringView<T> stringView)
-// bool Contains(T character)
-// bool Contains(const T* string)
-TYPED_TEST(StringTests, Contains)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_EQ(string.Size(), source.size() + source2.size());
+        EXPECT_GE(string.Capacity(), string.Size());
 
-    BasicString<T> string = this->GetCString();
+        std::basic_string<T> expected = this->GetEncodedString(
+            "Far far away, behind the word mountains, ");
 
-    std::basic_string<T> expectedString = string.Data();
-    BasicStringView<T> matchingSubstring(expectedString.data() + 3, expectedString.data() + expectedString.size());
-    BasicStringView<T> matchingSubstring2(expectedString.data() + 2, expectedString.data() + 3);
-    BasicStringView<T> differingSubstring(this->GetShortCString());
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
 
-    EXPECT_TRUE(string.Contains(matchingSubstring));
-    EXPECT_TRUE(string.Contains(matchingSubstring2));
-    EXPECT_FALSE(string.Contains(differingSubstring));
+        BasicString<T> result = string + source3.c_str();
 
-    EXPECT_TRUE(string.Contains(expectedString.back()));
-    EXPECT_FALSE(string.Contains(static_cast<T>('@')));
+        EXPECT_EQ(result.Size(), source.size() + source2.size() + source3.size());
+        EXPECT_GE(result.Capacity(), string.Size());
 
-    EXPECT_TRUE(string.Contains(expectedString.substr(expectedString.size() - 3, 3).data()));
-    EXPECT_TRUE(string.Contains(expectedString.substr(2, 4).data()));
-    EXPECT_FALSE(string.Contains(differingSubstring.Data()));
-}
+        std::basic_string<T> expected2 = this->GetEncodedString(
+            "Far far away, behind the word mountains, there lived the blind texts.");
 
-// [Const]Iterator Find(BasicStringView<T> string) [const]
-TYPED_TEST(StringTests, FindStringView)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string = this->GetFindString();
+        EXPECT_GENERAL_STREQ(result.Raw(), expected2.c_str());
+    }
 
-    EXPECT_EQ(string.Find(BasicStringView<T>(this->GetFoundString())), string.GetBegin() + 10);
-    EXPECT_EQ(string.Find(BasicStringView<T>(this->GetNotFoundString())), string.GetEnd());
-}
+    // BasicString<T, Alloc>::operator+=(std::initializer_list<T>)
+    TYPED_TEST(StringTest, InitializerListAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Far far away, ");
+        std::basic_string<T> source3 = this->GetEncodedString(
+            "there lived the blind texts.");
 
-// [Const]Iterator Find(const T* string) [const]
-TYPED_TEST(StringTests, FindCString)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string = this->GetFindString();
+        BasicString<T> string = source.c_str();
+        string += {
+            'b', 'e', 'h', 'i', 'n', 'd', ' ', 't', 'h', 'e', ' ', 'w', 'o', 'r', 'd',
+            ' ', 'm', 'o', 'u', 'n', 't', 'a', 'i', 'n', 's', ',', ' '
+        };
 
-    EXPECT_EQ(string.Find(this->GetFoundString()), string.GetBegin() + 10);
-    EXPECT_EQ(string.Find(this->GetNotFoundString()), string.GetEnd());
-}
+        EXPECT_EQ(string.Size(), source.size() + 27);
+        EXPECT_GE(string.Capacity(), string.Size());
 
-// [Const]Iterator Find(T character) [const]
-TYPED_TEST(StringTests, FindCharacter)
-{
-    using T = typename TestFixture::CharType;
-    BasicString<T> string = this->GetFindString();
+        std::basic_string<T> expected = this->GetEncodedString(
+            "Far far away, behind the word mountains, ");
 
-    EXPECT_EQ(string.Find(static_cast<T>('M')), string.GetBegin() + 10);
-    EXPECT_EQ(string.Find(static_cast<T>('x')), string.GetEnd());
-}
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
 
-// BasicStringView<T> Substring(Index startPos, Usize count)
-TYPED_TEST(StringTests, Substring)
-{
-    using T = typename TestFixture::CharType;
+        /* operator+(std::initializer_list<T>) doesn't exist. */
+    }
 
-    BasicString<T> string = this->GetCString();
-    BasicStringView<T> substring = string.Substring(3, 5);
+    // BasicString<T, Alloc>::operator+=(const BasicStringView<T>)
+    // BasicString<T, Alloc>::operator+(const BasicStringView<T>)
+    TYPED_TEST(StringTest, StringViewAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Far far away, ");
+        std::basic_string<T> source2 = this->GetEncodedString(
+            "behind the word mountains, mmmmm");
 
-    std::basic_string<T> stdSubstring = this->GetCString();
-    stdSubstring = stdSubstring.substr(3, 5);
+        std::basic_string<T> source3 = this->GetEncodedString(
+            "there lived the blind texts.ddd");
 
-    EXPECT_TRUE(std::equal(stdSubstring.begin(), stdSubstring.end(), substring.GetBegin()));
-    EXPECT_EQ(substring.Size(), stdSubstring.size());
-}
+        BasicString<T> string = source.c_str();
+        BasicStringView<T> appendedString(source2.c_str(), 27);
+        BasicStringView<T> appendedString2(source3.c_str(), 28);
 
-// void Swap(BasicString<T, Alloc>& string)
-TYPED_TEST(StringTests, Swap)
-{
-    using T = typename TestFixture::CharType;
+        string += appendedString;
+        BasicString<T> result = string + appendedString2;
 
-    BasicString<T> string = this->GetShortCString();
-    BasicString<T> string2 = this->GetCString();
+        EXPECT_EQ(string.Size(), source.size() + 27);
+        EXPECT_GE(string.Capacity(), string.Size());
 
-    std::basic_string<T> shortString = this->GetShortCString();
-    std::basic_string<T> longString = this->GetCString();
+        std::basic_string<T> expected = this->GetEncodedString(
+            "Far far away, behind the word mountains, ");
 
-    string.Swap(string2);
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), longString.begin()));
-    EXPECT_TRUE(std::equal(string2.GetBegin(), string2.GetEnd(), shortString.begin()));
+        EXPECT_EQ(result.Size(), source.size() + 55);
+        EXPECT_GE(result.Capacity(), result.Size());
 
-    EXPECT_EQ(string.Size(), longString.size());
-    EXPECT_EQ(string2.Size(), shortString.size());
-}
+        std::basic_string<T> expected2 = this->GetEncodedString(
+            "Far far away, behind the word mountains, there lived the blind texts.");
 
-// void Reserve(Usize capacity)
-TYPED_TEST(StringTests, Reserve)
-{
-    using T = typename TestFixture::CharType;
-    const Usize reserveCount = 124;
+        EXPECT_GENERAL_STREQ(result.Raw(), expected2.c_str());
+    }
 
-    BasicString<T> string = this->GetCString();
-    Usize previousSize = string.Size();
+    // BasicString<T, Alloc>::Front()
+    // BasicString<T, Alloc>::Back()
+    TYPED_TEST(StringTest, FrontAndBackGetters)
+    {
+        using T = typename TestFixture::CharType;
 
-    ASSERT_GT(reserveCount, string.Capacity());
-    string.Reserve(reserveCount);
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        BasicString<T> string = source.c_str();
 
-    EXPECT_GE(string.Capacity(), reserveCount);
-    EXPECT_EQ(string.Size(), previousSize);
+        EXPECT_EQ(&string.Front(), string.Data());
+        EXPECT_EQ(&string.Back(), string.Data() + string.Size() - 1);
+    }
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), this->GetCString()));
+    // BasicString<T, Alloc>::GetBegin()
+    // BasicString<T, Alloc>::GetEnd()
+    // BasicString<T, Alloc>::GetReverseBegin()
+    // BasicString<T, Alloc>::GetReverseEnd()
+    TYPED_TEST(StringTest, Iterators)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
 
-    const Usize smallReserveCount = 83;
-    /* 83 is definitely smaller than 124.. */
+        BasicString<T> string = source.c_str();
+        const BasicString<T> constString = source.c_str();
 
-    string.Reserve(smallReserveCount);
+        EXPECT_EQ(ToAddress(string.GetBegin()), string.Data());
+        EXPECT_EQ(ToAddress(string.GetReverseBegin()), &string.Back());
+        EXPECT_EQ(ToAddress(constString.GetBegin()), constString.Data());
+        EXPECT_EQ(ToAddress(constString.GetReverseBegin()), &constString.Back());
 
-    EXPECT_GE(string.Capacity(), reserveCount);
-    EXPECT_EQ(string.Size(), previousSize);
+        EXPECT_EQ(string.GetEnd(), string.GetBegin() + string.Size());
+        EXPECT_EQ(string.GetReverseEnd(), string.GetReverseBegin() + string.Size());
 
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), this->GetCString()));
-}
+        EXPECT_EQ(constString.GetEnd(), constString.GetBegin() + constString.Size());
+        EXPECT_EQ(
+            constString.GetReverseEnd(),
+            constString.GetReverseBegin() + constString.Size());
+    }
 
-// void Shrink()
-TYPED_TEST(StringTests, ShrinkLargeStrings)
-{
-    using T = typename TestFixture::CharType;
-    const Usize reserveCount = 124;
+    /* BasicString<T, Alloc>::Raw(), BasicString<T, Alloc>::Data(),
+     * BasicString<T, Alloc>::Size(), BasicString<T, Alloc>::Capacity(),
+     * BasicString<T, Alloc>::GetLocalCapacity(), BasicString<T, Alloc>::IsStorageLocal(),
+     * and BasicString<T, Alloc>::GetAllocator() are assumed to work. No tests.
+     */
 
-    BasicString<T> string = this->GetCString();
-    Usize previousSize = string.Size();
+    // String<T, Alloc>::IsEmpty()
+    TYPED_TEST(StringTest, IsEmpty)
+    {
+        using T = typename TestFixture::CharType;
 
-    ASSERT_GT(reserveCount, string.Capacity());
-    string.Reserve(reserveCount);
+        BasicString<T> array(3, static_cast<T>('f'));
+        BasicString<T> empty(12);
 
-    string.Shrink(reserveCount - 5);
+        ASSERT_EQ(array.Size(), 3);
+        ASSERT_EQ(empty.Size(), 0);
 
-    EXPECT_GE(string.Capacity(), reserveCount - 5);
-    EXPECT_EQ(string.Size(), previousSize);
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), this->GetCString()));
+        EXPECT_FALSE(array.IsEmpty());
+        EXPECT_TRUE(empty.IsEmpty());
+    }
 
-    const Usize smallShrinkCount = 3;
-    /* 83 is definitely smaller than 124.. */
+    // BasicString<T, Alloc>::Assign(Usize, T)
+    TYPED_TEST(StringTest, AssignFill)
+    {
+        using T = typename TestFixture::CharType;
 
-    string.Shrink(smallShrinkCount);
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
 
-    EXPECT_GE(string.Capacity(), reserveCount - 5);
-    EXPECT_EQ(string.Size(), previousSize);
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), this->GetCString()));
-}
+        string.Assign(20, static_cast<T>('f'));
 
-TYPED_TEST(StringTests, ShrinkSmallStrings)
-{
-    using T = typename TestFixture::CharType;
-    const Usize reserveCount = 124;
+        EXPECT_EQ(string.Size(), 20);
+        EXPECT_GE(string.Capacity(), string.Size());
 
-    BasicString<T> string = this->GetShortCString();
-    Usize previousSize = string.Size();
+        EXPECT_EQ(string.GetAllocator().GetId(), 17);
+        EXPECT_EQ(string.Data()[string.Size()], T());
 
-    ASSERT_GT(reserveCount, string.Capacity());
-    string.Reserve(reserveCount);
+        for (int index = 0; index < 20; ++index)
+            EXPECT_EQ(string.Data()[index], static_cast<T>('f'));
+    }
 
-    string.Shrink(string.GetLocalCapacity());
+    // BasicString<T, Alloc>::Assign(Iter, Iter)
+    TYPED_TEST(StringTest, AssignRange)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString("I am a long string!");
 
-    EXPECT_EQ(string.Capacity(), string.GetLocalCapacity());
-    EXPECT_TRUE(string.IsStorageLocal());
+        ForwardNonOwningTestContainer<T, 19> container(source2.data());
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(17));
 
-    EXPECT_EQ(string.Size(), previousSize);
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), this->GetShortCString()));
+        string.Assign(container.GetBegin(), container.GetEnd());
 
-    const Usize largeShrinkCount = 3234;
-    /* 83 is definitely smaller than 124.. */
+        EXPECT_EQ(string.Size(), source2.size());
+        EXPECT_GE(string.Capacity(), string.Size());
 
-    string.Shrink(largeShrinkCount);
+        EXPECT_EQ(string.GetAllocator().GetId(), 17);
 
-    EXPECT_EQ(string.Capacity(), string.GetLocalCapacity());
-    EXPECT_TRUE(string.IsStorageLocal());
+        EXPECT_EQ(string.Data()[string.Size()], T());
+        EXPECT_GENERAL_STREQ(string.Data(), source2.data());
+    }
 
-    EXPECT_EQ(string.Size(), previousSize);
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), this->GetShortCString()));
-}
+    // BasicString<T, Alloc>::Clear()
+    TYPED_TEST(StringTest, Clear)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hello, World! I am a long string!");
 
-/* ShrinkToFit() is basically Shrink(Size()), skipping... */
+        BasicString<T> string = source.c_str();
+        Usize capacity = string.Capacity();
 
-// bool operator==(const BasicString<T, Alloc1>& string1, const BasicString<T, Alloc2>& string2)
-// bool operator==(const BasicString<T, Alloc>& string1, const T* string2)
-// bool operator==(const T* string1, const BasicString<T, Alloc>& string2)
-TYPED_TEST(StringTests, EqualOperator)
-{
-    using T = typename TestFixture::CharType;
+        string.Clear();
 
-    BasicString<T> string = this->GetCString();
-    BasicString<T> sameString = this->GetCString();
-    BasicString<T> differentString = this->GetShortCString();
+        EXPECT_EQ(string.Size(), 0);
+        EXPECT_EQ(string.Capacity(), capacity);
+        EXPECT_EQ(string.Data()[0], T());
+    }
 
-    EXPECT_EQ(string, sameString);
-    EXPECT_NE(string, differentString);
+    // BasicString<T, Alloc>::Reset()
+    TYPED_TEST(StringTest, Reset)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString(
+            "Hello, World! I am a long string!");
 
-    EXPECT_EQ(string, sameString.Data());
-    EXPECT_NE(string, differentString.Data());
+        BasicString<T> string = source.c_str();
+        string.Reset();
 
-    EXPECT_EQ(string.Data(), sameString);
-    EXPECT_NE(string.Data(), differentString);
+        EXPECT_EQ(string.Size(), 0);
+        EXPECT_EQ(string.Capacity(), BasicString<T>::GetLocalCapacity());
+        EXPECT_EQ(string.Data()[0], T());
+    }
+
+    // BasicString<T, Alloc>::Insert(Index, const T*)
+    TYPED_TEST(StringTest, InsertCstring)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Heorld!");
+        std::basic_string<T> source2 = this->GetEncodedString("llo, W");
+
+        BasicString<T> string = source.c_str();
+        string.Insert(2, source2.c_str());
+
+        EXPECT_EQ(string.Size(), source.size() + source2.size());
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Insert(Index, const T*, Usize)
+    TYPED_TEST(StringTest, InsertCstringSize)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Heorld!");
+        std::basic_string<T> source2 = this->GetEncodedString("llo, World!");
+
+        BasicString<T> string = source.c_str();
+        string.Insert(2, source2.c_str(), 6);
+
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Insert(Index, BasicStringView<T>)
+    TYPED_TEST(StringTest, InsertStringView)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Heorld!");
+        std::basic_string<T> source2 = this->GetEncodedString("llo, World!");
+
+        BasicString<T> string = source.c_str();
+        string.Insert(2, BasicStringView<T>(source2.c_str(), 6));
+
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Insert(Index, const BasicString<T>&)
+    TYPED_TEST(StringTest, InsertString)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Heorld!");
+        std::basic_string<T> source2 = this->GetEncodedString("llo, W");
+
+        BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(13));
+        BasicString<T, StatefulAllocator> string2 = source2.c_str();
+
+        string.Insert(2, string2);
+
+        EXPECT_EQ(string.Size(), source.size() + source2.size());
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        EXPECT_EQ(string.GetAllocator().GetId(), 13);
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Insert(Index, Iter, Iter)
+    TYPED_TEST(StringTest, InsertRange)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Heorld!");
+        std::basic_string<T> source2 = this->GetEncodedString("llo, W");
+
+        ForwardNonOwningTestContainer<T, 6> container(source2.data());
+        BasicString<T> string(source.c_str(), StatefulAllocator(13));
+
+        string.Insert(2, container.GetBegin(), container.GetEnd());
+
+        EXPECT_EQ(string.Size(), source.size() + source2.size());
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Insert(Index, std::initializer_list<T>)
+    TYPED_TEST(StringTest, InsertInitializerList)
+    {
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> source = this->GetEncodedString("Heorld!");
+        BasicString<T> string(source.c_str(), StatefulAllocator(13));
+
+        string.Insert(2, { 'l', 'l', 'o', ',', ' ', 'W' });
+
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Remove(Index)
+    TYPED_TEST(StringTest, RemoveCharacter)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, mWorld!");
+
+        BasicString<T> string = source.c_str();
+        string.Remove(7);
+
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Remove(Index, Usize)
+    TYPED_TEST(StringTest, RemoveRange)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, mfaWorld!");
+
+        BasicString<T> string = source.c_str();
+        string.Remove(7, 3);
+
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+    }
+
+    // BasicString<T, ALloc>::PushBack(T)
+    TYPED_TEST(StringTest, PushBack)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+
+        BasicString<T> string = source.c_str();
+        string.PushBack(static_cast<T>('p'));
+
+        EXPECT_EQ(string.Size(), source.size() + 1);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!p");
+        EXPECT_GENERAL_STREQ(expected.c_str(), string.Data());
+    }
+
+    // BasicString<T, Alloc>::PopBack()
+    TYPED_TEST(StringTest, PopBack)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!!");
+
+        BasicString<T> string = source.c_str();
+        string.PopBack();
+
+        EXPECT_EQ(string.Size(), 13);
+        EXPECT_GE(string.Capacity(), string.Size());
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
+        EXPECT_GENERAL_STREQ(expected.c_str(), string.Data());
+    }
+
+    /* BasicString<T, Alloc>::Append(Usize, T),
+     * BasicString<T, Alloc>::Append(const T*, Usize), and
+     * BasicString<T, Alloc>::Append(Iter, Iter) were tested previously in the
+     * operator+= and operator+ tests. These will be skipped.
+     */
+
+    /* BasicString<T, Alloc>::StartsWith(), BasicString<T, Alloc>::EndsWith(),
+     * BasicString<T, Alloc>::Contains(), and BasicString<T, Alloc>::Find() are
+     * are helper functions to the equivalent functions in BasicStringView<T>. No tests.
+     */
+
+    // BasicStringView<T> Substring(Index, Usize)
+    TYPED_TEST(StringTest, Substring)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+
+        BasicString<T> string = source.c_str();
+        BasicStringView<T> substring = string.Substring(3, 5);
+
+        EXPECT_EQ(substring.Size(), 5);
+
+        std::basic_string<T> expected = this->GetEncodedString("lo, W");
+        EXPECT_EQ(
+            std::basic_string<T>(substring.Data(), substring.Size()),
+            expected.c_str());
+    }
+
+    // BasicString<T, Alloc>::Swap(BasicString<T, Alloc>&)
+    TYPED_TEST(StringTest, Swap)
+    {
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString(
+            "Hello, World! I am a long string.");
+
+        BasicString<T> string = source.c_str();
+        BasicString<T> string2 = source2.c_str();
+
+        string.Swap(string2);
+
+        EXPECT_EQ(string.Size(), source2.size());
+        EXPECT_GE(string.Capacity(), string.Capacity());
+        EXPECT_GENERAL_STREQ(string.Raw(), source2.c_str());
+
+        EXPECT_EQ(string2.Size(), source.size());
+        EXPECT_GE(string2.Capacity(), string2.Capacity());
+        EXPECT_GENERAL_STREQ(string2.Raw(), source.c_str());
+    }
+
+    // BasicString<T, Alloc>::Reserve(Usize)
+    TYPED_TEST(StringTest, Reserve)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+
+        BasicString<T> string = source.c_str();
+        ASSERT_GT(124, string.Capacity());
+
+        string.Reserve(124);
+
+        EXPECT_GE(string.Capacity(), 124);
+        EXPECT_EQ(string.Size(), source.size());
+        EXPECT_GENERAL_STREQ(string.Data(), source.c_str());
+
+        // 83 < 124, Reserve() should do nothing.
+        string.Reserve(83);
+
+        EXPECT_GE(string.Capacity(), 83);
+        EXPECT_EQ(string.Size(), source.size());
+        EXPECT_GENERAL_STREQ(string.Data(), source.c_str());
+    }
+
+    // BasicString<T, Alloc>::ShrinkToFit()
+    TYPED_TEST(StringTest, ShrinkToFit)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+
+        BasicString<T> string = source.c_str();
+        ASSERT_GT(string.Capacity(), string.Size());
+
+        string.ShrinkToFit();
+
+        EXPECT_EQ(
+            string.Capacity(),
+            std::max(string.Size(), BasicString<T>::GetLocalCapacity()));
+
+        EXPECT_EQ(string.Size(), source.size());
+        EXPECT_GENERAL_STREQ(string.Data(), source.c_str());
+
+        // The string's size is equal to its capacity, ShrinkToFit() should do nothing.
+        string.ShrinkToFit();
+
+        EXPECT_EQ(
+            string.Capacity(),
+            std::max(string.Size(), BasicString<T>::GetLocalCapacity()));
+
+        EXPECT_EQ(string.Size(), source.size());
+        EXPECT_GENERAL_STREQ(string.Data(), source.c_str());
+    }
+
+    // BasicString<T, Alloc>::begin()
+    // BasicString<T, Alloc>::end()
+    TYPED_TEST(StringTest, RangedForLoop)
+    {
+        using T = typename TestFixture::CharType;
+        BasicString<T> string(5, static_cast<T>('f'));
+
+        int index = 0;
+        for (const T& element : string)
+        {
+            EXPECT_EQ(&element, string.Raw() + index);
+            ++index;
+        }
+    }
+
+    // operator==(const BasicString<T, Alloc1>&, const BasicString<T, Alloc2>&)
+    // operator==(const BasicString<T, Alloc>&, const T*)
+    // operator==(const T*, const BasicString<T, Alloc>&)
+    TYPED_TEST(StringTest, EqualOperator)
+    {
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> source2 = this->GetEncodedString(
+            "Hello, World! I am a long string.");
+
+        BasicString<T> string = source.c_str();
+        BasicString<T> sameString = source.c_str();
+        BasicString<T> differentString = source2.c_str();
+
+        EXPECT_EQ(string, sameString);
+        EXPECT_NE(string, differentString);
+
+        EXPECT_EQ(string, sameString.Data());
+        EXPECT_NE(string, differentString.Data());
+
+        EXPECT_EQ(string.Data(), sameString);
+        EXPECT_NE(string.Data(), differentString);
+    }
 }

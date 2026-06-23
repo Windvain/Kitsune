@@ -123,17 +123,18 @@ namespace
 
         std::vector<int> sourceExpected = { 20, 32, 14, 698, 1 };
         for (int index = 0; index < 5; ++index)
-        {
-            EXPECT_EQ(source[index].use_count(), 2);
             EXPECT_EQ(*source[index], sourceExpected[index]);
-        }
 
         std::vector<int> destExpected = { 20, 32, 14, 698 };
         for (int index = 0; index < 4; ++index)
         {
+            EXPECT_EQ(source[index].use_count(), 2);
+
             EXPECT_EQ(destination[index].use_count(), 2);
             EXPECT_EQ(*destination[index], destExpected[index]);
         }
+
+        EXPECT_EQ(source[4].use_count(), 1);
     }
 
     // Algorithms::CopyBackwards(Iter, Iter, OutIter)

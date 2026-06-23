@@ -3,47 +3,14 @@
 
 #include <gtest/gtest.h>
 #include "TrackingAllocator.h"
+#include "StatefulAllocator.h"
 
 #include "Foundation/Filesystem/FileStream.h"
 
 namespace
 {
     using namespace Kitsune;
-    using Testing::TrackingAllocator;
-
-    class TestAllocator : public GlobalAllocator
-    {
-    public:
-        TestAllocator() = default;
-        inline TestAllocator(int id)
-            : Id(id)
-        {
-        }
-
-        TestAllocator(const TestAllocator&) = default;
-        TestAllocator(TestAllocator&& allocator)
-            : Id(std::exchange(allocator.Id, 0))
-        {
-        }
-
-        ~TestAllocator() = default;
-
-    public:
-        TestAllocator& operator=(const TestAllocator& allocator)
-        {
-            Id = allocator.Id;
-            return *this;
-        }
-
-        TestAllocator& operator=(TestAllocator&& allocator)
-        {
-            Id = std::exchange(allocator.Id, 0);
-            return *this;
-        }
-
-    public:
-        int Id = 0;
-    };
+    using Testing::TrackingAllocator, Testing::StatefulAllocator;
 
     class FileStreamTest : public ::testing::Test
     {
@@ -84,9 +51,9 @@ namespace
     // FileStream<BufSize, Alloc>::FileStream()
     TEST_F(FileStreamTest, AllocatorConstructor)
     {
-        BasicFileStream<4096, TestAllocator> stream(TestAllocator(42));
+        BasicFileStream<4096, StatefulAllocator> stream(StatefulAllocator(42));
         EXPECT_FALSE(stream.IsOpen());
-        EXPECT_EQ(stream.GetAllocator().Id, 42);
+        EXPECT_EQ(stream.GetAllocator().GetId(), 42);
     }
 
     // FileStream<BufSize, Alloc>::FileStream(StringView, FileAccessMode, FileOpenMode)
@@ -459,8 +426,8 @@ namespace
     // FileStream<BufSize, Alloc>::Swap(FileStream&)
     TEST_F(FileStreamTest, Swap)
     {
-        BasicFileStream<4096, TestAllocator> stream(TestAllocator(65));
-        BasicFileStream<4096, TestAllocator> stream2(TestAllocator(19));
+        BasicFileStream<4096, StatefulAllocator> stream(StatefulAllocator(65));
+        BasicFileStream<4096, StatefulAllocator> stream2(StatefulAllocator(19));
 
         ASSERT_TRUE(stream.Open("./example.txt", FileAccessMode::ReadWrite));
         stream.Swap(stream2);
@@ -468,8 +435,8 @@ namespace
         EXPECT_FALSE(stream.IsOpen());
         EXPECT_TRUE(stream2.IsOpen());
 
-        EXPECT_EQ(stream.GetAllocator().Id, 19);
-        EXPECT_EQ(stream2.GetAllocator().Id, 65);
+        EXPECT_EQ(stream.GetAllocator().GetId(), 19);
+        EXPECT_EQ(stream2.GetAllocator().GetId(), 65);
 
         EXPECT_TRUE(stream2.GetPath().Contains("example.txt"));
     }

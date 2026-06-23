@@ -1,373 +1,368 @@
 #include <gtest/gtest.h>
 #include "Foundation/String/StringView.h"
 
-using namespace Kitsune;
-
-template<typename T>
-class StringViewTests : public ::testing::Test
+namespace
 {
-public:
-    using CharType = T;
+    using namespace Kitsune;
 
-protected:
-    StringViewTests() { /* ... */ }
-    ~StringViewTests() { /* ... */ }
-
-protected:
-    const T* GetCString()
+    template<typename T>
+    class StringViewTest : public ::testing::Test
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Hello there, I am a string!";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"I am a wide string! How about you?";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"I am a UTF-8 string... The new kid on the block..";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Hey UTF-32, look at us old strings...";
-        else
-            return U"Yeah... we're ooooolllldddd...";
+    protected:
+        using CharType = T;
+
+        [[nodiscard]]
+        inline std::basic_string<T> GetEncodedString(
+            const char* string,
+            std::size_t size)
+        {
+            std::basic_string<T> convString;
+            for (std::size_t index = 0; index < size; ++index)
+            {
+                assert(string[index] <= 127);
+                convString.push_back(static_cast<T>(string[index]));
+            }
+
+            return convString;
+        }
+
+        [[nodiscard]]
+        inline std::basic_string<T> GetEncodedString(const char* string)
+        {
+            return GetEncodedString(string, std::strlen(string));
+        }
+    };
+
+    using StringViewTestTypes =
+        ::testing::Types<char, wchar_t, char8_t, char16_t, char32_t>;
+
+    TYPED_TEST_SUITE(StringViewTest, StringViewTestTypes);
+
+    // BasicStringView<T>()
+    TYPED_TEST(StringViewTest, DefaultConstructor)
+    {
+        using T = typename TestFixture::CharType;
+
+        BasicStringView<T> stringView{};
+        EXPECT_EQ(stringView.Data(), nullptr);
+        EXPECT_EQ(stringView.Size(), 0);
     }
 
-    const T* GetShortCString()
+    // BasicStringView<T>(const T*, Usize)
+    TYPED_TEST(StringViewTest, CstringSizeConstructor)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Hello World!";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Wiidde";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Hello there..";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"..uhh..";
-        else
-            return U"uhh";
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+
+        BasicStringView<T> stringView(string.data() + 2, string.data() + 5);
+        EXPECT_EQ(stringView.Data(), string.data() + 2);
+        EXPECT_EQ(stringView.Size(), 3);
     }
 
-    const T* GetFoundString()
+    // BasicStringView<T>(const T*)
+    TYPED_TEST(StringViewTest, CstringConstructor)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Mouse";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Mouse";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Mouse";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Mouse";
-        else
-            return U"Mouse";
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        BasicStringView<T> stringView(string.data());
+
+        EXPECT_EQ(stringView.Data(), string.data());
+        EXPECT_EQ(stringView.Size(), string.size());
     }
 
-    const T* GetNotFoundString()
+    // BasicStringView<T>(Iter, Iter)
+    TYPED_TEST(StringViewTest, RangeConstructor)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Standee";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Lamp";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Cubes";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Phone Stand";
-        else
-            return U"Laptop";
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        BasicStringView<T> stringView(string.data(), string.data() + string.size());
+
+        EXPECT_EQ(stringView.Data(), string.data());
+        EXPECT_EQ(stringView.Size(), string.size());
     }
 
-    const T* GetFindString()
+    // BasicStringView<T>::operator[](Index) const
+    TYPED_TEST(StringViewTest, SubscriptOperator)
     {
-        if constexpr (std::is_same_v<T, char>)
-            return "Earphones Mouse Pen Eraser Remote";
-        else if constexpr (std::is_same_v<T, wchar_t>)
-            return L"Earphones Mouse Pen Eraser Remote";
-        else if constexpr (std::is_same_v<T, char8_t>)
-            return u8"Earphones Mouse Pen Eraser Remote";
-        else if constexpr (std::is_same_v<T, char16_t>)
-            return u"Earphones Mouse Pen Eraser Remote";
-        else
-            return U"Earphones Mouse Pen Eraser Remote";
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        BasicStringView<T> stringView(string.data());
+
+        for (Index index = 0; index < stringView.Size(); ++index)
+            EXPECT_EQ(&stringView[index], stringView.Data() + index);
     }
-};
 
-using StringViewTestsImpl =
-    ::testing::Types<
-        char,
-        wchar_t,
-        char8_t,
-        char16_t,
-        char32_t>;
-
-TYPED_TEST_SUITE(StringViewTests, StringViewTestsImpl);
-
-// BasicStringView<T>()
-TYPED_TEST(StringViewTests, DefaultConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    BasicStringView<T> stringView{};
-    EXPECT_EQ(stringView.Data(), nullptr);
-    EXPECT_EQ(stringView.Size(), 0);
-}
-
-// BasicStringView<T>(const T* string, Usize size)
-TYPED_TEST(StringViewTests, CstringSizeConstructor)
-{
-    using T = typename TestFixture::CharType;
-    const T* cstring = this->GetCString();
-
-    BasicStringView<T> stringView(cstring + 2, cstring + 5);
-    EXPECT_EQ(stringView.Data(), cstring + 2);
-    EXPECT_EQ(stringView.Size(), 3);
-}
-
-// BasicStringView<T>(const T* string)
-TYPED_TEST(StringViewTests, CstringConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const T* cstring = this->GetCString();
-    Usize expectedSize = std::char_traits<T>::length(cstring);
-
-    BasicStringView<T> stringView(cstring);
-    EXPECT_EQ(stringView.Data(), cstring);
-    EXPECT_EQ(stringView.Size(), expectedSize);
-}
-
-// BasicStringView<T>(It begin, It end)
-TYPED_TEST(StringViewTests, RangeConstructor)
-{
-    using T = typename TestFixture::CharType;
-
-    const T* cstring = this->GetCString();
-    Usize expectedSize = std::char_traits<T>::length(cstring);
-
-    BasicStringView<T> stringView(cstring);
-    EXPECT_EQ(stringView.Data(), cstring);
-    EXPECT_EQ(stringView.Size(), expectedSize);
-}
-
-// const T& operator[](Index index) const
-TYPED_TEST(StringViewTests, SubscriptOperator)
-{
-    using T = typename TestFixture::CharType;
-    BasicStringView<T> stringView = this->GetCString();
-
-    for (Index i = 0; i < stringView.Size(); ++i)
+    // BasicStringView<T>::Front() const
+    // BasicStringView<T>::Back() const
+    TYPED_TEST(StringViewTest, FrontAndBack)
     {
-        EXPECT_EQ(stringView[i], stringView.Data()[i]);
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        BasicStringView<T> stringView(string.data());
+
+        EXPECT_EQ(&stringView.Front(), string.data());
+        EXPECT_EQ(&stringView.Back(), string.data() + string.size() - 1);
+
+        BasicStringView <T> empty;
+        EXPECT_THROW((void)(empty.Front()), OutOfRangeException);
+        EXPECT_THROW((void)(empty.Back()), OutOfRangeException);
     }
-}
 
-// const T& Front() const
-// const T& Back() const
-TYPED_TEST(StringViewTests, FrontAndBackGetters)
-{
-    using T = typename TestFixture::CharType;
-    BasicStringView<T> string = this->GetCString();
+    // BasicStringView<T>::GetBegin()
+    // BasicStringView<T>::GetEnd()
+    // BasicStringView<T>::GetReverseBegin()
+    // BasicStringView<T>::GetReverseEnd()
+    TYPED_TEST(StringViewTest, IteratorGetters)
+    {
+        using T = typename TestFixture::CharType;
 
-    EXPECT_EQ(string.Front(), string.Data()[0]);
-    EXPECT_EQ(string.Back(), string.Data()[string.Size() - 1]);
-}
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        BasicStringView<T> stringView(string.data());
 
-// ConstIterator GetBegin() const
-// ConstIterator GetEnd() const
-// ConstIterator GetReverseBegin() const
-// ConstIterator GetReverseEnd() const
-TYPED_TEST(StringViewTests, IteratorGetters)
-{
-    using T = typename TestFixture::CharType;
-    BasicStringView<T> string = this->GetCString();
+        EXPECT_EQ(ToAddress(stringView.GetBegin()), &stringView.Front());
+        EXPECT_EQ(stringView.GetEnd(), stringView.GetBegin() + stringView.Size());
 
-    EXPECT_EQ(*string.GetBegin(), string.Front());
-    EXPECT_EQ(string.GetEnd(), string.GetBegin() + string.Size());
+        EXPECT_EQ(&*stringView.GetReverseBegin(), &stringView.Back());
+        EXPECT_EQ(
+            stringView.GetReverseEnd(),
+            stringView.GetReverseBegin() + static_cast<Ptrdiff>(stringView.Size()));
+    }
 
-    EXPECT_EQ(*string.GetReverseBegin(), string.Back());
-    EXPECT_EQ(string.GetReverseEnd(), string.GetReverseBegin() + static_cast<Ptrdiff>(string.Size()));
-}
+    // BasicStringView<T>::RemovePrefix(Usize)
+    TYPED_TEST(StringViewTest, RemovePrefix)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
 
-// void RemovePrefix(Usize offset)
-TYPED_TEST(StringViewTests, RemovePrefix)
-{
-    using T = typename TestFixture::CharType;
+        BasicStringView<T> stringView = string.data();
+        std::basic_string_view expectedString = string.data();
 
-    BasicStringView<T> string = this->GetCString();
-    std::basic_string_view expectedString = this->GetCString();
+        stringView.RemovePrefix(3);
+        expectedString.remove_prefix(3);
 
-    string.RemovePrefix(3);
-    expectedString.remove_prefix(3);
+        EXPECT_EQ(stringView.Size(), expectedString.size());
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        for (int index = 0; index < expectedString.size(); ++index)
+            EXPECT_EQ(stringView.Data()[index], expectedString[index]);
+    }
 
-// void RemoveSuffix(Usize offset)
-TYPED_TEST(StringViewTests, RemoveSuffix)
-{
-    using T = typename TestFixture::CharType;
+    // BasicStringView<T>::RemoveSuffix(Usize)
+    TYPED_TEST(StringViewTest, RemoveSuffix)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
 
-    BasicStringView<T> string = this->GetCString();
-    std::basic_string_view expectedString = this->GetCString();
+        BasicStringView<T> stringView = string.data();
+        std::basic_string_view expectedString = string.data();
 
-    string.RemoveSuffix(3);
-    expectedString.remove_suffix(3);
+        stringView.RemoveSuffix(3);
+        expectedString.remove_suffix(3);
 
-    EXPECT_EQ(string.Size(), expectedString.size());
-    EXPECT_TRUE(std::equal(string.GetBegin(), string.GetEnd(), expectedString.begin()));
-}
+        EXPECT_EQ(stringView.Size(), expectedString.size());
+        for (int index = 0; index < expectedString.size(); ++index)
+            EXPECT_EQ(stringView.Data()[index], expectedString[index]);
+    }
 
-// void Swap(BasicStringView<T>& stringView)
-TYPED_TEST(StringViewTests, Swap)
-{
-    using T = typename TestFixture::CharType;
+    // BasicStringView<T>::Swap(BasicStringView<T>&)
+    TYPED_TEST(StringViewTest, Swap)
+    {
+        using T = typename TestFixture::CharType;
 
-    BasicStringView<T> string = this->GetCString();
-    BasicStringView<T> string2 = this->GetShortCString();
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> string2 = this->GetEncodedString("Not Hello, World!");
 
-    const T* rawString = string.Data();
-    const T* rawString2 = string2.Data();
+        BasicStringView<T> sv = string.data();
+        BasicStringView<T> sv2 = string2.data();
 
-    Usize size = string.Size();
-    Usize size2 = string2.Size();
+        const T* rawString = sv.Data();
+        const T* rawString2 = sv2.Data();
 
-    string.Swap(string2);
+        Usize size = sv.Size();
+        Usize size2 = sv2.Size();
 
-    EXPECT_EQ(string.Data(), rawString2);
-    EXPECT_EQ(string2.Data(), rawString);
+        sv.Swap(sv2);
 
-    EXPECT_EQ(string.Size(), size2);
-    EXPECT_EQ(string2.Size(), size);
-}
+        EXPECT_EQ(sv.Data(), rawString2);
+        EXPECT_EQ(sv2.Data(), rawString);
 
-// bool StartsWith(BasicStringView<T> stringView)
-// bool StartsWith(T character)
-// bool StartsWith(const T* string)
-TYPED_TEST(StringViewTests, StartsWith)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_EQ(sv.Size(), size2);
+        EXPECT_EQ(sv2.Size(), size);
+    }
 
-    BasicStringView<T> string = this->GetCString();
+    // BasicStringView<T>::StartsWith(BasicStringView<T>)
+    // BasicStringView<T>::StartsWith(T)
+    // BasicStringView<T>::StartsWith(const T*)
+    TYPED_TEST(StringViewTest, StartsWith)
+    {
+        using T = typename TestFixture::CharType;
 
-    std::basic_string<T> expectedString = string.Data();
-    BasicStringView<T> matchingSubstring(expectedString.data(), expectedString.data() + 3);
-    BasicStringView<T> differingSubstring(expectedString.data() + 2, expectedString.data() + 3);
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        BasicStringView<T> stringView = string.data();
 
-    EXPECT_TRUE(string.StartsWith(matchingSubstring));
-    EXPECT_FALSE(string.StartsWith(differingSubstring));
+        std::basic_string<T> expected = stringView.Data();
+        BasicStringView<T> sameSubstring(expected.data(), expected.data() + 3);
+        BasicStringView<T> diffSubstring(expected.data() + 2, expected.data() + 3);
 
-    EXPECT_TRUE(string.StartsWith(expectedString[0]));
-    EXPECT_FALSE(string.StartsWith(static_cast<T>('@')));
+        EXPECT_TRUE(stringView.StartsWith(sameSubstring));
+        EXPECT_FALSE(stringView.StartsWith(diffSubstring));
 
-    EXPECT_TRUE(string.StartsWith(expectedString.substr(0, 4).data()));
-    EXPECT_FALSE(string.StartsWith(expectedString.substr(2, 4).data()));
-}
+        EXPECT_TRUE(stringView.StartsWith(expected[0]));
+        EXPECT_FALSE(stringView.StartsWith(static_cast<T>('@')));
 
-// bool EndsWith(BasicStringView<T> stringView)
-// bool EndsWith(T character)
-// bool EndsWith(const T* string)
-TYPED_TEST(StringViewTests, EndsWith)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_TRUE(stringView.StartsWith(expected.substr(0, 4).data()));
+        EXPECT_FALSE(stringView.StartsWith(expected.substr(2, 4).data()));
+    }
 
-    BasicStringView<T> string = this->GetCString();
+    // BasicStringView<T>::EndsWith(BasicStringView<T> stringView)
+    // BasicStringView<T>::EndsWith(T character)
+    // BasicStringView<T>::EndsWith(const T* string)
+    TYPED_TEST(StringViewTest, EndsWith)
+    {
+        using T = typename TestFixture::CharType;
 
-    std::basic_string<T> expectedString = string.Data();
-    BasicStringView<T> matchingSubstring(expectedString.data() + 3, expectedString.data() + expectedString.size());
-    BasicStringView<T> differingSubstring(expectedString.data() + 2, expectedString.data() + 3);
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        BasicStringView<T> stringView = string.data();
 
-    EXPECT_TRUE(string.EndsWith(matchingSubstring));
-    EXPECT_FALSE(string.EndsWith(differingSubstring));
+        std::basic_string<T> expected = stringView.Data();
+        BasicStringView<T> matching(
+            expected.data() + 3,
+            expected.data() + expected.size());
 
-    EXPECT_TRUE(string.EndsWith(expectedString.back()));
-    EXPECT_FALSE(string.EndsWith(static_cast<T>('@')));
+        BasicStringView<T> diff(expected.data() + 2, expected.data() + 3);
 
-    EXPECT_TRUE(string.EndsWith(expectedString.substr(expectedString.size() - 3, 3).data()));
-    EXPECT_FALSE(string.EndsWith(expectedString.substr(2, 4).data()));
-}
+        EXPECT_TRUE(stringView.EndsWith(matching));
+        EXPECT_FALSE(stringView.EndsWith(diff));
 
-// bool Contains(BasicStringView<T> stringView)
-// bool Contains(T character)
-// bool Contains(const T* string)
-TYPED_TEST(StringViewTests, Contains)
-{
-    using T = typename TestFixture::CharType;
+        EXPECT_TRUE(stringView.EndsWith(expected.back()));
+        EXPECT_FALSE(stringView.EndsWith(static_cast<T>('@')));
 
-    BasicStringView<T> string = this->GetCString();
+        EXPECT_TRUE(stringView.EndsWith(expected.substr(expected.size() - 3, 3).data()));
+        EXPECT_FALSE(stringView.EndsWith(expected.substr(2, 4).data()));
+    }
 
-    std::basic_string<T> expectedString = string.Data();
-    BasicStringView<T> matchingSubstring(expectedString.data() + 3, expectedString.data() + expectedString.size());
-    BasicStringView<T> matchingSubstring2(expectedString.data() + 2, expectedString.data() + 3);
-    BasicStringView<T> differingSubstring(this->GetShortCString());
+    // BasicStringView<T>::Contains(BasicStringView<T> stringView)
+    // BasicStringView<T>::Contains(T character)
+    // BasicStringView<T>::Contains(const T* string)
+    TYPED_TEST(StringViewTest, Contains)
+    {
+        using T = typename TestFixture::CharType;
 
-    EXPECT_TRUE(string.Contains(matchingSubstring));
-    EXPECT_TRUE(string.Contains(matchingSubstring2));
-    EXPECT_FALSE(string.Contains(differingSubstring));
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> diffString = this->GetEncodedString("Nope.");
 
-    EXPECT_TRUE(string.Contains(expectedString.back()));
-    EXPECT_FALSE(string.Contains(static_cast<T>('@')));
+        BasicStringView<T> stringView = string.data();
 
-    EXPECT_TRUE(string.Contains(expectedString.substr(expectedString.size() - 3, 3).data()));
-    EXPECT_TRUE(string.Contains(expectedString.substr(2, 4).data()));
-    EXPECT_FALSE(string.Contains(differingSubstring.Data()));
-}
+        std::basic_string<T> expected = stringView.Data();
+        BasicStringView<T> matching(
+            expected.data() + 3,
+            expected.data() + expected.size());
 
-// ConstIterator Find(BasicStringView<T> string) const
-TYPED_TEST(StringViewTests, FindStringView)
-{
-    using T = typename TestFixture::CharType;
-    BasicStringView<T> string = this->GetFindString();
+        BasicStringView<T> matching2(
+            expected.data() + 2,
+            expected.data() + 3);
 
-    EXPECT_EQ(string.Find(BasicStringView<T>(this->GetFoundString())), string.GetBegin() + 10);
-    EXPECT_EQ(string.Find(BasicStringView<T>(this->GetNotFoundString())), string.GetEnd());
-}
+        BasicStringView<T> diff = diffString.data();
 
-// ConstIterator Find(const T* string) const
-TYPED_TEST(StringViewTests, FindCString)
-{
-    using T = typename TestFixture::CharType;
-    BasicStringView<T> string = this->GetFindString();
+        EXPECT_TRUE(stringView.Contains(matching));
+        EXPECT_TRUE(stringView.Contains(matching2));
+        EXPECT_FALSE(stringView.Contains(diff));
 
-    EXPECT_EQ(string.Find(this->GetFoundString()), string.GetBegin() + 10);
-    EXPECT_EQ(string.Find(this->GetNotFoundString()), string.GetEnd());
-}
+        EXPECT_TRUE(stringView.Contains(expected.back()));
+        EXPECT_FALSE(stringView.Contains(static_cast<T>('@')));
 
-// ConstIterator Find(T character) const
-TYPED_TEST(StringViewTests, FindCharacter)
-{
-    using T = typename TestFixture::CharType;
-    BasicStringView<T> string = this->GetFindString();
+        EXPECT_TRUE(stringView.Contains(expected.substr(expected.size() - 3, 3).data()));
+        EXPECT_TRUE(stringView.Contains(expected.substr(2, 4).data()));
+        EXPECT_FALSE(stringView.Contains(diff.Data()));
+    }
 
-    EXPECT_EQ(string.Find(static_cast<T>('M')), string.GetBegin() + 10);
-    EXPECT_EQ(string.Find(static_cast<T>('x')), string.GetEnd());
-}
+    // BasicStringView<T>::Find(BasicStringView<T> string) const
+    TYPED_TEST(StringViewTest, FindStringView)
+    {
+        using T = typename TestFixture::CharType;
 
-// BasicStringView<T> Substring(Index startPos, Usize count)
-TYPED_TEST(StringViewTests, Substring)
-{
-    using T = typename TestFixture::CharType;
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> falseString = this->GetEncodedString("Hello.");
+        std::basic_string<T> trueString = this->GetEncodedString("o, Wo");
 
-    BasicStringView<T> string = this->GetCString();
-    BasicStringView<T> substring = string.Substring(3, 5);
+        BasicStringView<T> stringView = string.data();
+        BasicStringView<T> falseSubstr = falseString.data();
+        BasicStringView<T> trueSubstr = trueString.data();
 
-    std::basic_string<T> stdSubstring = this->GetCString();
-    stdSubstring = stdSubstring.substr(3, 5);
+        EXPECT_EQ(stringView.Find(trueSubstr), stringView.GetBegin() + 4);
+        EXPECT_EQ(stringView.Find(falseSubstr), stringView.GetEnd());
+    }
 
-    EXPECT_TRUE(std::equal(stdSubstring.begin(), stdSubstring.end(), substring.GetBegin()));
-    EXPECT_EQ(substring.Size(), stdSubstring.size());
-}
+    // BasicStringView<T>::Find(const T* string) const
+    TYPED_TEST(StringViewTest, FindCString)
+    {
+        using T = typename TestFixture::CharType;
 
-// bool operator==(const BasicString<T, Alloc1>& string1, const BasicString<T, Alloc2>& string2)
-// bool operator==(const BasicString<T, Alloc>& string1, const T* string2)
-// bool operator==(const T* string1, const BasicString<T, Alloc>& string2)
-TYPED_TEST(StringViewTests, EqualOperator)
-{
-    using T = typename TestFixture::CharType;
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> falseString = this->GetEncodedString("Hello.");
+        std::basic_string<T> trueString = this->GetEncodedString("o, Wo");
 
-    BasicStringView<T> string = this->GetCString();
-    BasicStringView<T> sameString = this->GetCString();
-    BasicStringView<T> differentString = this->GetShortCString();
+        BasicStringView<T> stringView = string.data();
 
-    EXPECT_EQ(string, sameString);
-    EXPECT_NE(string, differentString);
+        EXPECT_EQ(stringView.Find(trueString.data()), stringView.GetBegin() + 4);
+        EXPECT_EQ(stringView.Find(falseString.data()), stringView.GetEnd());
+    }
 
-    EXPECT_EQ(string, sameString.Data());
-    EXPECT_NE(string, differentString.Data());
+    // BasicStringView<T>::Find(T character) const
+    TYPED_TEST(StringViewTest, FindCharacter)
+    {
+        using T = typename TestFixture::CharType;
 
-    EXPECT_EQ(string.Data(), sameString);
-    EXPECT_NE(string.Data(), differentString);
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        T found = static_cast<T>(' ');
+        T notFound = static_cast<T>('h');
+
+        BasicStringView<T> stringView = string.data();
+
+        EXPECT_EQ(stringView.Find(found), stringView.GetBegin() + 6);
+        EXPECT_EQ(stringView.Find(notFound), stringView.GetEnd());
+    }
+
+    // BasicStringView<T>::Substring(Index startPos, Usize count)
+    TYPED_TEST(StringViewTest, Substring)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+
+        BasicStringView<T> stringView = string.data();
+        BasicStringView<T> substring = stringView.Substring(3, 5);
+
+        std::basic_string<T> stdSubstring = string.data();
+        stdSubstring = stdSubstring.substr(3, 5);
+
+        EXPECT_EQ(substring.Size(), stdSubstring.size());
+        for (int index = 0; index < stdSubstring.size(); ++index)
+            EXPECT_EQ(substring.Data()[index], stdSubstring[index]);
+    }
+
+    // operator==(const BasicStringView<T>&, const BasicStringView<T>&)
+    // operator==(const BasicStringView<T>&, const T*)
+    // operator==(const T*, const BasicStringView<T>&)
+    TYPED_TEST(StringViewTest, EqualOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> string = this->GetEncodedString("Hello, World!");
+        std::basic_string<T> diffString = this->GetEncodedString("Hello, Worrd!");
+
+        BasicStringView<T> stringView = string.data();
+        BasicStringView<T> sameStringView = string.data();
+        BasicStringView<T> diffStringView = diffString.data();
+
+        EXPECT_EQ(stringView, sameStringView);
+        EXPECT_NE(stringView, diffStringView);
+
+        EXPECT_EQ(stringView, sameStringView.Data());
+        EXPECT_NE(stringView, diffStringView.Data());
+
+        EXPECT_EQ(stringView.Data(), sameStringView);
+        EXPECT_NE(stringView.Data(), diffStringView);
+    }
 }

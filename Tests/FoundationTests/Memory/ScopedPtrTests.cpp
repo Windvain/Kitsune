@@ -1,10 +1,12 @@
-#include "Foundation/Memory/ScopedPtr.h"
+#include <algorithm>
 #include <gtest/gtest.h>
 
-using namespace Kitsune;
+#include "Foundation/Memory/ScopedPtr.h"
 
 namespace
 {
+    using namespace Kitsune;
+
     template<typename T>
     class MyDeleter
     {
@@ -12,106 +14,96 @@ namespace
         using ValueType = T;
 
         MyDeleter() = default;
-        explicit MyDeleter(int value)
-            : Value(value)
-        {
-        }
+        MyDeleter(const MyDeleter& deleter) = default;
 
-        MyDeleter(const MyDeleter& deleter)
-            : Value(deleter.Value)
+        inline explicit MyDeleter(int value)
+            : m_Id(value)
         {
         }
 
         MyDeleter(MyDeleter&& deleter)
-            : Value(deleter.Value)
+            : m_Id(std::exchange(deleter.m_Id, 0))
         {
-            deleter.Value = 0;
         }
 
-        template<std::convertible_to<T> U>
-        MyDeleter(MyDeleter<U>&& deleter)
-            : Value(deleter.Value)
+        template<typename U>
+        inline MyDeleter(MyDeleter<U>&& deleter)
+            : m_Id(std::exchange(deleter.m_Id, 0))
         {
-            deleter.Value = 0;
-        }
-
-        MyDeleter& operator=(const MyDeleter& deleter)
-        {
-            Value = deleter.Value;
-            return *this;
-        }
-
-        void operator()(T* pointer)
-        {
-            Memory::Delete(pointer);
         }
 
     public:
-        int Value;
-    };
-
-    template<typename T>
-    class NotingDeleter
-    {
-    public:
-        using ValueType = T;
-
-        NotingDeleter() = default;
-        NotingDeleter(T** deletedPointer, int Id = 0)
-            : m_Deleted(deletedPointer), m_Id(Id)
+        MyDeleter& operator=(const MyDeleter& deleter) = default;
+        inline MyDeleter& operator=(MyDeleter&& deleter)
         {
-        }
-
-        NotingDeleter(const NotingDeleter&) = default;
-        NotingDeleter(NotingDeleter&& deleter)
-        {
-            m_Deleted = std::exchange(deleter.m_Deleted, nullptr);
             m_Id = std::exchange(deleter.m_Id, 0);
-        }
-
-        NotingDeleter& operator=(const NotingDeleter& deleter)
-        {
-            m_Deleted = deleter;
-            m_Id = deleter.m_Id;
-
             return *this;
         }
 
-        NotingDeleter& operator=(NotingDeleter&& deleter)
+        template<typename U>
+        inline MyDeleter& operator=(MyDeleter<U>&& deleter)
         {
-            m_Deleted = std::exchange(deleter.m_Deleted, nullptr);
             m_Id = std::exchange(deleter.m_Id, 0);
-
-            return *this;
-        }
-
-        template<std::convertible_to<T> U>
-        NotingDeleter& operator=(NotingDeleter<U>&& deleter)
-        {
-            m_Deleted = (T**)std::exchange(deleter.m_Deleted, nullptr);
-            m_Id = std::exchange(deleter.m_Id, 0);
-
             return *this;
         }
 
     public:
         void operator()(T* pointer)
         {
-            if (m_Deleted)
-                *m_Deleted = pointer;
-
             Memory::Delete(pointer);
         }
 
-        int GetId() const { return m_Id; }
+        [[nodiscard]]
+        inline int GetId() const
+        {
+            return m_Id;
+        }
 
     private:
         template<typename U>
-        friend class NotingDeleter;
+        friend class MyDeleter;
 
-        T** m_Deleted = nullptr;
         int m_Id;
     };
+
+    class ExtTrackingDeleter
+    {
+    public:
+        using ValueType = int;
+
+    public:
+        ExtTrackingDeleter() = default;
+        inline ExtTrackingDeleter(const ExtTrackingDeleter&) = default;
+
+        ExtTrackingDeleter& operator=(const ExtTrackingDeleter&) = default;
+
+    public:
+        inline void operator()(ValueType* pointer)
+        {
+            m_Deletions.push_back(pointer);
+            Memory::Delete(pointer);
+        }
+
+    public:
+        inline static void Reset()
+        {
+            m_Deletions.clear();
+        }
+
+        [[nodiscard]]
+        inline static bool IsDeleted(int* pointer)
+        {
+            return (std::find(
+                m_Deletions.begin(),
+                m_Deletions.end(),
+                pointer) != m_Deletions.end());
+        }
+
+    private:
+        static std::vector<int*> m_Deletions;
+    };
+
+    std::vector<int*> ExtTrackingDeleter::m_Deletions;
 
     struct Base
     {
@@ -130,359 +122,356 @@ namespace
         {
         }
     };
-}
 
-TEST(ScopedPtrTests, DefaultConstructor)
-{
-    ScopedPtr<int> pointer;
-    EXPECT_EQ(pointer.Get(), nullptr);
-}
-
-TEST(ScopedPtrTests, NullptrConstructor)
-{
-    ScopedPtr<int> pointer = nullptr;
-    EXPECT_EQ(pointer.Get(), nullptr);
-}
-
-TEST(ScopedPtrTests, PointerConstructor)
-{
-    int* rawPointer = Memory::New<int>(345);
-    ScopedPtr<int> pointer(rawPointer);
-
-    EXPECT_EQ(pointer.Get(), rawPointer);
-}
-
-TEST(ScopedPtrTests, PointerDeleterConstructor1)
-{
-    int* rawPointer = Memory::New<int>(345);
-    ScopedPtr<int, MyDeleter<int>> pointer(rawPointer, MyDeleter<int>(23));
-
-    EXPECT_EQ(pointer.Get(), rawPointer);
-    EXPECT_EQ(pointer.GetDeleter().Value, 23);
-}
-
-TEST(ScopedPtrTests, PointerDeleterConstructor2)
-{
-    int* rawPointer = Memory::New<int>(345);
-    MyDeleter<int> deleter = MyDeleter<int>(23);
-
-    ScopedPtr<int, MyDeleter<int>> pointer(rawPointer, deleter);
-
-    EXPECT_EQ(pointer.Get(), rawPointer);
-    EXPECT_EQ(pointer.GetDeleter().Value, 23);
-}
-
-TEST(ScopedPtrTests, MoveConstructor)
-{
-    int* rawPointer = Memory::New<int>(345);
-
-    ScopedPtr<int, MyDeleter<int>> pointer(rawPointer, MyDeleter<int>(234));
-    ScopedPtr<int, MyDeleter<int>> moved = Move(pointer);
-
-    EXPECT_EQ(pointer.Get(), nullptr);
-    EXPECT_EQ(pointer.GetDeleter().Value, 0);
-
-    EXPECT_EQ(moved.Get(), rawPointer);
-    EXPECT_EQ(moved.GetDeleter().Value, 234);
-}
-
-TEST(ScopedPtrTests, TemplatedMoveConstructor)
-{
-    Derived* rawPointer = Memory::New<Derived>(345);
-
-    ScopedPtr<Derived, MyDeleter<Derived>> pointer(
-        rawPointer, MyDeleter<Derived>(234));
-
-    ScopedPtr<Base, MyDeleter<Base>> moved = Move(pointer);
-
-    EXPECT_EQ(pointer.Get(), nullptr);
-    EXPECT_EQ(pointer.GetDeleter().Value, 0);
-
-    EXPECT_EQ(moved.Get(), rawPointer);
-    EXPECT_EQ(moved.GetDeleter().Value, 234);
-}
-
-TEST(ScopedPtrTests, Destructor)
-{
-    int* rawPointer = Memory::New<int>(2345);
-    int* deletedPointer = nullptr;
-
+    class ScopedPtrTest : public ::testing::Test
     {
-        ScopedPtr<int, NotingDeleter<int>> pointer(
-            rawPointer, NotingDeleter<int>(&deletedPointer));
+    public:
+        inline void TearDown() override
+        {
+            ExtTrackingDeleter::Reset();
+        }
+    };
 
-        KITSUNE_UNUSED(pointer);
+    TEST_F(ScopedPtrTest, DefaultConstructor)
+    {
+        ScopedPtr<int> pointer;
+        EXPECT_EQ(pointer.Get(), nullptr);
     }
 
-    EXPECT_EQ(deletedPointer, rawPointer);
-}
+    TEST_F(ScopedPtrTest, NullptrConstructor)
+    {
+        ScopedPtr<int> pointer = nullptr;
+        EXPECT_EQ(pointer.Get(), nullptr);
+    }
 
-TEST(ScopedPtrTests, MoveAssign)
-{
-    int* rawPointer = Memory::New<int>(345);
-    int* secondPointer = Memory::New<int>(452);
+    TEST_F(ScopedPtrTest, PointerConstructor)
+    {
+        int* rawPointer = Memory::New<int>(345);
+        ScopedPtr<int> pointer(rawPointer);
 
-    int* deletedPointer = nullptr;
+        EXPECT_EQ(pointer.Get(), rawPointer);
+    }
 
-    ScopedPtr<int, NotingDeleter<int>> pointer(
-        rawPointer, NotingDeleter<int>(nullptr, 3));
+    TEST_F(ScopedPtrTest, PointerDeleterConstructor1)
+    {
+        int* rawPointer = Memory::New<int>(345);
+        ScopedPtr<int, MyDeleter<int>> pointer(rawPointer, MyDeleter<int>(23));
 
-    ScopedPtr<int, NotingDeleter<int>> moved(
-        secondPointer, NotingDeleter<int>(&deletedPointer, 2123));
+        EXPECT_EQ(pointer.Get(), rawPointer);
+        EXPECT_EQ(pointer.GetDeleter().GetId(), 23);
+    }
 
-    moved = Move(pointer);
+    TEST_F(ScopedPtrTest, PointerDeleterConstructor2)
+    {
+        int* rawPointer = Memory::New<int>(345);
+        MyDeleter<int> deleter(23);
 
-    EXPECT_EQ(pointer.Get(), nullptr);
-    EXPECT_EQ(pointer.GetDeleter().GetId(), 0);
+        ScopedPtr<int, MyDeleter<int>> pointer(rawPointer, deleter);
 
-    EXPECT_EQ(deletedPointer, secondPointer);
+        EXPECT_EQ(pointer.Get(), rawPointer);
+        EXPECT_EQ(pointer.GetDeleter().GetId(), 23);
+    }
 
-    EXPECT_EQ(moved.Get(), rawPointer);
-    EXPECT_EQ(moved.GetDeleter().GetId(), 3);
-}
+    TEST_F(ScopedPtrTest, MoveConstructor)
+    {
+        int* rawPointer = Memory::New<int>(345);
 
-TEST(ScopedPtrTests, NullptrAssign)
-{
-    int* rawPointer = Memory::New<int>(345);
-    int* deletedPointer = nullptr;
+        ScopedPtr<int, MyDeleter<int>> pointer(rawPointer, MyDeleter<int>(234));
+        ScopedPtr<int, MyDeleter<int>> moved = Move(pointer);
 
-    ScopedPtr<int, NotingDeleter<int>> pointer(
-        rawPointer, NotingDeleter<int>(&deletedPointer, 3));
+        EXPECT_EQ(pointer.Get(), nullptr);
+        EXPECT_EQ(pointer.GetDeleter().GetId(), 0);
 
-    pointer = nullptr;
+        EXPECT_EQ(moved.Get(), rawPointer);
+        EXPECT_EQ(moved.GetDeleter().GetId(), 234);
+    }
 
-    EXPECT_EQ(deletedPointer, rawPointer);
+    TEST_F(ScopedPtrTest, TemplatedMoveConstructor)
+    {
+        auto* rawPointer = Memory::New<Derived>(345);
+        ScopedPtr<Derived, MyDeleter<Derived>> pointer(
+            rawPointer, MyDeleter<Derived>(234));
 
-    EXPECT_EQ(pointer.Get(), nullptr);
-    EXPECT_EQ(pointer.GetDeleter().GetId(), 3);
-}
+        ScopedPtr<Base, MyDeleter<Base>> moved = Move(pointer);
 
-TEST(ScopedPtrTests, TemplatedMoveAssign)
-{
-    Derived* rawPointer = Memory::New<Derived>(345);
-    Base* secondPointer = Memory::New<Derived>(452);
+        EXPECT_EQ(pointer.Get(), nullptr);
+        EXPECT_EQ(pointer.GetDeleter().GetId(), 0);
 
-    Base* deletedPointer = nullptr;
+        EXPECT_EQ(moved.Get(), rawPointer);
+        EXPECT_EQ(moved.GetDeleter().GetId(), 234);
+    }
 
-    ScopedPtr<Derived, NotingDeleter<Derived>> pointer(
-        rawPointer, NotingDeleter<Derived>(nullptr, 3));
+    TEST_F(ScopedPtrTest, Destructor)
+    {
+        int* rawPointer = Memory::New<int>(2345);
 
-    ScopedPtr<Base, NotingDeleter<Base>> moved(
-        secondPointer, NotingDeleter<Base>(&deletedPointer, 2123));
+        {
+            ScopedPtr<int, ExtTrackingDeleter> pointer(rawPointer);
+            KITSUNE_UNUSED(pointer);
+        }
 
-    moved = Move(pointer);
+        EXPECT_TRUE(ExtTrackingDeleter::IsDeleted(rawPointer));
+    }
 
-    EXPECT_EQ(pointer.Get(), nullptr);
-    EXPECT_EQ(pointer.GetDeleter().GetId(), 0);
+    TEST_F(ScopedPtrTest, MoveAssign)
+    {
+        int* rawPointer = Memory::New<int>(345);
+        int* secondPointer = Memory::New<int>(452);
 
-    EXPECT_EQ(deletedPointer, secondPointer);
+        ScopedPtr<int, ExtTrackingDeleter> pointer(rawPointer);
+        ScopedPtr<int, ExtTrackingDeleter> moved(secondPointer);
 
-    EXPECT_EQ(moved.Get(), rawPointer);
-    EXPECT_EQ(moved.GetDeleter().GetId(), 3);
-}
+        moved = Move(pointer);
 
-TEST(ScopedPtrTests, Dereference)
-{
-    int* rawPointer = Memory::New<int>(10);
-    ScopedPtr<int> pointer(rawPointer);
+        EXPECT_EQ(pointer.Get(), nullptr);
+        EXPECT_EQ(moved.Get(), rawPointer);
 
-    EXPECT_EQ(std::addressof(*pointer), rawPointer);
-}
+        EXPECT_TRUE(ExtTrackingDeleter::IsDeleted(secondPointer));
+    }
 
-TEST(ScopedPtrTests, ArrowOperator)
-{
-    int* rawPointer = Memory::New<int>(10);
-    ScopedPtr<int> pointer(rawPointer);
+    TEST_F(ScopedPtrTest, MoveAssignMovesDeleter)
+    {
+        int* rawPointer = Memory::New<int>(345);
+        int* secondPointer = Memory::New<int>(452);
 
-    EXPECT_EQ(pointer.operator->(), rawPointer);
+        ScopedPtr<int, MyDeleter<int>> pointer(rawPointer, MyDeleter<int>(23));
+        ScopedPtr<int, MyDeleter<int>> moved(secondPointer, MyDeleter<int>(4));
 
-}
+        moved = Move(pointer);
 
-TEST(ScopedPtrTests, Boolean)
-{
-    ScopedPtr<int> pointer(Memory::New<int>(10));
-    ScopedPtr<int> null;
+        EXPECT_EQ(pointer.GetDeleter().GetId(), 0);
+        EXPECT_EQ(moved.GetDeleter().GetId(), 23);
+    }
 
-    EXPECT_TRUE(pointer);
-    EXPECT_FALSE(null);
-}
+    TEST_F(ScopedPtrTest, NullptrAssign)
+    {
+        int* rawPointer = Memory::New<int>(345);
 
-TEST(ScopedPtrTests, Release)
-{
-    int* rawPointer = Memory::New<int>(23451);
-    ScopedPtr<int> pointer(rawPointer);
+        ScopedPtr<int, ExtTrackingDeleter> pointer(rawPointer);
+        pointer = nullptr;
 
-    EXPECT_EQ(pointer.Release(), rawPointer);
-    EXPECT_EQ(pointer.Get(), nullptr);
+        EXPECT_TRUE(ExtTrackingDeleter::IsDeleted(rawPointer));
+        EXPECT_EQ(pointer.Get(), nullptr);
+    }
 
-    Memory::Delete(rawPointer);
-}
-
-TEST(ScopedPtrTests, Reset)
-{
-    int* rawPointer = Memory::New<int>(34567);
-    int* deletedPointer = nullptr;
-
-    ScopedPtr<int, NotingDeleter<int>> pointer(
-        rawPointer, NotingDeleter<int>(&deletedPointer));;
-
-    int* secondPointer = Memory::New<int>(5489);
-    pointer.Reset(secondPointer);
-
-    EXPECT_EQ(deletedPointer, rawPointer);
-    EXPECT_EQ(pointer.Get(), secondPointer);
-
-    pointer.Reset();
-
-    EXPECT_EQ(deletedPointer, secondPointer);
-    EXPECT_EQ(pointer.Get(), nullptr);
-}
-
-TEST(ScopedPtrTests, Swap)
-{
-    int* firstPointer = Memory::New<int>(345);
-    int* secondPointer = Memory::New<int>(3491);
-
-    ScopedPtr<int, MyDeleter<int>> pointer1(
-        firstPointer, MyDeleter<int>(345231));
-
-    ScopedPtr<int, MyDeleter<int>> pointer2(
-        secondPointer, MyDeleter<int>(423));
-
-    pointer1.Swap(pointer2);
-
-    EXPECT_EQ(pointer1.Get(), secondPointer);
-    EXPECT_EQ(pointer1.GetDeleter().Value, 423);
-
-    EXPECT_EQ(pointer2.Get(), firstPointer);
-    EXPECT_EQ(pointer2.GetDeleter().Value, 345231);
-}
-
-/* Get() and GetDeleter() are basic functions, not testing.. */
-
-TEST(ScopedPtrTests, MakeScoped)
-{
-    auto pointer = MakeScoped<int>(345);
-    EXPECT_NE(pointer.Get(), nullptr);
-    EXPECT_EQ(*pointer.Get(), 345);
-}
-
-TEST(ScopedPtrTests, Comparison)
-{
-    int* buffer = (int*)Memory::Allocate(sizeof(int) * 3);
-    int* null = nullptr;
-
-    ScopedPtr<int> lesser(buffer);
-    ScopedPtr<int> mid(buffer + 1);
-    ScopedPtr<int> larger(buffer + 2);
-
-    EXPECT_EQ(mid == nullptr, mid.Get() == null);
-    EXPECT_EQ(mid != nullptr, mid.Get() != null);
-    EXPECT_EQ(mid < nullptr, mid.Get() < null);
-    EXPECT_EQ(mid > nullptr, mid.Get() > null);
-    EXPECT_EQ(mid <= nullptr, mid.Get() <= null);
-    EXPECT_EQ(mid >= nullptr, mid.Get() >= null);
-
-    EXPECT_EQ(nullptr == mid, null == mid.Get());
-    EXPECT_EQ(nullptr != mid, null != mid.Get());
-    EXPECT_EQ(nullptr < mid, null < mid.Get());
-    EXPECT_EQ(nullptr > mid, null > mid.Get());
-    EXPECT_EQ(nullptr <= mid, null <= mid.Get());
-    EXPECT_EQ(nullptr >= mid, null >= mid.Get());
-
-    EXPECT_TRUE(lesser < mid);
-    EXPECT_TRUE(mid < larger);
-    EXPECT_FALSE(larger < mid);
-    EXPECT_FALSE(mid < lesser);
-
-    EXPECT_TRUE(larger > mid);
-    EXPECT_TRUE(mid > lesser);
-    EXPECT_FALSE(mid > larger);
-    EXPECT_FALSE(lesser > mid);
-
-    EXPECT_TRUE(lesser <= mid);
-    EXPECT_TRUE(mid <= mid);
-    EXPECT_TRUE(mid <= larger);
-    EXPECT_FALSE(mid <= lesser);
-    EXPECT_FALSE(larger <= mid);
-
-    EXPECT_TRUE(larger >= mid);
-    EXPECT_TRUE(mid >= mid);
-    EXPECT_TRUE(mid >= lesser);
-    EXPECT_FALSE(lesser >= mid);
-    EXPECT_FALSE(mid >= larger);
-
-    EXPECT_TRUE(lesser == lesser);
-    EXPECT_TRUE(mid == mid);
-    EXPECT_TRUE(larger == larger);
-
-    EXPECT_FALSE(lesser != lesser);
-    EXPECT_FALSE(mid != mid);
-    EXPECT_FALSE(larger != larger);
-
-    EXPECT_TRUE(lesser < mid.Get());
-    EXPECT_TRUE(mid < larger.Get());
-    EXPECT_FALSE(larger < mid.Get());
-    EXPECT_FALSE(mid < lesser.Get());
-
-    EXPECT_TRUE(larger > mid.Get());
-    EXPECT_TRUE(mid > lesser.Get());
-    EXPECT_FALSE(mid > larger.Get());
-    EXPECT_FALSE(lesser > mid.Get());
-
-    EXPECT_TRUE(lesser <= mid.Get());
-    EXPECT_TRUE(mid <= mid.Get());
-    EXPECT_TRUE(mid <= larger.Get());
-    EXPECT_FALSE(mid <= lesser.Get());
-    EXPECT_FALSE(larger <= mid.Get());
-
-    EXPECT_TRUE(larger >= mid.Get());
-    EXPECT_TRUE(mid >= mid.Get());
-    EXPECT_TRUE(mid >= lesser.Get());
-    EXPECT_FALSE(lesser >= mid.Get());
-    EXPECT_FALSE(mid >= larger.Get());
-
-    EXPECT_TRUE(lesser == lesser.Get());
-    EXPECT_TRUE(mid == mid.Get());
-    EXPECT_TRUE(larger == larger.Get());
-
-    EXPECT_FALSE(lesser != lesser.Get());
-    EXPECT_FALSE(mid != mid.Get());
-    EXPECT_FALSE(larger != larger.Get());
-
-    EXPECT_TRUE(lesser.Get() < mid);
-    EXPECT_TRUE(mid.Get() < larger);
-    EXPECT_FALSE(larger.Get() < mid);
-    EXPECT_FALSE(mid.Get() < lesser);
-
-    EXPECT_TRUE(larger.Get() > mid);
-    EXPECT_TRUE(mid.Get() > lesser);
-    EXPECT_FALSE(mid.Get() > larger);
-    EXPECT_FALSE(lesser.Get() > mid);
-
-    EXPECT_TRUE(lesser.Get() <= mid);
-    EXPECT_TRUE(mid.Get() <= mid);
-    EXPECT_TRUE(mid.Get() <= larger);
-    EXPECT_FALSE(mid.Get() <= lesser);
-    EXPECT_FALSE(larger.Get() <= mid);
-
-    EXPECT_TRUE(larger.Get() >= mid);
-    EXPECT_TRUE(mid.Get() >= mid);
-    EXPECT_TRUE(mid.Get() >= lesser);
-    EXPECT_FALSE(lesser.Get() >= mid);
-    EXPECT_FALSE(mid.Get() >= larger);
-
-    EXPECT_TRUE(lesser.Get() == lesser);
-    EXPECT_TRUE(mid.Get() == mid);
-    EXPECT_TRUE(larger.Get() == larger);
-
-    EXPECT_FALSE(lesser.Get() != lesser);
-    EXPECT_FALSE(mid.Get() != mid);
-    EXPECT_FALSE(larger.Get() != larger);
-
-    (void)lesser.Release();
-    (void)mid.Release();
-    (void)larger.Release();
-
-    Memory::Free(buffer, sizeof(int) * 3);
+    TEST_F(ScopedPtrTest, TemplatedMoveAssign)
+    {
+        auto* rawPointer = Memory::New<Derived>(345);
+        auto* secondPointer = Memory::New<Derived>(452);
+
+        ScopedPtr<Derived, MyDeleter<Derived>> pointer(
+            rawPointer, MyDeleter<Derived>(34));
+
+        ScopedPtr<Base, MyDeleter<Base>> moved(secondPointer, MyDeleter<Base>(2341));
+        moved = Move(pointer);
+
+        EXPECT_EQ(pointer.Get(), nullptr);
+        EXPECT_EQ(pointer.GetDeleter().GetId(), 0);
+
+        EXPECT_EQ(moved.Get(), rawPointer);
+        EXPECT_EQ(moved.GetDeleter().GetId(), 34);
+    }
+
+    /* Unable to test whether ScopedPtr<T>::operator=(ScopedPtr<U>&&) deletes the
+     * pointer.
+     */
+
+    TEST_F(ScopedPtrTest, Dereference)
+    {
+        int* rawPointer = Memory::New<int>(10);
+        ScopedPtr<int> pointer(rawPointer);
+
+        EXPECT_EQ(std::addressof(*pointer), rawPointer);
+    }
+
+    TEST_F(ScopedPtrTest, ArrowOperator)
+    {
+        int* rawPointer = Memory::New<int>(10);
+        ScopedPtr<int> pointer(rawPointer);
+
+        EXPECT_EQ(pointer.operator->(), rawPointer);
+    }
+
+    TEST_F(ScopedPtrTest, Boolean)
+    {
+        ScopedPtr<int> pointer(Memory::New<int>(10));
+        ScopedPtr<int> null;
+
+        EXPECT_TRUE(pointer);
+        EXPECT_FALSE(null);
+    }
+
+    TEST_F(ScopedPtrTest, Release)
+    {
+        int* rawPointer = Memory::New<int>(23451);
+        ScopedPtr<int> pointer(rawPointer);
+
+        EXPECT_EQ(pointer.Release(), rawPointer);
+        EXPECT_EQ(pointer.Get(), nullptr);
+
+        Memory::Delete(rawPointer);
+    }
+
+    TEST_F(ScopedPtrTest, Reset)
+    {
+        int* rawPointer = Memory::New<int>(34567);
+        ScopedPtr<int, ExtTrackingDeleter> pointer(rawPointer);
+
+        int* secondPointer = Memory::New<int>(5489);
+        pointer.Reset(secondPointer);
+
+        EXPECT_EQ(pointer.Get(), secondPointer);
+        EXPECT_TRUE(ExtTrackingDeleter::IsDeleted(rawPointer));
+
+        pointer.Reset();
+
+        EXPECT_EQ(pointer.Get(), nullptr);
+        EXPECT_TRUE(ExtTrackingDeleter::IsDeleted(secondPointer));
+    }
+
+    TEST_F(ScopedPtrTest, Swap)
+    {
+        int* firstPointer = Memory::New<int>(345);
+        int* secondPointer = Memory::New<int>(3491);
+
+        ScopedPtr<int, MyDeleter<int>> pointer1(firstPointer, MyDeleter<int>(345231));
+        ScopedPtr<int, MyDeleter<int>> pointer2(secondPointer, MyDeleter<int>(423));
+
+        pointer1.Swap(pointer2);
+
+        EXPECT_EQ(pointer1.Get(), secondPointer);
+        EXPECT_EQ(pointer1.GetDeleter().GetId(), 423);
+
+        EXPECT_EQ(pointer2.Get(), firstPointer);
+        EXPECT_EQ(pointer2.GetDeleter().GetId(), 345231);
+    }
+
+    /* Get() and GetDeleter() are basic functions, not testing.. */
+
+    TEST_F(ScopedPtrTest, MakeScoped)
+    {
+        auto pointer = MakeScoped<int>(345);
+        EXPECT_NE(pointer.Get(), nullptr);
+        EXPECT_EQ(*pointer.Get(), 345);
+    }
+
+    TEST_F(ScopedPtrTest, Comparison)
+    {
+        int* buffer = static_cast<int*>(Memory::Allocate(sizeof(int) * 3));
+        int* null = nullptr;
+
+        ScopedPtr<int> lesser(buffer);
+        ScopedPtr<int> mid(buffer + 1);
+        ScopedPtr<int> larger(buffer + 2);
+
+        EXPECT_EQ(mid == nullptr, mid.Get() == null);
+        EXPECT_EQ(mid != nullptr, mid.Get() != null);
+        EXPECT_EQ(mid < nullptr, mid.Get() < null);
+        EXPECT_EQ(mid > nullptr, mid.Get() > null);
+        EXPECT_EQ(mid <= nullptr, mid.Get() <= null);
+        EXPECT_EQ(mid >= nullptr, mid.Get() >= null);
+
+        EXPECT_EQ(nullptr == mid, null == mid.Get());
+        EXPECT_EQ(nullptr != mid, null != mid.Get());
+        EXPECT_EQ(nullptr < mid, null < mid.Get());
+        EXPECT_EQ(nullptr > mid, null > mid.Get());
+        EXPECT_EQ(nullptr <= mid, null <= mid.Get());
+        EXPECT_EQ(nullptr >= mid, null >= mid.Get());
+
+        EXPECT_TRUE(lesser < mid);
+        EXPECT_TRUE(mid < larger);
+        EXPECT_FALSE(larger < mid);
+        EXPECT_FALSE(mid < lesser);
+
+        EXPECT_TRUE(larger > mid);
+        EXPECT_TRUE(mid > lesser);
+        EXPECT_FALSE(mid > larger);
+        EXPECT_FALSE(lesser > mid);
+
+        EXPECT_TRUE(lesser <= mid);
+        EXPECT_TRUE(mid <= mid);
+        EXPECT_TRUE(mid <= larger);
+        EXPECT_FALSE(mid <= lesser);
+        EXPECT_FALSE(larger <= mid);
+
+        EXPECT_TRUE(larger >= mid);
+        EXPECT_TRUE(mid >= mid);
+        EXPECT_TRUE(mid >= lesser);
+        EXPECT_FALSE(lesser >= mid);
+        EXPECT_FALSE(mid >= larger);
+
+        EXPECT_TRUE(lesser == lesser);
+        EXPECT_TRUE(mid == mid);
+        EXPECT_TRUE(larger == larger);
+
+        EXPECT_FALSE(lesser != lesser);
+        EXPECT_FALSE(mid != mid);
+        EXPECT_FALSE(larger != larger);
+
+        EXPECT_TRUE(lesser < mid.Get());
+        EXPECT_TRUE(mid < larger.Get());
+        EXPECT_FALSE(larger < mid.Get());
+        EXPECT_FALSE(mid < lesser.Get());
+
+        EXPECT_TRUE(larger > mid.Get());
+        EXPECT_TRUE(mid > lesser.Get());
+        EXPECT_FALSE(mid > larger.Get());
+        EXPECT_FALSE(lesser > mid.Get());
+
+        EXPECT_TRUE(lesser <= mid.Get());
+        EXPECT_TRUE(mid <= mid.Get());
+        EXPECT_TRUE(mid <= larger.Get());
+        EXPECT_FALSE(mid <= lesser.Get());
+        EXPECT_FALSE(larger <= mid.Get());
+
+        EXPECT_TRUE(larger >= mid.Get());
+        EXPECT_TRUE(mid >= mid.Get());
+        EXPECT_TRUE(mid >= lesser.Get());
+        EXPECT_FALSE(lesser >= mid.Get());
+        EXPECT_FALSE(mid >= larger.Get());
+
+        EXPECT_TRUE(lesser == lesser.Get());
+        EXPECT_TRUE(mid == mid.Get());
+        EXPECT_TRUE(larger == larger.Get());
+
+        EXPECT_FALSE(lesser != lesser.Get());
+        EXPECT_FALSE(mid != mid.Get());
+        EXPECT_FALSE(larger != larger.Get());
+
+        EXPECT_TRUE(lesser.Get() < mid);
+        EXPECT_TRUE(mid.Get() < larger);
+        EXPECT_FALSE(larger.Get() < mid);
+        EXPECT_FALSE(mid.Get() < lesser);
+
+        EXPECT_TRUE(larger.Get() > mid);
+        EXPECT_TRUE(mid.Get() > lesser);
+        EXPECT_FALSE(mid.Get() > larger);
+        EXPECT_FALSE(lesser.Get() > mid);
+
+        EXPECT_TRUE(lesser.Get() <= mid);
+        EXPECT_TRUE(mid.Get() <= mid);
+        EXPECT_TRUE(mid.Get() <= larger);
+        EXPECT_FALSE(mid.Get() <= lesser);
+        EXPECT_FALSE(larger.Get() <= mid);
+
+        EXPECT_TRUE(larger.Get() >= mid);
+        EXPECT_TRUE(mid.Get() >= mid);
+        EXPECT_TRUE(mid.Get() >= lesser);
+        EXPECT_FALSE(lesser.Get() >= mid);
+        EXPECT_FALSE(mid.Get() >= larger);
+
+        EXPECT_TRUE(lesser.Get() == lesser);
+        EXPECT_TRUE(mid.Get() == mid);
+        EXPECT_TRUE(larger.Get() == larger);
+
+        EXPECT_FALSE(lesser.Get() != lesser);
+        EXPECT_FALSE(mid.Get() != mid);
+        EXPECT_FALSE(larger.Get() != larger);
+
+        (void)lesser.Release();
+        (void)mid.Release();
+        (void)larger.Release();
+
+        Memory::Free(buffer, sizeof(int) * 3);
+    }
 }

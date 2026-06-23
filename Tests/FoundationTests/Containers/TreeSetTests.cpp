@@ -1,403 +1,711 @@
 #include <gtest/gtest.h>
+#include <algorithm>
+
 #include "TestContainer.h"
+#include "TrackingAllocator.h"
+#include "StatefulAllocator.h"
 
-#include "Foundation/Containers/TreeSet.h"
 #include "Foundation/Concepts/Container.h"
+#include "Foundation/Containers/TreeSet.h"
 
-using namespace Kitsune;
-using namespace Kitsune::Testing;
+#include "Foundation/Algorithms/Advance.h"
 
 namespace
 {
+    using namespace Kitsune;
+    using Testing::ForwardTestContainer, Testing::StatefulAllocator,
+          Testing::TrackingAllocator;
+
+    static_assert(Kitsune::ForwardIterator<TreeSet<int>::Iterator>,
+                  "TreeSet<T>'s iterator doesn't satisfy ForwardIterator.");
+
+    static_assert(Kitsune::ForwardIterator<TreeSet<int>::ConstIterator>,
+                  "TreeSet<T>'s iterator doesn't satisfy ForwardIterator.");
+
+    static_assert(
+        Container<TreeSet<int>>,
+        "TreeSet<T> does not satisfy the requirements of the Container concept.");
+
     template<typename T>
-    class StatefulCompare
+    class FlippableCompare
     {
     public:
-        StatefulCompare(bool flip = false)
-            : Flip(flip)
+        inline explicit FlippableCompare(bool greaterThan = false)
+            : m_Flip(greaterThan)
         {
         }
 
-        bool operator()(const T& lhs, const T& rhs)
+        inline bool operator()(const T& lhs, const T& rhs)
         {
-            return Flip ? (lhs > rhs) : (lhs < rhs);
-        }
+            return m_Flip ? (lhs > rhs) : (lhs < rhs);
+        };
 
-    public:
-        bool Flip;
+    private:
+        bool m_Flip;
     };
 
-    class MyAllocator
+    template<typename T>
+    class FlippableCompare<std::shared_ptr<T>>
     {
     public:
-        MyAllocator(int value = 0)
-            : Value(value)
+        inline explicit FlippableCompare(bool greaterThan = false)
+            : m_Flip(greaterThan)
         {
         }
 
-    public:
-        KITSUNE_FORCEINLINE void* Allocate(Usize bytes)
+        inline bool operator()(const std::shared_ptr<T>& lhs,
+                               const std::shared_ptr<T>& rhs)
         {
-            return Memory::Allocate(bytes);
-        }
+            return m_Flip ? (*lhs > *rhs) : (*lhs < *rhs);
+        };
 
-        KITSUNE_FORCEINLINE void* Allocate(Usize bytes, Usize alignment)
-        {
-            return Memory::Allocate(bytes, alignment);
-        }
-
-        KITSUNE_FORCEINLINE void Free(void* pointer, Usize bytes)
-        {
-            Memory::Free(pointer, bytes);
-        }
-
-    public:
-        int Value;
+    private:
+        bool m_Flip;
     };
 
-    inline bool operator==(const MyAllocator&, const MyAllocator&)
+    // TreeSet<T, Comp, Alloc>::TreeSet()
+    TEST(TreeSetTest, DefaultConstructor)
     {
-        return true;
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet;
+
+        EXPECT_EQ(treeSet.Size(), 0);
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 0);
+
+        treeSet.Insert(2);
+        treeSet.Insert(3);
+        ASSERT_EQ(treeSet.Size(), 2);
+
+        EXPECT_EQ(*treeSet.GetBegin(), 2);
     }
-}
 
-static_assert(Kitsune::ForwardIterator<TreeSet<int>::Iterator>,
-              "TreeSet<T>'s iterator doesn't satisfy ForwardIterator.");
-
-static_assert(Kitsune::ForwardIterator<TreeSet<int>::ConstIterator>,
-              "TreeSet<T>'s iterator doesn't satisfy ForwardIterator.");
-
-static_assert(
-    Container<TreeSet<int>>,
-    "TreeSet<T> does not satisfy the Container concept.");
-
-TEST(TreeSetTests, DefaultConstructor)
-{
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set;
-
-    /* Can't check StatefulCompare. */
-
-    EXPECT_EQ(set.Size(), 0);
-    EXPECT_EQ(set.GetAllocator().Value, 0);
-}
-
-TEST(TreeSetTests, CompareAllocConstructor)
-{
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        StatefulCompare<int>{true}, MyAllocator(2));
-
-    /* Can't check StatefulCompare. */
-
-    EXPECT_EQ(set.Size(), 0);
-    EXPECT_EQ(set.GetAllocator().Value, 2);
-}
-
-TEST(TreeSetTests, AllocConstructor)
-{
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(MyAllocator(2));
-
-    /* Can't check StatefulCompare. */
-
-    EXPECT_EQ(set.Size(), 0);
-    EXPECT_EQ(set.GetAllocator().Value, 2);
-}
-
-TEST(TreeSetTests, RangeCompareAllocatorConstructor)
-{
-    ForwardTestContainer<int, 5> container = { 23, 1, 5, 9, 5 };
-    int expected[4] = { 23, 9, 5, 1 };
-
-    const TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        container.GetBegin(), container.GetEnd(),
-        StatefulCompare<int>{true}, MyAllocator(231));
-
-    EXPECT_EQ(set.Size(), 4);
-    EXPECT_EQ(set.GetAllocator().Value, 231);
-
-    Index index = 0;
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter)
+    // TreeSet<T, Comp, Alloc>::TreeSet()
+    TEST(TreeSetTest, DefaultConstructorDoesNotAllocate)
     {
-        EXPECT_EQ(*iter, expected[index]);
-        ++index;
+        TreeSet<int, FlippableCompare<int>, TrackingAllocator> treeSet;
+        EXPECT_EQ(treeSet.GetAllocator().AllocationCount(), 0);
     }
-}
 
-TEST(TreeSetTests, RangeAllocatorConstructor)
-{
-    ForwardTestContainer<int, 5> container = { 23, 1, 5, 9, 5 };
-    int expected[4] = { 1, 5, 9, 23 };
-
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        container.GetBegin(), container.GetEnd(),
-        MyAllocator(231));
-
-    EXPECT_EQ(set.Size(), 4);
-    EXPECT_EQ(set.GetAllocator().Value, 231);
-
-    Index index = 0;
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter)
+    // TreeSet<T, Comp, Alloc>::TreeSet(const Comp&, const Alloc&)
+    TEST(TreeSetTest, CompareAndAllocatorConstructor)
     {
-        EXPECT_EQ(*iter, expected[index]);
-        ++index;
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet(
+            FlippableCompare<int>(true),
+            StatefulAllocator(43));
+
+        EXPECT_EQ(treeSet.Size(), 0);
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 43);
+
+        treeSet.Insert(2);
+        treeSet.Insert(3);
+        ASSERT_EQ(treeSet.Size(), 2);
+
+        EXPECT_EQ(*treeSet.GetBegin(), 3);
     }
-}
 
-TEST(TreeSetTests, CopyConstructor)
-{
-    ForwardTestContainer<int, 8> container = { 23, 1, 5, 9, 5, 23, 44, 19 };
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        container.GetBegin(), container.GetEnd(),
-        StatefulCompare<int>{true}, MyAllocator(231));
-
-    TreeSet<int, StatefulCompare<int>, MyAllocator> copy = set;
-
-    EXPECT_EQ(set.Size(), copy.Size());
-    EXPECT_EQ(copy.GetAllocator(), set.GetAllocator());
-
-    for (auto iter1 = set.GetBegin(), iter2 = copy.GetBegin(); iter1 != set.GetEnd();
-         ++iter1, ++iter2)
+    // TreeSet<T, Comp, Alloc>::TreeSet(const Comp&, const Alloc&)
+    TEST(TreeSetTest, CompareAndAllocatorConstructorDoesNotAllocate)
     {
-        EXPECT_EQ(*iter1, *iter2);
+        TreeSet<int, FlippableCompare<int>, TrackingAllocator> treeSet(
+            FlippableCompare<int>(true));
+
+        EXPECT_EQ(treeSet.GetAllocator().AllocationCount(), 0);
     }
-}
 
-TEST(TreeSetTests, MoveConstructor)
-{
-    ForwardTestContainer<int, 8> container = { 23, 1, 5, 9, 5, 23, 44, 19 };
-    int expected[6] = { 44, 23, 19, 9, 5, 1 };
-
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        container.GetBegin(), container.GetEnd(),
-        StatefulCompare<int>{true}, MyAllocator(231));
-
-    TreeSet<int, StatefulCompare<int>, MyAllocator> moved = Move(set);
-
-    EXPECT_EQ(set.Size(), 0);
-
-    EXPECT_EQ(moved.Size(), 6);
-    EXPECT_EQ(moved.GetAllocator().Value, 231);
-
-    Index index = 0;
-    for (auto iter1 = moved.GetBegin(); iter1 != moved.GetEnd(); ++iter1)
+    // TreeSet<T, Comp, Alloc>::TreeSet(const Alloc&)
+    TEST(TreeSetTest, AllocatorConstructor)
     {
-        EXPECT_EQ(*iter1, expected[index]);
-        ++index;
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet(
+            StatefulAllocator(43));
+
+        EXPECT_EQ(treeSet.Size(), 0);
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 43);
+
+        treeSet.Insert(2);
+        treeSet.Insert(3);
+        ASSERT_EQ(treeSet.Size(), 2);
+
+        EXPECT_EQ(*treeSet.GetBegin(), 2);
     }
-}
 
-TEST(TreeSetTests, InitListCompareAllocatorConstructor)
-{
-    int expected[4] = { 23, 9, 5, 1 };
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        { 23, 1, 5, 9, 5 },
-        StatefulCompare<int>{true}, MyAllocator(231));
-
-    EXPECT_EQ(set.Size(), 4);
-    EXPECT_EQ(set.GetAllocator().Value, 231);
-
-    Index index = 0;
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter)
+    // TreeSet<T, Comp, Alloc>::TreeSet(const Alloc&)
+    TEST(TreeSetTest, AllocatorConstructorDoesNotAllocate)
     {
-        EXPECT_EQ(*iter, expected[index]);
-        ++index;
+        TreeSet<int, FlippableCompare<int>, TrackingAllocator> treeSet(
+            TrackingAllocator{ /* ... */ });
+
+        EXPECT_EQ(treeSet.GetAllocator().AllocationCount(), 0);
     }
-}
 
-TEST(TreeSetTests, InitListAllocatorConstructor)
-{
-    int expected[4] = { 1, 5, 9, 23 };
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set({ 23, 1, 5, 9, 5 }, MyAllocator(231));
-
-    EXPECT_EQ(set.Size(), 4);
-    EXPECT_EQ(set.GetAllocator().Value, 231);
-
-    Index index = 0;
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter)
+    // TreeSet<T, Comp, Alloc>::TreeSet(Iter, Iter, const Comp&, const Alloc&)
+    TEST(TreeSetTest, RangeWithCompareConstructor)
     {
-        EXPECT_EQ(*iter, expected[index]);
-        ++index;
+        ForwardTestContainer<int, 5> container = { 23, 1, 5, 9, 5 };
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet(
+            container.GetBegin(), container.GetEnd(),
+            FlippableCompare<int>(true),
+            StatefulAllocator(2341));
+
+        EXPECT_EQ(treeSet.Size(), 4);
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 2341);
+
+        std::vector<int> expected = { 23, 9, 5, 1 };
+        Index index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+            EXPECT_EQ(*iter, expected[index]);
     }
-}
 
-TEST(TreeSetTests, Destructor)
-{
-    /* Can't test this. */
-}
-
-TEST(TreeSetTests, CopyAssign)
-{
-    ForwardTestContainer<int, 8> container = { 23, 1, 5, 9, 5, 23, 44, 19 };
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        container.GetBegin(), container.GetEnd(),
-        StatefulCompare<int>{true}, MyAllocator(231));
-
-    TreeSet<int, StatefulCompare<int>, MyAllocator> copy = { 34, 121, 11, 3, 85 };
-    copy = set;
-
-    EXPECT_EQ(set.Size(), copy.Size());
-    EXPECT_EQ(copy.GetAllocator(), set.GetAllocator());
-
-    for (auto iter1 = set.GetBegin(), iter2 = copy.GetBegin(); iter1 != set.GetEnd();
-         ++iter1, ++iter2)
+    // TreeSet<T, Comp, Alloc>::TreeSet(Iter, Iter, const Alloc&)
+    TEST(TreeSetTest, RangeWithAllocatorOnlyConstructor)
     {
-        EXPECT_EQ(*iter1, *iter2);
+        ForwardTestContainer<int, 5> container = { 23, 1, 5, 9, 5 };
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet(
+            container.GetBegin(), container.GetEnd(),
+            StatefulAllocator(2341));
+
+        EXPECT_EQ(treeSet.Size(), 4);
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 2341);
+
+        std::vector<int> expected = { 1, 5, 9, 23 };
+        Index index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+            EXPECT_EQ(*iter, expected[index]);
     }
-}
 
-TEST(TreeSetTests, MoveAssign)
-{
-    ForwardTestContainer<int, 8> container = { 23, 1, 5, 9, 5, 23, 44, 19 };
-    int expected[6] = { 44, 23, 19, 9, 5, 1 };
-
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set(
-        container.GetBegin(), container.GetEnd(),
-        StatefulCompare<int>{true}, MyAllocator(231));
-
-    TreeSet<int, StatefulCompare<int>, MyAllocator> moved = { 83, 12, 45, 683, 293 };
-    moved = Move(set);
-
-    EXPECT_EQ(set.Size(), 0);
-
-    EXPECT_EQ(moved.Size(), 6);
-    EXPECT_EQ(moved.GetAllocator().Value, 231);
-
-    Index index = 0;
-    for (auto iter1 = moved.GetBegin(); iter1 != moved.GetEnd(); ++iter1)
+    // TreeSet<T, Comp, Alloc>::TreeSet(
+    //     std::initializer_list<T>, const Comp&, const Alloc&)
+    TEST(TreeSetTest, InitializerListWithCompareConstructor)
     {
-        EXPECT_EQ(*iter1, expected[index]);
-        ++index;
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet(
+            { 23, 1, 5, 9, 5 },
+            FlippableCompare<int>(true),
+            StatefulAllocator(2341));
+
+        EXPECT_EQ(treeSet.Size(), 4);
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 2341);
+
+        std::vector<int> expected = { 23, 9, 5, 1 };
+        Index index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+            EXPECT_EQ(*iter, expected[index]);
     }
-}
 
-TEST(TreeSetTests, InitListAssign)
-{
-    int expected[4] = { 1, 5, 9, 23 };
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set({ 2384, 23, 12, 11 }, MyAllocator(231));
-
-    set = { 23, 1, 5, 9, 5 };
-
-    EXPECT_EQ(set.Size(), 4);
-    EXPECT_EQ(set.GetAllocator().Value, 231);
-
-    Index index = 0;
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter)
+    // TreeSet<T, Comp, Alloc>::TreeSet(std::initializer_list<T>, const Alloc&)
+    TEST(TreeSetTest, InitializerListWithAllocatorOnlyConstructor)
     {
-        EXPECT_EQ(*iter, expected[index]);
-        ++index;
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet(
+            { 23, 1, 5, 9, 5 },
+            StatefulAllocator(2341));
+
+        EXPECT_EQ(treeSet.Size(), 4);
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 2341);
+
+        std::vector<int> expected = { 1, 5, 9, 23 };
+        Index index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+            EXPECT_EQ(*iter, expected[index]);
     }
-}
 
-TEST(TreeSetTests, IsEmpty)
-{
-    TreeSet<int> empty;
-    TreeSet<int> set = { 324, 1, 56, 12 };
+    // TreeSet<T, Comp, Alloc>::TreeSet(const TreeSet&)
+    TEST(TreeSetTest, CopyConstructor)
+    {
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> treeSet(
+            {
+                std::make_shared<int>(23),
+                std::make_shared<int>(1),
+                std::make_shared<int>(5),
+                std::make_shared<int>(9),
+                std::make_shared<int>(5)
+            },
+            FlippableCompare<std::shared_ptr<int>>(true),
+            StatefulAllocator(2341));
 
-    EXPECT_TRUE(empty.IsEmpty());
-    EXPECT_FALSE(set.IsEmpty());
-}
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> copy(treeSet);
 
-TEST(TreeSetTests, Swap)
-{
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set1(
-        { 23, 1287, 38, 595, 122, 38, 444 },
-        StatefulCompare<int>(true), MyAllocator(12));
+        EXPECT_EQ(copy.GetAllocator(), treeSet.GetAllocator());
+        EXPECT_EQ(copy.GetAllocator().GetId(), 2341);
 
-    TreeSet<int, StatefulCompare<int>, MyAllocator> set2(
-        { 23, 93, 1287, 123, 11 },
-        StatefulCompare<int>(false), MyAllocator(4444));
+        EXPECT_EQ(treeSet.Size(), 4);
+        EXPECT_EQ(copy.Size(), 4);
 
-    set1.Swap(set2);
+        std::vector<int> expected = { 23, 9, 5, 1 };
+        auto iter = treeSet.GetBegin();
+        auto copyIter = copy.GetBegin();
 
-    EXPECT_EQ(set1.Size(), 5);
-    EXPECT_EQ(set2.Size(), 6);
+        for (int index = 0; index < expected.size(); ++index, ++iter, ++copyIter)
+        {
+            EXPECT_EQ(**iter, expected[index]);
+            EXPECT_EQ(**copyIter, expected[index]);
 
-    EXPECT_EQ(set1.GetAllocator().Value, 4444);
-    EXPECT_EQ(set2.GetAllocator().Value, 12);
+            EXPECT_EQ(*iter, *copyIter);
+        }
+    }
 
-    int expected1[5] = { 11, 23, 93, 123, 1287 };
-    Index index1 = 0;
+    // TreeSet<T, Comp, Alloc>::TreeSet(TreeSet&&)
+    TEST(TreeSetTest, MoveConstructor)
+    {
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> treeSet(
+            {
+                std::make_shared<int>(23),
+                std::make_shared<int>(1),
+                std::make_shared<int>(5),
+                std::make_shared<int>(9),
+                std::make_shared<int>(5)
+            },
+            FlippableCompare<std::shared_ptr<int>>(true),
+            StatefulAllocator(2341));
 
-    for (auto iter = set1.GetBegin(); iter != set1.GetEnd(); ++iter, ++index1)
-        EXPECT_EQ(*iter, expected1[index1]);
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> move(std::move(treeSet));
 
-    int expected2[6] = { 1287, 595, 444, 122, 38, 23 };
-    Index index2 = 0;
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 0);
+        EXPECT_EQ(move.GetAllocator().GetId(), 2341);
 
-    for (auto iter = set2.GetBegin(); iter != set2.GetEnd(); ++iter, ++index2)
-        EXPECT_EQ(*iter, expected2[index2]);
-}
+        EXPECT_EQ(treeSet.Size(), 0);
+        EXPECT_EQ(move.Size(), 4);
 
-TEST(TreeSetTests, Clear)
-{
-    TreeSet<int> set = { 932, 129, 54, 12, 3293 };
-    set.Clear();
+        std::vector<int> expected = { 23, 9, 5, 1 };
+        auto iter = move.GetBegin();
 
-    EXPECT_EQ(set.Size(), 0);
-    EXPECT_EQ(set.GetBegin(), set.GetEnd());
-}
+        for (int index = 0; index < expected.size(); ++index, ++iter)
+        {
+            EXPECT_EQ(**iter, expected[index]);
+            EXPECT_EQ(iter->use_count(), 1);
+        }
+    }
 
-TEST(TreeSetTests, InsertCopy)
-{
-    TreeSet<int> set = { 23, 53, 9812, 4942 };
-    int value = 341;
+    // TreeSet<T, Comp, Alloc>::~TreeSet()
+    TEST(TreeSetTest, Destructor)
+    {
+        // TODO: Find a way to test the destructor.
+        EXPECT_TRUE(true);
+    }
 
-    set.Insert(value);
+    // TreeSet<T, Comp, Alloc>::operator=(const TreeSet&)
+    TEST(TreeSetTest, CopyAssign)
+    {
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> treeSet(
+            {
+                std::make_shared<int>(23),
+                std::make_shared<int>(1),
+                std::make_shared<int>(5),
+                std::make_shared<int>(9),
+                std::make_shared<int>(5)
+            },
+            FlippableCompare<std::shared_ptr<int>>(true),
+            StatefulAllocator(2341));
 
-    int expected[5] = { 23, 53, 341, 4942, 9812 };
-    Index index = 0;
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> copy =
+        {
+            std::make_shared<int>(3242),
+            std::make_shared<int>(97),
+            std::make_shared<int>(1),
+            std::make_shared<int>(87)
+        };
 
-    EXPECT_EQ(set.Size(), 5);
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter, ++index)
-        EXPECT_EQ(*iter, expected[index]);
-}
+        copy = treeSet;
 
-TEST(TreeSetTests, InsertMove)
-{
-    TreeSet<int> set = { 23, 53, 9812, 4942 };
-    set.Insert(341);
+        EXPECT_EQ(copy.GetAllocator(), treeSet.GetAllocator());
+        EXPECT_EQ(copy.GetAllocator().GetId(), 2341);
 
-    int expected[5] = { 23, 53, 341, 4942, 9812 };
-    Index index = 0;
+        EXPECT_EQ(treeSet.Size(), 4);
+        EXPECT_EQ(copy.Size(), 4);
 
-    EXPECT_EQ(set.Size(), 5);
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter, ++index)
-        EXPECT_EQ(*iter, expected[index]);
-}
+        std::vector<int> expected = { 23, 9, 5, 1 };
+        auto iter = treeSet.GetBegin();
+        auto copyIter = copy.GetBegin();
 
-TEST(TreeSetTests, InsertRange)
-{
-    TreeSet<int> set = { 23, 53, 9812, 4942 };
-    ForwardTestContainer<int, 5> container = { 23, 86, 9332, 2344, 94 };
+        for (int index = 0; index < expected.size(); ++index, ++iter, ++copyIter)
+        {
+            EXPECT_EQ(**iter, expected[index]);
+            EXPECT_EQ(**copyIter, expected[index]);
 
-    set.Insert(container.GetBegin(), container.GetEnd());
+            EXPECT_EQ(*iter, *copyIter);
+        }
+    }
 
-    int expected[8] = { 23, 53, 86, 94, 2344, 4942, 9332, 9812 };
-    Index index = 0;
+    // TreeSet<T, Comp, Alloc>::operator=(TreeSet&&)
+    TEST(TreeSetTest, MoveAssign)
+    {
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> treeSet(
+            {
+                std::make_shared<int>(23),
+                std::make_shared<int>(1),
+                std::make_shared<int>(5),
+                std::make_shared<int>(9),
+                std::make_shared<int>(5)
+            },
+            FlippableCompare<std::shared_ptr<int>>(true),
+            StatefulAllocator(2341));
 
-    EXPECT_EQ(set.Size(), 8);
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter, ++index)
-        EXPECT_EQ(*iter, expected[index]);
-}
+        TreeSet<std::shared_ptr<int>,
+                FlippableCompare<std::shared_ptr<int>>,
+                StatefulAllocator> move = {
+            std::make_shared<int>(343),
+            std::make_shared<int>(21),
+            std::make_shared<int>(2),
+            std::make_shared<int>(0),
+        };
 
-TEST(TreeSetTests, InsertInitList)
-{
-    TreeSet<int> set = { 23, 53, 9812, 4942 };
-    set.Insert({ 23, 86, 9332, 2344, 94 });
+        move = std::move(treeSet);
 
-    int expected[8] = { 23, 53, 86, 94, 2344, 4942, 9332, 9812 };
-    Index index = 0;
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 0);
+        EXPECT_EQ(move.GetAllocator().GetId(), 2341);
 
-    EXPECT_EQ(set.Size(), 8);
-    for (auto iter = set.GetBegin(); iter != set.GetEnd(); ++iter, ++index)
-        EXPECT_EQ(*iter, expected[index]);
-}
+        EXPECT_EQ(treeSet.Size(), 0);
+        EXPECT_EQ(move.Size(), 4);
 
-TEST(TreeSetTests, Equal)
-{
-    TreeSet<int> set = { 123, 92, 91, 11, -34, -3, 0 };
-    TreeSet<int> equalSet = { 123, 92, 91, 11, -34, -3, 0 };
-    TreeSet<int> unequalSet = { 123, 92, 91, 11, -34, -3, 1 };
+        std::vector<int> expected = { 23, 9, 5, 1 };
+        auto iter = move.GetBegin();
 
-    EXPECT_TRUE(set == equalSet);
-    EXPECT_FALSE(set == unequalSet);
+        for (int index = 0; index < expected.size(); ++index, ++iter)
+        {
+            EXPECT_EQ(**iter, expected[index]);
+            EXPECT_EQ(iter->use_count(), 1);
+        }
+    }
+
+    // TreeSet<T, Comp, Alloc>::operator=(std::initializer_list)
+    TEST(TreeSetTest, InitializerListAssign)
+    {
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> treeSet(
+            { 2384, 23, 12, 11 },
+            StatefulAllocator(231));
+
+        ASSERT_EQ(treeSet.GetAllocator().GetId(), 231);
+        treeSet = { 23, 1, 5, 9, 5 };
+
+        EXPECT_EQ(treeSet.GetAllocator().GetId(), 231);
+        EXPECT_EQ(treeSet.Size(), 4);
+
+        std::vector<int> expected = { 1, 5, 9, 23 };
+        Index index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+            EXPECT_EQ(*iter, expected[index]);
+    }
+
+    // TreeSet<T, Comp, Alloc>::GetBegin()
+    // TreeSet<T, Comp, Alloc>::GetEnd()
+    TEST(TreeSetTest, Iterators)
+    {
+        TreeSet<int, FlippableCompare<int>> treeSet = { 32, 1, 5, 7, 12, 1 };
+        ASSERT_EQ(treeSet.Size(), 5);
+
+        EXPECT_EQ(*treeSet.GetBegin(), 1);
+
+        /* TreeSet<T, Comp, Alloc>::GetEnd()'s iterator value is undefined, and therefore
+         * cannot be tested.
+         */
+    }
+
+    // TreeSet<T, Comp, Alloc>::IsEmpty()
+    TEST(TreeSetTest, IsEmpty)
+    {
+        TreeSet<int> treeSet = { 39, 12, 12 };
+        TreeSet<int> empty;
+
+        ASSERT_EQ(treeSet.Size(), 2);
+        ASSERT_EQ(empty.Size(), 0);
+
+        EXPECT_FALSE(treeSet.IsEmpty());
+        EXPECT_TRUE(empty.IsEmpty());
+    }
+
+    /* TreeSet<T, Comp, Alloc>::Size() and TreeSet<T, Comp, Alloc>::GetAllocator() is
+     * assumed to work. No tests.
+     */
+
+    // TreeSet<T, Comp, Alloc>::Clear()
+    TEST(TreeSetTest, Clear)
+    {
+        TreeSet<int, LessFunctor<int>, TrackingAllocator> treeSet = { 3, 123, 123, 10 };
+        ASSERT_GT(treeSet.GetAllocator().AllocationSize(), 0);
+        ASSERT_GT(treeSet.Size(), 0);
+
+        treeSet.Clear();
+
+        EXPECT_EQ(treeSet.Size(), 0);
+        EXPECT_EQ(treeSet.GetAllocator().AllocationSize(), 0);
+    }
+
+    // TreeSet<T, Comp, Alloc>::Insert(const T&)
+    TEST(TreeSetTest, InsertCopy)
+    {
+        using Ptr = std::shared_ptr<int>;
+        TreeSet<Ptr, FlippableCompare<Ptr>, TrackingAllocator> treeSet = {
+            std::make_shared<int>(23),
+            std::make_shared<int>(0),
+            std::make_shared<int>(3234),
+            std::make_shared<int>(61),
+        };
+
+        ASSERT_EQ(treeSet.Size(), 4);
+
+        Usize bytes = treeSet.GetAllocator().AllocationSize();
+        Ptr pointer = std::make_shared<int>(5);
+
+        auto [iter, success] = treeSet.Insert(pointer);
+        auto [iter2, fail] = treeSet.Insert(pointer);
+
+        EXPECT_EQ(*iter, pointer);
+        EXPECT_TRUE(success);
+
+        EXPECT_EQ(iter2, iter);
+        EXPECT_FALSE(fail);
+
+        EXPECT_GT(treeSet.GetAllocator().AllocationSize(), bytes);
+        EXPECT_EQ(treeSet.Size(), 5);
+
+        std::vector<int> expected = { 0, 5, 23, 61, 3234 };
+        int index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+        {
+            EXPECT_EQ(iter->use_count(), 1 + (**iter == 5));
+            EXPECT_EQ(**iter, expected[index]);
+        }
+    }
+
+    // TreeSet<T, Comp, Alloc>::Insert(T&&)
+    TEST(TreeSetTest, InsertMove)
+    {
+        using Ptr = std::shared_ptr<int>;
+        TreeSet<Ptr, FlippableCompare<Ptr>, TrackingAllocator> treeSet = {
+            std::make_shared<int>(23),
+            std::make_shared<int>(0),
+            std::make_shared<int>(3234),
+            std::make_shared<int>(61),
+        };
+
+        ASSERT_EQ(treeSet.Size(), 4);
+
+        Usize bytes = treeSet.GetAllocator().AllocationSize();
+
+        auto [iter, success] = treeSet.Insert(std::make_shared<int>(5));
+        auto [iter2, fail] = treeSet.Insert(std::make_shared<int>(5));
+
+        EXPECT_EQ(**iter, 5);
+        EXPECT_TRUE(success);
+
+        EXPECT_EQ(iter2, iter);
+        EXPECT_FALSE(fail);
+
+        EXPECT_GT(treeSet.GetAllocator().AllocationSize(), bytes);
+        EXPECT_EQ(treeSet.Size(), 5);
+
+        std::vector<int> expected = { 0, 5, 23, 61, 3234 };
+        int index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+        {
+            EXPECT_EQ(iter->use_count(), 1);
+            EXPECT_EQ(**iter, expected[index]);
+        }
+    }
+
+    // TreeSet<T, Comp, Alloc>::Insert(Iter, Iter)
+    TEST(TreeSetTest, InsertRange)
+    {
+        using Ptr = std::shared_ptr<int>;
+        TreeSet<Ptr, FlippableCompare<Ptr>, TrackingAllocator> treeSet = {
+            std::make_shared<int>(23),
+            std::make_shared<int>(0),
+            std::make_shared<int>(3234),
+            std::make_shared<int>(61),
+        };
+
+        ASSERT_EQ(treeSet.Size(), 4);
+
+        Usize bytes = treeSet.GetAllocator().AllocationSize();
+        ForwardTestContainer<Ptr, 6> container = {
+            std::make_shared<int>(5),
+            std::make_shared<int>(23),
+            std::make_shared<int>(123),
+            std::make_shared<int>(13),
+            std::make_shared<int>(5),
+            std::make_shared<int>(73),
+        };
+
+        treeSet.Insert(container.GetBegin(), container.GetEnd());
+
+        EXPECT_GT(treeSet.GetAllocator().AllocationSize(), bytes);
+        EXPECT_EQ(treeSet.Size(), 8);
+
+        std::vector<int> expected = { 0, 5, 13, 23, 61, 73, 123, 3234 };
+        int index = 0;
+
+        std::vector<int> twoOwners = { 5, 123, 13, 73 };
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+        {
+            if (std::find(twoOwners.begin(), twoOwners.end(), **iter) != twoOwners.end())
+                EXPECT_EQ(iter->use_count(), 2);
+            else
+                EXPECT_EQ(iter->use_count(), 1);
+
+            EXPECT_EQ(**iter, expected[index]);
+        }
+    }
+
+    // TreeSet<T, Comp, Alloc>::Insert(std::initializer_list)
+    TEST(TreeSetTest, InsertInitializerList)
+    {
+        using Ptr = std::shared_ptr<int>;
+        TreeSet<Ptr, FlippableCompare<Ptr>, TrackingAllocator> treeSet = {
+            std::make_shared<int>(23),
+            std::make_shared<int>(0),
+            std::make_shared<int>(3234),
+            std::make_shared<int>(61),
+        };
+
+        ASSERT_EQ(treeSet.Size(), 4);
+
+        Usize bytes = treeSet.GetAllocator().AllocationSize();
+        treeSet.Insert({
+            std::make_shared<int>(5),
+            std::make_shared<int>(23),
+            std::make_shared<int>(123),
+            std::make_shared<int>(13),
+            std::make_shared<int>(5),
+            std::make_shared<int>(73),
+        });
+
+        EXPECT_GT(treeSet.GetAllocator().AllocationSize(), bytes);
+        EXPECT_EQ(treeSet.Size(), 8);
+
+        std::vector<int> expected = { 0, 5, 13, 23, 61, 73, 123, 3234 };
+        int index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+        {
+            EXPECT_EQ(iter->use_count(), 1);
+            EXPECT_EQ(**iter, expected[index]);
+        }
+    }
+
+    // TreeSet<T, Comp, Alloc>::Swap(TreeSet&)
+    TEST(TreeSetTest, Swap)
+    {
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> set1(
+            { 23, 1287, 38, 595, 122, 38, 444 },
+            FlippableCompare<int>(true), StatefulAllocator(12));
+
+        TreeSet<int, FlippableCompare<int>, StatefulAllocator> set2(
+            { 23, 93, 1287, 123, 11 },
+            FlippableCompare<int>(false), StatefulAllocator(4444));
+
+        set1.Swap(set2);
+
+        EXPECT_EQ(set1.Size(), 5);
+        EXPECT_EQ(set2.Size(), 6);
+
+        EXPECT_EQ(set1.GetAllocator().GetId(), 4444);
+        EXPECT_EQ(set2.GetAllocator().GetId(), 12);
+
+        int expected1[5] = { 11, 23, 93, 123, 1287 };
+        Index index1 = 0;
+
+        for (auto iter = set1.GetBegin(); iter != set1.GetEnd(); ++iter, ++index1)
+            EXPECT_EQ(*iter, expected1[index1]);
+
+        int expected2[6] = { 1287, 595, 444, 122, 38, 23 };
+        Index index2 = 0;
+
+        for (auto iter = set2.GetBegin(); iter != set2.GetEnd(); ++iter, ++index2)
+            EXPECT_EQ(*iter, expected2[index2]);
+    }
+
+    // operator==(const TreeSet<T, Comp, Alloc>&, const TreeSet<T, Comp, Alloc>&)
+    TEST(TreeSetTest, Equal)
+    {
+        TreeSet<int> set = { 123, 92, 91, 11, -34, -3, 0 };
+        TreeSet<int> equalSet = { 92, 91, -34, 123, -3, 11, 0 };
+        TreeSet<int> unequalSet = { 123, 92, 91, 11, -34, -3, 1 };
+
+        EXPECT_TRUE(set == equalSet);
+        EXPECT_FALSE(set == unequalSet);
+    }
+
+    // TreeSet<T, Comp, Alloc>::Iterator::operator*()
+    // TreeSet<T, Comp, Alloc>::ConstIterator::operator*()
+    TEST(TreeSetTest, IteratorDereference)
+    {
+        // The end user must not be able to modify any element of the tree set.
+        TreeSet<int> set = { 8, 19, 10, 68, 4 };
+        const TreeSet<int> constSet = { 8, 19, 10, 68, 4 };
+
+        ASSERT_EQ(*set.GetBegin(), 4);
+        ASSERT_EQ(*constSet.GetBegin(), 4);
+
+        EXPECT_TRUE((std::is_same_v<decltype(*set.GetBegin()), const int&>));
+        EXPECT_TRUE((std::is_same_v<decltype(*constSet.GetBegin()), const int&>));
+    }
+
+    // TreeSet<T, Comp, Alloc>::Iterator::operator->()
+    // TreeSet<T, Comp, Alloc>::ConstIterator::operator->()
+    TEST(TreeSetTest, IteratorArrowOperator)
+    {
+        // The end user must not be able to modify any element of the tree set.
+        TreeSet<int> set = { 8, 19, 10, 68, 4 };
+        const TreeSet<int> constSet = { 8, 19, 10, 68, 4 };
+
+        EXPECT_TRUE((std::is_same_v<
+            decltype(set.GetBegin().operator->()),
+            const int*>));
+
+        EXPECT_TRUE((std::is_same_v<
+            decltype(constSet.GetBegin().operator->()),
+            const int*>));
+    }
+
+    // TreeSet<T, Comp, Alloc>::Iterator::operator++()
+    // TreeSet<T, Comp, Alloc>::Iterator::operator++(int)
+    TEST(TreeSetTest, IteratorIncrement)
+    {
+        TreeSet<int> set = { 8, 19, 10, 68, 4 };
+        auto iter = set.GetBegin();
+
+        ASSERT_EQ(*iter, 4);
+
+        EXPECT_EQ(*(iter++), 4);
+        EXPECT_EQ(*iter, 8);
+
+        EXPECT_EQ(*(++iter), 10);
+        EXPECT_EQ(*iter, 10);
+    }
+
+    // operator==(
+    //     const TreeSet<T, Comp, Alloc>::[Const]Iterator&,
+    //     const TreeSet<T, Comp, Alloc>::[Const]Iterator&)
+    TEST(TreeSetTest, IteratorEqual)
+    {
+        TreeSet<int> set = { 8, 19, 10, 68, 4 };
+
+        auto iter = set.GetBegin();
+        auto sameIter = set.GetBegin();
+
+        auto differentIter = set.GetBegin();
+        Algorithms::Advance(differentIter, 3);
+
+        EXPECT_EQ(iter, sameIter);
+        EXPECT_NE(iter, differentIter);
+    }
 }
