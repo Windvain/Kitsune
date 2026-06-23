@@ -76,6 +76,8 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/String/Utf16EncodingTests.cpp"
     "FoundationTests/String/Utf32EncodingTests.cpp"
 
+    "FoundationTests/Threading/AtomicTests.cpp"
+
     "FoundationTests/Utilities/FunctorTests.cpp"
 
     "FoundationTests/Main.cpp"
