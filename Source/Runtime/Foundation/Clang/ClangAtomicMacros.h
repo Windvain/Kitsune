@@ -45,6 +45,10 @@ namespace
 #define KITSUNE_GENERAL_ATOMIC_EXCHANGE(type, order, pointer, value, ret) \
     __atomic_exchange(pointer, value, ret, int(order))
 
+#define KITSUNE_GENERAL_ATOMIC_COMPARE_EXCHANGE(type, order,                      \
+                                                pointer, expected, desired)       \
+    __atomic_compare_exchange(pointer, expected, desired, false, int(order), int(order))
+
 // __atomic_store_n and __atomic_load_n only works for integral or pointer types of
 // sizes 1, 2, 4, or 8 bytes.
 #define KITSUNE_INTERNAL_ATOMIC_STORE(type, order, dest, source)    \
@@ -74,6 +78,14 @@ namespace
     {                                                                          \
         __atomic_exchange(pointer, const_cast<type*>(value), ret, int(order)); \
     }
+
+#define KITSUNE_INTERNAL_ATOMIC_COMPARE_EXCHANGE(type, order,                          \
+                                                 pointer, expected, desired)           \
+    ((std::is_integral_v<type> || std::is_pointer_v<type>) && (sizeof(type) < 8)) ?    \
+        __atomic_compare_exchange_n(pointer, expected, *(desired), false,              \
+                                    int(order), int(order)) :                          \
+        __atomic_compare_exchange(pointer, expected, desired, false,                   \
+                                  int(order), int(order))
 
 #define KITSUNE_ATOMIC_STORE_8(type, order, dest, source) \
     KITSUNE_INTERNAL_ATOMIC_STORE(type, order, dest, source)
@@ -110,6 +122,26 @@ namespace
 
 #define KITSUNE_ATOMIC_EXCHANGE_64(type, order, pointer, value, ret) \
     KITSUNE_INTERNAL_ATOMIC_EXCHANGE(type, order, pointer, value, ret)
+
+#define KITSUNE_ATOMIC_COMPARE_EXCHANGE_8(type, order,                  \
+                                          pointer, expected, desired)   \
+    KITSUNE_INTERNAL_ATOMIC_COMPARE_EXCHANGE(type, order,        \
+                                             pointer, expected, desired)
+
+#define KITSUNE_ATOMIC_COMPARE_EXCHANGE_16(type, order,                 \
+                                          pointer, expected, desired)   \
+    KITSUNE_INTERNAL_ATOMIC_COMPARE_EXCHANGE(type, order,        \
+                                             pointer, expected, desired)
+
+#define KITSUNE_ATOMIC_COMPARE_EXCHANGE_32(type, order,                 \
+                                          pointer, expected, desired)   \
+    KITSUNE_INTERNAL_ATOMIC_COMPARE_EXCHANGE(type, order,        \
+                                             pointer, expected, desired)
+
+#define KITSUNE_ATOMIC_COMPARE_EXCHANGE_64(type, order,                 \
+                                          pointer, expected, desired)   \
+    KITSUNE_INTERNAL_ATOMIC_COMPARE_EXCHANGE(type, order,        \
+                                             pointer, expected, desired)
 
 // Only one general function for these arithmetic functions.
 #define KITSUNE_INTERNAL_ATOMIC_FETCH_ADD(type, order, source, value) \

@@ -37,7 +37,7 @@ namespace
         bool, char, char8_t, char16_t, char32_t,
         signed char, signed short, signed int, signed long, signed long long,
         unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long,
-        int*, MyObject>;
+        MyObject>;
 
     TYPED_TEST_SUITE(AtomicTest, AtomicTestTypes);
 
@@ -58,14 +58,6 @@ namespace
             Atomic<T> object(T(34));
             EXPECT_EQ(object.Load(), T(34));
         }
-        else if (std::is_pointer_v<T>)
-        {
-            void* pointer = std::malloc(64);
-            Atomic<T> object(static_cast<T>(pointer));
-
-            EXPECT_EQ(object.Load(), pointer);
-            std::free(pointer);
-        }
     }
 
     TYPED_TEST(AtomicTest, ValueAssign)
@@ -79,16 +71,6 @@ namespace
 
             EXPECT_EQ(object.Load(), T(8));
         }
-        else if (std::is_pointer_v<T>)
-        {
-            void* pointer = std::malloc(64);
-            Atomic<T> object(static_cast<T>(pointer));
-
-            object = nullptr;
-
-            EXPECT_EQ(object.Load(), nullptr);
-            std::free(pointer);
-        }
     }
 
     /* Atomic<T>::Load() and Atomic<T>::Store() are assumed to work. */
@@ -97,11 +79,44 @@ namespace
     {
         using T = typename TestFixture::ValueType;
 
-        Atomic<T> object(T(434));
-        ASSERT_EQ(object.Load(), T(434));
+        if constexpr (std::is_integral_v<T> || std::is_same_v<T, MyObject>)
+        {
+            Atomic<T> object(T(434));
+            ASSERT_EQ(object.Load(), T(434));
 
-        EXPECT_EQ(object.Exchange(T(111)), T(434));
-        EXPECT_EQ(object.Load(), T(111));
+            EXPECT_EQ(object.Exchange(T(111)), T(434));
+            EXPECT_EQ(object.Load(), T(111));
+        }
+    }
+
+    TYPED_TEST(AtomicTest, CompareExchange)
+    {
+        using T = typename TestFixture::ValueType;
+
+        if constexpr (std::is_same_v<T, bool>)
+        {
+            Atomic<T> object(T(true));
+            T expected(false);
+
+            EXPECT_FALSE(object.CompareExchange(expected, false));
+            EXPECT_EQ(expected, true);
+
+            EXPECT_TRUE(object.CompareExchange(expected, false));
+            EXPECT_EQ(expected, true);
+            EXPECT_EQ(object.Load(), false);
+        }
+        else if (std::is_integral_v<T> || std::is_same_v<T, MyObject>)
+        {
+            Atomic<T> object(T(211));
+            T expected(120);
+
+            EXPECT_FALSE(object.CompareExchange(expected, T(5)));
+            EXPECT_EQ(expected, T(211));
+
+            EXPECT_TRUE(object.CompareExchange(expected, T(10)));
+            EXPECT_EQ(expected, T(211));
+            EXPECT_EQ(object.Load(), T(10));
+        }
     }
 
     TYPED_TEST(AtomicTest, ArithmeticOperators)

@@ -51,6 +51,14 @@ namespace Kitsune
                 KITSUNE_ATOMIC_EXCHANGE_8(T, order, pointer, value, ret);
             }
 
+            KITSUNE_FORCEINLINE static bool CompareExchange(
+                T* pointer, T* expected, T* desired,
+                MemoryOrder order)
+            {
+                return KITSUNE_ATOMIC_COMPARE_EXCHANGE_8(
+                    T, order, pointer, expected, desired);
+            }
+
         public:
             KITSUNE_FORCEINLINE static T FetchAdd(
                 T* pointer, T value, MemoryOrder order) noexcept
@@ -109,6 +117,14 @@ namespace Kitsune
                 T* pointer, const T* value, T* ret, MemoryOrder order) noexcept
             {
                 KITSUNE_ATOMIC_EXCHANGE_16(T, order, pointer, value, ret);
+            }
+
+            KITSUNE_FORCEINLINE static bool CompareExchange(
+                T* pointer, T* expected, T* desired,
+                MemoryOrder order)
+            {
+                return KITSUNE_ATOMIC_COMPARE_EXCHANGE_16(
+                    T, order, pointer, expected, desired);
             }
 
         public:
@@ -171,6 +187,14 @@ namespace Kitsune
                 KITSUNE_ATOMIC_EXCHANGE_32(T, order, pointer, value, ret);
             }
 
+            KITSUNE_FORCEINLINE static bool CompareExchange(
+                T* pointer, T* expected, T* desired,
+                MemoryOrder order)
+            {
+                return KITSUNE_ATOMIC_COMPARE_EXCHANGE_32(
+                    T, order, pointer, expected, desired);
+            }
+
         public:
             KITSUNE_FORCEINLINE static T FetchAdd(
                 T* pointer, T value, MemoryOrder order) noexcept
@@ -229,8 +253,16 @@ namespace Kitsune
                 T* pointer, const T* value, T* ret, MemoryOrder order) noexcept
             {
                 KITSUNE_ATOMIC_EXCHANGE_64(T, order, pointer, value, ret);
-
             }
+
+            KITSUNE_FORCEINLINE static bool CompareExchange(
+                T* pointer, T* expected, T* desired,
+                MemoryOrder order)
+            {
+                return KITSUNE_ATOMIC_COMPARE_EXCHANGE_64(
+                    T, order, pointer, expected, desired);
+            }
+
         public:
             KITSUNE_FORCEINLINE static T FetchAdd(
                 T* pointer, T value, MemoryOrder order) noexcept
@@ -335,11 +367,20 @@ namespace Kitsune
             return ret;
         }
 
+        inline bool CompareExchange(
+            T& expected, T desired, MemoryOrder order = MemoryOrder::SeqCst)
+        {
+            return KITSUNE_GENERAL_ATOMIC_COMPARE_EXCHANGE(
+                T, order,
+                AddressOf(m_Value), AddressOf(expected), AddressOf(desired));
+        }
+
     private:
         T m_Value;
     };
 
     template<std::integral T>
+        requires (!std::is_same_v<std::remove_cv_t<T>, bool>)
     class Atomic<T> : public NonCopyable
     {
     private:
@@ -417,6 +458,14 @@ namespace Kitsune
             Base::Exchange(AddressOf(m_Value), AddressOf(value), AddressOf(ret), order);
 
             return ret;
+        }
+
+        inline bool CompareExchange(
+            T& expected, T desired, MemoryOrder order = MemoryOrder::SeqCst) noexcept
+        {
+            return Base::CompareExchange(
+                AddressOf(m_Value), AddressOf(expected), AddressOf(desired),
+                order);
         }
 
     public:
