@@ -1,5 +1,9 @@
 #include "Application/Application.h"
+#include "Foundation/Common/Macros.h"
 #include "Foundation/Memory/Memory.h"
+
+#include "Foundation/Logging/Logger.h"
+#include "Foundation/Memory/SharedPtr.h"
 
 #include "GraphicsCore/GpuInstance.h"
 #include "GraphicsCore/CommandList.h"

@@ -1,1069 +1,1127 @@
-// TODO: Uncomment this after reimplementing SharedPtr<T>.
-// #include <gtest/gtest.h>
-// #include "Foundation/Memory/SharedPtr.h"
-
-// namespace
-// {
-//     using namespace Kitsune;
-
-//     class TrackingAllocator
-//     {
-//     public:
-//         TrackingAllocator() = default;
-
-//         // We check the allocator's state externally, so the allocations have to be
-//         // copied.
-//         TrackingAllocator(const TrackingAllocator& allocator) = default;
-//         TrackingAllocator(TrackingAllocator&& allocator) = default;
-
-//         ~TrackingAllocator() = default;
-
-//     public:
-//         TrackingAllocator& operator=(const TrackingAllocator& allocator)
-//         {
-//             return *this;
-//         }
-
-//         TrackingAllocator& operator=(TrackingAllocator&& allocator)
-//         {
-//             m_Allocations = std::move(allocator.m_Allocations);
-//             return *this;
-//         }
-
-//     public:
-//         inline void* Allocate(
-//             Usize bytes,
-//             Usize alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__)
-//         {
-//             void* pointer = Memory::Allocate(bytes, alignment);
-//             m_Allocations.insert({ pointer, bytes });
-
-//             return pointer;
-//         }
-
-//         inline void Free(void* pointer, Usize bytes)
-//         {
-//             EXPECT_TRUE(m_Allocations.contains(pointer));
-//             EXPECT_EQ(m_Allocations[pointer], bytes);
-
-//             m_Allocations.erase(pointer);
-//             Memory::Free(pointer, bytes);
-//         }
-
-//     public:
-//         inline bool operator==(const TrackingAllocator& otherAlloc) const
-//         {
-//             return (this == &otherAlloc);
-//         }
-
-//     private:
-//         std::unordered_map<void*, std::size_t> m_Allocations;
-//     };
-
-//     template<typename T>
-//     class TrackingDeleter
-//     {
-//     public:
-//         using ValueType = T;
-//         using StorageType = std::vector<void*>;
-
-//         inline TrackingDeleter() = default;
-//         inline TrackingDeleter(StorageType* storage)
-//             : m_Storage(storage)
-//         {
-//         }
-
-//         inline TrackingDeleter(const TrackingDeleter&) = default;
-//         inline TrackingDeleter(TrackingDeleter&& deleter)
-//             : m_Storage(std::exchange(deleter.m_Storage, nullptr))
-//         {
-//         }
-
-//         ~TrackingDeleter() = default;
-
-//     public:
-//         inline TrackingDeleter& operator=(const TrackingDeleter& deleter)
-//         {
-//             if (this == &deleter)
-//                 return *this;
-
-//             KITSUNE_UNREACHABLE();
-//             return *this;
-//         }
-
-//         inline TrackingDeleter& operator=(TrackingDeleter&& deleter)
-//         {
-//             if (this == &deleter)
-//                 return *this;
-
-//             KITSUNE_UNREACHABLE();
-//             return *this;
-//         }
+#include <gtest/gtest.h>
+#include "Foundation/Memory/BadWeakPtrException.h"
+#include "Foundation/Memory/Memory.h"
+#include "Foundation/Memory/SharedPtr.h"
+
+namespace
+{
+    using namespace Kitsune;
+
+    class TrackingAllocator
+    {
+    public:
+        TrackingAllocator() = default;
+
+        // We check the allocator's state externally, so the allocations have to be
+        // copied.
+        TrackingAllocator(const TrackingAllocator& allocator) = default;
+        TrackingAllocator(TrackingAllocator&& allocator) = default;
+
+        ~TrackingAllocator() = default;
+
+    public:
+        TrackingAllocator& operator=(const TrackingAllocator& allocator)
+        {
+            return *this;
+        }
+
+        TrackingAllocator& operator=(TrackingAllocator&& allocator)
+        {
+            m_Allocations = std::move(allocator.m_Allocations);
+            return *this;
+        }
+
+    public:
+        inline void* Allocate(
+            Usize bytes,
+            Usize alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+        {
+            void* pointer = Memory::Allocate(bytes, alignment);
+            m_Allocations.insert({ pointer, bytes });
+
+            return pointer;
+        }
+
+        inline void Free(void* pointer, Usize bytes)
+        {
+            EXPECT_TRUE(m_Allocations.contains(pointer));
+            EXPECT_EQ(m_Allocations[pointer], bytes);
+
+            m_Allocations.erase(pointer);
+            Memory::Free(pointer, bytes);
+        }
+
+    public:
+        inline bool operator==(const TrackingAllocator& otherAlloc) const
+        {
+            return (this == &otherAlloc);
+        }
+
+    private:
+        std::unordered_map<void*, std::size_t> m_Allocations;
+    };
+
+    template<typename T>
+    class TrackingDeleter
+    {
+    public:
+        using ValueType = T;
+        using StorageType = std::vector<void*>;
+
+        inline TrackingDeleter() = default;
+        inline TrackingDeleter(StorageType* storage)
+            : m_Storage(storage)
+        {
+        }
+
+        inline TrackingDeleter(const TrackingDeleter&) = default;
+        inline TrackingDeleter(TrackingDeleter&& deleter)
+            : m_Storage(std::exchange(deleter.m_Storage, nullptr))
+        {
+        }
+
+        ~TrackingDeleter() = default;
+
+    public:
+        inline TrackingDeleter& operator=(const TrackingDeleter& deleter)
+        {
+            if (this == &deleter)
+                return *this;
+
+            KITSUNE_UNREACHABLE();
+            return *this;
+        }
+
+        inline TrackingDeleter& operator=(TrackingDeleter&& deleter)
+        {
+            if (this == &deleter)
+                return *this;
+
+            KITSUNE_UNREACHABLE();
+            return *this;
+        }
 
-//     public:
-//         inline void operator()(T* pointer)
-//         {
-//             if ((m_Storage == nullptr) || (pointer == nullptr))
-//                 return;
+    public:
+        inline void operator()(T* pointer)
+        {
+            if ((m_Storage == nullptr) || (pointer == nullptr))
+                return;
 
-//             m_Storage->push_back(pointer);
-//             Memory::Delete(pointer);
-//         }
+            m_Storage->push_back(pointer);
+            Memory::Delete(pointer);
+        }
 
-//     private:
-//         template<typename U>
-//         friend class MyDeleter;
+    private:
+        template<typename U>
+        friend class MyDeleter;
 
-//         StorageType* m_Storage = nullptr;
-//     };
+        StorageType* m_Storage = nullptr;
+    };
 
-//     static_assert(
-//         Deleter<TrackingDeleter<int>>,
-//         "TrackingDeleter<T> does not fulfill the requirements for Deleter.");
+    static_assert(
+        Deleter<TrackingDeleter<int>>,
+        "TrackingDeleter<T> does not fulfill the requirements for Deleter.");
 
-//     class Base
-//     {
-//     public:
-//         virtual ~Base() = default;
-//     };
+    class Base
+    {
+    public:
+        virtual ~Base() = default;
+    };
 
-//     class Derived : public Base
-//     {
-//     };
+    class Derived : public Base
+    {
+    };
 
-//     TEST(SharedPtrTest, DefaultNullptrConstructor)
-//     {
-//         SharedPtr<int> pointer;
-//         SharedPtr<int> null = nullptr;
+    TEST(SharedPtrTest, DefaultNullptrConstructor)
+    {
+        SharedPtr<int> pointer;
+        SharedPtr<int> null = nullptr;
 
-//         EXPECT_EQ(pointer.Get(), nullptr);
-//         EXPECT_EQ(null.Get(), nullptr);
+        EXPECT_EQ(pointer.Get(), nullptr);
+        EXPECT_EQ(null.Get(), nullptr);
 
-//         EXPECT_EQ(pointer.GetCount(), 0);
-//         EXPECT_EQ(null.GetCount(), 0);
-//     }
+        EXPECT_EQ(pointer.GetCount(), 0);
+        EXPECT_EQ(null.GetCount(), 0);
+    }
 
-//     TEST(SharedPtrTest, PointerConstructor)
-//     {
-//         int* rawPointer = Memory::New<int>(234);
-//         auto pointer = SharedPtr<int>(rawPointer);
+    TEST(SharedPtrTest, PointerConstructor)
+    {
+        int* rawPointer = Memory::New<int>(234);
+        auto pointer = SharedPtr<int>(rawPointer);
 
-//         EXPECT_EQ(pointer.Get(), rawPointer);
-//         EXPECT_EQ(pointer.GetCount(), 1);
+        EXPECT_EQ(pointer.Get(), rawPointer);
+        EXPECT_EQ(pointer.GetCount(), 1);
 
-//         // rawPointer here should've been destroyed by GlobalAllocator.
-//     }
+        // rawPointer here should've been destroyed by GlobalAllocator.
+    }
 
-//     TEST(SharedPtrTest, PointerDeleterConstructor)
-//     {
-//         int* rawPointer1 = Memory::New<int>();
-//         int* rawPointer2 = Memory::New<int>();
+    TEST(SharedPtrTest, PointerDeleterConstructor)
+    {
+        int* rawPointer1 = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
+
+        std::vector<void*> deleted;
 
-//         std::vector<void*> deleted;
+        {
+            TrackingDeleter<int> deleter(&deleted);
 
-//         {
-//             TrackingDeleter<int> deleter(&deleted);
+            SharedPtr<int> moved(rawPointer1, TrackingDeleter<int>(&deleted));
+            SharedPtr<int> copied(rawPointer2, deleter);
 
-//             SharedPtr<int> moved(rawPointer1, TrackingDeleter<int>(&deleted));
-//             SharedPtr<int> copied(rawPointer2, deleter);
+            EXPECT_EQ(moved.Get(), rawPointer1);
+            EXPECT_EQ(moved.GetCount(), 1);
 
-//             EXPECT_EQ(moved.Get(), rawPointer1);
-//             EXPECT_EQ(moved.GetCount(), 1);
+            EXPECT_EQ(copied.Get(), rawPointer2);
+            EXPECT_EQ(copied.GetCount(), 1);
+        }
 
-//             EXPECT_EQ(copied.Get(), rawPointer2);
-//             EXPECT_EQ(copied.GetCount(), 1);
-//         }
+        EXPECT_EQ(deleted[0], rawPointer2);
+        EXPECT_EQ(deleted[1], rawPointer1);
+    }
 
-//         EXPECT_EQ(deleted[0], rawPointer2);
-//         EXPECT_EQ(deleted[1], rawPointer1);
-//     }
+    TEST(SharedPtrTest, NullptrDeleterConstructor)
+    {
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, NullptrDeleterConstructor)
-//     {
-//         std::vector<void*> deleted;
+        {
+            TrackingDeleter<int> deleter(&deleted);
 
-//         {
-//             TrackingDeleter<int> deleter(&deleted);
+            SharedPtr<int> moved(nullptr, TrackingDeleter<int>(&deleted));
+            SharedPtr<int> copied(nullptr, deleter);
 
-//             SharedPtr<int> moved(nullptr, TrackingDeleter<int>(&deleted));
-//             SharedPtr<int> copied(nullptr, deleter);
+            EXPECT_EQ(moved.Get(), nullptr);
+            EXPECT_EQ(moved.GetCount(), 1);
 
-//             EXPECT_EQ(moved.Get(), nullptr);
-//             EXPECT_EQ(moved.GetCount(), 1);
+            EXPECT_EQ(copied.Get(), nullptr);
+            EXPECT_EQ(copied.GetCount(), 1);
+        }
 
-//             EXPECT_EQ(copied.Get(), nullptr);
-//             EXPECT_EQ(copied.GetCount(), 1);
-//         }
+        EXPECT_EQ(deleted.size(), 0);
+    }
 
-//         EXPECT_EQ(deleted.size(), 0);
-//     }
+    TEST(SharedPtrTest, CopyDeleterAndAllocatorConstructor)
+    {
+        int* rawPointer = Memory::New<int>();
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, CopyDeleterAndAllocatorConstructor)
-//     {
-//         int* rawPointer = Memory::New<int>();
-//         std::vector<void*> deleted;
+        {
+            TrackingDeleter<int> deleter(&deleted);
+            SharedPtr<int> pointer(rawPointer, deleter, TrackingAllocator());
 
-//         {
-//             TrackingDeleter<int> deleter(&deleted);
-//             SharedPtr<int> pointer(rawPointer, deleter, TrackingAllocator());
+            EXPECT_EQ(pointer.Get(), rawPointer);
+            EXPECT_EQ(pointer.GetCount(), 1);
+        }
 
-//             EXPECT_EQ(pointer.Get(), rawPointer);
-//             EXPECT_EQ(pointer.GetCount(), 1);
-//         }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+    TEST(SharedPtrTest, MoveDeleterAndAllocatorConstructor)
+    {
+        int* rawPointer = Memory::New<int>();
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, MoveDeleterAndAllocatorConstructor)
-//     {
-//         int* rawPointer = Memory::New<int>();
-//         std::vector<void*> deleted;
+        {
+            SharedPtr<int> pointer(
+                rawPointer,
+                TrackingDeleter<int>(&deleted),
+                TrackingAllocator());
 
-//         {
-//             SharedPtr<int> pointer(
-//                 rawPointer,
-//                 TrackingDeleter<int>(&deleted),
-//                 TrackingAllocator());
+            EXPECT_EQ(pointer.Get(), rawPointer);
+            EXPECT_EQ(pointer.GetCount(), 1);
+        }
 
-//             EXPECT_EQ(pointer.Get(), rawPointer);
-//             EXPECT_EQ(pointer.GetCount(), 1);
-//         }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+    TEST(SharedPtrTest, NullptrCopyDeleterAndAllocatorConstructor)
+    {
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, NullptrCopyDeleterAndAllocatorConstructor)
-//     {
-//         std::vector<void*> deleted;
+        {
+            TrackingDeleter<int> deleter(&deleted);
+            SharedPtr<int> pointer(nullptr, deleter, TrackingAllocator());
 
-//         {
-//             TrackingDeleter<int> deleter(&deleted);
-//             SharedPtr<int> pointer(nullptr, deleter, TrackingAllocator());
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 1);
+        }
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 1);
-//         }
+        EXPECT_EQ(deleted.size(), 0);
+    }
 
-//         EXPECT_EQ(deleted.size(), 0);
-//     }
+    TEST(SharedPtrTest, NullptrMoveDeleterAndAllocatorConstructor)
+    {
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, NullptrMoveDeleterAndAllocatorConstructor)
-//     {
-//         std::vector<void*> deleted;
+        {
+            SharedPtr<int> pointer(
+                nullptr,
+                TrackingDeleter<int>(&deleted),
+                TrackingAllocator());
 
-//         {
-//             SharedPtr<int> pointer(
-//                 nullptr,
-//                 TrackingDeleter<int>(&deleted),
-//                 TrackingAllocator());
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 1);
+        }
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 1);
-//         }
+        EXPECT_EQ(deleted.size(), 0);
+    }
 
-//         EXPECT_EQ(deleted.size(), 0);
-//     }
+    TEST(SharedPtrTest, CopyConstructor)
+    {
+        int* rawPointer = Memory::New<int>(4);
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, CopyConstructor)
-//     {
-//         int* rawPointer = Memory::New<int>(4);
-//         std::vector<void*> deleted;
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
 
-//         {
-//             SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+            SharedPtr<int> copy = pointer;
 
-//             // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-//             SharedPtr<int> copy = pointer;
+            EXPECT_EQ(copy.Get(), rawPointer);
+            EXPECT_EQ(copy.GetCount(), 2);
 
-//             EXPECT_EQ(copy.Get(), rawPointer);
-//             EXPECT_EQ(copy.GetCount(), 2);
+            EXPECT_EQ(pointer.Get(), rawPointer);
+            EXPECT_EQ(pointer.GetCount(), 2);
+        }
 
-//             EXPECT_EQ(pointer.Get(), rawPointer);
-//             EXPECT_EQ(pointer.GetCount(), 2);
-//         }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+    TEST(SharedPtrTest, AliasingCopyConstructor)
+    {
+        int* rawPointer = Memory::New<int>(45);
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, CopyConstructorHandlesNullptr)
-//     {
-//         std::vector<void*> deleted;
+        {
+            SharedPtr<int> ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
 
-//         {
-//             SharedPtr<int> pointer(nullptr, TrackingDeleter<int>(&deleted));
+            int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
+            SharedPtr<int> pointer(ownedPointer, storedPointer);
 
-//             // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-//             SharedPtr<int> copy = pointer;
+            EXPECT_EQ(pointer.Get(), storedPointer);
+            EXPECT_EQ(pointer.GetCount(), 2);
 
-//             EXPECT_EQ(copy.Get(), nullptr);
-//             EXPECT_EQ(copy.GetCount(), 0);
+            EXPECT_EQ(ownedPointer.Get(), rawPointer);
+            EXPECT_EQ(ownedPointer.GetCount(), 2);
+        }
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 0);
-//         }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//         EXPECT_EQ(deleted.size(), 0);
-//     }
+    TEST(SharedPtrTest, TemplatedCopyConstructor)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, AliasingCopyConstructor)
-//     {
-//         int* rawPointer = Memory::New<int>(45);
-//         std::vector<void*> deleted;
+        {
+            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
 
-//         {
-//             SharedPtr<int> ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
+            // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+            SharedPtr<Base> copy = pointer;
 
-//             int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
-//             SharedPtr<int> pointer(ownedPointer, storedPointer);
+            EXPECT_EQ(copy.Get(), rawPointer);
+            EXPECT_EQ(copy.GetCount(), 2);
 
-//             EXPECT_EQ(pointer.Get(), storedPointer);
-//             EXPECT_EQ(pointer.GetCount(), 2);
+            EXPECT_EQ(pointer.Get(), rawPointer);
+            EXPECT_EQ(pointer.GetCount(), 2);
+        }
 
-//             EXPECT_EQ(ownedPointer.Get(), rawPointer);
-//             EXPECT_EQ(ownedPointer.GetCount(), 2);
-//         }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+    TEST(SharedPtrTest, TemplatedCopyConstructorHandlesNullptr)
+    {
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, TemplatedCopyConstructor)
-//     {
-//         auto* rawPointer = Memory::New<Derived>();
-//         std::vector<void*> deleted;
+        {
+            SharedPtr<Derived> pointer(nullptr, TrackingDeleter<Derived>(&deleted));
 
-//         {
-//             SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+            SharedPtr<Base> copy = pointer;
 
-//             // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-//             SharedPtr<Base> copy = pointer;
+            EXPECT_EQ(copy.Get(), nullptr);
+            EXPECT_EQ(copy.GetCount(), 2);
 
-//             EXPECT_EQ(copy.Get(), rawPointer);
-//             EXPECT_EQ(copy.GetCount(), 2);
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 2);
+        }
 
-//             EXPECT_EQ(pointer.Get(), rawPointer);
-//             EXPECT_EQ(pointer.GetCount(), 2);
-//         }
+        EXPECT_EQ(deleted.size(), 0);
+    }
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+    TEST(SharedPtrTest, MoveConstructor)
+    {
+        std::vector<void*> deleted;
+        int* rawPointer = Memory::New<int>(5);
 
-//     TEST(SharedPtrTest, TemplatedCopyConstructorHandlesNullptr)
-//     {
-//         std::vector<void*> deleted;
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            SharedPtr<int> moved = std::move(pointer);
 
-//         {
-//             SharedPtr<Derived> pointer(nullptr, TrackingDeleter<Derived>(&deleted));
+            EXPECT_EQ(moved.Get(), rawPointer);
+            EXPECT_EQ(moved.GetCount(), 1);
 
-//             // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-//             SharedPtr<Base> copy = pointer;
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 0);
+        }
 
-//             EXPECT_EQ(copy.Get(), nullptr);
-//             EXPECT_EQ(copy.GetCount(), 0);
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 0);
-//         }
+    TEST(SharedPtrTest, TemplatedMoveConstructor)
+    {
+        std::vector<void*> deleted;
+        auto* rawPointer = Memory::New<Derived>();
 
-//         EXPECT_EQ(deleted.size(), 0);
-//     }
+        {
+            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            SharedPtr<Base> moved(std::move(pointer));
 
-//     TEST(SharedPtrTest, MoveConstructor)
-//     {
-//         std::vector<void*> deleted;
-//         int* rawPointer = Memory::New<int>(5);
+            EXPECT_EQ(moved.Get(), rawPointer);
+            EXPECT_EQ(moved.GetCount(), 1);
 
-//         {
-//             SharedPtr<int> pointer(rawPointer);
-//             SharedPtr<int> moved = std::move(pointer);
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 0);
+        }
 
-//             EXPECT_EQ(moved.Get(), rawPointer);
-//             EXPECT_EQ(moved.GetCount(), 1);
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 0);
-//         }
+    TEST(SharedPtrTest, AliasingMoveConstructor)
+    {
+        int* rawPointer = Memory::New<int>(45);
+        std::vector<void*> deleted;
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+        {
+            SharedPtr<int> ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
 
-//     TEST(SharedPtrTest, MoveConstructorHandlesNullptr)
-//     {
-//         std::vector<void*> deleted;
+            int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
+            SharedPtr<int> pointer(std::move(ownedPointer), storedPointer);
 
-//         {
-//             SharedPtr<int> pointer;
-//             SharedPtr<int> moved = std::move(pointer);
+            EXPECT_EQ(pointer.Get(), storedPointer);
+            EXPECT_EQ(pointer.GetCount(), 1);
 
-//             EXPECT_EQ(moved.Get(), nullptr);
-//             EXPECT_EQ(moved.GetCount(), 0);
+            EXPECT_EQ(ownedPointer.Get(), nullptr);
+            EXPECT_EQ(ownedPointer.GetCount(), 0);
+        }
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 0);
-//         }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//         EXPECT_EQ(deleted.size(), 0);
-//     }
+    TEST(SharedPtrTest, WeakPtrConstructor)
+    {
+        int* rawPointer = Memory::New<int>(45);
+        std::vector<void*> deleted;
 
-//     TEST(SharedPtrTest, TemplatedMoveConstructor)
-//     {
-//         std::vector<void*> deleted;
-//         auto* rawPointer = Memory::New<Derived>();
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            WeakPtr<int> weakPointer(pointer);
 
-//         {
-//             SharedPtr<Derived> pointer(rawPointer);
-//             SharedPtr<Base> moved = std::move(pointer);
+            ASSERT_EQ(pointer.GetCount(), 1);
+            ASSERT_EQ(pointer.Get(), rawPointer);
 
-//             EXPECT_EQ(moved.Get(), rawPointer);
-//             EXPECT_EQ(moved.GetCount(), 1);
+            SharedPtr<int> copy(weakPointer);
+            EXPECT_EQ(copy.Get(), rawPointer);
+            EXPECT_EQ(copy.GetCount(), 2);
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 0);
-//         }
+            EXPECT_EQ(pointer.Get(), rawPointer);
+            EXPECT_EQ(pointer.GetCount(), 2);
+        }
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
 
-//     TEST(SharedPtrTest, TemplatedMoveConstructorHandlesNullptr)
-//     {
-//         std::vector<void*> deleted;
+        WeakPtr<int> weakNull;
+        ASSERT_TRUE(weakNull.IsExpired());
 
-//         {
-//             SharedPtr<Derived> pointer;
-//             SharedPtr<Base> moved = std::move(pointer);
+        EXPECT_THROW(
+            SharedPtr<int> pointer(weakNull),
+            BadWeakPtrException);
+    }
 
-//             EXPECT_EQ(moved.Get(), nullptr);
-//             EXPECT_EQ(moved.GetCount(), 0);
+    TEST(SharedPtrTest, ScopedPtrConstructor)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        std::vector<void*> deleted;
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//             EXPECT_EQ(pointer.GetCount(), 0);
-//         }
+        {
+            ScopedPtr<Derived, TrackingDeleter<Derived>> pointer(
+                rawPointer,
+                TrackingDeleter<Derived>(&deleted));
 
-//         EXPECT_EQ(deleted.size(), 0);
-//     }
+            SharedPtr<Base> moved(std::move(pointer));
+            EXPECT_EQ(moved.Get(), rawPointer);
+            EXPECT_EQ(moved.GetCount(), 1);
 
-//     TEST(SharedPtrTest, AliasingMoveConstructor)
-//     {
-//         int* rawPointer = Memory::New<int>(45);
-//         std::vector<void*> deleted;
+            EXPECT_EQ(pointer.Get(), nullptr);
+        }
 
-//         {
-//             SharedPtr<int> ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//             int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
-//             SharedPtr<int> pointer(std::move(ownedPointer), storedPointer);
+    TEST(SharedPtrTest, Destructor)
+    {
+        int* rawPointer = Memory::New<int>(5);
+        std::vector<void*> deleted;
 
-//             EXPECT_EQ(pointer.Get(), storedPointer);
-//             EXPECT_EQ(pointer.GetCount(), 1);
+        {
+            SharedPtr<int> pointer = SharedPtr<int>(
+                rawPointer,
+                TrackingDeleter<int>(&deleted));
 
-//             EXPECT_EQ(ownedPointer.Get(), nullptr);
-//             EXPECT_EQ(ownedPointer.GetCount(), 0);
-//         }
+            KITSUNE_UNUSED(pointer);
+        }
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-//     TEST(SharedPtrTest, WeakPtrConstructor)
-//     {
-//         int* rawPointer = Memory::New<int>(45);
-//         std::vector<void*> deleted;
+    TEST(SharedPtrTest, CopyAssign)
+    {
+        int* rawPointer = Memory::New<int>(4);
+        int* rawPointer2 = Memory::New<int>(5);
 
-//         {
-//             SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
-//             WeakPtr<int> weakPointer(pointer);
+        std::vector<void*> deleted;
 
-//             ASSERT_EQ(pointer.GetCount(), 1);
-//             ASSERT_EQ(pointer.Get(), rawPointer);
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            SharedPtr<int> copy(rawPointer2, TrackingDeleter<int>(&deleted));
 
-//             SharedPtr<int> copy(weakPointer);
-//             EXPECT_EQ(copy.Get(), rawPointer);
-//             EXPECT_EQ(copy.GetCount(), 2);
+            copy = pointer;
 
-//             EXPECT_EQ(pointer.Get(), rawPointer);
-//             EXPECT_EQ(pointer.GetCount(), 2);
-//         }
+            EXPECT_EQ(copy.Get(), rawPointer);
+            EXPECT_EQ(copy.GetCount(), 2);
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
+            EXPECT_EQ(pointer.Get(), rawPointer);
+            EXPECT_EQ(pointer.GetCount(), 2);
+        }
 
-//     TEST(SharedPtrTest, ScopedPtrConstructor)
-//     {
-//         auto* rawPointer = Memory::New<Derived>();
-//         std::vector<void*> deleted;
+        EXPECT_EQ(deleted.size(), 2);
+        EXPECT_EQ(deleted[0], rawPointer2);
+        EXPECT_EQ(deleted[1], rawPointer);
+    }
 
-//         {
-//             ScopedPtr<Derived, TrackingDeleter<Derived>> pointer(
-//                 rawPointer,
-//                 TrackingDeleter<Derived>(&deleted));
+    TEST(SharedPtrTest, TemplatedCopyAssign)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        auto* rawPointer2 = Memory::New<Derived>();
 
-//             SharedPtr<Base> moved(std::move(pointer));
-//             EXPECT_EQ(moved.Get(), rawPointer);
-//             EXPECT_EQ(moved.GetCount(), 1);
+        std::vector<void*> deleted;
 
-//             EXPECT_EQ(pointer.Get(), nullptr);
-//         }
+        {
+            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            SharedPtr<Base> copy(rawPointer2, TrackingDeleter<Derived>(&deleted));
 
-//         EXPECT_EQ(deleted.size(), 1);
-//         EXPECT_EQ(deleted[0], rawPointer);
-//     }
-// }
+            copy = pointer;
 
+            EXPECT_EQ(copy.Get(), rawPointer);
+            EXPECT_EQ(copy.GetCount(), 2);
 
+            EXPECT_EQ(pointer.Get(), rawPointer);
+            EXPECT_EQ(pointer.GetCount(), 2);
+        }
 
+        EXPECT_EQ(deleted.size(), 2);
+        EXPECT_EQ(deleted[0], rawPointer2);
+        EXPECT_EQ(deleted[1], rawPointer);
+    }
 
+    TEST(SharedPtrTest, MoveAssign)
+    {
+        std::vector<void*> deleted;
+        int* rawPointer = Memory::New<int>(5);
+        int* rawPointer2 = Memory::New<int>(5);
 
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            SharedPtr<int> moved(rawPointer2, TrackingDeleter<int>(&deleted));
 
+            moved = std::move(pointer);
 
+            EXPECT_EQ(moved.Get(), rawPointer);
+            EXPECT_EQ(moved.GetCount(), 1);
 
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 0);
+        }
 
+        EXPECT_EQ(deleted.size(), 2);
+        EXPECT_EQ(deleted[0], rawPointer2);
+        EXPECT_EQ(deleted[1], rawPointer);
+    }
 
+    TEST(SharedPtrTest, TemplatedMoveAssign)
+    {
+        std::vector<void*> deleted;
+        auto* rawPointer = Memory::New<Derived>();
+        auto* rawPointer2 = Memory::New<Derived>();
 
+        {
+            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            SharedPtr<Base> moved(rawPointer2, TrackingDeleter<Base>(&deleted));
 
+            moved = std::move(pointer);
 
+            EXPECT_EQ(moved.Get(), rawPointer);
+            EXPECT_EQ(moved.GetCount(), 1);
 
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 0);
+        }
 
-// // TEST(SharedPtrTest, Destructor)
-// // {
-// //     int* rawPointer = Memory::New<int>(5);
-// //     int* deleted = nullptr;
+        EXPECT_EQ(deleted.size(), 2);
+        EXPECT_EQ(deleted[0], rawPointer2);
+        EXPECT_EQ(deleted[1], rawPointer);
+    }
 
-// //     {
-// //         TrackingDeleter<int> deleter = TrackingDeleter<int>(&deleted);
-// //         SharedPtr<int> pointer = SharedPtr<int>(rawPointer, std::move(deleter));
+    TEST(SharedPtrTest, ScopedPtrAssign)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        auto* rawPointer2 = Memory::New<Base>();
 
-// //         KITSUNE_UNUSED(pointer);
-// //     }
+        std::vector<void*> deleted;
 
-// //     EXPECT_EQ(rawPointer, deleted);
-// // }
+        {
+            ScopedPtr<Derived, TrackingDeleter<Derived>> pointer(
+                rawPointer,
+                TrackingDeleter<Derived>(&deleted));
 
-// // TEST(SharedPtrTest, CopyAssign)
-// // {
-// //     int* rawPointer1 = Memory::New<int>(5);
-// //     int* rawPointer2 = Memory::New<int>(10);
+            SharedPtr<Base> moved(rawPointer2, TrackingDeleter<Base>(&deleted));
+            moved = std::move(pointer);
 
-// //     int* deleted = nullptr;
-// //     int* deleted2 = nullptr;
+            EXPECT_EQ(moved.Get(), rawPointer);
+            EXPECT_EQ(moved.GetCount(), 1);
 
-// //     {
-// //         auto pointer = SharedPtr<int>(rawPointer1, TrackingDeleter<int>(&deleted2));
-// //         auto copy = SharedPtr<int>(rawPointer2, TrackingDeleter<int>(&deleted));
+            EXPECT_EQ(pointer.Get(), nullptr);
+        }
 
-// //         copy = pointer;
+        EXPECT_EQ(deleted.size(), 2);
+        EXPECT_EQ(deleted[0], rawPointer2);
+        EXPECT_EQ(deleted[1], rawPointer);
+    }
 
-// //         EXPECT_EQ(deleted, rawPointer2);
-// //         EXPECT_EQ(copy.Get(), pointer.Get());
-// //     }
+    TEST(SharedPtrTest, Reset)
+    {
+        std::vector<void*> deleted;
+        int* rawPointer = Memory::New<int>();
 
-// //     EXPECT_EQ(deleted2, rawPointer1);
-// // }
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            ASSERT_EQ(pointer.Get(), rawPointer);
 
-// // TEST(SharedPtrTest, TemplateCopyAssign)
-// // {
-// //     Derived* rawPointer1 = Memory::New<Derived>();
-// //     Base* rawPointer2 = Memory::New<Base>();
+            pointer.Reset();
+            EXPECT_EQ(pointer.Get(), nullptr);
+            EXPECT_EQ(pointer.GetCount(), 0);
+        }
 
-// //     Base* deleted = nullptr;
-// //     Derived* deleted2 = nullptr;
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-// //     {
-// //         auto pointer = SharedPtr<Derived>(rawPointer1, TrackingDeleter<Derived>(&deleted2));
-// //         auto copy = SharedPtr<Base>(rawPointer2, TrackingDeleter<Base>(&deleted));
+    TEST(SharedPtrTest, ResetPointer)
+    {
+        std::vector<void*> deleted;
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// //         copy = pointer;
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            ASSERT_EQ(pointer.Get(), rawPointer);
 
-// //         EXPECT_EQ(deleted, rawPointer2);
-// //         EXPECT_EQ(copy.Get(), pointer.Get());
-// //     }
+            pointer.Reset(rawPointer2);
+            EXPECT_EQ(pointer.Get(), rawPointer2);
+            EXPECT_EQ(pointer.GetCount(), 1);
+        }
 
-// //     EXPECT_EQ(deleted2, rawPointer1);
-// // }
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
+    }
 
-// // TEST(SharedPtrTest, MoveAssign)
-// // {
-// //     int* rawPointer1 = Memory::New<int>(5);
-// //     int* rawPointer2 = Memory::New<int>(10);
+    TEST(SharedPtrTest, ResetPointerDeleterAndAllocator)
+    {
+        std::vector<void*> deleted;
+        std::vector<void*> deleted2;
 
-// //     int* deleted = nullptr;
-// //     int* deleted2 = nullptr;
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// //     {
-// //         auto pointer = SharedPtr<int>(rawPointer1, TrackingDeleter<int>(&deleted2));
-// //         auto move = SharedPtr<int>(rawPointer2, TrackingDeleter<int>(&deleted));
+        {
+            SharedPtr<int> pointer(
+                rawPointer,
+                TrackingDeleter<int>(&deleted),
+                TrackingAllocator());
 
-// //         move = std::move(pointer);
+            ASSERT_EQ(pointer.Get(), rawPointer);
 
-// //         EXPECT_EQ(deleted, rawPointer2);
-// //         EXPECT_EQ(move.Get(), rawPointer1);
-// //         EXPECT_EQ(pointer.GetCount(), 0);
-// //     }
+            pointer.Reset(
+                rawPointer2,
+                TrackingDeleter<int>(&deleted2),
+                TrackingAllocator());
 
-// //     EXPECT_EQ(deleted2, rawPointer1);
-// // }
+            EXPECT_EQ(pointer.Get(), rawPointer2);
+            EXPECT_EQ(pointer.GetCount(), 1);
+        }
 
-// // TEST(SharedPtrTest, TemplatedMoveAssign)
-// // {
-// //     Derived* rawPointer1 = Memory::New<Derived>();
-// //     Base* rawPointer2 = Memory::New<Base>();
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
 
-// //     Base* deleted = nullptr;
-// //     Derived* deleted2 = nullptr;
+        EXPECT_EQ(deleted2.size(), 1);
+        EXPECT_EQ(deleted2[0], rawPointer2);
+    }
 
-// //     {
-// //         auto pointer = SharedPtr<Derived>(rawPointer1, TrackingDeleter<Derived>(&deleted2));
-// //         auto move = SharedPtr<Base>(rawPointer2, TrackingDeleter<Base>(&deleted));
+    TEST(SharedPtrTest, ResetPointerAndDeleter)
+    {
+        std::vector<void*> deleted;
+        std::vector<void*> deleted2;
 
-// //         move = std::move(pointer);
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// //         EXPECT_EQ(deleted, rawPointer2);
-// //         EXPECT_EQ(move.Get(), rawPointer1);
-// //         EXPECT_EQ(pointer.GetCount(), 0);
-// //     }
+        {
+            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            ASSERT_EQ(pointer.Get(), rawPointer);
 
-// //     EXPECT_EQ(deleted2, rawPointer1);
-// // }
+            pointer.Reset(rawPointer2, TrackingDeleter<int>(&deleted2));
+            EXPECT_EQ(pointer.Get(), rawPointer2);
+            EXPECT_EQ(pointer.GetCount(), 1);
+        }
 
-// // TEST(SharedPtrTest, ScopedPtrAssign)
-// // {
-// //     Derived* rawPointer1 = Memory::New<Derived>();
-// //     Base* rawPointer2 = Memory::New<Base>();
+        EXPECT_EQ(deleted.size(), 1);
+        EXPECT_EQ(deleted[0], rawPointer);
 
-// //     Base* deleted = nullptr;
-// //     Derived* deleted2 = nullptr;
+        EXPECT_EQ(deleted2.size(), 1);
+        EXPECT_EQ(deleted2[0], rawPointer2);
+    }
 
-// //     {
-// //         ScopedPtr<Derived, TrackingDeleter<Derived>> pointer(
-// //             rawPointer1, TrackingDeleter<Derived>(&deleted2));
+    TEST(SharedPtrTest, Dereference)
+    {
+        int* rawPointer = Memory::New<int>();
+        SharedPtr<int> pointer(rawPointer);
 
-// //         auto move = SharedPtr<Base>(rawPointer2, TrackingDeleter<Base>(&deleted));
-// //         move = std::move(pointer);
+        EXPECT_EQ(&*pointer, rawPointer);
+    }
 
-// //         EXPECT_EQ(deleted, rawPointer2);
-// //         EXPECT_EQ(move.Get(), rawPointer1);
-// //         EXPECT_EQ(pointer.Get(), nullptr);
-// //     }
+    TEST(SharedPtrTest, Boolean)
+    {
+        int* rawPointer = Memory::New<int>();
 
-// //     EXPECT_EQ(deleted2, rawPointer1);
-// // }
+        SharedPtr<int> pointer(rawPointer);
+        SharedPtr<int> empty;
 
-// // TEST(SharedPtrTest, Dereference)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>(5);
-// //     EXPECT_EQ(&*pointer, pointer.Get());
-// // }
+        EXPECT_TRUE((bool)pointer);
+        EXPECT_FALSE((bool)empty);
+    }
 
-// // TEST(SharedPtrTest, Boolean)
-// // {
-// //     auto pointer = MakeShared<int>(5);
-// //     auto empty = SharedPtr<int>();
+    /* SharedPtr<T>::Get() and SharedPtr<T>::GetCount() are assumed to work. */
 
-// //     EXPECT_TRUE((bool)pointer);
-// //     EXPECT_FALSE((bool)empty);
-// // }
+    TEST(SharedPtrTest, Swap)
+    {
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// // TEST(SharedPtrTest, GetCount)
-// // {
-// //     auto ptr1 = MakeShared<int>(2);
-// //     auto pointer2 = ptr1;
-// //     auto ptr3 = pointer2;
-// //     auto ptr4 = ptr3;
+        SharedPtr<int> pointer(rawPointer);
+        SharedPtr<int> pointer2(rawPointer2);
 
-// //     EXPECT_EQ(ptr1.GetCount(), 4);
-// // }
+        Usize count = pointer.GetCount();
+        Usize count2 = pointer2.GetCount();
 
-// // TEST(SharedPtrTest, SwapMemberFunction)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>(5);
-// //     SharedPtr<int> pointer2 = MakeShared<int>(10);
+        pointer.Swap(pointer2);
 
-// //     int* rawPointer = pointer.Get();
-// //     int* rawPointer2 = pointer2.Get();
+        EXPECT_EQ(pointer.Get(), rawPointer2);
+        EXPECT_EQ(pointer2.Get(), rawPointer);
 
-// //     Usize count = pointer.GetCount();
-// //     Usize count2 = pointer2.GetCount();
+        EXPECT_EQ(pointer.GetCount(), count2);
+        EXPECT_EQ(pointer2.GetCount(), count);
+    }
 
-// //     pointer.Swap(pointer2);
+    TEST(SharedPtrTest, Comparisons)
+    {
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// //     EXPECT_EQ(pointer.Get(), rawPointer2);
-// //     EXPECT_EQ(pointer2.Get(), rawPointer);
+        SharedPtr<int> pointer(rawPointer);
+        SharedPtr<int> pointer2(rawPointer2);
 
-// //     EXPECT_EQ(pointer.GetCount(), count2);
-// //     EXPECT_EQ(pointer2.GetCount(), count);
-// // }
+        EXPECT_EQ(pointer == pointer2, false);
+        EXPECT_EQ(pointer == pointer, true);
+        EXPECT_EQ(pointer2 == pointer2, true);
 
-// // TEST(SharedPtrTest, Comparison)
-// // {
-// //     int* memory1 = Memory::New<int>();
-// //     int* memory2 = Memory::New<int>();
-// //     int* memory3 = Memory::New<int>();
+        /* operator!= is auto-generated by the compiler if operator== is defined. */
 
-// //     std::vector<SharedPtr<int>> array = {
-// //         SharedPtr<int>(memory1),
-// //         SharedPtr<int>(memory2),
-// //         SharedPtr<int>(memory3)
-// //     };
+        EXPECT_EQ(pointer > pointer, pointer.Get() > pointer.Get());
+        EXPECT_EQ(pointer < pointer, pointer.Get() < pointer.Get());
+        EXPECT_EQ(pointer >= pointer, pointer.Get() >= pointer.Get());
+        EXPECT_EQ(pointer <= pointer, pointer.Get() <= pointer.Get());
 
-// //     for (auto& pointer1 : array)
-// //     {
-// //         for (auto& pointer2 : array)
-// //         {
-// //             EXPECT_EQ(pointer1 == pointer2,
-// //                       pointer1.Get() == pointer2.Get());
+        EXPECT_EQ(pointer > pointer2, pointer.Get() > pointer2.Get());
+        EXPECT_EQ(pointer < pointer2, pointer.Get() < pointer2.Get());
+        EXPECT_EQ(pointer >= pointer2, pointer.Get() >= pointer2.Get());
+        EXPECT_EQ(pointer <= pointer2, pointer.Get() <= pointer2.Get());
+    }
 
-// //             EXPECT_EQ(pointer1 != pointer2,
-// //                       pointer1.Get() != pointer2.Get());
+    TEST(SharedPtrTest, NullptrComparisons)
+    {
+        int* null = nullptr;
+        int* rawPointer = Memory::New<int>();
 
-// //             EXPECT_EQ(pointer1 > pointer2,
-// //                       pointer1.Get() > pointer2.Get());
+        SharedPtr<int> pointer(rawPointer);
 
-// //             EXPECT_EQ(pointer1 < pointer2,
-// //                       pointer1.Get() < pointer2.Get());
+        /* operator!= is auto-generated by the compiler if operator== is defined. */
 
-// //             EXPECT_EQ(pointer1 >= pointer2,
-// //                       pointer1.Get() >= pointer2.Get());
+        EXPECT_EQ(pointer == nullptr, pointer.Get() == null);
+        EXPECT_EQ(pointer < nullptr, pointer.Get() < null);
+        EXPECT_EQ(pointer > nullptr, pointer.Get() > null);
+        EXPECT_EQ(pointer <= nullptr, pointer.Get() <= null);
+        EXPECT_EQ(pointer >= nullptr, pointer.Get() >= null);
 
-// //             EXPECT_EQ(pointer1 <= pointer2,
-// //                       pointer1.Get() <= pointer2.Get());
-// //         }
-// //     }
+        EXPECT_EQ(nullptr == pointer, null == pointer.Get());
+        EXPECT_EQ(nullptr < pointer, null < pointer.Get());
+        EXPECT_EQ(nullptr > pointer, null > pointer.Get());
+        EXPECT_EQ(nullptr <= pointer, null <= pointer.Get());
+        EXPECT_EQ(nullptr >= pointer, null >= pointer.Get());
+    }
 
-// //     int* null = nullptr;
-// //     SharedPtr<int> pointer = MakeShared<int>(234);
+    TEST(WeakPtrTest, DefaultConstructor)
+    {
+        WeakPtr<int> pointer;
+        EXPECT_EQ(pointer.GetCount(), 0);
+        EXPECT_EQ(pointer.Lock(), SharedPtr<int>());
+    }
 
-// //     EXPECT_EQ(pointer == nullptr, pointer.Get() == null);
-// //     EXPECT_EQ(pointer != nullptr, pointer.Get() != null);
-// //     EXPECT_EQ(pointer < nullptr, pointer.Get() < null);
-// //     EXPECT_EQ(pointer > nullptr, pointer.Get() > null);
-// //     EXPECT_EQ(pointer <= nullptr, pointer.Get() <= null);
-// //     EXPECT_EQ(pointer >= nullptr, pointer.Get() >= null);
+    TEST(WeakPtrTest, SharedPtrConstructor)
+    {
+        int* rawPointer = Memory::New<int>();
 
-// //     EXPECT_EQ(nullptr == pointer, null == pointer.Get());
-// //     EXPECT_EQ(nullptr != pointer, null != pointer.Get());
-// //     EXPECT_EQ(nullptr < pointer, null < pointer.Get());
-// //     EXPECT_EQ(nullptr > pointer, null > pointer.Get());
-// //     EXPECT_EQ(nullptr <= pointer, null <= pointer.Get());
-// //     EXPECT_EQ(nullptr >= pointer, null >= pointer.Get());
-// // }
+        SharedPtr<int> null;
+        SharedPtr<int> pointer(rawPointer);
 
-// // TEST(WeakPtrTests, DefaultConstructor)
-// // {
-// //     WeakPtr<int> pointer;
-// //     EXPECT_EQ(pointer.GetCount(), 0);
-// // }
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+        SharedPtr<int> copy = pointer;
+        KITSUNE_UNUSED(copy);
 
-// // TEST(WeakPtrTests, SharedPtrConstructor)
-// // {
-// //     SharedPtr<int> null;
-// //     SharedPtr<int> pointer = MakeShared<int>(5);
+        WeakPtr<int> nullWeakPointer = null;
+        EXPECT_EQ(nullWeakPointer.GetCount(), null.GetCount());
+        EXPECT_EQ(nullWeakPointer.Lock(), null);
 
-// //     WeakPtr<int> weakNull = null;
-// //     WeakPtr<int> weak = pointer;
+        WeakPtr<int> weakPointer = pointer;
+        EXPECT_EQ(weakPointer.GetCount(), pointer.GetCount());
+        EXPECT_EQ(weakPointer.Lock(), pointer);
+    }
 
-// //     EXPECT_EQ(weakNull.GetCount(), 0);
-// //     EXPECT_EQ(weak.GetCount(), 1);
-// //     EXPECT_EQ(weak.Lock(), pointer);
-// // }
+    TEST(WeakPtrTest, CopyConstructor)
+    {
+        int* rawPointer = Memory::New<int>(5);
+        SharedPtr<int> pointer(rawPointer);
 
-// // TEST(WeakPtrTests, CopyConstructor)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>(5);
+        WeakPtr<int> weakPointer = pointer;
+        ASSERT_EQ(weakPointer.GetCount(), 1);
+        ASSERT_EQ(weakPointer.Lock(), pointer);
 
-// //     WeakPtr<int> weak = pointer;
-// //     WeakPtr<int> copy = weak;
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+        WeakPtr<int> weakCopy = weakPointer;
+        EXPECT_EQ(weakCopy.GetCount(), 1);
+        EXPECT_EQ(weakCopy.Lock(), pointer);
+    }
 
-// //     EXPECT_EQ(copy.GetCount(), 1);
-// //     EXPECT_EQ(weak.GetCount(), 1);
+    TEST(WeakPtrTest, TemplatedCopyConstructor)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        SharedPtr<Derived> pointer(rawPointer);
 
-// //     EXPECT_EQ(weak.Lock(), pointer);
-// //     EXPECT_EQ(copy.Lock(), pointer);
-// // }
+        WeakPtr<Derived> weakPointer = pointer;
+        ASSERT_EQ(weakPointer.GetCount(), 1);
+        ASSERT_EQ(weakPointer.Lock(), pointer);
 
-// // TEST(WeakPtrTests, TemplatedCopyConstructor)
-// // {
-// //     SharedPtr<Derived> pointer = MakeShared<Derived>();
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+        WeakPtr<Base> weakCopy = weakPointer;
+        EXPECT_EQ(weakCopy.GetCount(), 1);
+        EXPECT_EQ(weakCopy.Lock(), pointer);
+    }
 
-// //     WeakPtr<Derived> weak = pointer;
-// //     WeakPtr<Base> copy = weak;
+    TEST(WeakPtrTest, MoveConstructor)
+    {
+        int* rawPointer = Memory::New<int>();
+        SharedPtr<int> pointer(rawPointer);
 
-// //     EXPECT_EQ(copy.GetCount(), 1);
-// //     EXPECT_EQ(weak.GetCount(), 1);
+        WeakPtr<int> weak = pointer;
+        ASSERT_EQ(weak.GetCount(), 1);
+        ASSERT_EQ(weak.Lock(), pointer);
 
-// //     EXPECT_EQ(weak.Lock(), pointer);
-// //     EXPECT_EQ(copy.Lock(), pointer);
-// // }
+        WeakPtr<int> move = std::move(weak);
+        EXPECT_EQ(move.GetCount(), 1);
+        EXPECT_EQ(weak.GetCount(), 0);
 
-// // TEST(WeakPtrTests, MoveConstructor)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>();
+        EXPECT_EQ(move.Lock(), pointer);
+        EXPECT_EQ(weak.Lock(), SharedPtr<int>());
+    }
 
-// //     WeakPtr<int> weak = pointer;
-// //     WeakPtr<int> move = std::move(weak);
+    TEST(WeakPtrTest, TemplatedMoveConstructor)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        SharedPtr<Derived> pointer(rawPointer);
 
-// //     EXPECT_EQ(move.GetCount(), 1);
-// //     EXPECT_EQ(weak.GetCount(), 0);
+        WeakPtr<Derived> weak = pointer;
+        ASSERT_EQ(weak.GetCount(), 1);
+        ASSERT_EQ(weak.Lock(), pointer);
 
-// //     EXPECT_EQ(move.Lock(), pointer);
-// //     EXPECT_EQ(weak.Lock(), nullptr);
-// // }
+        WeakPtr<Base> move = std::move(weak);
+        EXPECT_EQ(move.GetCount(), 1);
+        EXPECT_EQ(weak.GetCount(), 0);
 
-// // TEST(WeakPtrTests, TemplatedMoveConstructor)
-// // {
-// //     SharedPtr<Derived> pointer = MakeShared<Derived>();
+        EXPECT_EQ(move.Lock(), pointer);
+        EXPECT_EQ(weak.Lock(), SharedPtr<Base>());
+    }
 
-// //     WeakPtr<Derived> weak = pointer;
-// //     WeakPtr<Base> move = std::move(weak);
+    TEST(WeakPtrTest, Destructor)
+    {
+        // No way of testing the destructor.
+        EXPECT_TRUE(true);
+    }
 
-// //     EXPECT_EQ(move.GetCount(), 1);
-// //     EXPECT_EQ(weak.GetCount(), 0);
+    TEST(WeakPtrTest, SharedPtrAssign)
+    {
+        WeakPtr<Base> weak;
 
-// //     EXPECT_EQ(move.Lock(), pointer);
-// //     EXPECT_EQ(weak.Lock(), nullptr);
-// // }
+        {
+            auto* rawPointer = Memory::New<Derived>();
+            SharedPtr<Derived> pointer(rawPointer);
 
-// // TEST(WeakPtrTests, SharedPtrAssign)
-// // {
-// //     WeakPtr<Base> weak;
+            weak = pointer;
 
-// //     {
-// //         SharedPtr<Derived> pointer = MakeShared<Derived>();
-// //         weak = pointer;
+            EXPECT_EQ(weak.GetCount(), 1);
+            EXPECT_EQ(weak.Lock(), pointer);
+        }
 
-// //         EXPECT_EQ(weak.GetCount(), 1);
-// //         EXPECT_EQ(weak.Lock(), pointer);
-// //     }
+        EXPECT_EQ(weak.GetCount(), 0);
+        EXPECT_EQ(weak.Lock(), nullptr);
+    }
 
-// //     EXPECT_EQ(weak.GetCount(), 0);
-// //     EXPECT_EQ(weak.Lock(), nullptr);
-// // }
+    TEST(WeakPtrTest, CopyAssign)
+    {
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// // TEST(WeakPtrTests, CopyAssign)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>();
-// //     SharedPtr<int> pointer2 = MakeShared<int>();
+        SharedPtr<int> pointer(rawPointer);
+        SharedPtr<int> pointer2(rawPointer2);
 
-// //     WeakPtr<int> weak = pointer;
-// //     WeakPtr<int> copy = pointer2;
+        WeakPtr<int> weak = pointer;
+        WeakPtr<int> copy = pointer2;
 
-// //     copy = weak;
+        copy = weak;
 
-// //     EXPECT_EQ(weak.GetCount(), 1);
-// //     EXPECT_EQ(copy.GetCount(), 1);
+        EXPECT_EQ(weak.GetCount(), 1);
+        EXPECT_EQ(copy.GetCount(), 1);
 
-// //     EXPECT_EQ(copy.Lock(), pointer);
-// // }
+        EXPECT_EQ(copy.Lock(), pointer);
+    }
 
-// // TEST(WeakPtrTests, TemplatedCopyAssign)
-// // {
-// //     SharedPtr<Derived> pointer = MakeShared<Derived>();
-// //     SharedPtr<Base> pointer2 = MakeShared<Base>();
+    TEST(WeakPtrTest, TemplatedCopyAssign)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        auto* rawPointer2 = Memory::New<Derived>();
 
-// //     WeakPtr<Derived> weak = pointer;
-// //     WeakPtr<Base> copy = pointer2;
+        SharedPtr<Derived> pointer(rawPointer);
+        SharedPtr<Base> pointer2(rawPointer2);
 
-// //     copy = weak;
+        WeakPtr<Derived> weak = pointer;
+        WeakPtr<Base> copy = pointer2;
 
-// //     EXPECT_EQ(weak.GetCount(), 1);
-// //     EXPECT_EQ(copy.GetCount(), 1);
+        copy = weak;
 
-// //     EXPECT_EQ(copy.Lock(), pointer);
-// // }
+        EXPECT_EQ(weak.GetCount(), 1);
+        EXPECT_EQ(copy.GetCount(), 1);
 
-// // TEST(WeakPtrTests, MoveAssign)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>();
-// //     SharedPtr<int> pointer2 = MakeShared<int>();
+        EXPECT_EQ(copy.Lock(), pointer);
+    }
 
-// //     WeakPtr<int> weak = pointer;
-// //     WeakPtr<int> move = pointer2;
+    TEST(WeakPtrTest, MoveAssign)
+    {
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// //     move = std::move(weak);
+        SharedPtr<int> pointer(rawPointer);
+        SharedPtr<int> pointer2(rawPointer2);
 
-// //     EXPECT_EQ(weak.GetCount(), 0);
-// //     EXPECT_EQ(move.GetCount(), 1);
+        WeakPtr<int> weak = pointer;
+        WeakPtr<int> move = pointer2;
 
-// //     EXPECT_EQ(move.Lock(), pointer);
-// //     EXPECT_EQ(weak.Lock(), nullptr);
-// // }
+        move = std::move(weak);
 
-// // TEST(WeakPtrTests, Reset)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>();
-// //     WeakPtr<int> weak = pointer;
+        EXPECT_EQ(weak.GetCount(), 0);
+        EXPECT_EQ(move.GetCount(), 1);
 
-// //     weak.Reset();
+        EXPECT_EQ(move.Lock(), pointer);
+        EXPECT_EQ(weak.Lock(), nullptr);
+    }
 
-// //     EXPECT_EQ(weak.GetCount(), 0);
-// // }
+    TEST(WeakPtrTest, TemplatedMoveAssign)
+    {
+        auto* rawPointer = Memory::New<Derived>();
+        auto* rawPointer2 = Memory::New<Derived>();
 
-// // TEST(WeakPtrTests, GetCount)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>();
-// //     WeakPtr<int> weak = pointer;
+        SharedPtr<Derived> pointer(rawPointer);
+        SharedPtr<Base> pointer2(rawPointer2);
 
-// //     EXPECT_EQ(weak.GetCount(), 1);
+        WeakPtr<Derived> weak = pointer;
+        WeakPtr<Base> move = pointer2;
 
-// //     SharedPtr<int> copy = pointer;
-// //     EXPECT_EQ(weak.GetCount(), 2);
-// // }
+        move = std::move(weak);
 
-// // TEST(WeakPtrTests, IsExpired)
-// // {
-// //     WeakPtr<Base> weak;
-// //     WeakPtr<Base> null;
+        EXPECT_EQ(weak.GetCount(), 0);
+        EXPECT_EQ(move.GetCount(), 1);
 
-// //     {
-// //         SharedPtr<Derived> pointer = MakeShared<Derived>();
-// //         weak = pointer;
-// //     }
+        EXPECT_EQ(move.Lock(), pointer);
+        EXPECT_EQ(weak.Lock(), nullptr);
+    }
 
-// //     EXPECT_TRUE(weak.IsExpired());
-// //     EXPECT_TRUE(null.IsExpired());
-// // }
+    TEST(WeakPtrTest, Reset)
+    {
+        SharedPtr<int> pointer = MakeShared<int>();
+        WeakPtr<int> weak = pointer;
 
-// // TEST(WeakPtrTests, Lock)
-// // {
-// //     WeakPtr<Base> weak;
+        weak.Reset();
+        EXPECT_EQ(weak.GetCount(), 0);
+        EXPECT_EQ(weak.Lock(), SharedPtr<int>());
+    }
 
-// //     {
-// //         SharedPtr<Derived> pointer = MakeShared<Derived>();
-// //         weak = pointer;
+    /* WeakPtr<T>::GetCount() is assumed to work. */
 
-// //         EXPECT_EQ(weak.Lock(), pointer);
-// //     }
+    TEST(WeakPtrTest, IsExpired)
+    {
+        WeakPtr<Base> weakPointer;
+        WeakPtr<Base> null;
 
-// //     EXPECT_EQ(weak.Lock(), nullptr);
-// // }
+        SharedPtr<Derived> pointer2(Memory::New<Derived>());
+        WeakPtr<Base> weakPointer2 = pointer2;
 
-// // TEST(WeakPtrTests, SwapMemberFn)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>(5);
-// //     SharedPtr<int> pointer2 = MakeShared<int>(10);
+        {
+            auto* rawPointer = Memory::New<Derived>();
+            SharedPtr<Derived> pointer(rawPointer);
 
-// //     WeakPtr<int> weakPtr = pointer;
-// //     WeakPtr<int> weakPointer2 = pointer2;
+            weakPointer = pointer;
+        }
 
-// //     int* rawPointer = pointer.Get();
-// //     int* rawPointer2 = pointer2.Get();
+        EXPECT_TRUE(weakPointer.IsExpired());
+        EXPECT_TRUE(null.IsExpired());
 
-// //     weakPtr.Swap(weakPointer2);
+        EXPECT_FALSE(weakPointer2.IsExpired());
+    }
 
-// //     EXPECT_EQ(weakPtr.Lock().Get(), rawPointer2);
-// //     EXPECT_EQ(weakPointer2.Lock().Get(), rawPointer);
-// // }
+    TEST(WeakPtrTest, Swap)
+    {
+        int* rawPointer = Memory::New<int>();
+        int* rawPointer2 = Memory::New<int>();
 
-// // TEST(WeakPtrTests, SwapAlgorithm)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>(5);
-// //     SharedPtr<int> pointer2 = MakeShared<int>(10);
+        SharedPtr<int> pointer(rawPointer);
+        SharedPtr<int> pointer2(rawPointer2);
 
-// //     WeakPtr<int> weakPtr = pointer;
-// //     WeakPtr<int> weakPointer2 = pointer2;
+        WeakPtr<int> weakPtr = pointer;
+        WeakPtr<int> weakPointer2 = pointer2;
 
-// //     int* rawPointer = pointer.Get();
-// //     int* rawPointer2 = pointer2.Get();
+        weakPtr.Swap(weakPointer2);
 
-// //     Swap(weakPtr, weakPointer2);
+        EXPECT_EQ(weakPtr.Lock().Get(), rawPointer2);
+        EXPECT_EQ(weakPointer2.Lock().Get(), rawPointer);
+    }
 
-// //     EXPECT_EQ(weakPtr.Lock().Get(), rawPointer2);
-// //     EXPECT_EQ(weakPointer2.Lock().Get(), rawPointer);
-// // }
+    TEST(SharedPtrTest, StaticPointerCast)
+    {
+        SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
+        SharedPtr<int> intPointer = StaticPointerCast<int>(voidPointer);
 
-// // TEST(SharedPtrTest, StaticPointerCast)
-// // {
-// //     SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
-// //     SharedPtr<int> intPointer = StaticPointerCast<int>(voidPointer);
+        EXPECT_EQ((void*)intPointer.Get(), voidPointer.Get());
 
-// //     EXPECT_EQ((void*)intPointer.Get(), voidPointer.Get());
+        EXPECT_EQ(intPointer.GetCount(), 2);
+        EXPECT_EQ(voidPointer.GetCount(), 2);
+    }
 
-// //     EXPECT_EQ(intPointer.GetCount(), 2);
-// //     EXPECT_EQ(voidPointer.GetCount(), 2);
-// // }
+    TEST(SharedPtrTest, MoveStaticPointerCast)
+    {
+        SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
+        void* rawPointer = voidPointer.Get();
 
-// // TEST(SharedPtrTest, MoveStaticPointerCast)
-// // {
-// //     SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
-// //     void* rawPointer = voidPointer.Get();
+        SharedPtr<int> intPointer = StaticPointerCast<int>(Move(voidPointer));
+        EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
-// //     SharedPtr<int> intPointer = StaticPointerCast<int>(Move(voidPointer));
-// //     EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+        EXPECT_EQ(intPointer.GetCount(), 1);
+        EXPECT_EQ(voidPointer.GetCount(), 0);
+    }
 
-// //     EXPECT_EQ(intPointer.GetCount(), 1);
-// //     EXPECT_EQ(voidPointer.GetCount(), 0);
-// // }
+    TEST(SharedPtrTest, DynamicPointerCast)
+    {
+        SharedPtr<Base> pointer = MakeShared<Derived>();
+        SharedPtr<Derived> intPointer = DynamicPointerCast<Derived>(pointer);
 
-// // TEST(SharedPtrTest, DynamicPointerCast)
-// // {
-// //     SharedPtr<Base> pointer = MakeShared<Derived>();
-// //     SharedPtr<Derived> intPointer = DynamicPointerCast<Derived>(pointer);
+        EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
 
-// //     EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
+        EXPECT_EQ(intPointer.GetCount(), 2);
+        EXPECT_EQ(pointer.GetCount(), 2);
+    }
 
-// //     EXPECT_EQ(intPointer.GetCount(), 2);
-// //     EXPECT_EQ(pointer.GetCount(), 2);
-// // }
+    TEST(SharedPtrTest, MoveDynamicPointerCast)
+    {
+        SharedPtr<Base> pointer = MakeShared<Derived>();
+        Base* rawPointer = pointer.Get();
 
-// // TEST(SharedPtrTest, MoveDynamicPointerCast)
-// // {
-// //     SharedPtr<Base> pointer = MakeShared<Derived>();
-// //     Base* rawPointer = pointer.Get();
+        SharedPtr<Derived> intPointer = DynamicPointerCast<Derived>(Move(pointer));
+        EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
-// //     SharedPtr<Derived> intPointer = DynamicPointerCast<Derived>(Move(pointer));
-// //     EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+        EXPECT_EQ(intPointer.GetCount(), 1);
+        EXPECT_EQ(pointer.GetCount(), 0);
+    }
 
-// //     EXPECT_EQ(intPointer.GetCount(), 1);
-// //     EXPECT_EQ(pointer.GetCount(), 0);
-// // }
+    TEST(SharedPtrTest, ConstPointerCast)
+    {
+        SharedPtr<const int> pointer = MakeShared<int>();
+        SharedPtr<int> intPointer = ConstPointerCast<int>(pointer);
 
-// // TEST(SharedPtrTest, ConstPointerCast)
-// // {
-// //     SharedPtr<const int> pointer = MakeShared<int>();
-// //     SharedPtr<int> intPointer = ConstPointerCast<int>(pointer);
+        EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
 
-// //     EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
+        EXPECT_EQ(intPointer.GetCount(), 2);
+        EXPECT_EQ(pointer.GetCount(), 2);
+    }
 
-// //     EXPECT_EQ(intPointer.GetCount(), 2);
-// //     EXPECT_EQ(pointer.GetCount(), 2);
-// // }
+    TEST(SharedPtrTest, MoveConstPointerCast)
+    {
+        SharedPtr<const int> pointer = MakeShared<int>();
+        const int* rawPointer = pointer.Get();
 
-// // TEST(SharedPtrTest, MoveConstPointerCast)
-// // {
-// //     SharedPtr<const int> pointer = MakeShared<int>();
-// //     const int* rawPointer = pointer.Get();
+        SharedPtr<int> intPointer = ConstPointerCast<int>(Move(pointer));
+        EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
-// //     SharedPtr<int> intPointer = ConstPointerCast<int>(Move(pointer));
-// //     EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+        EXPECT_EQ(intPointer.GetCount(), 1);
+        EXPECT_EQ(pointer.GetCount(), 0);
+    }
 
-// //     EXPECT_EQ(intPointer.GetCount(), 1);
-// //     EXPECT_EQ(pointer.GetCount(), 0);
-// // }
+    TEST(SharedPtrTest, ReinterpretPointerCast)
+    {
+        SharedPtr<int> pointer = MakeShared<int>();
+        SharedPtr<float> intPointer = ReinterpretPointerCast<float>(pointer);
 
-// // TEST(SharedPtrTest, ReinterpretPointerCast)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>();
-// //     SharedPtr<float> intPointer = ReinterpretPointerCast<float>(pointer);
+        EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
 
-// //     EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
+        EXPECT_EQ(intPointer.GetCount(), 2);
+        EXPECT_EQ(pointer.GetCount(), 2);
+    }
 
-// //     EXPECT_EQ(intPointer.GetCount(), 2);
-// //     EXPECT_EQ(pointer.GetCount(), 2);
-// // }
+    TEST(SharedPtrTest, MoveReinterpretPointerCast)
+    {
+        SharedPtr<int> pointer = MakeShared<int>();
+        int* rawPointer = pointer.Get();
 
-// // TEST(SharedPtrTest, MoveReinterpretPointerCast)
-// // {
-// //     SharedPtr<int> pointer = MakeShared<int>();
-// //     int* rawPointer = pointer.Get();
+        SharedPtr<float> intPointer = ReinterpretPointerCast<float>(Move(pointer));
+        EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
-// //     SharedPtr<float> intPointer = ReinterpretPointerCast<float>(Move(pointer));
-// //     EXPECT_EQ((void*)intPointer.Get(), rawPointer);
+        EXPECT_EQ(intPointer.GetCount(), 1);
+        EXPECT_EQ(pointer.GetCount(), 0);
+    }
+}
 
-// //     EXPECT_EQ(intPointer.GetCount(), 1);
-// //     EXPECT_EQ(pointer.GetCount(), 0);
-// // }
