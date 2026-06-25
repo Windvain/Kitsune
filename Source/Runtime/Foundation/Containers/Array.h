@@ -318,9 +318,9 @@ namespace Kitsune
             if (m_Begin == nullptr)
                 return;
 
-            m_Allocator.Free(m_Begin, Capacity() * sizeof(T));
             Algorithms::Destroy(m_Begin, m_End);
 
+            m_Allocator.Free(m_Begin, Capacity() * sizeof(T));
             m_StorageEnd = m_End = m_Begin = nullptr;
         }
 
