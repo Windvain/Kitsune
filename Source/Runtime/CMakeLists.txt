@@ -41,6 +41,7 @@ add_library(KitsuneEngine STATIC
 
     "Foundation/Containers/Array.h"
     "Foundation/Containers/Pair.h"
+    "Foundation/Containers/RBTree.h"
     "Foundation/Containers/TreeSet.h"
 
     "Foundation/Diagnostics/Assert.cpp"

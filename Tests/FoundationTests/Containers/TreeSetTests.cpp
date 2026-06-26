@@ -447,6 +447,40 @@ namespace
         EXPECT_EQ(treeSet.GetAllocator().AllocationSize(), 0);
     }
 
+    // TreeSet<T, Comp, Alloc>::Emplace(Args&&...)
+    TEST(TreeSetTest, Emplace)
+    {
+        using Ptr = std::shared_ptr<int>;
+        TreeSet<Ptr, FlippableCompare<Ptr>, TrackingAllocator> treeSet = {
+            std::make_shared<int>(23),
+            std::make_shared<int>(0),
+            std::make_shared<int>(3234),
+            std::make_shared<int>(61),
+        };
+
+        int* pointer = new int(4);
+        auto [iterator, success] = treeSet.Emplace(pointer);
+
+        EXPECT_EQ(iterator->get(), pointer);
+        EXPECT_TRUE(success);
+
+        int* pointer2 = new int(0);
+        auto [iter2, success2] = treeSet.Emplace(pointer2);
+
+        EXPECT_EQ(**iter2, 0);
+        EXPECT_FALSE(success2);
+
+        /* Emplace() creates the object, delete will have already been called
+         * on pointer2.
+         */
+
+        std::vector<int> expected = { 0, 4, 23, 61, 3234 };
+        int index = 0;
+
+        for (auto iter = treeSet.GetBegin(); iter != treeSet.GetEnd(); ++iter, ++index)
+            EXPECT_EQ(**iter, expected[index]);
+    }
+
     // TreeSet<T, Comp, Alloc>::Insert(const T&)
     TEST(TreeSetTest, InsertCopy)
     {
