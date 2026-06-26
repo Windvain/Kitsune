@@ -6,6 +6,7 @@
 #include "Foundation/Memory/ScopedPtr.h"
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
+
 #include "Foundation/Memory/BadWeakPtrException.h"
 
 namespace Kitsune
@@ -84,9 +85,9 @@ namespace Kitsune
         class SharedControlBlock : public SharedControlBlockBase<Mode>
         {
         public:
-            template<typename DelRef, typename AllocRef>
+            template<typename DelRef>
             inline SharedControlBlock(
-                T* pointer, DelRef&& deleter, AllocRef&& allocator)
+                T* pointer, DelRef&& deleter, const Alloc& allocator)
                 : m_Pointer(pointer),
                   m_Deleter(Forward<DelRef>(deleter)),
                   m_Allocator(allocator)
@@ -177,29 +178,28 @@ namespace Kitsune
         {
         }
 
-        template<typename U, typename DelRef, typename AllocRef>
+        template<typename U, typename DelRef, Allocator Alloc>
             requires (std::is_convertible_v<U*, T*> &&
-                      Deleter<std::remove_reference_t<DelRef>> &&
-                      Allocator<std::remove_reference_t<AllocRef>>)
-        inline SharedPtr(U* pointer, DelRef&& deleter, AllocRef&& allocator)
+                      Deleter<std::remove_reference_t<DelRef>>)
+        inline SharedPtr(U* pointer, DelRef&& deleter, const Alloc& allocator)
             : m_Pointer(pointer)
         {
             using ControlBlockType = Details::SharedControlBlock<
                 U, Mode,
                 std::remove_reference_t<DelRef>,
-                std::remove_reference_t<AllocRef>>;
+                Alloc>;
 
             try
             {
-                std::remove_reference_t<AllocRef> stored = Forward<AllocRef>(allocator);
-                auto* data = stored.Allocate(
+                Alloc copy = allocator;
+                auto* data = copy.Allocate(
                     sizeof(ControlBlockType),
                     alignof(ControlBlockType));
 
                 // Increment the weak count. (1)
                 m_ControlBlock = Memory::ConstructAt<ControlBlockType>(
                     data,
-                    pointer, Forward<DelRef>(deleter), Move(stored));
+                    pointer, Forward<DelRef>(deleter), Move(copy));
             }
             catch (...)
             {
@@ -213,12 +213,11 @@ namespace Kitsune
             m_ControlBlock->IncrementCount();
         }
 
-        template<typename DelRef, typename AllocRef>
-            requires (Deleter<std::remove_reference_t<DelRef>> &&
-                      Allocator<std::remove_reference_t<AllocRef>>)
-        inline SharedPtr(std::nullptr_t, DelRef&& deleter, AllocRef&& allocator)
+        template<typename DelRef, Allocator Alloc>
+            requires Deleter<std::remove_reference_t<DelRef>>
+        inline SharedPtr(std::nullptr_t, DelRef&& deleter, const Alloc& allocator)
             : SharedPtr(static_cast<T*>(nullptr), Forward<DelRef>(deleter),
-                        Forward<AllocRef>(allocator))
+                        allocator)
         {
         }
 
@@ -279,7 +278,7 @@ namespace Kitsune
         template<typename U, Deleter Deleter>
             requires std::is_convertible_v<U*, T*>
         inline SharedPtr(ScopedPtr<U, Deleter>&& pointer)
-            : SharedPtr(pointer.Release(), pointer.GetDeleter())
+            : SharedPtr(pointer.Release(), Move(pointer.GetDeleter()))
         {
         }
 
@@ -352,16 +351,15 @@ namespace Kitsune
             SharedPtr(pointer, Forward<DelRef>(deleter)).Swap(*this);
         }
 
-        template<typename U, typename DelRef, typename AllocRef>
+        template<typename U, typename DelRef, Allocator Alloc>
             requires (std::is_convertible_v<U*, T*> &&
-                      Deleter<std::remove_reference_t<DelRef>> &&
-                      Allocator<std::remove_reference_t<AllocRef>>)
-        inline void Reset(U* pointer, DelRef&& deleter, AllocRef&& allocator)
+                      Deleter<std::remove_reference_t<DelRef>>)
+        inline void Reset(U* pointer, DelRef&& deleter, const Alloc& allocator)
         {
             SharedPtr(
                 pointer,
                 Forward<DelRef>(deleter),
-                Forward<AllocRef>(allocator)).Swap(*this);
+                allocator).Swap(*this);
         }
 
     public:

@@ -8,32 +8,6 @@ namespace Kitsune::Testing
     class TrackingAllocator
     {
     public:
-        TrackingAllocator() = default;
-        TrackingAllocator(const TrackingAllocator& allocator)
-        {
-            /* Do not copy the unordered_map into the newly-made allocator. */
-        }
-
-        TrackingAllocator(TrackingAllocator&& allocator)
-            : m_Allocations(std::move(allocator.m_Allocations))
-        {
-        }
-
-        ~TrackingAllocator() = default;
-
-    public:
-        TrackingAllocator& operator=(const TrackingAllocator& allocator)
-        {
-            return *this;
-        }
-
-        TrackingAllocator& operator=(TrackingAllocator&& allocator)
-        {
-            m_Allocations = std::move(allocator.m_Allocations);
-            return *this;
-        }
-
-    public:
         inline void* Allocate(
             Usize bytes,
             Usize alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__)
@@ -85,7 +59,7 @@ namespace Kitsune::Testing
     public:
         inline bool operator==(const TrackingAllocator& otherAlloc) const
         {
-            return (this == &otherAlloc);
+            return (m_Allocations == otherAlloc.m_Allocations);
         }
 
     private:
