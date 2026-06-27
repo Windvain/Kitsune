@@ -221,15 +221,23 @@ namespace Kitsune
             }
 
         public:
-            inline bool operator==(const RBTIterator& iterator) const
+            [[nodiscard]]
+            inline NodeType* GetNodeHandle() const
             {
-                return (m_Current == iterator.m_Current);
+                return m_Current;
             }
 
         private:
             NodeType* m_Current;
             const Tree* m_Tree;
         };
+
+        template<typename Storage, typename Tree>
+        inline bool operator==(const RBTIterator<Storage, Tree>& iter1,
+                               const RBTIterator<Storage, Tree>& iter2)
+        {
+            return (iter1.GetNodeHandle() == iter2.GetNodeHandle());
+        }
     }
 
     template<
@@ -242,15 +250,17 @@ namespace Kitsune
     private:
         using ThisType = RBTree<Key, Value, Compare, Alloc, IsSet>;
 
-    public:
-        using ValueType = std::conditional_t<IsSet, const Key, Pair<const Key, Value>>;
-        using NodeType = Details::RBTNode<ValueType, IsSet>;
+    // Keep this `protected` access modifier, because this class will be inherited
+    // by either TreeSet<T> or TreeMap<T>, and they have different type-aliases.
+    protected:
+        using StorageType = std::conditional_t<IsSet, const Key, Pair<const Key, Value>>;
+        using NodeType = Details::RBTNode<StorageType, IsSet>;
 
         using CompareType = Compare;
         using AllocatorType = Alloc;
 
-        using Iterator = Details::RBTIterator<ValueType, ThisType>;
-        using ConstIterator = Details::RBTIterator<const ValueType, ThisType>;
+        using Iterator = Details::RBTIterator<StorageType, ThisType>;
+        using ConstIterator = Details::RBTIterator<const StorageType, ThisType>;
 
     public:
         inline RBTree() = default;
@@ -316,8 +326,17 @@ namespace Kitsune
             return ConstIterator(m_Front, this);
         }
 
-        [[nodiscard]] inline Iterator GetEnd() { return Iterator(); }
-        [[nodiscard]] inline ConstIterator GetEnd() const { return ConstIterator(); }
+        [[nodiscard]]
+        inline Iterator GetEnd()
+        {
+            return Iterator(nullptr, this);
+        }
+
+        [[nodiscard]]
+        inline ConstIterator GetEnd() const
+        {
+            return ConstIterator(nullptr, this);
+        }
 
     public:
         [[nodiscard]]
@@ -334,6 +353,12 @@ namespace Kitsune
 
         [[nodiscard]] inline Alloc& GetAllocator() { return m_Allocator; }
         [[nodiscard]] inline const Alloc& GetAllocator() const { return m_Allocator; }
+
+        [[nodiscard]]
+        inline Compare GetCompare() const
+        {
+            return m_Compare;
+        }
 
     public:
         inline void Clear()
@@ -357,18 +382,18 @@ namespace Kitsune
         }
 
     public:
-        inline Pair<Iterator, bool> Insert(const ValueType& value)
+        inline Pair<Iterator, bool> Insert(const StorageType& value)
         {
             return Emplace(value);
         }
 
-        inline Pair<Iterator, bool> Insert(ValueType&& value)
+        inline Pair<Iterator, bool> Insert(StorageType&& value)
         {
             return Emplace(Move(value));
         }
 
         template<typename... Args>
-            requires std::constructible_from<ValueType, Args...>
+            requires std::constructible_from<StorageType, Args...>
         inline Pair<Iterator, bool> Emplace(Args&&... args)
         {
             auto [node, success] = BSTEmplace(Forward<Args>(args)...);
@@ -378,6 +403,39 @@ namespace Kitsune
             return { Iterator(node, this), success };
         }
 
+    public:
+        inline bool Contains(const Key& key) const
+        {
+            return (Find(key) != GetEnd());
+        }
+
+        inline Iterator Find(const Key& key)
+        {
+            return Iterator(InternalFind(key), this);
+        }
+
+        inline ConstIterator Find(const Key& key) const
+        {
+            return ConstIterator(InternalFind(key), this);
+        }
+
+    private:
+        inline NodeType* InternalFind(const Key& key) const
+        {
+            NodeType* node = m_Root;
+            while (node != nullptr)
+            {
+                if (m_Compare(key, node->GetKey()))
+                    node = node->GetLeftChild();
+                else if (m_Compare(node->GetKey(), key))
+                    node = node->GetRightChild();
+                else
+                    return node;
+            }
+
+            return nullptr;
+        }
+
     private:
         template<typename... Args>
         inline Pair<NodeType*, bool> BSTEmplace(Args&&... args)
@@ -385,7 +443,7 @@ namespace Kitsune
             if (m_Root == nullptr)
                 return BSTFirstEmplace(Forward<Args>(args)...);
 
-            return BSTRestInsert(ValueType(Forward<Args>(args)...));
+            return BSTRestInsert(StorageType(Forward<Args>(args)...));
         }
 
         template<typename... Args>
@@ -400,7 +458,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline Pair<NodeType*, bool> BSTRestInsert(ValueType&& value)
+        inline Pair<NodeType*, bool> BSTRestInsert(StorageType&& value)
         {
             using namespace Details;
 

@@ -35,7 +35,7 @@ namespace
         {
         }
 
-        inline bool operator()(const T& lhs, const T& rhs)
+        inline bool operator()(const T& lhs, const T& rhs) const
         {
             return m_Flip ? (lhs > rhs) : (lhs < rhs);
         };
@@ -665,6 +665,30 @@ namespace
 
         for (auto iter = set2.GetBegin(); iter != set2.GetEnd(); ++iter, ++index2)
             EXPECT_EQ(*iter, expected2[index2]);
+    }
+
+    // TreeSet<T, Comp, Alloc>::Contains(const T&)
+    TEST(TreeSetTest, Contains)
+    {
+        TreeSet<int, FlippableCompare<int>> set(
+            { 23, 1287, 38, 595, 122, 38, 444 },
+            FlippableCompare<int>(true));
+
+        EXPECT_TRUE(set.Contains(23));
+        EXPECT_FALSE(set.Contains(445));
+    }
+
+    // TreeSet<T, Comp, Alloc>::Find(const T&)
+    TEST(TreeSetTest, Find)
+    {
+        TreeSet<int> set = { 23, 1287, 38, 595, 122, 38, 444 };
+        const TreeSet<int> constSet = { 23, 1287, 38, 595, 122, 38, 444 };
+
+        EXPECT_EQ(*set.Find(23), 23);
+        EXPECT_EQ(set.Find(1), set.GetEnd());
+
+        EXPECT_EQ(*constSet.Find(23), 23);
+        EXPECT_EQ(constSet.Find(1), constSet.GetEnd());
     }
 
     // operator==(const TreeSet<T, Comp, Alloc>&, const TreeSet<T, Comp, Alloc>&)
