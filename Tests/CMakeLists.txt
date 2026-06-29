@@ -49,6 +49,7 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
 
     "FoundationTests/Filesystem/FileStreamTests.cpp"
 
+    "FoundationTests/Include/FlippableCompare.h"
     "FoundationTests/Include/PushBackContainer.h"
     "FoundationTests/Include/StatefulAllocator.h"
     "FoundationTests/Include/StringEqualAssert.h"

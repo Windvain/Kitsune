@@ -1,8 +1,8 @@
 #pragma once
 
 #include <initializer_list>
-#include "Foundation/Algorithms/Equal.h"
 
+#include "Foundation/Algorithms/Equal.h"
 #include "Foundation/Containers/RBTree.h"
 
 namespace Kitsune
@@ -23,6 +23,9 @@ namespace Kitsune
 
         using Iterator = typename BaseType::Iterator;
         using ConstIterator = typename BaseType::ConstIterator;
+
+    public:
+        using BaseType::Clear, BaseType::Insert;
 
     public:
         inline TreeSet() = default;
@@ -78,23 +81,13 @@ namespace Kitsune
 
         inline TreeSet& operator=(std::initializer_list<T> initList)
         {
-            BaseType::Clear();
+            Clear();
             Insert(initList);
 
             return *this;
         }
 
     public:
-        inline Pair<Iterator, bool> Insert(const T& value)
-        {
-            return BaseType::Insert(value);
-        }
-
-        inline Pair<Iterator, bool> Insert(T&& value)
-        {
-            return BaseType::Insert(Move(value));
-        }
-
         template<ForwardIterator Iter>
         inline void Insert(Iter begin, Iter end)
         {
@@ -102,10 +95,17 @@ namespace Kitsune
                 Insert(*begin);
         }
 
-        inline void Insert(std::initializer_list<T> initList)
+        inline void Insert(std::initializer_list<ValueType> initList)
         {
             for (auto iter = initList.begin(); iter != initList.end(); ++iter)
                 Insert(*iter);
+        }
+
+    public:
+        inline void Swap(TreeSet& set)
+        {
+            // Hide any signatures from RBTree.
+            return BaseType::Swap(set);
         }
     };
 

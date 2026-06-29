@@ -36,7 +36,7 @@ namespace Kitsune
         }
 
         template<bool IsSet, typename T>
-        inline static decltype(auto) GetRBTNodeValue(T& storage)
+        inline static auto& GetRBTNodeValue(T& storage)
         {
             if constexpr (IsSet)
                 return storage;
@@ -44,7 +44,68 @@ namespace Kitsune
                 return storage.Second;
         }
 
-        template<typename T, bool IsSet>
+        template<typename Key, typename Mapped, bool IsSet = std::is_void_v<Mapped>>
+        class RBTStorage
+        {
+        public:
+            using ValueType = std::conditional_t<
+                IsSet, const Key, Pair<const Key, Mapped>>;
+
+            using KeyType = const Key;
+            using MappedType = std::conditional_t<IsSet, const Key, Mapped>;
+
+        public:
+            template<typename... Args>
+            inline RBTStorage(Args&&... args)
+                : m_Value(Forward<Args>(args)...)
+            {
+            }
+
+        public:
+            [[nodiscard]]
+            inline ValueType& GetValue()
+            {
+                return m_Value;
+            }
+
+            [[nodiscard]]
+            inline const ValueType& GetValue() const
+            {
+                return m_Value;
+            }
+
+            [[nodiscard]]
+            inline const Key& GetKey() const
+            {
+                if constexpr (IsSet)
+                    return m_Value;
+                else
+                    return m_Value.First;
+            }
+
+            [[nodiscard]]
+            inline MappedType& GetMapped()
+            {
+                if constexpr (IsSet)
+                    return m_Value;
+                else
+                    return m_Value.Second;
+            }
+
+            [[nodiscard]]
+            inline const MappedType& GetMapped() const
+            {
+                if constexpr (IsSet)
+                    return m_Value;
+                else
+                    return m_Value.Second;
+            }
+
+        private:
+            ValueType m_Value;
+        };
+
+        template<typename Storage>
         class RBTNode
         {
         public:
@@ -108,33 +169,50 @@ namespace Kitsune
             }
 
         public:
-            [[nodiscard]] inline T& GetStorage() { return m_Storage; }
-            [[nodiscard]] inline const T& GetStorage() const { return m_Storage; }
-
             [[nodiscard]]
-            inline const auto& GetKey() const
+            inline auto& GetValue()
             {
-                return GetRBTNodeKey<IsSet>(m_Storage);
+                return m_Storage.GetValue();
             }
 
             [[nodiscard]]
             inline const auto& GetValue() const
             {
-                return GetRBTNodeValue<IsSet>(m_Storage);
+                return m_Storage.GetValue();
             }
 
             [[nodiscard]]
-            inline auto& GetValue()
+            inline const auto& GetKey() const
             {
-                return GetRBTNodeValue<IsSet>(m_Storage);
+                return m_Storage.GetKey();
+            }
+
+            [[nodiscard]]
+            inline const auto& GetMapped() const
+            {
+                return m_Storage.GetMapped();
+            }
+
+            [[nodiscard]]
+            inline auto& GetMapped()
+            {
+                return m_Storage.GetMapped();
             }
 
         public:
-            [[nodiscard]] inline RBTNodeColor GetColor() const { return m_Color; }
-            inline void SetColor(RBTNodeColor color) { m_Color = color; }
+            [[nodiscard]]
+            inline RBTNodeColor GetColor() const
+            {
+                return m_Color;
+            }
+
+            inline void SetColor(RBTNodeColor color)
+            {
+                m_Color = color;
+            }
 
         private:
-            T m_Storage;
+            Storage m_Storage;
             RBTNodeColor m_Color;
 
             RBTNode* m_Parent = nullptr;
@@ -147,8 +225,13 @@ namespace Kitsune
         private:
             using NodeType = typename Tree::NodeType;
 
+            using ValueRef = decltype(std::declval<Storage>().GetValue());
+            using MappedRef = decltype(std::declval<Storage>().GetMapped());
+
         public:
-            using ValueType = Storage;
+            using ValueType = std::remove_reference_t<ValueRef>;
+            using MappedType = std::remove_reference_t<MappedRef>;
+
             using DifferenceType = std::ptrdiff_t;
 
         public:
@@ -162,15 +245,41 @@ namespace Kitsune
             {
             }
 
-        public:
-            inline Storage& operator*() const
+            template<typename Other>
+                requires std::same_as<Other, std::remove_cv_t<Storage>>
+            inline RBTIterator(const RBTIterator<Other, Tree>& iter)
+                : m_Current(iter.m_Current), m_Tree(iter.m_Tree)
             {
-                return m_Current->GetStorage();
             }
 
-            inline auto* operator->() const
+            RBTIterator(const RBTIterator&) = default;
+            RBTIterator(RBTIterator&&) = default;
+
+            ~RBTIterator() = default;
+
+        public:
+            RBTIterator& operator=(const RBTIterator&) = default;
+            RBTIterator& operator=(RBTIterator&&) = default;
+
+            template<typename Other>
+                requires std::same_as<Other, std::remove_cv_t<Storage>>
+            inline RBTIterator& operator=(const RBTIterator<Other, Tree>& iter)
             {
-                return AddressOf(m_Current->GetValue());
+                m_Current = iter.m_Current;
+                m_Tree = iter.m_Tree;
+
+                return *this;
+            }
+
+        public:
+            inline ValueType& operator*() const
+            {
+                return m_Current->GetValue();
+            }
+
+            inline MappedType* operator->() const
+            {
+                return AddressOf(m_Current->GetMapped());
             }
 
         public:
@@ -228,6 +337,10 @@ namespace Kitsune
             }
 
         private:
+            template<typename OtherStorage, typename OtherTree>
+            friend class RBTIterator;
+
+        private:
             NodeType* m_Current;
             const Tree* m_Tree;
         };
@@ -241,20 +354,23 @@ namespace Kitsune
     }
 
     template<
-        typename Key, typename Value,
+        typename Key, typename Mapped,
         InvocableReturn<bool, const Key&, const Key&> Compare = LessFunctor<Key>,
-        Allocator Alloc = GlobalAllocator,
-        bool IsSet = std::is_same_v<Value, void>>
+        Allocator Alloc = GlobalAllocator>
     class RBTree
     {
     private:
-        using ThisType = RBTree<Key, Value, Compare, Alloc, IsSet>;
+        using ThisType = RBTree<Key, Mapped, Compare, Alloc>;
 
     // Keep this `protected` access modifier, because this class will be inherited
     // by either TreeSet<T> or TreeMap<T>, and they have different type-aliases.
     protected:
-        using StorageType = std::conditional_t<IsSet, const Key, Pair<const Key, Value>>;
-        using NodeType = Details::RBTNode<StorageType, IsSet>;
+        using StorageType = Details::RBTStorage<Key, Mapped>;
+        using NodeType = Details::RBTNode<StorageType>;
+
+        using ValueType = typename StorageType::ValueType;
+        using KeyType = typename StorageType::KeyType;
+        using MappedType = typename StorageType::MappedType;
 
         using CompareType = Compare;
         using AllocatorType = Alloc;
@@ -382,18 +498,18 @@ namespace Kitsune
         }
 
     public:
-        inline Pair<Iterator, bool> Insert(const StorageType& value)
+        inline Pair<Iterator, bool> Insert(const ValueType& value)
         {
             return Emplace(value);
         }
 
-        inline Pair<Iterator, bool> Insert(StorageType&& value)
+        inline Pair<Iterator, bool> Insert(ValueType&& value)
         {
             return Emplace(Move(value));
         }
 
         template<typename... Args>
-            requires std::constructible_from<StorageType, Args...>
+            requires std::constructible_from<ValueType, Args...>
         inline Pair<Iterator, bool> Emplace(Args&&... args)
         {
             auto [node, success] = BSTEmplace(Forward<Args>(args)...);
@@ -411,16 +527,16 @@ namespace Kitsune
 
         inline Iterator Find(const Key& key)
         {
-            return Iterator(InternalFind(key), this);
+            return InternalFind(key);
         }
 
         inline ConstIterator Find(const Key& key) const
         {
-            return ConstIterator(InternalFind(key), this);
+            return ConstIterator(InternalFind(key));
         }
 
     private:
-        inline NodeType* InternalFind(const Key& key) const
+        inline Iterator InternalFind(const Key& key) const
         {
             NodeType* node = m_Root;
             while (node != nullptr)
@@ -430,10 +546,10 @@ namespace Kitsune
                 else if (m_Compare(node->GetKey(), key))
                     node = node->GetRightChild();
                 else
-                    return node;
+                    return Iterator(node, this);
             }
 
-            return nullptr;
+            return Iterator(nullptr, this);
         }
 
     private:
@@ -443,7 +559,7 @@ namespace Kitsune
             if (m_Root == nullptr)
                 return BSTFirstEmplace(Forward<Args>(args)...);
 
-            return BSTRestInsert(StorageType(Forward<Args>(args)...));
+            return BSTRestInsert(ValueType(Forward<Args>(args)...));
         }
 
         template<typename... Args>
@@ -458,12 +574,13 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline Pair<NodeType*, bool> BSTRestInsert(StorageType&& value)
+        inline Pair<NodeType*, bool> BSTRestInsert(ValueType&& value)
         {
             using namespace Details;
-
             NodeType* parent = m_Root;
-            const Key& key = Details::GetRBTNodeKey<IsSet>(value);
+
+            StorageType storage(Move(value));
+            const Key& key = storage.GetKey();
 
             while (true)
             {
@@ -479,7 +596,9 @@ namespace Kitsune
                     parent = parent->GetChild(direction);
                 else
                 {
-                    NodeType* node = CreateNode(RBTNodeColor::Red, Move(value));
+                    NodeType* node = CreateNode(
+                        RBTNodeColor::Red, Move(storage.GetValue()));
+
                     node->SetParent(parent);
                     parent->SetChild(direction, node);
 
@@ -587,7 +706,7 @@ namespace Kitsune
             if (node == nullptr)
                 return;
 
-            NodeType* copy = CreateNode(RBTNodeColor::Black, node->GetStorage());
+            NodeType* copy = CreateNode(RBTNodeColor::Black, node->GetValue());
             if (m_Root == nullptr)
                 m_Root = copy;
             else
