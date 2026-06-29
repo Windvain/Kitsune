@@ -42,6 +42,7 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
 
     "FoundationTests/Containers/ArrayTests.cpp"
     "FoundationTests/Containers/PairTests.cpp"
+    "FoundationTests/Containers/TreeMapTests.cpp"
     "FoundationTests/Containers/TreeSetTests.cpp"
 
     "FoundationTests/Diagnostics/BacktraceFrameTests.cpp"
