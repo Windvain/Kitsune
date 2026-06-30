@@ -25,12 +25,7 @@ namespace Kitsune::Testing
         ~StatefulAllocator() = default;
 
     public:
-        StatefulAllocator& operator=(const StatefulAllocator& allocator)
-        {
-            m_Id = allocator.m_Id;
-            return *this;
-        }
-
+        StatefulAllocator& operator=(const StatefulAllocator&) = default;
         StatefulAllocator& operator=(StatefulAllocator&& allocator)
         {
             m_Id = std::exchange(allocator.m_Id, 0);

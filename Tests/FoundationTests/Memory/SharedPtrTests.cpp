@@ -1,65 +1,12 @@
 #include <gtest/gtest.h>
-#include "Foundation/Memory/BadWeakPtrException.h"
-#include "Foundation/Memory/Memory.h"
+#include "TrackingAllocator.h"
+
 #include "Foundation/Memory/SharedPtr.h"
 
 namespace
 {
     using namespace Kitsune;
-
-    class TrackingAllocator
-    {
-    public:
-        TrackingAllocator() = default;
-
-        // We check the allocator's state externally, so the allocations have to be
-        // copied.
-        TrackingAllocator(const TrackingAllocator& allocator) = default;
-        TrackingAllocator(TrackingAllocator&& allocator) = default;
-
-        ~TrackingAllocator() = default;
-
-    public:
-        TrackingAllocator& operator=(const TrackingAllocator& allocator)
-        {
-            return *this;
-        }
-
-        TrackingAllocator& operator=(TrackingAllocator&& allocator)
-        {
-            m_Allocations = std::move(allocator.m_Allocations);
-            return *this;
-        }
-
-    public:
-        inline void* Allocate(
-            Usize bytes,
-            Usize alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__)
-        {
-            void* pointer = Memory::Allocate(bytes, alignment);
-            m_Allocations.insert({ pointer, bytes });
-
-            return pointer;
-        }
-
-        inline void Free(void* pointer, Usize bytes)
-        {
-            EXPECT_TRUE(m_Allocations.contains(pointer));
-            EXPECT_EQ(m_Allocations[pointer], bytes);
-
-            m_Allocations.erase(pointer);
-            Memory::Free(pointer, bytes);
-        }
-
-    public:
-        inline bool operator==(const TrackingAllocator& otherAlloc) const
-        {
-            return (this == &otherAlloc);
-        }
-
-    private:
-        std::unordered_map<void*, std::size_t> m_Allocations;
-    };
+    using Testing::TrackingAllocator;
 
     template<typename T>
     class TrackingDeleter
