@@ -26,24 +26,6 @@ namespace Kitsune
             Black
         };
 
-        template<bool IsSet, typename T>
-        inline static const auto& GetRBTNodeKey(const T& storage)
-        {
-            if constexpr (IsSet)
-                return storage;
-            else
-                return storage.First;
-        }
-
-        template<bool IsSet, typename T>
-        inline static auto& GetRBTNodeValue(T& storage)
-        {
-            if constexpr (IsSet)
-                return storage;
-            else
-                return storage.Second;
-        }
-
         template<typename Key, typename Mapped, bool IsSet = std::is_void_v<Mapped>>
         class RBTStorage
         {
@@ -109,6 +91,12 @@ namespace Kitsune
         class RBTNode
         {
         public:
+            using ValueType = typename Storage::ValueType;
+
+            using KeyType = typename Storage::KeyType;
+            using MappedType = typename Storage::MappedType;
+
+        public:
             template<typename... Args>
             inline RBTNode(RBTNodeColor color, Args&&... args)
                 : m_Storage(Forward<Args>(args)...), m_Color(color)
@@ -170,31 +158,31 @@ namespace Kitsune
 
         public:
             [[nodiscard]]
-            inline auto& GetValue()
+            inline ValueType& GetValue()
             {
                 return m_Storage.GetValue();
             }
 
             [[nodiscard]]
-            inline const auto& GetValue() const
+            inline const ValueType& GetValue() const
             {
                 return m_Storage.GetValue();
             }
 
             [[nodiscard]]
-            inline const auto& GetKey() const
+            inline const KeyType& GetKey() const
             {
                 return m_Storage.GetKey();
             }
 
             [[nodiscard]]
-            inline const auto& GetMapped() const
+            inline MappedType& GetMapped()
             {
                 return m_Storage.GetMapped();
             }
 
             [[nodiscard]]
-            inline auto& GetMapped()
+            inline const MappedType& GetMapped() const
             {
                 return m_Storage.GetMapped();
             }
