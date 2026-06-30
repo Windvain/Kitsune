@@ -5,7 +5,7 @@
 
 namespace
 {
-    using namespace Kitsune;
+    using Kitsune::ThreadSafety;
     using Testing::TrackingAllocator;
 
     template<typename T>
@@ -79,10 +79,41 @@ namespace
     {
     };
 
-    TEST(SharedPtrTest, DefaultNullptrConstructor)
+    template<typename T>
+    class SharedPtrTest : public ::testing::Test
     {
-        SharedPtr<int> pointer;
-        SharedPtr<int> null = nullptr;
+    public:
+        template<typename U>
+        using Ptr = Kitsune::SharedPtr<U, T::value>;
+
+        template<typename U>
+        using Weak = Kitsune::WeakPtr<U, T::value>;
+    };
+
+    template<typename T>
+    class WeakPtrTest : public ::testing::Test
+    {
+    public:
+        template<typename U>
+        using Ptr = Kitsune::SharedPtr<U, T::value>;
+
+        template<typename U>
+        using Weak = Kitsune::WeakPtr<U, T::value>;
+    };
+
+    using SharedPtrTestTypes = ::testing::Types<
+        std::integral_constant<ThreadSafety, ThreadSafety::NotThreadSafe>,
+        std::integral_constant<ThreadSafety, ThreadSafety::ThreadSafe>>;
+
+    TYPED_TEST_SUITE(SharedPtrTest, SharedPtrTestTypes);
+    TYPED_TEST_SUITE(WeakPtrTest, SharedPtrTestTypes);
+
+    TYPED_TEST(SharedPtrTest, DefaultNullptrConstructor)
+    {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
+        Ptr pointer;
+        Ptr null = nullptr;
 
         EXPECT_EQ(pointer.Get(), nullptr);
         EXPECT_EQ(null.Get(), nullptr);
@@ -91,10 +122,12 @@ namespace
         EXPECT_EQ(null.GetCount(), 0);
     }
 
-    TEST(SharedPtrTest, PointerConstructor)
+    TYPED_TEST(SharedPtrTest, PointerConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>(234);
-        auto pointer = SharedPtr<int>(rawPointer);
+        Ptr pointer(rawPointer);
 
         EXPECT_EQ(pointer.Get(), rawPointer);
         EXPECT_EQ(pointer.GetCount(), 1);
@@ -102,8 +135,10 @@ namespace
         // rawPointer here should've been destroyed by GlobalAllocator.
     }
 
-    TEST(SharedPtrTest, PointerDeleterConstructor)
+    TYPED_TEST(SharedPtrTest, PointerDeleterConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer1 = Memory::New<int>();
         int* rawPointer2 = Memory::New<int>();
 
@@ -112,8 +147,8 @@ namespace
         {
             TrackingDeleter<int> deleter(&deleted);
 
-            SharedPtr<int> moved(rawPointer1, TrackingDeleter<int>(&deleted));
-            SharedPtr<int> copied(rawPointer2, deleter);
+            Ptr moved(rawPointer1, TrackingDeleter<int>(&deleted));
+            Ptr copied(rawPointer2, deleter);
 
             EXPECT_EQ(moved.Get(), rawPointer1);
             EXPECT_EQ(moved.GetCount(), 1);
@@ -126,15 +161,16 @@ namespace
         EXPECT_EQ(deleted[1], rawPointer1);
     }
 
-    TEST(SharedPtrTest, NullptrDeleterConstructor)
+    TYPED_TEST(SharedPtrTest, NullptrDeleterConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
         std::vector<void*> deleted;
 
         {
             TrackingDeleter<int> deleter(&deleted);
 
-            SharedPtr<int> moved(nullptr, TrackingDeleter<int>(&deleted));
-            SharedPtr<int> copied(nullptr, deleter);
+            Ptr moved(nullptr, TrackingDeleter<int>(&deleted));
+            Ptr copied(nullptr, deleter);
 
             EXPECT_EQ(moved.Get(), nullptr);
             EXPECT_EQ(moved.GetCount(), 1);
@@ -146,14 +182,16 @@ namespace
         EXPECT_EQ(deleted.size(), 0);
     }
 
-    TEST(SharedPtrTest, CopyDeleterAndAllocatorConstructor)
+    TYPED_TEST(SharedPtrTest, CopyDeleterAndAllocatorConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
         std::vector<void*> deleted;
 
         {
             TrackingDeleter<int> deleter(&deleted);
-            SharedPtr<int> pointer(rawPointer, deleter, TrackingAllocator());
+            Ptr pointer(rawPointer, deleter, TrackingAllocator());
 
             EXPECT_EQ(pointer.Get(), rawPointer);
             EXPECT_EQ(pointer.GetCount(), 1);
@@ -163,16 +201,16 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, MoveDeleterAndAllocatorConstructor)
+    TYPED_TEST(SharedPtrTest, MoveDeleterAndAllocatorConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> pointer(
-                rawPointer,
-                TrackingDeleter<int>(&deleted),
-                TrackingAllocator());
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted),
+                        TrackingAllocator());
 
             EXPECT_EQ(pointer.Get(), rawPointer);
             EXPECT_EQ(pointer.GetCount(), 1);
@@ -182,13 +220,14 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, NullptrCopyDeleterAndAllocatorConstructor)
+    TYPED_TEST(SharedPtrTest, NullptrCopyDeleterAndAllocatorConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
         std::vector<void*> deleted;
 
         {
             TrackingDeleter<int> deleter(&deleted);
-            SharedPtr<int> pointer(nullptr, deleter, TrackingAllocator());
+            Ptr pointer(nullptr, deleter, TrackingAllocator());
 
             EXPECT_EQ(pointer.Get(), nullptr);
             EXPECT_EQ(pointer.GetCount(), 1);
@@ -197,15 +236,14 @@ namespace
         EXPECT_EQ(deleted.size(), 0);
     }
 
-    TEST(SharedPtrTest, NullptrMoveDeleterAndAllocatorConstructor)
+    TYPED_TEST(SharedPtrTest, NullptrMoveDeleterAndAllocatorConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> pointer(
-                nullptr,
-                TrackingDeleter<int>(&deleted),
-                TrackingAllocator());
+            Ptr pointer(nullptr, TrackingDeleter<int>(&deleted),
+                        TrackingAllocator());
 
             EXPECT_EQ(pointer.Get(), nullptr);
             EXPECT_EQ(pointer.GetCount(), 1);
@@ -214,16 +252,18 @@ namespace
         EXPECT_EQ(deleted.size(), 0);
     }
 
-    TEST(SharedPtrTest, CopyConstructor)
+    TYPED_TEST(SharedPtrTest, CopyConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>(4);
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
 
             // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-            SharedPtr<int> copy = pointer;
+            Ptr copy = pointer;
 
             EXPECT_EQ(copy.Get(), rawPointer);
             EXPECT_EQ(copy.GetCount(), 2);
@@ -236,16 +276,18 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, AliasingCopyConstructor)
+    TYPED_TEST(SharedPtrTest, AliasingCopyConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>(45);
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
 
             int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
-            SharedPtr<int> pointer(ownedPointer, storedPointer);
+            Ptr pointer(ownedPointer, storedPointer);
 
             EXPECT_EQ(pointer.Get(), storedPointer);
             EXPECT_EQ(pointer.GetCount(), 2);
@@ -258,16 +300,19 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, TemplatedCopyConstructor)
+    TYPED_TEST(SharedPtrTest, TemplatedCopyConstructor)
     {
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+
         auto* rawPointer = Memory::New<Derived>();
         std::vector<void*> deleted;
 
         {
-            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            DerivedPtr pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
 
             // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-            SharedPtr<Base> copy = pointer;
+            BasePtr copy = pointer;
 
             EXPECT_EQ(copy.Get(), rawPointer);
             EXPECT_EQ(copy.GetCount(), 2);
@@ -280,15 +325,18 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, TemplatedCopyConstructorHandlesNullptr)
+    TYPED_TEST(SharedPtrTest, TemplatedCopyConstructorHandlesNullptr)
     {
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+
         std::vector<void*> deleted;
 
         {
-            SharedPtr<Derived> pointer(nullptr, TrackingDeleter<Derived>(&deleted));
+            DerivedPtr pointer(nullptr, TrackingDeleter<Derived>(&deleted));
 
             // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-            SharedPtr<Base> copy = pointer;
+            BasePtr copy = pointer;
 
             EXPECT_EQ(copy.Get(), nullptr);
             EXPECT_EQ(copy.GetCount(), 2);
@@ -300,14 +348,16 @@ namespace
         EXPECT_EQ(deleted.size(), 0);
     }
 
-    TEST(SharedPtrTest, MoveConstructor)
+    TYPED_TEST(SharedPtrTest, MoveConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         std::vector<void*> deleted;
         int* rawPointer = Memory::New<int>(5);
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
-            SharedPtr<int> moved = std::move(pointer);
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr moved = std::move(pointer);
 
             EXPECT_EQ(moved.Get(), rawPointer);
             EXPECT_EQ(moved.GetCount(), 1);
@@ -320,14 +370,17 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, TemplatedMoveConstructor)
+    TYPED_TEST(SharedPtrTest, TemplatedMoveConstructor)
     {
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+
         std::vector<void*> deleted;
         auto* rawPointer = Memory::New<Derived>();
 
         {
-            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
-            SharedPtr<Base> moved(std::move(pointer));
+            DerivedPtr pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            BasePtr moved(std::move(pointer));
 
             EXPECT_EQ(moved.Get(), rawPointer);
             EXPECT_EQ(moved.GetCount(), 1);
@@ -340,16 +393,18 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, AliasingMoveConstructor)
+    TYPED_TEST(SharedPtrTest, AliasingMoveConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>(45);
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
 
             int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
-            SharedPtr<int> pointer(std::move(ownedPointer), storedPointer);
+            Ptr pointer(std::move(ownedPointer), storedPointer);
 
             EXPECT_EQ(pointer.Get(), storedPointer);
             EXPECT_EQ(pointer.GetCount(), 1);
@@ -362,19 +417,22 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, WeakPtrConstructor)
+    TYPED_TEST(SharedPtrTest, WeakPtrConstructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+        using Weak = typename TestFixture::template Weak<int>;
+
         int* rawPointer = Memory::New<int>(45);
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
-            WeakPtr<int> weakPointer(pointer);
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Weak weakPointer(pointer);
 
             ASSERT_EQ(pointer.GetCount(), 1);
             ASSERT_EQ(pointer.Get(), rawPointer);
 
-            SharedPtr<int> copy(weakPointer);
+            Ptr copy(weakPointer);
             EXPECT_EQ(copy.Get(), rawPointer);
             EXPECT_EQ(copy.GetCount(), 2);
 
@@ -385,16 +443,18 @@ namespace
         EXPECT_EQ(deleted.size(), 1);
         EXPECT_EQ(deleted[0], rawPointer);
 
-        WeakPtr<int> weakNull;
+        Weak weakNull;
         ASSERT_TRUE(weakNull.IsExpired());
 
         EXPECT_THROW(
-            SharedPtr<int> pointer(weakNull),
+            Ptr pointer(weakNull),
             BadWeakPtrException);
     }
 
-    TEST(SharedPtrTest, ScopedPtrConstructor)
+    TYPED_TEST(SharedPtrTest, ScopedPtrConstructor)
     {
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+
         auto* rawPointer = Memory::New<Derived>();
         std::vector<void*> deleted;
 
@@ -403,7 +463,7 @@ namespace
                 rawPointer,
                 TrackingDeleter<Derived>(&deleted));
 
-            SharedPtr<Base> moved(std::move(pointer));
+            BasePtr moved(std::move(pointer));
             EXPECT_EQ(moved.Get(), rawPointer);
             EXPECT_EQ(moved.GetCount(), 1);
 
@@ -414,16 +474,15 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, Destructor)
+    TYPED_TEST(SharedPtrTest, Destructor)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>(5);
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> pointer = SharedPtr<int>(
-                rawPointer,
-                TrackingDeleter<int>(&deleted));
-
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
             KITSUNE_UNUSED(pointer);
         }
 
@@ -431,16 +490,18 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, CopyAssign)
+    TYPED_TEST(SharedPtrTest, CopyAssign)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>(4);
         int* rawPointer2 = Memory::New<int>(5);
 
         std::vector<void*> deleted;
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
-            SharedPtr<int> copy(rawPointer2, TrackingDeleter<int>(&deleted));
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr copy(rawPointer2, TrackingDeleter<int>(&deleted));
 
             copy = pointer;
 
@@ -456,16 +517,19 @@ namespace
         EXPECT_EQ(deleted[1], rawPointer);
     }
 
-    TEST(SharedPtrTest, TemplatedCopyAssign)
+    TYPED_TEST(SharedPtrTest, TemplatedCopyAssign)
     {
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+
         auto* rawPointer = Memory::New<Derived>();
         auto* rawPointer2 = Memory::New<Derived>();
 
         std::vector<void*> deleted;
 
         {
-            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
-            SharedPtr<Base> copy(rawPointer2, TrackingDeleter<Derived>(&deleted));
+            DerivedPtr pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            BasePtr copy(rawPointer2, TrackingDeleter<Derived>(&deleted));
 
             copy = pointer;
 
@@ -481,15 +545,17 @@ namespace
         EXPECT_EQ(deleted[1], rawPointer);
     }
 
-    TEST(SharedPtrTest, MoveAssign)
+    TYPED_TEST(SharedPtrTest, MoveAssign)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         std::vector<void*> deleted;
         int* rawPointer = Memory::New<int>(5);
         int* rawPointer2 = Memory::New<int>(5);
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
-            SharedPtr<int> moved(rawPointer2, TrackingDeleter<int>(&deleted));
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr moved(rawPointer2, TrackingDeleter<int>(&deleted));
 
             moved = std::move(pointer);
 
@@ -505,15 +571,18 @@ namespace
         EXPECT_EQ(deleted[1], rawPointer);
     }
 
-    TEST(SharedPtrTest, TemplatedMoveAssign)
+    TYPED_TEST(SharedPtrTest, TemplatedMoveAssign)
     {
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+
         std::vector<void*> deleted;
         auto* rawPointer = Memory::New<Derived>();
         auto* rawPointer2 = Memory::New<Derived>();
 
         {
-            SharedPtr<Derived> pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
-            SharedPtr<Base> moved(rawPointer2, TrackingDeleter<Base>(&deleted));
+            DerivedPtr pointer(rawPointer, TrackingDeleter<Derived>(&deleted));
+            BasePtr moved(rawPointer2, TrackingDeleter<Base>(&deleted));
 
             moved = std::move(pointer);
 
@@ -529,8 +598,10 @@ namespace
         EXPECT_EQ(deleted[1], rawPointer);
     }
 
-    TEST(SharedPtrTest, ScopedPtrAssign)
+    TYPED_TEST(SharedPtrTest, ScopedPtrAssign)
     {
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+
         auto* rawPointer = Memory::New<Derived>();
         auto* rawPointer2 = Memory::New<Base>();
 
@@ -541,7 +612,7 @@ namespace
                 rawPointer,
                 TrackingDeleter<Derived>(&deleted));
 
-            SharedPtr<Base> moved(rawPointer2, TrackingDeleter<Base>(&deleted));
+            BasePtr moved(rawPointer2, TrackingDeleter<Base>(&deleted));
             moved = std::move(pointer);
 
             EXPECT_EQ(moved.Get(), rawPointer);
@@ -555,13 +626,15 @@ namespace
         EXPECT_EQ(deleted[1], rawPointer);
     }
 
-    TEST(SharedPtrTest, Reset)
+    TYPED_TEST(SharedPtrTest, Reset)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         std::vector<void*> deleted;
         int* rawPointer = Memory::New<int>();
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
             ASSERT_EQ(pointer.Get(), rawPointer);
 
             pointer.Reset();
@@ -573,14 +646,16 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, ResetPointer)
+    TYPED_TEST(SharedPtrTest, ResetPointer)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         std::vector<void*> deleted;
         int* rawPointer = Memory::New<int>();
         int* rawPointer2 = Memory::New<int>();
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
             ASSERT_EQ(pointer.Get(), rawPointer);
 
             pointer.Reset(rawPointer2);
@@ -592,8 +667,10 @@ namespace
         EXPECT_EQ(deleted[0], rawPointer);
     }
 
-    TEST(SharedPtrTest, ResetPointerDeleterAndAllocator)
+    TYPED_TEST(SharedPtrTest, ResetPointerDeleterAndAllocator)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         std::vector<void*> deleted;
         std::vector<void*> deleted2;
 
@@ -601,17 +678,13 @@ namespace
         int* rawPointer2 = Memory::New<int>();
 
         {
-            SharedPtr<int> pointer(
-                rawPointer,
-                TrackingDeleter<int>(&deleted),
-                TrackingAllocator());
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted),
+                        TrackingAllocator());
 
             ASSERT_EQ(pointer.Get(), rawPointer);
 
-            pointer.Reset(
-                rawPointer2,
-                TrackingDeleter<int>(&deleted2),
-                TrackingAllocator());
+            pointer.Reset(rawPointer2, TrackingDeleter<int>(&deleted2),
+                          TrackingAllocator());
 
             EXPECT_EQ(pointer.Get(), rawPointer2);
             EXPECT_EQ(pointer.GetCount(), 1);
@@ -624,8 +697,10 @@ namespace
         EXPECT_EQ(deleted2[0], rawPointer2);
     }
 
-    TEST(SharedPtrTest, ResetPointerAndDeleter)
+    TYPED_TEST(SharedPtrTest, ResetPointerAndDeleter)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         std::vector<void*> deleted;
         std::vector<void*> deleted2;
 
@@ -633,7 +708,7 @@ namespace
         int* rawPointer2 = Memory::New<int>();
 
         {
-            SharedPtr<int> pointer(rawPointer, TrackingDeleter<int>(&deleted));
+            Ptr pointer(rawPointer, TrackingDeleter<int>(&deleted));
             ASSERT_EQ(pointer.Get(), rawPointer);
 
             pointer.Reset(rawPointer2, TrackingDeleter<int>(&deleted2));
@@ -648,34 +723,39 @@ namespace
         EXPECT_EQ(deleted2[0], rawPointer2);
     }
 
-    TEST(SharedPtrTest, Dereference)
+    TYPED_TEST(SharedPtrTest, Dereference)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
-        SharedPtr<int> pointer(rawPointer);
+        Ptr pointer(rawPointer);
 
         EXPECT_EQ(&*pointer, rawPointer);
     }
 
-    TEST(SharedPtrTest, Boolean)
+    TYPED_TEST(SharedPtrTest, Boolean)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
         int* rawPointer = Memory::New<int>();
 
-        SharedPtr<int> pointer(rawPointer);
-        SharedPtr<int> empty;
+        Ptr pointer(rawPointer);
+        Ptr empty;
 
         EXPECT_TRUE((bool)pointer);
         EXPECT_FALSE((bool)empty);
     }
 
-    /* SharedPtr<T>::Get() and SharedPtr<T>::GetCount() are assumed to work. */
+    /* Ptr<T>::Get() and Ptr<T>::GetCount() are assumed to work. */
 
-    TEST(SharedPtrTest, Swap)
+    TYPED_TEST(SharedPtrTest, Swap)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
         int* rawPointer2 = Memory::New<int>();
 
-        SharedPtr<int> pointer(rawPointer);
-        SharedPtr<int> pointer2(rawPointer2);
+        Ptr pointer(rawPointer);
+        Ptr pointer2(rawPointer2);
 
         Usize count = pointer.GetCount();
         Usize count2 = pointer2.GetCount();
@@ -689,13 +769,15 @@ namespace
         EXPECT_EQ(pointer2.GetCount(), count);
     }
 
-    TEST(SharedPtrTest, Comparisons)
+    TYPED_TEST(SharedPtrTest, Comparisons)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
         int* rawPointer2 = Memory::New<int>();
 
-        SharedPtr<int> pointer(rawPointer);
-        SharedPtr<int> pointer2(rawPointer2);
+        Ptr pointer(rawPointer);
+        Ptr pointer2(rawPointer2);
 
         EXPECT_EQ(pointer == pointer2, false);
         EXPECT_EQ(pointer == pointer, true);
@@ -714,12 +796,14 @@ namespace
         EXPECT_EQ(pointer <= pointer2, pointer.Get() <= pointer2.Get());
     }
 
-    TEST(SharedPtrTest, NullptrComparisons)
+    TYPED_TEST(SharedPtrTest, NullptrComparisons)
     {
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* null = nullptr;
         int* rawPointer = Memory::New<int>();
 
-        SharedPtr<int> pointer(rawPointer);
+        Ptr pointer(rawPointer);
 
         /* operator!= is auto-generated by the compiler if operator== is defined. */
 
@@ -736,110 +820,136 @@ namespace
         EXPECT_EQ(nullptr >= pointer, null >= pointer.Get());
     }
 
-    TEST(WeakPtrTest, DefaultConstructor)
+    TYPED_TEST(WeakPtrTest, DefaultConstructor)
     {
-        WeakPtr<int> pointer;
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
+        Weak pointer;
         EXPECT_EQ(pointer.GetCount(), 0);
-        EXPECT_EQ(pointer.Lock(), SharedPtr<int>());
+        EXPECT_EQ(pointer.Lock(), Ptr{});
     }
 
-    TEST(WeakPtrTest, SharedPtrConstructor)
+    TYPED_TEST(WeakPtrTest, SharedPtrConstructor)
     {
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
 
-        SharedPtr<int> null;
-        SharedPtr<int> pointer(rawPointer);
+        Ptr null;
+        Ptr pointer(rawPointer);
 
         // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-        SharedPtr<int> copy = pointer;
+        Ptr copy = pointer;
         KITSUNE_UNUSED(copy);
 
-        WeakPtr<int> nullWeakPointer = null;
+        Weak nullWeakPointer = null;
         EXPECT_EQ(nullWeakPointer.GetCount(), null.GetCount());
         EXPECT_EQ(nullWeakPointer.Lock(), null);
 
-        WeakPtr<int> weakPointer = pointer;
+        Weak weakPointer = pointer;
         EXPECT_EQ(weakPointer.GetCount(), pointer.GetCount());
         EXPECT_EQ(weakPointer.Lock(), pointer);
     }
 
-    TEST(WeakPtrTest, CopyConstructor)
+    TYPED_TEST(WeakPtrTest, CopyConstructor)
     {
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>(5);
-        SharedPtr<int> pointer(rawPointer);
+        Ptr pointer(rawPointer);
 
-        WeakPtr<int> weakPointer = pointer;
+        Weak weakPointer = pointer;
         ASSERT_EQ(weakPointer.GetCount(), 1);
         ASSERT_EQ(weakPointer.Lock(), pointer);
 
         // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-        WeakPtr<int> weakCopy = weakPointer;
+        Weak weakCopy = weakPointer;
         EXPECT_EQ(weakCopy.GetCount(), 1);
         EXPECT_EQ(weakCopy.Lock(), pointer);
     }
 
-    TEST(WeakPtrTest, TemplatedCopyConstructor)
+    TYPED_TEST(WeakPtrTest, TemplatedCopyConstructor)
     {
+        using BaseWeak = typename TestFixture::template Weak<Base>;
+        using DerivedWeak = typename TestFixture::template Weak<Derived>;
+
+        using Ptr = typename TestFixture::template Ptr<Derived>;
+
         auto* rawPointer = Memory::New<Derived>();
-        SharedPtr<Derived> pointer(rawPointer);
+        Ptr pointer(rawPointer);
 
-        WeakPtr<Derived> weakPointer = pointer;
+        DerivedWeak weakPointer = pointer;
         ASSERT_EQ(weakPointer.GetCount(), 1);
         ASSERT_EQ(weakPointer.Lock(), pointer);
 
         // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-        WeakPtr<Base> weakCopy = weakPointer;
+        BaseWeak weakCopy = weakPointer;
         EXPECT_EQ(weakCopy.GetCount(), 1);
         EXPECT_EQ(weakCopy.Lock(), pointer);
     }
 
-    TEST(WeakPtrTest, MoveConstructor)
+    TYPED_TEST(WeakPtrTest, MoveConstructor)
     {
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
-        SharedPtr<int> pointer(rawPointer);
+        Ptr pointer(rawPointer);
 
-        WeakPtr<int> weak = pointer;
+        Weak weak = pointer;
         ASSERT_EQ(weak.GetCount(), 1);
         ASSERT_EQ(weak.Lock(), pointer);
 
-        WeakPtr<int> move = std::move(weak);
+        Weak move = std::move(weak);
         EXPECT_EQ(move.GetCount(), 1);
         EXPECT_EQ(weak.GetCount(), 0);
 
         EXPECT_EQ(move.Lock(), pointer);
-        EXPECT_EQ(weak.Lock(), SharedPtr<int>());
+        EXPECT_EQ(weak.Lock(), Ptr{});
     }
 
-    TEST(WeakPtrTest, TemplatedMoveConstructor)
+    TYPED_TEST(WeakPtrTest, TemplatedMoveConstructor)
     {
-        auto* rawPointer = Memory::New<Derived>();
-        SharedPtr<Derived> pointer(rawPointer);
+        using BaseWeak = typename TestFixture::template Weak<Base>;
+        using DerivedWeak = typename TestFixture::template Weak<Derived>;
 
-        WeakPtr<Derived> weak = pointer;
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+
+        auto* rawPointer = Memory::New<Derived>();
+        DerivedPtr pointer(rawPointer);
+
+        DerivedWeak weak = pointer;
         ASSERT_EQ(weak.GetCount(), 1);
         ASSERT_EQ(weak.Lock(), pointer);
 
-        WeakPtr<Base> move = std::move(weak);
+        BaseWeak move = std::move(weak);
         EXPECT_EQ(move.GetCount(), 1);
         EXPECT_EQ(weak.GetCount(), 0);
 
         EXPECT_EQ(move.Lock(), pointer);
-        EXPECT_EQ(weak.Lock(), SharedPtr<Base>());
+        EXPECT_EQ(weak.Lock(), BasePtr{});
     }
 
-    TEST(WeakPtrTest, Destructor)
+    TYPED_TEST(WeakPtrTest, Destructor)
     {
         // No way of testing the destructor.
         EXPECT_TRUE(true);
     }
 
-    TEST(WeakPtrTest, SharedPtrAssign)
+    TYPED_TEST(WeakPtrTest, SharedPtrAssign)
     {
-        WeakPtr<Base> weak;
+        using Weak = typename TestFixture::template Weak<Base>;
+        using Ptr = typename TestFixture::template Ptr<Derived>;
+
+        Weak weak;
 
         {
             auto* rawPointer = Memory::New<Derived>();
-            SharedPtr<Derived> pointer(rawPointer);
+            Ptr pointer(rawPointer);
 
             weak = pointer;
 
@@ -851,16 +961,19 @@ namespace
         EXPECT_EQ(weak.Lock(), nullptr);
     }
 
-    TEST(WeakPtrTest, CopyAssign)
+    TYPED_TEST(WeakPtrTest, CopyAssign)
     {
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
         int* rawPointer2 = Memory::New<int>();
 
-        SharedPtr<int> pointer(rawPointer);
-        SharedPtr<int> pointer2(rawPointer2);
+        Ptr pointer(rawPointer);
+        Ptr pointer2(rawPointer2);
 
-        WeakPtr<int> weak = pointer;
-        WeakPtr<int> copy = pointer2;
+        Weak weak = pointer;
+        Weak copy = pointer2;
 
         copy = weak;
 
@@ -870,16 +983,22 @@ namespace
         EXPECT_EQ(copy.Lock(), pointer);
     }
 
-    TEST(WeakPtrTest, TemplatedCopyAssign)
+    TYPED_TEST(WeakPtrTest, TemplatedCopyAssign)
     {
+        using BaseWeak = typename TestFixture::template Weak<Base>;
+        using DerivedWeak = typename TestFixture::template Weak<Derived>;
+
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+
         auto* rawPointer = Memory::New<Derived>();
         auto* rawPointer2 = Memory::New<Derived>();
 
-        SharedPtr<Derived> pointer(rawPointer);
-        SharedPtr<Base> pointer2(rawPointer2);
+        DerivedPtr pointer(rawPointer);
+        BasePtr pointer2(rawPointer2);
 
-        WeakPtr<Derived> weak = pointer;
-        WeakPtr<Base> copy = pointer2;
+        DerivedWeak weak = pointer;
+        BaseWeak copy = pointer2;
 
         copy = weak;
 
@@ -889,16 +1008,19 @@ namespace
         EXPECT_EQ(copy.Lock(), pointer);
     }
 
-    TEST(WeakPtrTest, MoveAssign)
+    TYPED_TEST(WeakPtrTest, MoveAssign)
     {
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
         int* rawPointer2 = Memory::New<int>();
 
-        SharedPtr<int> pointer(rawPointer);
-        SharedPtr<int> pointer2(rawPointer2);
+        Ptr pointer(rawPointer);
+        Ptr pointer2(rawPointer2);
 
-        WeakPtr<int> weak = pointer;
-        WeakPtr<int> move = pointer2;
+        Weak weak = pointer;
+        Weak move = pointer2;
 
         move = std::move(weak);
 
@@ -909,16 +1031,22 @@ namespace
         EXPECT_EQ(weak.Lock(), nullptr);
     }
 
-    TEST(WeakPtrTest, TemplatedMoveAssign)
+    TYPED_TEST(WeakPtrTest, TemplatedMoveAssign)
     {
+        using BaseWeak = typename TestFixture::template Weak<Base>;
+        using DerivedWeak = typename TestFixture::template Weak<Derived>;
+
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+
         auto* rawPointer = Memory::New<Derived>();
         auto* rawPointer2 = Memory::New<Derived>();
 
-        SharedPtr<Derived> pointer(rawPointer);
-        SharedPtr<Base> pointer2(rawPointer2);
+        DerivedPtr pointer(rawPointer);
+        BasePtr pointer2(rawPointer2);
 
-        WeakPtr<Derived> weak = pointer;
-        WeakPtr<Base> move = pointer2;
+        DerivedWeak weak = pointer;
+        BaseWeak move = pointer2;
 
         move = std::move(weak);
 
@@ -929,29 +1057,39 @@ namespace
         EXPECT_EQ(weak.Lock(), nullptr);
     }
 
-    TEST(WeakPtrTest, Reset)
+    TYPED_TEST(WeakPtrTest, Reset)
     {
-        SharedPtr<int> pointer = MakeShared<int>();
-        WeakPtr<int> weak = pointer;
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
+        int* rawPointer = Memory::New<int>(4);
+
+        Ptr pointer(rawPointer);
+        Weak weak = pointer;
 
         weak.Reset();
         EXPECT_EQ(weak.GetCount(), 0);
-        EXPECT_EQ(weak.Lock(), SharedPtr<int>());
+        EXPECT_EQ(weak.Lock(), Ptr{});
     }
 
     /* WeakPtr<T>::GetCount() is assumed to work. */
 
-    TEST(WeakPtrTest, IsExpired)
+    TYPED_TEST(WeakPtrTest, IsExpired)
     {
-        WeakPtr<Base> weakPointer;
-        WeakPtr<Base> null;
+        using BaseWeak = typename TestFixture::template Weak<Base>;
+        using DerivedWeak = typename TestFixture::template Weak<Derived>;
 
-        SharedPtr<Derived> pointer2(Memory::New<Derived>());
-        WeakPtr<Base> weakPointer2 = pointer2;
+        using Ptr = typename TestFixture::template Ptr<Derived>;
+
+        BaseWeak weakPointer;
+        BaseWeak null;
+
+        Ptr pointer2(Memory::New<Derived>());
+        BaseWeak weakPointer2 = pointer2;
 
         {
             auto* rawPointer = Memory::New<Derived>();
-            SharedPtr<Derived> pointer(rawPointer);
+            Ptr pointer(rawPointer);
 
             weakPointer = pointer;
         }
@@ -962,16 +1100,19 @@ namespace
         EXPECT_FALSE(weakPointer2.IsExpired());
     }
 
-    TEST(WeakPtrTest, Swap)
+    TYPED_TEST(WeakPtrTest, Swap)
     {
+        using Weak = typename TestFixture::template Weak<int>;
+        using Ptr = typename TestFixture::template Ptr<int>;
+
         int* rawPointer = Memory::New<int>();
         int* rawPointer2 = Memory::New<int>();
 
-        SharedPtr<int> pointer(rawPointer);
-        SharedPtr<int> pointer2(rawPointer2);
+        Ptr pointer(rawPointer);
+        Ptr pointer2(rawPointer2);
 
-        WeakPtr<int> weakPtr = pointer;
-        WeakPtr<int> weakPointer2 = pointer2;
+        Weak weakPtr = pointer;
+        Weak weakPointer2 = pointer2;
 
         weakPtr.Swap(weakPointer2);
 
@@ -979,10 +1120,13 @@ namespace
         EXPECT_EQ(weakPointer2.Lock().Get(), rawPointer);
     }
 
-    TEST(SharedPtrTest, StaticPointerCast)
+    TYPED_TEST(SharedPtrTest, StaticPointerCast)
     {
-        SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
-        SharedPtr<int> intPointer = StaticPointerCast<int>(voidPointer);
+        using VoidPtr = typename TestFixture::template Ptr<void>;
+        using IntPtr = typename TestFixture::template Ptr<int>;
+
+        VoidPtr voidPointer(Memory::New<int>(3));
+        IntPtr intPointer = StaticPointerCast<int>(voidPointer);
 
         EXPECT_EQ((void*)intPointer.Get(), voidPointer.Get());
 
@@ -990,22 +1134,28 @@ namespace
         EXPECT_EQ(voidPointer.GetCount(), 2);
     }
 
-    TEST(SharedPtrTest, MoveStaticPointerCast)
+    TYPED_TEST(SharedPtrTest, MoveStaticPointerCast)
     {
-        SharedPtr<void> voidPointer = SharedPtr<void>(Memory::New<int>(3));
+        using VoidPtr = typename TestFixture::template Ptr<void>;
+        using IntPtr = typename TestFixture::template Ptr<int>;
+
+        VoidPtr voidPointer(Memory::New<int>(3));
         void* rawPointer = voidPointer.Get();
 
-        SharedPtr<int> intPointer = StaticPointerCast<int>(Move(voidPointer));
+        IntPtr intPointer = StaticPointerCast<int>(Move(voidPointer));
         EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
         EXPECT_EQ(intPointer.GetCount(), 1);
         EXPECT_EQ(voidPointer.GetCount(), 0);
     }
 
-    TEST(SharedPtrTest, DynamicPointerCast)
+    TYPED_TEST(SharedPtrTest, DynamicPointerCast)
     {
-        SharedPtr<Base> pointer = MakeShared<Derived>();
-        SharedPtr<Derived> intPointer = DynamicPointerCast<Derived>(pointer);
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+
+        BasePtr pointer(Memory::New<Derived>());
+        DerivedPtr intPointer = DynamicPointerCast<Derived>(pointer);
 
         EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
 
@@ -1013,22 +1163,28 @@ namespace
         EXPECT_EQ(pointer.GetCount(), 2);
     }
 
-    TEST(SharedPtrTest, MoveDynamicPointerCast)
+    TYPED_TEST(SharedPtrTest, MoveDynamicPointerCast)
     {
-        SharedPtr<Base> pointer = MakeShared<Derived>();
+        using BasePtr = typename TestFixture::template Ptr<Base>;
+        using DerivedPtr = typename TestFixture::template Ptr<Derived>;
+
+        BasePtr pointer(Memory::New<Derived>());
         Base* rawPointer = pointer.Get();
 
-        SharedPtr<Derived> intPointer = DynamicPointerCast<Derived>(Move(pointer));
+        DerivedPtr intPointer = DynamicPointerCast<Derived>(Move(pointer));
         EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
         EXPECT_EQ(intPointer.GetCount(), 1);
         EXPECT_EQ(pointer.GetCount(), 0);
     }
 
-    TEST(SharedPtrTest, ConstPointerCast)
+    TYPED_TEST(SharedPtrTest, ConstPointerCast)
     {
-        SharedPtr<const int> pointer = MakeShared<int>();
-        SharedPtr<int> intPointer = ConstPointerCast<int>(pointer);
+        using Ptr = typename TestFixture::template Ptr<int>;
+        using ConstPtr = typename TestFixture::template Ptr<const int>;
+
+        ConstPtr pointer(Memory::New<int>());
+        Ptr intPointer = ConstPointerCast<int>(pointer);
 
         EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
 
@@ -1036,22 +1192,28 @@ namespace
         EXPECT_EQ(pointer.GetCount(), 2);
     }
 
-    TEST(SharedPtrTest, MoveConstPointerCast)
+    TYPED_TEST(SharedPtrTest, MoveConstPointerCast)
     {
-        SharedPtr<const int> pointer = MakeShared<int>();
+        using Ptr = typename TestFixture::template Ptr<int>;
+        using ConstPtr = typename TestFixture::template Ptr<const int>;
+
+        ConstPtr pointer(Memory::New<int>());
         const int* rawPointer = pointer.Get();
 
-        SharedPtr<int> intPointer = ConstPointerCast<int>(Move(pointer));
+        Ptr intPointer = ConstPointerCast<int>(Move(pointer));
         EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
         EXPECT_EQ(intPointer.GetCount(), 1);
         EXPECT_EQ(pointer.GetCount(), 0);
     }
 
-    TEST(SharedPtrTest, ReinterpretPointerCast)
+    TYPED_TEST(SharedPtrTest, ReinterpretPointerCast)
     {
-        SharedPtr<int> pointer = MakeShared<int>();
-        SharedPtr<float> intPointer = ReinterpretPointerCast<float>(pointer);
+        using IntPtr = typename TestFixture::template Ptr<int>;
+        using FloatPtr = typename TestFixture::template Ptr<float>;
+
+        IntPtr pointer(Memory::New<int>());
+        FloatPtr intPointer = ReinterpretPointerCast<float>(pointer);
 
         EXPECT_EQ((void*)intPointer.Get(), pointer.Get());
 
@@ -1059,12 +1221,15 @@ namespace
         EXPECT_EQ(pointer.GetCount(), 2);
     }
 
-    TEST(SharedPtrTest, MoveReinterpretPointerCast)
+    TYPED_TEST(SharedPtrTest, MoveReinterpretPointerCast)
     {
-        SharedPtr<int> pointer = MakeShared<int>();
+        using IntPtr = typename TestFixture::template Ptr<int>;
+        using FloatPtr = typename TestFixture::template Ptr<float>;
+
+        IntPtr pointer(Memory::New<int>());
         int* rawPointer = pointer.Get();
 
-        SharedPtr<float> intPointer = ReinterpretPointerCast<float>(Move(pointer));
+        FloatPtr intPointer = ReinterpretPointerCast<float>(Move(pointer));
         EXPECT_EQ((void*)intPointer.Get(), rawPointer);
 
         EXPECT_EQ(intPointer.GetCount(), 1);

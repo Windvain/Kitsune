@@ -55,13 +55,13 @@ namespace Kitsune
                     return m_SharedCount.CompareExchange(expected, desired);
                 else
                 {
-                    bool exchange = (m_SharedCount != expected);
-                    if (exchange)
-                        expected = m_SharedCount;
-                    else
+                    bool compare = (m_SharedCount == expected);
+                    if (compare)
                         m_SharedCount = desired;
+                    else
+                        expected = m_SharedCount;
 
-                    return exchange;
+                    return compare;
                 }
             }
 
@@ -222,7 +222,7 @@ namespace Kitsune
         }
 
         template<typename U>
-        inline SharedPtr(const SharedPtr<U>& shared, T* pointer)
+        inline SharedPtr(const SharedPtr<U, Mode>& shared, T* pointer)
             : SharedPtr(pointer, shared.m_ControlBlock)
         {
             if (m_ControlBlock != nullptr)
@@ -230,7 +230,7 @@ namespace Kitsune
         }
 
         template<typename U>
-        inline SharedPtr(SharedPtr<U>&& shared, T* pointer)
+        inline SharedPtr(SharedPtr<U, Mode>&& shared, T* pointer)
             : SharedPtr(pointer, Exchange(shared.m_ControlBlock, nullptr))
         {
             shared.m_Pointer = nullptr;
@@ -250,14 +250,14 @@ namespace Kitsune
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
-        inline SharedPtr(const SharedPtr<U>& pointer)
+        inline SharedPtr(const SharedPtr<U, Mode>& pointer)
             : SharedPtr(pointer, pointer.Get())
         {
         }
 
         template<typename U>
             requires std::is_convertible_v<U*, T*>
-        inline SharedPtr(SharedPtr<U>&& pointer)
+        inline SharedPtr(SharedPtr<U, Mode>&& pointer)
             : SharedPtr(
                 Exchange(pointer.m_Pointer, nullptr),
                 Exchange(pointer.m_ControlBlock, nullptr))
@@ -640,19 +640,19 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline SharedPtr<T> Lock() const
+        inline SharedPtr<T, Mode> Lock() const
         {
             if (m_ControlBlock == nullptr)
-                return SharedPtr<T>();
+                return SharedPtr<T, Mode>();
 
             Int32 current = m_ControlBlock->GetCount();
             while (current > 0)
             {
                 if (m_ControlBlock->CompareExchange(current, current + 1))
-                    return SharedPtr<T>(m_Pointer, m_ControlBlock);
+                    return SharedPtr<T, Mode>(m_Pointer, m_ControlBlock);
             }
 
-            return SharedPtr<T>();
+            return SharedPtr<T, Mode>();
         }
 
     private:
