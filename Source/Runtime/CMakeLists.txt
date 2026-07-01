@@ -125,6 +125,7 @@ add_library(KitsuneRuntime STATIC
     "Foundation/Utilities/EnumFlags.h"
     "Foundation/Utilities/Functor.h"
     "Foundation/Utilities/NonCopyable.h"
+    "Foundation/Utilities/SystemInformation.cpp"
     "Foundation/Utilities/SystemInformation.h"
 
     "Launch/EngineLoop.cpp"

@@ -3,6 +3,7 @@
 #include "Foundation/String/String.h"
 #include "Foundation/Containers/Array.h"
 
+#include "Foundation/Utilities/EnumFlags.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
@@ -16,6 +17,26 @@ namespace Kitsune
         AArch32,    //< Architecture matches ARMv7 and below.
         AArch64     //< Architecture matches all ARMv8 CPUs and above.
     };
+
+    // CPU additional features. Only x86 architecture features are listed
+    // for now, as there are no plans to support ARM CPUs.
+    enum class CpuFeatures : Uint64
+    {
+        None     = 0,
+        MMX      = 1 << 0,
+        SSE      = 1 << 1,
+        SSE2     = 1 << 2,
+        SSE3     = 1 << 3,
+        SSSE3    = 1 << 4,
+        SSE4_1   = 1 << 5,
+        SSE4_2   = 1 << 6,
+        POPCNT   = 1 << 7,
+        AVX      = 1 << 8,
+        AVX2     = 1 << 9,
+        AVX512_F = 1 << 10
+    };
+
+    KITSUNE_OVERLOAD_FLAGS_OPERATORS(CpuFeatures);
 
     // Contains information regarding the system's CPU.
     class CpuInformation
@@ -124,5 +145,8 @@ namespace Kitsune
         static OperatingSystemInformation GetOperatingSystemInformation();
 
         static BatteryInformation GetBatteryInformation();
+
+    public:
+        static CpuFeatures GetCpuFeatures();
     };
 }

@@ -31,6 +31,11 @@ public:
         KITSUNE_INFO_FORMAT("CPU Physical Cores: {0}", cpuInfo.PhysicalCoreCount());
 
         KITSUNE_INFO("");
+        KITSUNE_INFO_FORMAT(
+            "CPU Features: {0:0b}",
+            static_cast<Uint64>(SystemInformation::GetCpuFeatures()));
+
+        KITSUNE_INFO("");
         KITSUNE_INFO_FORMAT("Operating System Name: {0}", osInfo.Name());
         KITSUNE_INFO_FORMAT("Operating System Short Name: {0}", osInfo.ShortName());
 
