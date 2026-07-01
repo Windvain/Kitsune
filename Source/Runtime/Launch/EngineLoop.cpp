@@ -1,8 +1,6 @@
 #include "Launch/EngineLoop.h"
 
-#include "Foundation/Logging/Logger.h"
 #include "Foundation/Logging/ConsoleLogSink.h"
-
 #include "Foundation/Diagnostics/LogicException.h"
 
 namespace Kitsune
@@ -39,15 +37,19 @@ namespace Kitsune
             "For the source code, visit https://github.com/Windvain/Kitsune",
             GetEngineVersion());
 
-        m_Application = CreateApplication(m_CommandLineArguments);
-        if (m_Application == nullptr)
-            return;
-
         KITSUNE_ENGINE_INFO(
             Launch,
-            "Kitsune Engine initialization step ran successfully.");
+            "Kitsune Engine initialization step ran successfully. Calling the "
+            "application's constructor.");
+
+        m_Application = CreateApplication(m_CommandLineArguments);
+        if (m_Application == nullptr)
+            Exit(1);
     }
 
+    // NOTE: This is done just to suppress warnings. Remove the NOLINT comment once
+    // Run() is made non-const.
+    // NOLINTNEXTLINE(readability-make-member-function-const)
     void EngineLoop::Run()
     {
         KITSUNE_ENGINE_INFO(
@@ -57,7 +59,7 @@ namespace Kitsune
 
         while (!m_ExitRequested)
         {
-            m_Application->Update();
+            m_Application->OnUpdate(/* Temp */ 0);
         }
     }
 

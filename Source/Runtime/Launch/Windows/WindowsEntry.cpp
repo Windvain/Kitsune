@@ -136,13 +136,13 @@ static const char* FormatExceptionCode(DWORD code)
     case EXCEPTION_NONCONTINUABLE_EXCEPTION:
         return "Non-continuable Exception Occurred";
     case EXCEPTION_CXX_THROW:
-        return "C++ Exception";
+        return "Uncaught C++ Exception";
     default:
         return "Unknown";
     }
 }
 
-static DWORD ProcessSehException(LPEXCEPTION_POINTERS exceptionInfo)
+static DWORD ProcessSEHException(LPEXCEPTION_POINTERS exceptionInfo)
 {
     PEXCEPTION_RECORD record = exceptionInfo->ExceptionRecord;
     DWORD exceptionCode = record->ExceptionCode;
@@ -210,6 +210,7 @@ int WINAPI WinMain(
     LPSTR lpCmdLine, int nShowCmd)
 #endif
 {
+
 #if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
     KITSUNE_UNUSED(hInstance);
     KITSUNE_UNUSED(hPrevInstance);
@@ -219,20 +220,22 @@ int WINAPI WinMain(
 
     int returnValue = EXIT_SUCCESS;
 
+#if !defined(KITSUNE_BUILD_PRODUCTION)
     // MinGW doesn't define the <crtdbg.h> header functions.
     // Enables debug heap allocations (ALLOC_MEM_DF) and automatically dump
     // memory leaks when the program exits (LEAK_CHECK_DF).
-#if defined(KITSUNE_COMPILER_SUPPORTS_CRTDBG) && defined(KITSUNE_BUILD_DEBUG)
+    #if defined(KITSUNE_COMPILER_SUPPORTS_CRTDBG)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
+    #endif
 
-    SetPerMonitorDpiAwareness();
-
-#if !defined(KITSUNE_BUILD_PRODUCTION)
+    // Try creating a terminal in debug builds.
     if (!TryCreateTerminal())
         return EXIT_FAILURE;
 #endif
 
+    SetPerMonitorDpiAwareness();
+
+    // NOLINTNEXTLINE(bugprone-branch-clone): When building with MinGW, SEH is disabled.
     if (::IsDebuggerPresent())
         returnValue = Kitsune::UniversalMain(__argc, __argv);
     else
@@ -244,20 +247,18 @@ int WINAPI WinMain(
             returnValue = Kitsune::UniversalMain(__argc, __argv);
         }
 #if defined(KITSUNE_COMPILER_SUPPORTS_SEH)
-        __except (ProcessSehException(GetExceptionInformation()))
+        __except (ProcessSEHException(GetExceptionInformation()))
         {
             KITSUNE_UNREACHABLE();
         }
 #endif
-
-        // Makes debugging much easier, removed in production code.
-#if !defined(KITSUNE_BUILD_PRODUCTION)
-        if (returnValue != 0)
-            ::Sleep(INFINITE);
-#endif
     }
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)
+    // Makes debugging much easier, removed in production code.
+    if (returnValue != 0)
+        ::Sleep(INFINITE);
+
     DestroyTerminal();
 #endif
 

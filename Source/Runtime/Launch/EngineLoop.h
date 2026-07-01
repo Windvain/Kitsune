@@ -1,12 +1,9 @@
 #pragma once
 
+#include "Core/Application.h"
+#include "Core/CommandLineArguments.h"
+
 #include "Foundation/Logging/Logger.h"
-
-#include "Foundation/Threading/Mutex.h"
-#include "Foundation/Diagnostics/Backtrace.h"
-
-#include "Application/Application.h"
-#include "Application/CommandLineArguments.h"
 
 namespace Kitsune
 {
@@ -29,28 +26,9 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline const Backtrace& GetExceptionBacktrace() const
-        {
-            return m_ExceptionBacktrace;
-        }
-
-        [[nodiscard]]
         inline const CommandLineArguments& GetCommandLineArguments() const
         {
             return m_CommandLineArguments;
-        }
-
-    public:
-        // Should only be called in the Exception class's constructor.
-        inline void CaptureExceptionBacktrace()
-        {
-            // If there are multiple threads calling this, we don't want the
-            // backtrace to keep getting overridden.
-            if (!m_ExceptionMutex.TryAcquire())
-                return;
-
-            m_ExceptionBacktrace = Backtrace::Capture(1);
-            m_ExceptionMutex.Release();
         }
 
     public:
@@ -78,9 +56,6 @@ namespace Kitsune
 
         Int32 m_ExitCode = 0;
         bool m_ExitRequested = false;
-
-        Backtrace m_ExceptionBacktrace;
-        Mutex m_ExceptionMutex;
 
         Application* m_Application = nullptr;
     };

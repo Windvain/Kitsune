@@ -11,7 +11,7 @@ link_libraries(
     GTest::gtest
     GTest::gmock
 
-    KitsuneEngine
+    KitsuneRuntime
 )
 # MSVC corrupts UTF-8 strings if /utf-8 is not specified.
 # It first encodes the string as UTF-8, then encodes it again in Windows-1252.

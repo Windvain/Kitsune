@@ -1,4 +1,4 @@
-#include "Application/Application.h"
+#include "Core/Application.h"
 #include "Foundation/Memory/Memory.h"
 
 #include "Foundation/Logging/Logger.h"
@@ -9,8 +9,9 @@ using namespace Kitsune;
 class SystemInformationTests : public Application
 {
 public:
-    SystemInformationTests(const ApplicationSpecifications& specs)
-        : Application(specs)
+    SystemInformationTests(const ApplicationSpecifications& specs,
+                           const CommandLineArguments& arguments)
+        : Application(specs, arguments)
     {
         CpuInformation cpuInfo = SystemInformation::GetCpuInformation()[0];
         OperatingSystemInformation osInfo =
@@ -40,11 +41,11 @@ public:
     }
 };
 
-Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
+Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
 {
     ApplicationSpecifications specs;
     specs.Name = "SystemInformation";
     specs.Headless = true;
 
-    return Memory::New<SystemInformationTests>(specs);
+    return Memory::New<SystemInformationTests>(specs, arguments);
 }

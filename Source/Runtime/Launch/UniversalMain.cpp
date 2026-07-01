@@ -1,8 +1,10 @@
 #include "Launch/EngineLoop.h"
-#include "Foundation/Memory/Memory.h"
 
+#include "Foundation/Memory/Memory.h"
 #include "Foundation/Logging/Logger.h"
+
 #include "Foundation/Diagnostics/Exception.h"
+#include "Foundation/Diagnostics/Backtrace.h"
 
 namespace Kitsune
 {
@@ -34,8 +36,8 @@ namespace Kitsune
     {
         // The memory subsystem is going to be used a lot in
         // engine initialization.
-        MemorySubsystemGuard initGuard_{ /* ... */ };
-        if (!initGuard_.IsInitialized())
+        MemorySubsystemGuard initGuard{ /* ... */ };
+        if (!initGuard.IsInitialized())
             return 1;
 
         bool exceptionThrown = false;
@@ -61,7 +63,12 @@ namespace Kitsune
                     Launch,
                     "The engine crashed due of a {0}. Description: \"{1}\"",
                     engineException->GetName(),
-                    engineException->GetDescription());;
+                    engineException->GetDescription());
+
+                KITSUNE_ENGINE_FATAL_FORMAT(
+                    Launch,
+                    "\n{0}",
+                    *static_cast<Backtrace*>(engineException->GetBacktrace()));
             }
             else
             {
@@ -71,11 +78,6 @@ namespace Kitsune
                     "({0})",
                     exception.what());
             }
-
-            KITSUNE_ENGINE_FATAL_FORMAT(
-                Launch,
-                "\n{0}",
-                engineLoop.GetExceptionBacktrace());
         }
 
         int exitCode = engineLoop.Shutdown();
