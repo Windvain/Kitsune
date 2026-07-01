@@ -60,8 +60,8 @@ namespace Kitsune
 
         try
         {
-            const char* symbolName = mangledName;
-            if (symbolName == nullptr)
+            String symbolName;
+            if (mangledName == nullptr)
                 symbolName = "<unknown>";
             else
             {
