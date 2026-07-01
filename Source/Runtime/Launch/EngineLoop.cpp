@@ -1,7 +1,11 @@
 #include "Launch/EngineLoop.h"
 
+#include <cstdlib>
+#include "Foundation/Algorithms/Contains.h"
 #include "Foundation/Logging/ConsoleLogSink.h"
+
 #include "Foundation/Diagnostics/LogicException.h"
+#include "Foundation/Utilities/SystemInformation.h"
 
 namespace Kitsune
 {
@@ -37,6 +41,14 @@ namespace Kitsune
             "For the source code, visit https://github.com/Windvain/Kitsune",
             GetEngineVersion());
 
+#if defined(KITSUNE_ENABLE_SIMD_OPTIMIZATIONS)
+        if (!CPUSupportsSIMDRequirements())
+        {
+            ForceExit(EXIT_FAILURE);
+            return;
+        }
+#endif
+
         KITSUNE_ENGINE_INFO(
             Launch,
             "Kitsune Engine initialization step ran successfully. Calling the "
@@ -44,7 +56,7 @@ namespace Kitsune
 
         m_Application = CreateApplication(m_CommandLineArguments);
         if (m_Application == nullptr)
-            Exit(1);
+            Exit(EXIT_FAILURE);
     }
 
     // NOTE: This is done just to suppress warnings. Remove the NOLINT comment once
@@ -77,5 +89,34 @@ namespace Kitsune
         m_Logger = nullptr;
 
         return m_ExitCode;
+    }
+
+    bool EngineLoop::CPUSupportsSIMDRequirements()
+    {
+        KITSUNE_ENGINE_INFO(Launch, "Checking SIMD support...");
+
+        CpuFeatures features = SystemInformation::GetCpuFeatures();
+        Array<bool> supported;
+
+        const auto LogSupportMessage = [](bool supported, const char* featureName)
+        {
+            KITSUNE_ENGINE_LOG_FORMAT(
+                Launch,
+                supported ? LogSeverity::Info : LogSeverity::Fatal,
+                SourceLocation(),
+                "\tSupports {0}: {1}", featureName, supported);
+        };
+
+#if defined(KITSUNE_ARCH_X86)
+        {
+            auto supportsAVX2 = bool(features & CpuFeatures::AVX2);
+            LogSupportMessage(supportsAVX2, "AVX2");
+
+            supported.PushBack(supportsAVX2);
+        }
+#endif
+
+        KITSUNE_ENGINE_INFO(Launch, "Finished SIMD checks.");
+        return !Algorithms::Contains(supported.GetBegin(), supported.GetEnd(), false);
     }
 }

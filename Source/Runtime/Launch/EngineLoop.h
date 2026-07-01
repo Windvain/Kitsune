@@ -48,6 +48,9 @@ namespace Kitsune
         }
 
     private:
+        [[nodiscard]] static bool CPUSupportsSIMDRequirements();
+
+    private:
         static EngineLoop* s_Instance;
 
     public:
