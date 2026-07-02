@@ -1,4 +1,4 @@
-add_library(KitsuneRuntime STATIC
+add_library(KitsuneRuntime SHARED
     "Core/Application.cpp"
     "Core/Application.h"
     "Core/CommandLineArguments.h"
@@ -127,11 +127,9 @@ add_library(KitsuneRuntime STATIC
     "Foundation/Utilities/NonCopyable.h"
     "Foundation/Utilities/SystemInformation.cpp"
     "Foundation/Utilities/SystemInformation.h"
-
-    "Launch/EngineLoop.cpp"
-    "Launch/EngineLoop.h"
-    "Launch/UniversalMain.cpp"
 )
+
+add_library(Kitsune::Runtime ALIAS KitsuneRuntime)
 
 # CpuId.h should only be included on x86_64 targets. Contains the use of the CPUID
 # instruction, which is specific to the x86 architecture.
@@ -155,12 +153,16 @@ if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS)
     target_compile_definitions(KitsuneRuntime PUBLIC "KITSUNE_ENABLE_SIMD_OPTIMIZATIONS=1")
 endif()
 
-target_compile_definitions(KitsuneRuntime PUBLIC
+target_compile_definitions(KitsuneRuntime
+    PUBLIC
     "KITSUNE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}"
     "KITSUNE_VERSION_MINOR=${PROJECT_VERSION_MINOR}"
     "KITSUNE_VERSION_PATCH=${PROJECT_VERSION_PATCH}"
 
     "KITSUNE_BUILD_$<UPPER_CASE:$<CONFIG>>=1"
+
+    PRIVATE
+    "KITSUNE_EXPORTS=1"
 )
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
@@ -170,9 +172,6 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"
-
-        "Launch/Windows/WindowsEngineLoop.cpp"
-        "Launch/Windows/WindowsEntry.cpp"
     )
 
     # Include WindowsSystemInformation.cpp for compilers other than MSVC, b.c. the
@@ -181,6 +180,15 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         target_sources(KitsuneRuntime PRIVATE "Foundation/Windows/WindowsSystemInformation.cpp")
     endif()
+
+    # Simulate the symbol visibility of DLLs. (Hidden until declared exported)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        target_compile_options(KitsuneRuntime PRIVATE
+            "-fvisibility=hidden"
+            "-fvisibility-inlines-hidden"
+        )
+    endif()
+
 
     target_link_libraries(KitsuneRuntime PRIVATE
         "SHcore.lib"        # Used for DPI support, for example GetDpiForMonitor().

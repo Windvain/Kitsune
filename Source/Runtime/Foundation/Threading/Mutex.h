@@ -1,13 +1,15 @@
 #pragma once
 
 #include "Foundation/Common/Types.h"
+#include "Foundation/Common/Macros.h"
+
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
     // A multithreading primitive for synchronizing access to a shared resource or
     // a function.
-    class Mutex : public NonCopyable
+    class KITSUNE_API Mutex : public NonCopyable
     {
     public:
         Mutex();

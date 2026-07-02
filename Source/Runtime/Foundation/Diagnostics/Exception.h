@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exception>
+#include "Foundation/Common/Macros.h"
 
 namespace Kitsune
 {
@@ -16,7 +17,7 @@ namespace Kitsune
     // The engine's own class for an exception. Practically the same as a regular
     // std::exception, but with additional information such as the exception name
     // and description.
-    class Exception : public std::exception
+    class KITSUNE_API Exception : public std::exception
     {
     public:
         Exception() noexcept;

@@ -10,7 +10,7 @@ namespace Kitsune
         bool Headless = false;
     };
 
-    class Application : public NonCopyable
+    class KITSUNE_API Application : public NonCopyable
     {
     public:
         Application(const ApplicationSpecifications& specs,

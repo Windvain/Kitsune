@@ -20,7 +20,7 @@ namespace Kitsune
 
     // The memory class. Contains most of the common functions for dealing with
     // memory.
-    class Memory
+    class KITSUNE_API Memory
     {
     public:
         static bool InitializeExplicit();

@@ -12,7 +12,7 @@ namespace Kitsune
 {
     // A singleton class which provides an interface to interact with
     // "global" sinks.
-    class Logger : public NonCopyable
+    class KITSUNE_API Logger : public NonCopyable
     {
     public:
         Logger();

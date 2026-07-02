@@ -23,7 +23,7 @@ namespace Kitsune
     {
         // Can't put this in the BasicConsoleWriter b.c its a templated
         // class.
-        void UnbufferedWriteConsole(
+        KITSUNE_API void UnbufferedWriteConsole(
             ConsoleWriterType streamType,
             StringView string);
     }

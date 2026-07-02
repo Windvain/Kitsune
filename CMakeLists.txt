@@ -48,7 +48,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/CMake/KitsuneUtilities.cmake")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/External")
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Source/Runtime")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Source/Launcher")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Source/Main")
 
 if (KITSUNE_BUILD_TEST_EXECUTABLES)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Tests")

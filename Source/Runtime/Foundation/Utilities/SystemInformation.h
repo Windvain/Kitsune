@@ -138,7 +138,7 @@ namespace Kitsune
 
     // Obtains the running system's information. Currently, this class only
     // has full functionality under the x86 architecture.
-    class SystemInformation : public NonCopyable
+    class KITSUNE_API SystemInformation : public NonCopyable
     {
     public:
         static Array<CpuInformation> GetCpuInformation();

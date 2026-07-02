@@ -6,7 +6,7 @@
 namespace Kitsune
 {
     // A log sink which outputs log payloads to the console.
-    class ConsoleLogSink : public LogSink
+    class KITSUNE_API ConsoleLogSink : public LogSink
     {
     public:
         void Log(const LogPayload& payload) override;
