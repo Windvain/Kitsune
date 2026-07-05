@@ -3,6 +3,9 @@ add_library(KitsuneRuntime SHARED
     "Core/Application.h"
     "Core/CommandLineArguments.h"
 
+    "Display/DisplayManager.cpp"
+    "Display/DisplayManager.h"
+
     "Foundation/Algorithms/Advance.h"
     "Foundation/Algorithms/Contains.h"
     "Foundation/Algorithms/Copy.h"
@@ -167,6 +170,9 @@ target_compile_definitions(KitsuneRuntime
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     target_sources(KitsuneRuntime PRIVATE
+        "Display/Windows/WindowsDisplayManager.cpp"
+        "Display/Windows/WindowsDisplayManager.h"
+
         "Foundation/Windows/WindowsConsoleWriter.cpp"
         "Foundation/Windows/WindowsFileStream.cpp"
         "Foundation/Windows/WindowsMemory.cpp"

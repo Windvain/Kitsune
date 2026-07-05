@@ -3,6 +3,7 @@
 #include "Core/Application.h"
 #include "Core/CommandLineArguments.h"
 
+#include "Display/DisplayManager.h"
 #include "Foundation/Logging/Logger.h"
 
 namespace Kitsune
@@ -56,6 +57,8 @@ namespace Kitsune
     public:
         CommandLineArguments m_CommandLineArguments;
         Logger* m_Logger = nullptr;
+
+        DisplayManager* m_DisplayManager = nullptr;
 
         Int32 m_ExitCode = 0;
         bool m_ExitRequested = false;

@@ -49,6 +49,15 @@ namespace Kitsune
         }
 #endif
 
+        // TODO: Read this from a config file?
+#if defined(KITSUNE_OS_WINDOWS)
+        String displayServer = "Windows";
+#else
+        String displayServer = "";
+#endif
+
+        m_DisplayManager = DisplayManager::Initialize(displayServer);
+
         KITSUNE_ENGINE_INFO(
             Launch,
             "Kitsune Engine initialization step ran successfully. Calling the "
@@ -71,6 +80,7 @@ namespace Kitsune
 
         while (!m_ExitRequested)
         {
+            m_DisplayManager->Update(/* Temp */ 0);
             m_Application->OnUpdate(/* Temp */ 0);
         }
     }

@@ -1,0 +1,72 @@
+#pragma once
+
+#include "Foundation/Maths/Vector2.h"
+#include "Foundation/String/StringView.h"
+
+#include "Foundation/Containers/Array.h"
+
+namespace Kitsune
+{
+    // The display's orientation.
+    // Note: Setting a display's orientation to 90° twice doesn't make the display
+    //       rotate 180°, a.k.a display rotations don't stack.
+    enum class DisplayOrientation
+    {
+        Default,
+        Rotated90,
+        Rotated180,
+        Rotated270
+    };
+
+#if defined(KITSUNE_OS_WINDOWS)
+    using DisplayID = void*;
+#endif
+
+    struct DisplayInformation
+    {
+        Vector2<Uint32> Size;
+        Vector2<Int32> Position;
+
+        Uint32 RefreshRate;
+        Uint32 DPI;
+
+        DisplayOrientation Orientation;
+        bool MainDisplay;
+    };
+
+    class KITSUNE_API DisplayManager
+    {
+    public:
+        virtual ~DisplayManager() = default;
+
+    public:
+        static DisplayManager* Initialize(StringView serverName);
+        static void Shutdown();
+
+        [[nodiscard]]
+        static DisplayManager* GetInstance()
+        {
+            return s_Instance;
+        }
+
+    public:
+        virtual void Update(double delta) = 0;
+
+    public:
+        [[nodiscard]] virtual Array<DisplayID> GetDisplays() const = 0;
+        [[nodiscard]] virtual DisplayID GetMainDisplay() const = 0;
+
+        [[nodiscard]] virtual Usize GetDisplayCount() const = 0;
+
+        [[nodiscard]]
+        virtual DisplayInformation GetDisplayInformation(DisplayID displayID) const = 0;
+
+    public:
+        virtual void SetDisplayOrientation(
+            DisplayID displayID,
+            DisplayOrientation orientation) const = 0;
+
+    private:
+        static DisplayManager* s_Instance;
+    };
+}
