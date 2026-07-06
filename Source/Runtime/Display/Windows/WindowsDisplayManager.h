@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Windows.h>
-
 #include "Display/DisplayManager.h"
+
 #include "Foundation/Memory/ScopedPtr.h"
+#include "Foundation/Algorithms/Contains.h"
 
 namespace Kitsune
 {
@@ -47,8 +48,16 @@ namespace Kitsune
             return m_Displays.Size();
         }
 
+    public:
         [[nodiscard]]
         DisplayInformation GetDisplayInformation(DisplayID displayID) const override;
+
+        [[nodiscard]]
+        inline bool IsDisplayConnected(DisplayID displayID) const override
+        {
+            return Algorithms::Contains(
+                m_Displays.GetBegin(), m_Displays.GetEnd(), displayID);
+        }
 
     public:
         void SetDisplayOrientation(

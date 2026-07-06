@@ -58,8 +58,12 @@ namespace Kitsune
 
         [[nodiscard]] virtual Usize GetDisplayCount() const = 0;
 
+    public:
         [[nodiscard]]
         virtual DisplayInformation GetDisplayInformation(DisplayID displayID) const = 0;
+
+        [[nodiscard]]
+        virtual bool IsDisplayConnected(DisplayID displayID) const = 0;
 
     public:
         virtual void SetDisplayOrientation(
