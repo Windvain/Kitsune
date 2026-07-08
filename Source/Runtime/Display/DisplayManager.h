@@ -44,7 +44,7 @@ namespace Kitsune
         static void Shutdown();
 
         [[nodiscard]]
-        static DisplayManager* GetInstance()
+        inline static DisplayManager* GetInstance()
         {
             return s_Instance;
         }

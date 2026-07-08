@@ -57,6 +57,7 @@ namespace Kitsune
 #endif
 
         m_DisplayManager = DisplayManager::Initialize(displayServer);
+        m_WindowManager = WindowManager::Initialize(displayServer);
 
         KITSUNE_ENGINE_INFO(
             Launch,
@@ -81,6 +82,8 @@ namespace Kitsune
         while (!m_ExitRequested)
         {
             m_DisplayManager->Update(/* Temp */ 0);
+            m_WindowManager->Update(/* Temp */ 0);
+
             m_Application->OnUpdate(/* Temp */ 0);
         }
     }
