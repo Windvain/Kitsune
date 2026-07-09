@@ -28,10 +28,23 @@ namespace Kitsune
         Vector2<Int32> Position;
 
         Uint32 RefreshRate;
-        Uint32 DPI;
+        float Scaling;
 
         DisplayOrientation Orientation;
         bool MainDisplay;
+    };
+
+    struct DisplayManagerConfigurations
+    {
+        StringView DisplayServer;
+
+        // Ignored when DisplayServer != "Null".
+        struct
+        {
+            Vector2<Uint32> Size;
+            Uint32 RefreshRate;
+            DisplayOrientation Orientation;
+        } NullDisplay;
     };
 
     class KITSUNE_API DisplayManager
@@ -40,7 +53,7 @@ namespace Kitsune
         virtual ~DisplayManager() = default;
 
     public:
-        static DisplayManager* Initialize(StringView serverName);
+        static DisplayManager* Initialize(const DisplayManagerConfigurations& configs);
         static void Shutdown();
 
         [[nodiscard]]
@@ -68,7 +81,7 @@ namespace Kitsune
     public:
         virtual void SetDisplayOrientation(
             DisplayID displayID,
-            DisplayOrientation orientation) const = 0;
+            DisplayOrientation orientation) = 0;
 
     private:
         static DisplayManager* s_Instance;

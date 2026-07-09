@@ -50,13 +50,20 @@ namespace Kitsune
 #endif
 
         // TODO: Read this from a config file?
+        String displayServer;
 #if defined(KITSUNE_OS_WINDOWS)
-        String displayServer = "Windows";
-#else
-        String displayServer = "";
+        displayServer = "Windows";
 #endif
 
-        m_DisplayManager = DisplayManager::Initialize(displayServer);
+        m_DisplayManager = DisplayManager::Initialize({
+            .DisplayServer = displayServer,
+            .NullDisplay = {
+                .Size = { 1920, 1080 },
+                .RefreshRate = 60,
+                .Orientation = DisplayOrientation::Default
+            }
+        });
+
         m_WindowManager = WindowManager::Initialize(displayServer);
 
         KITSUNE_ENGINE_INFO(

@@ -126,13 +126,12 @@ namespace Kitsune
             WindowsDisplayManager::MonitorEnumerationProc,
             reinterpret_cast<LPARAM>(&data)));
 
-        // The values of *dpiX and *dpiY are identical.
+        // The values of *dpiX and *dpiY are identical, we're going to use dpiX.
         UINT dpiX, dpiY;
-        if (SUCCEEDED(::GetDpiForMonitor(data.Handle, MDT_EFFECTIVE_DPI, &dpiX, &dpiY)))
-            displayInfo.DPI = dpiX;
-        else
-            displayInfo.DPI = USER_DEFAULT_SCREEN_DPI;
+        if (FAILED(::GetDpiForMonitor(data.Handle, MDT_EFFECTIVE_DPI, &dpiX, &dpiY)))
+            dpiX = USER_DEFAULT_SCREEN_DPI;
 
+        displayInfo.Scaling = (float(dpiX) / 96.0f);
         switch (deviceMode.dmDisplayOrientation)
         {
         case DMDO_90:
@@ -153,7 +152,7 @@ namespace Kitsune
 
     void WindowsDisplayManager::SetDisplayOrientation(
         DisplayID displayID,
-        DisplayOrientation orientation) const
+        DisplayOrientation orientation)
     {
         KITSUNE_ENGINE_WARN(
             Display,

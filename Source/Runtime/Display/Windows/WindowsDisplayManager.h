@@ -62,7 +62,7 @@ namespace Kitsune
     public:
         void SetDisplayOrientation(
             DisplayID displayID,
-            DisplayOrientation orientation) const override;
+            DisplayOrientation orientation) override;
 
     private:
         static BOOL MonitorEnumerationProc(

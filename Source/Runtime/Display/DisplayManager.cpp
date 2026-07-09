@@ -1,5 +1,7 @@
 #include "Display/DisplayManager.h"
+
 #include "Foundation/Logging/Logger.h"
+#include "Display/Null/NullDisplayManager.h"
 
 #if defined(KITSUNE_OS_WINDOWS)
     #include "Display/Windows/WindowsDisplayManager.h"
@@ -11,18 +13,23 @@ namespace Kitsune
 {
     DisplayManager* DisplayManager::s_Instance = nullptr;
 
-    DisplayManager* DisplayManager::Initialize(StringView serverName)
+    DisplayManager* DisplayManager::Initialize(
+        const DisplayManagerConfigurations& configs)
     {
-        KITSUNE_INFO_FORMAT("Initializing the {0} display manager.", serverName);
+        KITSUNE_INFO_FORMAT(
+            "Initializing the {0} display manager.",
+            configs.DisplayServer);
 
-        // Linux-based distros can use either X11 or Wayland.
-        // Other operating systems just use the built-in display server.
-#if !defined(KITSUNE_OS_LINUX)
-        KITSUNE_UNUSED(serverName);
-#endif
-
+        if (configs.DisplayServer == "Null")
+        {
+            s_Instance = Memory::New<NullDisplayManager>(
+                configs.NullDisplay.Size,
+                configs.NullDisplay.RefreshRate,
+                configs.NullDisplay.Orientation);
+        }
 #if defined(KITSUNE_OS_WINDOWS)
-        s_Instance = Memory::New<WindowsDisplayManager>();
+        else if (configs.DisplayServer == "Windows")
+            s_Instance = Memory::New<WindowsDisplayManager>();
 #endif
 
         return s_Instance;

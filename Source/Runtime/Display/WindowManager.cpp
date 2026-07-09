@@ -1,5 +1,7 @@
 #include "Display/WindowManager.h"
+
 #include "Foundation/Logging/Logger.h"
+#include "Display/Null/NullWindowManager.h"
 
 #if defined(KITSUNE_OS_WINDOWS)
     #include "Display/Windows/WindowsWindowManager.h"
@@ -21,8 +23,11 @@ namespace Kitsune
         KITSUNE_UNUSED(serverName);
 #endif
 
+        if (serverName == "Null")
+            s_Instance = Memory::New<NullWindowManager>();
+        else if (serverName == "Windows")
 #if defined(KITSUNE_OS_WINDOWS)
-        s_Instance = Memory::New<WindowsWindowManager>();
+            s_Instance = Memory::New<WindowsWindowManager>();
 #endif
 
         return s_Instance;
