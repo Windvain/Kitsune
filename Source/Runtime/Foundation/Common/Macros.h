@@ -105,6 +105,23 @@
     #define KITSUNE_IGNORE_CLANG_WARNING(code)
 #endif
 
+#if defined(KITSUNE_COMPILER_MSVC)
+    #define KITSUNE_DLLEXPORT __declspec(dllexport)
+    #define KITSUNE_DLLIMPORT __declspec(dllimport)
+#elif defined(KITSUNE_COMPILER_CLANG) && defined(KITSUNE_OS_WINDOWS)
+    #define KITSUNE_DLLEXPORT [[gnu::dllexport]]
+    #define KITSUNE_DLLIMPORT [[gnu::dllimport]]
+#else
+    #define KITSUNE_DLLEXPORT
+    #define KITSUNE_DLLIMPORT
+#endif
+
+#if defined(KITSUNE_EXPORTS)
+    #define KITSUNE_API KITSUNE_DLLEXPORT
+#else
+    #define KITSUNE_API KITSUNE_DLLIMPORT
+#endif
+
 // Equivalent to the sign() function in mathematics. Returns 1 if the value `x` is
 // positive, -1 if it is negative, and 0 if the value is equal to 0.
 // This macro expands into a ternary statement, so it might not be suitable

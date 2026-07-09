@@ -40,6 +40,6 @@ namespace Kitsune
     // Returns a pair of values, the former is true when the message box
     // was successfully shown, else it is false. The latter returns the ID
     // of the button pressed by the user.
-    Pair<bool, MessageBoxButtonId>
-    ShowMessageBox(const MessageBoxSpecifications& specs);
+    KITSUNE_API
+    Pair<bool, MessageBoxButtonId> ShowMessageBox(const MessageBoxSpecifications& specs);
 }

@@ -1,7 +1,8 @@
 #include "Foundation/Diagnostics/Exception.h"
 
-#include "Launch/EngineLoop.h"
 #include "Foundation/String/String.h"
+#include "Foundation/Threading/Mutex.h"
+#include "Foundation/Diagnostics/Backtrace.h"
 
 namespace Kitsune
 {
@@ -20,9 +21,23 @@ namespace Kitsune
             {
             }
 
+            inline void CaptureBacktrace()
+            {
+                if (!m_Mutex.TryAcquire())
+                    return;
+
+                Backtrace = Backtrace::Capture(1);
+                m_Mutex.Release();
+            }
+
+        private:
+            Mutex m_Mutex;
+
         public:
             BasicString<char, AllocatorType> Name;
             BasicString<char, AllocatorType> Description;
+
+            Backtrace Backtrace;
         };
     }
 
@@ -47,15 +62,12 @@ namespace Kitsune
             // BasicString<T, Alloc> constructors can throw if the allocator
             // fails to allocate memory.
             Memory::ConstructAt<ExceptionData>(m_Data, name, description);
+            m_Data->CaptureBacktrace();
         }
         catch (...)
         {
             Memory::Free(m_Data, sizeof(ExceptionData));
         }
-
-        EngineLoop* engineLoop = EngineLoop::GetInstance();
-        if (engineLoop != nullptr)
-            engineLoop->CaptureExceptionBacktrace();
     }
 
     Exception::~Exception() noexcept
@@ -81,5 +93,13 @@ namespace Kitsune
             return "";
 
         return m_Data->Description.Raw();
+    }
+
+    Backtrace* Exception::GetBacktrace() const noexcept
+    {
+        if (m_Data == nullptr)
+            return nullptr;
+
+        return &m_Data->Backtrace;
     }
 }

@@ -38,7 +38,7 @@ namespace Kitsune
     {
         // Contains platform-specific implementations for file operations.
         // Kind of like the FILE struct in C.
-        class FileObject
+        class KITSUNE_API FileObject
         {
         public:
             FileObject();

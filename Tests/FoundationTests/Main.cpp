@@ -1,4 +1,4 @@
-#include "Application/Application.h"
+#include "Core/Application.h"
 #include <gtest/gtest.h>
 
 #include "Launch/EngineLoop.h"
@@ -9,8 +9,9 @@ using namespace Kitsune;
 class FoundationTests : public Application
 {
 public:
-    FoundationTests(const ApplicationSpecifications& specs)
-        : Application(specs)
+    FoundationTests(const ApplicationSpecifications& specs,
+                    const CommandLineArguments& arguments)
+        : Application(specs, arguments)
     {
         testing::InitGoogleTest();
 
@@ -18,17 +19,17 @@ public:
         engineLoop->Exit(RUN_ALL_TESTS());
     }
 
-    ~FoundationTests()
+    ~FoundationTests() override
     {
         std::cin.get();
     }
 };
 
-Application* Kitsune::CreateApplication(const CommandLineArguments& /* args */)
+Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
 {
     ApplicationSpecifications specs;
     specs.Name = "FoundationTests";
     specs.Headless = true;
 
-    return Memory::New<FoundationTests>(specs);
+    return Memory::New<FoundationTests>(specs, arguments);
 }

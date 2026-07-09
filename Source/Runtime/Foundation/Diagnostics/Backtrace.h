@@ -9,7 +9,7 @@ namespace Kitsune
 {
     // Represents a sequence of active functions calls leading up to
     // the call which creates this class (Backtrace::Capture()).
-    class Backtrace
+    class KITSUNE_API Backtrace
     {
     public:
         using ValueType = const BacktraceFrame;
