@@ -139,7 +139,7 @@ add_library(Kitsune::Runtime ALIAS KitsuneRuntime)
 # CpuId.h should only be included on x86_64 targets. Contains the use of the CPUID
 # instruction, which is specific to the x86 architecture.
 if (${KITSUNE_TARGET_ARCHITECTURE} STREQUAL "x86_64")
-    target_sources(KitsuneRuntime PRIVATE "Foundation/Utilities/CpuId.h")
+    target_sources(KitsuneRuntime PRIVATE "Foundation/Utilities/CPUID.h")
 endif()
 
 if (KITSUNE_ENABLE_VULKAN_BACKEND)
@@ -219,9 +219,9 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_sources(KitsuneRuntime PRIVATE
-        "Foundation/Msvc/MsvcBacktrace.cpp"
-        "Foundation/Msvc/MsvcInterlocked.inl"
-        "Foundation/Msvc/MsvcSystemInformation.cpp"
+        "Foundation/MSVC/MSVCBacktrace.cpp"
+        "Foundation/MSVC/MSVCInterlocked.inl"
+        "Foundation/MSVC/MSVCSystemInformation.cpp"
     )
 
     target_compile_definitions(KitsuneRuntime PRIVATE "KITSUNE_ENABLE_BACKTRACES=1")
