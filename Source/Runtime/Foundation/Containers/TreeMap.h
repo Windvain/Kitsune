@@ -10,7 +10,7 @@ namespace Kitsune
 {
     template<
         typename Key, typename Value,
-        InvocableReturn<bool, const Key&, const Key&> Compare = LessFunctor<Key>,
+        InvocableReturn<bool, const Key&, const Key&> Compare = LessThanFunctor<Key>,
         Allocator Alloc = GlobalAllocator>
     class TreeMap : public RBTree<Key, Value, Compare, Alloc>
     {

@@ -405,7 +405,13 @@ namespace
     // TreeSet<T, Comp, Alloc>::Clear()
     TEST(TreeSetTest, Clear)
     {
-        TreeSet<int, LessFunctor<int>, TrackingAllocator> treeSet = { 3, 123, 123, 10 };
+        TreeSet<int, LessThanFunctor<int>, TrackingAllocator> treeSet = {
+            3,
+            123,
+            123,
+            10
+        };
+
         ASSERT_GT(treeSet.GetAllocator().AllocationSize(), 0);
         ASSERT_GT(treeSet.Size(), 0);
 
