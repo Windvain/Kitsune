@@ -39,10 +39,10 @@ $ cmake -S . -B build/ --preset "Visual Studio 2026"
 -- Build files have been written to: <path to Kitsune>/build
 ```
 
-Or alternatively for MinGW-w64 with Clang:
+Or alternatively for Clang:
 ```bash
 $ cd <path to Kitsune>
-$ cmake -S . -B build/ --preset "Clang MinGW"
+$ cmake -S . -B build/ --preset "Clang"
 ...
 -- Configuring done (2.7s)
 -- Generating done (0.2s)
@@ -55,7 +55,7 @@ Visual Studio 2026 users can use this command:
 ```bash
 $ cmake --build build/ --preset "Visual Studio 2026 - <your build type>"
 ```
-Or with MinGW-w64 and Clang:
+Or with Clang:
 ```bash
-$ cmake --build build/ --preset "Clang MinGW - <your build type>"
+$ cmake --build build/ --preset "Clang - <your build type>"
 ```
