@@ -15,7 +15,9 @@ namespace Kitsune
 
     WindowManager* WindowManager::Initialize(StringView serverName)
     {
-        KITSUNE_INFO_FORMAT("Initializing the {0} window manager.", serverName);
+        KITSUNE_ENGINE_INFO_FORMAT(
+            Display,
+            "Initializing the {0} window manager.", serverName);
 
         // Linux-based distros can use either X11 or Wayland.
         // Other operating systems just use the built-in display server.

@@ -16,9 +16,9 @@ namespace Kitsune
     DisplayManager* DisplayManager::Initialize(
         const DisplayManagerConfigurations& configs)
     {
-        KITSUNE_INFO_FORMAT(
-            "Initializing the {0} display manager.",
-            configs.DisplayServer);
+        KITSUNE_ENGINE_INFO_FORMAT(
+            Display,
+            "Initializing the {0} display manager.", configs.DisplayServer);
 
         if (configs.DisplayServer == "Null")
         {
