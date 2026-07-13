@@ -15,7 +15,7 @@ namespace Kitsune::Details
         if ((handle == nullptr) || (handle == INVALID_HANDLE_VALUE))
             return;
 
-        WideString wideString = Utf8ToUtf16<char, wchar_t>(string);
+        WideString wideString = UTF8ToUTF16<char, wchar_t>(string);
         ::WriteConsoleW(
             handle, wideString.Data(), static_cast<DWORD>(wideString.Size()),
             nullptr, nullptr);

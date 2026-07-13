@@ -44,7 +44,7 @@ namespace Kitsune
             "This function should have failed on the first call.");
 
         ::RegCloseKey(keyHandle);
-        return Utf16ToUtf8<wchar_t, char>(wideData);
+        return UTF16ToUTF8<wchar_t, char>(wideData);
     }
 
     Array<CPUInformation> SystemInformation::GetCPUInformation()

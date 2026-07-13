@@ -1,4 +1,4 @@
-#include "Foundation/String/Utf16Encoding.h"
+#include "Foundation/String/UTF8Encoding.h"
 #include <gtest/gtest.h>
 
 #include "Foundation/Containers/Array.h"
@@ -9,37 +9,37 @@
 using namespace Kitsune;
 
 template<typename T>
-class Utf16EncodingTests : public ::testing::Test
+class UTF8EncodingTests : public ::testing::Test
 {
 public:
     using CharType = T;
-    using EncodingType = Utf16Encoding<T>;
+    using EncodingType = UTF8Encoding<T>;
 
     using CodepointType = typename EncodingType::CodepointType;
 
-    static_assert(TextEncoding<Utf16Encoding<T>>,
-                  "Utf16Encoding<T> does not satisfy the requirements of TextEncoding.");
+    static_assert(TextEncoding<UTF8Encoding<T>>,
+                  "UTF8Encoding<T> does not satisfy the requirements of TextEncoding.");
 
 protected:
-    Utf16EncodingTests() { /* ... */ }
-    ~Utf16EncodingTests() { /* ... */ }
+    UTF8EncodingTests() { /* ... */ }
+    ~UTF8EncodingTests() { /* ... */ }
 
 protected:
     // Terrible naming but ┑(￣Д ￣)┍
     BasicStringView<T> GetSmileyFaceAndRandom()
     {
-        if constexpr (std::is_same_v<T, wchar_t>)
-            return L"😁🤧🤕👾";
-        else /* std:is_same_v<T, char16_t> */
-            return u"😁🤧🤕👾";
+        if constexpr (std::is_same_v<T, char>)
+            return "😁🤧🤕👾";
+        else /* std:is_same_v<T, char8_t> */
+            return u8"😁🤧🤕👾";
     }
 
     BasicStringView<T> GetInvalidString()
     {
-        if constexpr (std::is_same_v<T, wchar_t>)
-            return L"\xD800🦐💩";
-        else /* std:is_same_v<T, char16_t> */
-            return u"\xD87F🦐💩";
+        if constexpr (std::is_same_v<T, char>)
+            return "\xD8\x04\xDB\x7F🦐💩";
+        else /* std:is_same_v<T, char8_t> */
+            return reinterpret_cast<const char8_t*>("\xD8\x04\xDB\x7F🦐💩");
     }
 
     Array<CodepointType> GetSmileyFaceAndRandomCodepoints()
@@ -55,30 +55,24 @@ protected:
 
     Array<CodepointType> GetInvalidCodepoints()
     {
-        return { 0xD800, 0x2022, 0x2022 };
+        return { 0xD800, 0xDB7F, 0x2022, 0x2022 };
     }
 };
 
-using Utf16EncodingTestsImpl =
+using UTF8EncodingTestsImpl =
     ::testing::Types<
-        char16_t
+        char,
+        char8_t>;
 
-        // Some platforms define wchar_t as having a size of 2 bytes.
-        // For example, Windows.
-#if defined(KITSUNE_OS_WINDOWS)
-        , wchar_t
-#endif
-    >;
+TYPED_TEST_SUITE(UTF8EncodingTests, UTF8EncodingTestsImpl);
 
-TYPED_TEST_SUITE(Utf16EncodingTests, Utf16EncodingTestsImpl);
-
-TYPED_TEST(Utf16EncodingTests, MaxCodepointValue)
+TYPED_TEST(UTF8EncodingTests, MaxCodepointValue)
 {
     using Encoding = typename TestFixture::EncodingType;
     EXPECT_EQ(Encoding::MaxCodepointValue(), 0x10FFFF);
 }
 
-TYPED_TEST(Utf16EncodingTests, DecodeSingleValid)
+TYPED_TEST(UTF8EncodingTests, DecodeSingleValid)
 {
     using Encoding = typename TestFixture::EncodingType;
     auto string = this->GetSmileyFaceAndRandom();
@@ -86,13 +80,13 @@ TYPED_TEST(Utf16EncodingTests, DecodeSingleValid)
     typename Encoding::CodepointType codepoint;
     auto result = Encoding::DecodeSingle(string.GetBegin(), string.GetEnd(), &codepoint);
 
-    EXPECT_EQ(result.InputPosition, string.GetBegin() + 2);
+    EXPECT_EQ(result.InputPosition, string.GetBegin() + 4);
     EXPECT_EQ(result.OutputPosition, &codepoint + 1);
 
     EXPECT_EQ(codepoint, 0x1F601);
 }
 
-TYPED_TEST(Utf16EncodingTests, DecodeSingleInvalid)
+TYPED_TEST(UTF8EncodingTests, DecodeSingleInvalid)
 {
     using Encoding = typename TestFixture::EncodingType;
     auto string = this->GetInvalidString();
@@ -106,7 +100,7 @@ TYPED_TEST(Utf16EncodingTests, DecodeSingleInvalid)
     EXPECT_EQ(codepoint, 0);
 }
 
-TYPED_TEST(Utf16EncodingTests, EncodeSingleValid)
+TYPED_TEST(UTF8EncodingTests, EncodeSingleValid)
 {
     using Encoding = typename TestFixture::EncodingType;
     using T = typename TestFixture::CharType;
@@ -119,12 +113,14 @@ TYPED_TEST(Utf16EncodingTests, EncodeSingleValid)
 
     EXPECT_EQ(result.InputPosition, codepoints.GetBegin() + 1);
 
-    EXPECT_EQ(string.Size(), 2);
-    EXPECT_EQ(string[0], T(0xD83D));
-    EXPECT_EQ(string[1], T(0xDE01));
+    EXPECT_EQ(string.Size(), 4);
+    EXPECT_EQ(string[0], T(0xF0));
+    EXPECT_EQ(string[1], T(0x9F));
+    EXPECT_EQ(string[2], T(0x98));
+    EXPECT_EQ(string[3], T(0x81));
 }
 
-TYPED_TEST(Utf16EncodingTests, EncodeSingleInvalid)
+TYPED_TEST(UTF8EncodingTests, EncodeSingleInvalid)
 {
     using Encoding = typename TestFixture::EncodingType;
     using T = typename TestFixture::CharType;

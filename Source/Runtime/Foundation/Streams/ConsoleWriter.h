@@ -8,7 +8,7 @@
 
 #include "Foundation/String/Valid.h"
 #include "Foundation/String/String.h"
-#include "Foundation/String/Utf8Encoding.h"
+#include "Foundation/String/UTF8Encoding.h"
 
 namespace Kitsune
 {
@@ -34,7 +34,7 @@ namespace Kitsune
     {
     public:
         static_assert(
-            BufferSize >= Utf8Encoding<char>::MaximumCodeunits(),
+            BufferSize >= UTF8Encoding<char>::MaximumCodeunits(),
             "BasicConsoleWriter<BufSize, Alloc> expects the buffer size to "
             "be at least 4 bytes.");
 
@@ -131,7 +131,7 @@ namespace Kitsune
             StringView dataView = m_Buffer;
             while (!dataView.IsEmpty())
             {
-                auto invalidIter = FindInvalidEncoding<Utf8Encoding<char>>(
+                auto invalidIter = FindInvalidEncoding<UTF8Encoding<char>>(
                     dataView.GetBegin(), dataView.GetEnd());
 
                 if (invalidIter != dataView.GetBegin())
@@ -149,7 +149,7 @@ namespace Kitsune
                 // it is possible that it got cut off, bring the invalid character
                 // back to the front.
                 Usize difference = dataView.GetEnd() - invalidIter;
-                if (difference < Utf8Encoding<char>::MaximumCodeunits())
+                if (difference < UTF8Encoding<char>::MaximumCodeunits())
                 {
                     m_Buffer = String(invalidIter, difference);
                     return;     // Don't clear the buffer, we've cleared it already!

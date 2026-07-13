@@ -1,4 +1,4 @@
-#include "Foundation/String/Utf32Encoding.h"
+#include "Foundation/String/UTF32Encoding.h"
 #include <gtest/gtest.h>
 
 #include "Foundation/Containers/Array.h"
@@ -9,20 +9,20 @@
 using namespace Kitsune;
 
 template<typename T>
-class Utf32EncodingTests : public ::testing::Test
+class UTF32EncodingTests : public ::testing::Test
 {
 public:
     using CharType = T;
-    using EncodingType = Utf32Encoding<T>;
+    using EncodingType = UTF32Encoding<T>;
 
     using CodepointType = typename EncodingType::CodepointType;
 
-    static_assert(TextEncoding<Utf32Encoding<T>>,
-                  "Utf32Encoding<T> does not satisfy the requirements of TextEncoding.");
+    static_assert(TextEncoding<UTF32Encoding<T>>,
+                  "UTF32Encoding<T> does not satisfy the requirements of TextEncoding.");
 
 protected:
-    Utf32EncodingTests() { /* ... */ }
-    ~Utf32EncodingTests() { /* ... */ }
+    UTF32EncodingTests() { /* ... */ }
+    ~UTF32EncodingTests() { /* ... */ }
 
 protected:
     // Terrible naming but ┑(￣Д ￣)┍
@@ -59,7 +59,7 @@ protected:
     }
 };
 
-using Utf32EncodingTestsImpl =
+using UTF32EncodingTestsImpl =
     ::testing::Types<
         char32_t
 
@@ -70,15 +70,15 @@ using Utf32EncodingTestsImpl =
 #endif
     >;
 
-TYPED_TEST_SUITE(Utf32EncodingTests, Utf32EncodingTestsImpl);
+TYPED_TEST_SUITE(UTF32EncodingTests, UTF32EncodingTestsImpl);
 
-TYPED_TEST(Utf32EncodingTests, MaxCodepointValue)
+TYPED_TEST(UTF32EncodingTests, MaxCodepointValue)
 {
     using Encoding = typename TestFixture::EncodingType;
     EXPECT_EQ(Encoding::MaxCodepointValue(), 0x10FFFF);
 }
 
-TYPED_TEST(Utf32EncodingTests, DecodeSingleValid)
+TYPED_TEST(UTF32EncodingTests, DecodeSingleValid)
 {
     using Encoding = typename TestFixture::EncodingType;
     auto string = this->GetSmileyFaceAndRandom();
@@ -92,7 +92,7 @@ TYPED_TEST(Utf32EncodingTests, DecodeSingleValid)
     EXPECT_EQ(codepoint, 0x1F601);
 }
 
-TYPED_TEST(Utf32EncodingTests, DecodeSingleInvalid)
+TYPED_TEST(UTF32EncodingTests, DecodeSingleInvalid)
 {
     using Encoding = typename TestFixture::EncodingType;
     auto string = this->GetInvalidString();
@@ -106,7 +106,7 @@ TYPED_TEST(Utf32EncodingTests, DecodeSingleInvalid)
     EXPECT_EQ(codepoint, 0);
 }
 
-TYPED_TEST(Utf32EncodingTests, EncodeSingleValid)
+TYPED_TEST(UTF32EncodingTests, EncodeSingleValid)
 {
     using Encoding = typename TestFixture::EncodingType;
     using T = typename TestFixture::CharType;
@@ -123,7 +123,7 @@ TYPED_TEST(Utf32EncodingTests, EncodeSingleValid)
     EXPECT_EQ(string[0], T(0x1F601));
 }
 
-TYPED_TEST(Utf32EncodingTests, EncodeSingleInvalid)
+TYPED_TEST(UTF32EncodingTests, EncodeSingleInvalid)
 {
     using Encoding = typename TestFixture::EncodingType;
     using T = typename TestFixture::CharType;

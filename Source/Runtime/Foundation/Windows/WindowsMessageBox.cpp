@@ -42,15 +42,15 @@ namespace Kitsune
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 
-        auto wideTitle = Utf8ToUtf16<char, wchar_t>(specs.Title);
-        auto wideDescription = Utf8ToUtf16<char, wchar_t>(specs.Description);
+        auto wideTitle = UTF8ToUTF16<char, wchar_t>(specs.Title);
+        auto wideDescription = UTF8ToUTF16<char, wchar_t>(specs.Description);
 
         Array<WideString> buttonTexts(specs.Buttons.Size());
         Array<TASKDIALOG_BUTTON> buttons(specs.Buttons.Size());
 
         for (const MessageBoxButton& button : specs.Buttons)
         {
-            buttonTexts.PushBack(Utf8ToUtf16<char, wchar_t>(button.Text));
+            buttonTexts.PushBack(UTF8ToUTF16<char, wchar_t>(button.Text));
 
             TASKDIALOG_BUTTON nativeButton;
             nativeButton.nButtonID = IDCONTINUE + button.Id + 1;

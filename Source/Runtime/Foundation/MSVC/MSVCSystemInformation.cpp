@@ -112,10 +112,10 @@ namespace Kitsune
         return classObject->Get(name.Data(), 0, variant, nullptr, nullptr);
     }
 
-    inline static String BstrToUtf8(BSTR string)
+    inline static String BstrToUTF8(BSTR string)
     {
         WideString wideString(string, ::SysStringLen(string));
-        return Utf16ToUtf8<wchar_t, char>(wideString);
+        return UTF16ToUTF8<wchar_t, char>(wideString);
     }
 
     Array<CPUInformation> SystemInformation::GetCPUInformation()
@@ -159,11 +159,11 @@ namespace Kitsune
                 if (SUCCEEDED(GetClassObjectValue(classObject, L"Manufacturer",
                                                   &variant)))
                 {
-                    cpuInformation.m_Vendor = BstrToUtf8(variant.bstrVal);
+                    cpuInformation.m_Vendor = BstrToUTF8(variant.bstrVal);
                 }
 
                 if (SUCCEEDED(GetClassObjectValue(classObject, L"Name", &variant)))
-                    cpuInformation.m_Description = BstrToUtf8(variant.bstrVal);
+                    cpuInformation.m_Description = BstrToUTF8(variant.bstrVal);
 
                 if (SUCCEEDED(GetClassObjectValue(classObject, L"NumberOfCores",
                                                   &variant)))
@@ -206,7 +206,7 @@ namespace Kitsune
         EnumerateWmiObject(enumerator, [&](IWbemClassObject* classObject)
         {
             if (SUCCEEDED(GetClassObjectValue(classObject, L"Caption", &variant)))
-                osInformation.m_Name = BstrToUtf8(variant.bstrVal);
+                osInformation.m_Name = BstrToUTF8(variant.bstrVal);
 
             if (SUCCEEDED(GetClassObjectValue(classObject, L"OsType", &variant)))
             {

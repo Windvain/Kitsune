@@ -82,7 +82,7 @@ namespace Kitsune
         AdjustWindowRect(&adjustedRect, styles, false, exStyles, dpiX);
 
         ScopedPtr<WindowsWindow> window = MakeScoped<WindowsWindow>();
-        WideString title = Utf8ToUtf16<char, wchar_t>(configs.Title);
+        WideString title = UTF8ToUTF16<char, wchar_t>(configs.Title);
 
         window->Fullscreen = false;
         window->Handle = ::CreateWindowExW(
@@ -181,7 +181,7 @@ namespace Kitsune
         if (acquiredLength == 0)
             throw SystemException("Failed to get the window's title.");
 
-        return Utf16ToUtf8<wchar_t, char>(wideTitle);
+        return UTF16ToUTF8<wchar_t, char>(wideTitle);
     }
 
     WindowState WindowsWindowManager::GetWindowState(WindowID windowID) const
@@ -296,7 +296,7 @@ namespace Kitsune
                 "The specified window is invalid. It has been closed.");
         }
 
-        WideString wideTitle = Utf8ToUtf16<char, wchar_t>(title);
+        WideString wideTitle = UTF8ToUTF16<char, wchar_t>(title);
         auto handle = reinterpret_cast<WindowsWindow*>(windowID)->Handle;
 
         if (!::SetWindowTextW(handle, wideTitle.Raw()))

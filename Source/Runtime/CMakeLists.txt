@@ -109,9 +109,9 @@ add_library(KitsuneRuntime SHARED
     "Foundation/String/StringView.h"
     "Foundation/String/Transcode.h"
     "Foundation/String/TranscodePresets.h"
-    "Foundation/String/Utf8Encoding.h"
-    "Foundation/String/Utf16Encoding.h"
-    "Foundation/String/Utf32Encoding.h"
+    "Foundation/String/UTF8Encoding.h"
+    "Foundation/String/UTF16Encoding.h"
+    "Foundation/String/UTF32Encoding.h"
     "Foundation/String/Valid.h"
 
     "Foundation/Templates/Exchange.h"
@@ -136,7 +136,7 @@ add_library(KitsuneRuntime SHARED
 
 add_library(Kitsune::Runtime ALIAS KitsuneRuntime)
 
-# CpuId.h should only be included on x86_64 targets. Contains the use of the CPUID
+# CPUID.h should only be included on x86_64 targets. Contains the use of the CPUID
 # instruction, which is specific to the x86 architecture.
 if (${KITSUNE_TARGET_ARCHITECTURE} STREQUAL "x86_64")
     target_sources(KitsuneRuntime PRIVATE "Foundation/Utilities/CPUID.h")
