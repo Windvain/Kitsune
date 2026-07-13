@@ -14,7 +14,7 @@
 #if defined(KITSUNE_COMPILER_CLANG)
     #include "Foundation/Clang/ClangAtomicMacros.h"
 #elif defined(KITSUNE_COMPILER_MSVC)
-    #include "Foundation/Msvc/MsvcAtomicMacros.h"
+    #include "Foundation/MSVC/MSVCAtomicMacros.h"
 #else
     #error No implementations for atomic macros were found.
 #endif

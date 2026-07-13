@@ -8,7 +8,7 @@
 
 namespace Kitsune
 {
-    Pair<bool, MessageBoxButtonId> ShowFallbackMessageBox(
+    Pair<bool, MessageBoxButtonID> ShowFallbackMessageBox(
         const MessageBoxSpecifications& specs)
     {
         // TODO: Unimplemented. Will implement once I iron out the needed changes.
@@ -16,7 +16,7 @@ namespace Kitsune
         return { false, 0 };
     }
 
-    Pair<bool, MessageBoxButtonId> ShowMessageBox(
+    Pair<bool, MessageBoxButtonID> ShowMessageBox(
         const MessageBoxSpecifications& specs)
     {
         // As of now, Windows will always load versions <6.0, which doesn't have

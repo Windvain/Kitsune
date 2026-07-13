@@ -8,7 +8,7 @@
 #include "Foundation/Diagnostics/SystemException.h"
 
 #if defined(KITSUNE_ARCH_X86)
-    #include "Foundation/Utilities/CpuId.h"
+    #include "Foundation/Utilities/CPUID.h"
 #endif
 
 namespace Kitsune
@@ -47,9 +47,9 @@ namespace Kitsune
         return Utf16ToUtf8<wchar_t, char>(wideData);
     }
 
-    Array<CpuInformation> SystemInformation::GetCpuInformation()
+    Array<CPUInformation> SystemInformation::GetCPUInformation()
     {
-        CpuInformation cpuInformation;
+        CPUInformation cpuInformation;
 
         // Get architecture and logical core count. (GetSystemInfo)
         SYSTEM_INFO systemInfo;
@@ -58,19 +58,19 @@ namespace Kitsune
         switch (systemInfo.wProcessorArchitecture)
         {
         case PROCESSOR_ARCHITECTURE_INTEL:
-            cpuInformation.m_Architecture = CpuArchitecture::x86_32;
+            cpuInformation.m_Architecture = CPUArchitecture::x86_32;
             break;
         case PROCESSOR_ARCHITECTURE_AMD64:
-            cpuInformation.m_Architecture = CpuArchitecture::x86_64;
+            cpuInformation.m_Architecture = CPUArchitecture::x86_64;
             break;
         case PROCESSOR_ARCHITECTURE_ARM:
-            cpuInformation.m_Architecture = CpuArchitecture::AArch32;
+            cpuInformation.m_Architecture = CPUArchitecture::AArch32;
             break;
         case PROCESSOR_ARCHITECTURE_ARM64:
-            cpuInformation.m_Architecture = CpuArchitecture::AArch64;
+            cpuInformation.m_Architecture = CPUArchitecture::AArch64;
             break;
         default:
-            cpuInformation.m_Architecture = CpuArchitecture::Other;
+            cpuInformation.m_Architecture = CPUArchitecture::Other;
         }
 
         cpuInformation.m_LogicalCores = systemInfo.dwNumberOfProcessors;
@@ -78,12 +78,12 @@ namespace Kitsune
         // Get vendor and features. (CPUID instruction)
 #if defined(KITSUNE_ARCH_X86)
         {
-            CpuIdResult cpuIdResult = CallCpuId(/* Manufacturer ID */ 0, 0);
+            CPUIDResult cpuIDResult = CallCPUID(/* Manufacturer ID */ 0, 0);
             String manufacturer(3 * sizeof(Int32), '\0');
 
-            std::memcpy(manufacturer.Data(), &cpuIdResult.Ebx, sizeof(Int32));
-            std::memcpy(manufacturer.Data() + 4, &cpuIdResult.Edx, sizeof(Int32));
-            std::memcpy(manufacturer.Data() + 8, &cpuIdResult.Ecx, sizeof(Int32));
+            std::memcpy(manufacturer.Data(), &cpuIDResult.EBX, sizeof(Int32));
+            std::memcpy(manufacturer.Data() + 4, &cpuIDResult.EDX, sizeof(Int32));
+            std::memcpy(manufacturer.Data() + 8, &cpuIDResult.ECX, sizeof(Int32));
 
             cpuInformation.m_Vendor = manufacturer;
         }

@@ -24,6 +24,5 @@
         return lhs;                                                              \
     }                                                                            \
                                                                                  \
-                                                                                 \
     constexpr Flags operator|(Flags lhs, Flags rhs) { return (lhs |= rhs); }     \
     constexpr Flags operator&(Flags lhs, Flags rhs) { return (lhs &= rhs); }     \

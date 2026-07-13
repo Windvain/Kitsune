@@ -13,7 +13,7 @@ public:
                            const CommandLineArguments& arguments)
         : Application(specs, arguments)
     {
-        CpuInformation cpuInfo = SystemInformation::GetCpuInformation()[0];
+        CPUInformation cpuInfo = SystemInformation::GetCPUInformation()[0];
         OperatingSystemInformation osInfo =
             SystemInformation::GetOperatingSystemInformation();
 
@@ -33,7 +33,7 @@ public:
         KITSUNE_INFO("");
         KITSUNE_INFO_FORMAT(
             "CPU Features: {0:0b}",
-            static_cast<Uint64>(SystemInformation::GetCpuFeatures()));
+            static_cast<Uint64>(SystemInformation::GetCPUFeatures()));
 
         KITSUNE_INFO("");
         KITSUNE_INFO_FORMAT("Operating System Name: {0}", osInfo.Name());

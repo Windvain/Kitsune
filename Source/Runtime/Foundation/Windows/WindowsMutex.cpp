@@ -32,6 +32,7 @@ namespace Kitsune
         }
     }
 
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
     Mutex::Mutex()
     {
         static_assert(

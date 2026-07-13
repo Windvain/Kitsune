@@ -9,7 +9,7 @@
 namespace Kitsune
 {
     // The architecture of the CPU.
-    enum class CpuArchitecture
+    enum class CPUArchitecture
     {
         Other,      //< The architecture is unknown or is not included in this enum.
         x86_32,     //< CPU architecture is the 32-bit version of x86.
@@ -20,7 +20,7 @@ namespace Kitsune
 
     // CPU additional features. Only x86 architecture features are listed
     // for now, as there are no plans to support ARM CPUs.
-    enum class CpuFeatures : Uint64
+    enum class CPUFeatures : Uint64
     {
         None     = 0,
         MMX      = 1 << 0,
@@ -36,10 +36,10 @@ namespace Kitsune
         AVX512_F = 1 << 10
     };
 
-    KITSUNE_OVERLOAD_FLAGS_OPERATORS(CpuFeatures);
+    KITSUNE_OVERLOAD_FLAGS_OPERATORS(CPUFeatures);
 
     // Contains information regarding the system's CPU.
-    class CpuInformation
+    class CPUInformation
     {
     public:
         [[nodiscard]] inline String Vendor() const { return m_Vendor; }
@@ -52,7 +52,7 @@ namespace Kitsune
         inline Uint32 PhysicalCoreCount() const { return m_PhysicalCores; }
 
         [[nodiscard]]
-        inline CpuArchitecture Architecture() const
+        inline CPUArchitecture Architecture() const
         {
             return m_Architecture;
         }
@@ -62,15 +62,15 @@ namespace Kitsune
         {
             switch (m_Architecture)
             {
-            case CpuArchitecture::x86_32:   [[fallthrough]];
-            case CpuArchitecture::AArch32:
+            case CPUArchitecture::x86_32:   [[fallthrough]];
+            case CPUArchitecture::AArch32:
                 return 32;
 
-            case CpuArchitecture::x86_64:   [[fallthrough]];
-            case CpuArchitecture::AArch64:
+            case CPUArchitecture::x86_64:   [[fallthrough]];
+            case CPUArchitecture::AArch64:
                 return 64;
 
-            case CpuArchitecture::Other:
+            case CPUArchitecture::Other:
                 return 0;
             }
 
@@ -79,7 +79,7 @@ namespace Kitsune
 
     private:
         friend class SystemInformation;
-        CpuInformation() = default;
+        CPUInformation() = default;
 
     private:
         String m_Vendor;
@@ -88,7 +88,7 @@ namespace Kitsune
         Uint32 m_LogicalCores = 0;
         Uint32 m_PhysicalCores = 0;
 
-        CpuArchitecture m_Architecture = CpuArchitecture::Other;
+        CPUArchitecture m_Architecture = CPUArchitecture::Other;
     };
 
     // Contains information regarding the operating system.
@@ -141,12 +141,12 @@ namespace Kitsune
     class KITSUNE_API SystemInformation : public NonCopyable
     {
     public:
-        static Array<CpuInformation> GetCpuInformation();
+        static Array<CPUInformation> GetCPUInformation();
         static OperatingSystemInformation GetOperatingSystemInformation();
 
         static BatteryInformation GetBatteryInformation();
 
     public:
-        static CpuFeatures GetCpuFeatures();
+        static CPUFeatures GetCPUFeatures();
     };
 }
