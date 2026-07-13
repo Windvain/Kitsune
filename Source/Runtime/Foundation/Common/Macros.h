@@ -2,8 +2,8 @@
 
 #include "Foundation/Common/Predefined.h"
 
-#define KITSUNE_STRINGIFY_HELPER_(x) #x
-#define KITSUNE_STRINGIFY(x) KITSUNE_STRINGIFY_HELPER_(x)
+#define KITSUNE_INTERNAL_STRINGIFY_HELPER(x) #x
+#define KITSUNE_STRINGIFY(x) KITSUNE_INTERNAL_STRINGIFY_HELPER(x)
 
 // Checks whether the compiler supports a specific builtin function.
 // Defined to `__has_builtin` for compilers which support it.
@@ -98,9 +98,9 @@
     #define KITSUNE_PUSH_COMPILER_WARNINGS() _Pragma("clang diagnostic push")
     #define KITSUNE_POP_COMPILER_WARNINGS() _Pragma("clang diagnostic pop")
 
-    #define KITSUNE_IGNORE_CLANG_WARNING_HELPER_(param) _Pragma(#param)
+    #define KITSUNE_INTERNAL_IGNORE_CLANG_WARNING_HELPER(param) _Pragma(#param)
     #define KITSUNE_IGNORE_CLANG_WARNING(code) \
-        KITSUNE_IGNORE_CLANG_WARNING_HELPER_(clang diagnostic ignored #code)
+        KITSUNE_INTERNAL_IGNORE_CLANG_WARNING_HELPER(clang diagnostic ignored #code)
 #else
     #define KITSUNE_IGNORE_CLANG_WARNING(code)
 #endif

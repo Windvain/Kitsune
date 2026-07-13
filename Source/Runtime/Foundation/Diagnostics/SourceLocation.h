@@ -6,26 +6,26 @@
 #include "Foundation/String/StringView.h"
 
 #if KITSUNE_HAS_BUILTIN(__builtin_FILE) || defined(KITSUNE_COMPILER_MSVC)
-    #define KITSUNE_BUILTIN_FILE() __builtin_FILE()
+    #define KITSUNE_INTERNAL_BUILTIN_FILE() __builtin_FILE()
 #else
-    #define KITSUNE_BUILTIN_FILE() "<unknown>"
+    #define KITSUNE_INTERNAL_BUILTIN_FILE() "<unknown>"
 #endif
 
 #if KITSUNE_HAS_BUILTIN(__builtin_LINE) || defined(KITSUNE_COMPILER_MSVC)
-    #define KITSUNE_BUILTIN_LINE() __builtin_LINE()
+    #define KITSUNE_INTERNAL_BUILTIN_LINE() __builtin_LINE()
 #else
-    #define KITSUNE_BUILTIN_LINE() 0
+    #define KITSUNE_INTERNAL_BUILTIN_LINE() 0
 #endif
 
 // MSVC defines both __builtin_FUNCSIG() and __builtin_FUNCTION().
 // __builtin_FUNCSIG is preferred here because it returns the entire function
 // signature, not just its name.
 #if defined(KITSUNE_COMPILER_MSVC)
-    #define KITSUNE_BUILTIN_FUNC() __builtin_FUNCSIG()
+    #define KITSUNE_INTERNAL_BUILTIN_FUNC() __builtin_FUNCSIG()
 #elif KITSUNE_HAS_BUILTIN(__builtin_FUNCTION)
-    #define KITSUNE_BUILTIN_FUNC() __builtin_FUNCTION()
+    #define KITSUNE_INTERNAL_BUILTIN_FUNC() __builtin_FUNCTION()
 #else
-    #define KITSUNE_BUILTIN_FUNC() "<unknown>"
+    #define KITSUNE_INTERNAL_BUILTIN_FUNC() "<unknown>"
 #endif
 
 namespace Kitsune
@@ -46,9 +46,9 @@ namespace Kitsune
         // Obtains the source information at the current location. Do not call
         // this function with any arguments.
         inline static SourceLocation Current(
-            const char* file = KITSUNE_BUILTIN_FILE(),
-            const char* func = KITSUNE_BUILTIN_FUNC(),
-            Uint32 line = KITSUNE_BUILTIN_LINE())
+            const char* file = KITSUNE_INTERNAL_BUILTIN_FILE(),
+            const char* func = KITSUNE_INTERNAL_BUILTIN_FUNC(),
+            Uint32 line = KITSUNE_INTERNAL_BUILTIN_LINE())
         {
             return SourceLocation(file, func, line);
         }
@@ -97,6 +97,6 @@ namespace Kitsune
     };
 }
 
-#undef KITSUNE_BUILTIN_FILE
-#undef KITSUNE_BUILTIN_LINE
-#undef KITSUNE_BUILTIN_FUNC
+#undef KITSUNE_INTERNAL_BUILTIN_FILE
+#undef KITSUNE_INTERNAL_BUILTIN_LINE
+#undef KITSUNE_INTERNAL_BUILTIN_FUNC
