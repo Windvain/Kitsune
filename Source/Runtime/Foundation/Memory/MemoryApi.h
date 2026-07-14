@@ -22,9 +22,9 @@ namespace Kitsune
         virtual Usize GetDefaultAlignment() const = 0;
 
     public:
-        // These functions are used for implementing the new/delete operators. MemoryApi doesn't
-        // force the implementation to keep the size of the block, which is a problem when
-        // we're trying to free the memory used for polymorphic types.
+        // These functions are used for implementing the new/delete operators. MemoryApi
+        // doesn't force the implementation to keep the size of the block, which is a
+        // problem when we're trying to free the memory used for polymorphic types.
         [[nodiscard]] virtual void* TryNew(Usize bytes, Usize alignment) = 0;
         virtual void Delete(void* pointer) = 0;
     };

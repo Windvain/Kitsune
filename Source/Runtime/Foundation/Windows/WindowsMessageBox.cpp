@@ -8,7 +8,7 @@
 
 namespace Kitsune
 {
-    Pair<bool, MessageBoxButtonId> ShowFallbackMessageBox(
+    Pair<bool, MessageBoxButtonID> ShowFallbackMessageBox(
         const MessageBoxSpecifications& specs)
     {
         // TODO: Unimplemented. Will implement once I iron out the needed changes.
@@ -16,7 +16,7 @@ namespace Kitsune
         return { false, 0 };
     }
 
-    Pair<bool, MessageBoxButtonId> ShowMessageBox(
+    Pair<bool, MessageBoxButtonID> ShowMessageBox(
         const MessageBoxSpecifications& specs)
     {
         // As of now, Windows will always load versions <6.0, which doesn't have
@@ -42,15 +42,15 @@ namespace Kitsune
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 
-        auto wideTitle = Utf8ToUtf16<char, wchar_t>(specs.Title);
-        auto wideDescription = Utf8ToUtf16<char, wchar_t>(specs.Description);
+        auto wideTitle = UTF8ToUTF16<char, wchar_t>(specs.Title);
+        auto wideDescription = UTF8ToUTF16<char, wchar_t>(specs.Description);
 
         Array<WideString> buttonTexts(specs.Buttons.Size());
         Array<TASKDIALOG_BUTTON> buttons(specs.Buttons.Size());
 
         for (const MessageBoxButton& button : specs.Buttons)
         {
-            buttonTexts.PushBack(Utf8ToUtf16<char, wchar_t>(button.Text));
+            buttonTexts.PushBack(UTF8ToUTF16<char, wchar_t>(button.Text));
 
             TASKDIALOG_BUTTON nativeButton;
             nativeButton.nButtonID = IDCONTINUE + button.Id + 1;

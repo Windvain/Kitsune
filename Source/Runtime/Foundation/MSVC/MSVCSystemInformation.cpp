@@ -12,9 +12,9 @@ using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 namespace Kitsune
 {
-    struct ComInitializer
+    struct COMInitializer
     {
-        inline ComInitializer()
+        inline COMInitializer()
         {
             HRESULT result = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
             if (FAILED(result))
@@ -29,7 +29,7 @@ namespace Kitsune
                 throw SystemException("Failed to initialize the COM library.");
         }
 
-        inline ~ComInitializer()
+        inline ~COMInitializer()
         {
             // CoInitializeEx() should always be proceeded with CoUninitialize(),
             // even if it returns S_FALSE.
@@ -37,7 +37,7 @@ namespace Kitsune
         }
     };
 
-    static ComPtr<IEnumWbemClassObject> ExecuteWmiQuery(WideStringView wqlQuery)
+    static ComPtr<IEnumWbemClassObject> ExecuteWMIQuery(WideStringView wqlQuery)
     {
         HRESULT result;
 
@@ -112,16 +112,16 @@ namespace Kitsune
         return classObject->Get(name.Data(), 0, variant, nullptr, nullptr);
     }
 
-    inline static String BstrToUtf8(BSTR string)
+    inline static String BstrToUTF8(BSTR string)
     {
         WideString wideString(string, ::SysStringLen(string));
-        return Utf16ToUtf8<wchar_t, char>(wideString);
+        return UTF16ToUTF8<wchar_t, char>(wideString);
     }
 
-    Array<CpuInformation> SystemInformation::GetCpuInformation()
+    Array<CPUInformation> SystemInformation::GetCPUInformation()
     {
-        ComInitializer initializer_{};
-        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWmiQuery(
+        COMInitializer initializer{};
+        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
             L"SELECT Architecture, Manufacturer, Name, NumberOfCores, "
             L"NumberOfLogicalProcessors "
             L"FROM Win32_Processor");
@@ -129,41 +129,41 @@ namespace Kitsune
         VARIANT variant;
         ::VariantInit(&variant);
 
-        Array<CpuInformation> cpuInfoArray;
+        Array<CPUInformation> cpuInfoArray;
         EnumerateWmiObject(enumerator,
             [&](IWbemClassObject* classObject)
             {
-                CpuInformation cpuInformation;
+                CPUInformation cpuInformation;
                 if (SUCCEEDED(GetClassObjectValue(classObject, L"Architecture",
                                                   &variant)))
                 {
                     switch (variant.uiVal)
                     {
                     case PROCESSOR_ARCHITECTURE_INTEL:
-                        cpuInformation.m_Architecture = CpuArchitecture::x86_32;
+                        cpuInformation.m_Architecture = CPUArchitecture::x86_32;
                         break;
                     case PROCESSOR_ARCHITECTURE_AMD64:
-                        cpuInformation.m_Architecture = CpuArchitecture::x86_64;
+                        cpuInformation.m_Architecture = CPUArchitecture::x86_64;
                         break;
                     case PROCESSOR_ARCHITECTURE_ARM:
-                        cpuInformation.m_Architecture = CpuArchitecture::AArch32;
+                        cpuInformation.m_Architecture = CPUArchitecture::AArch32;
                         break;
                     case PROCESSOR_ARCHITECTURE_ARM64:
-                        cpuInformation.m_Architecture = CpuArchitecture::AArch64;
+                        cpuInformation.m_Architecture = CPUArchitecture::AArch64;
                         break;
                     default:
-                        cpuInformation.m_Architecture = CpuArchitecture::Other;
+                        cpuInformation.m_Architecture = CPUArchitecture::Other;
                     }
                 }
 
                 if (SUCCEEDED(GetClassObjectValue(classObject, L"Manufacturer",
                                                   &variant)))
                 {
-                    cpuInformation.m_Vendor = BstrToUtf8(variant.bstrVal);
+                    cpuInformation.m_Vendor = BstrToUTF8(variant.bstrVal);
                 }
 
                 if (SUCCEEDED(GetClassObjectValue(classObject, L"Name", &variant)))
-                    cpuInformation.m_Description = BstrToUtf8(variant.bstrVal);
+                    cpuInformation.m_Description = BstrToUTF8(variant.bstrVal);
 
                 if (SUCCEEDED(GetClassObjectValue(classObject, L"NumberOfCores",
                                                   &variant)))
@@ -186,45 +186,45 @@ namespace Kitsune
 
     OperatingSystemInformation SystemInformation::GetOperatingSystemInformation()
     {
-        ComInitializer initializer_{};
-        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWmiQuery(
+        COMInitializer initializer{};
+        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
             L"SELECT Caption, OSType FROM Win32_OperatingSystem");
 
         VARIANT variant;
         ::VariantInit(&variant);
 
-        enum OsTypeConstants : USHORT
+        enum OSTypeConstants : USHORT
         {
             Win3x = 15,
             Win95 = 16,
             Win98 = 17,
-            WinNt = 18,
-            WinCe = 19
+            WinNT = 18,
+            WinCE = 19
         };
 
         OperatingSystemInformation osInformation;
         EnumerateWmiObject(enumerator, [&](IWbemClassObject* classObject)
         {
             if (SUCCEEDED(GetClassObjectValue(classObject, L"Caption", &variant)))
-                osInformation.m_Name = BstrToUtf8(variant.bstrVal);
+                osInformation.m_Name = BstrToUTF8(variant.bstrVal);
 
             if (SUCCEEDED(GetClassObjectValue(classObject, L"OsType", &variant)))
             {
                 switch (variant.uiVal)
                 {
-                case OsTypeConstants::Win3x:
+                case OSTypeConstants::Win3x:
                     osInformation.m_ShortName = "Windows 3.x";
                     break;
-                case OsTypeConstants::Win95:
+                case OSTypeConstants::Win95:
                     osInformation.m_ShortName = "Windows 95";
                     break;
-                case OsTypeConstants::Win98:
+                case OSTypeConstants::Win98:
                     osInformation.m_ShortName = "Windows 98";
                     break;
-                case OsTypeConstants::WinNt:
+                case OSTypeConstants::WinNT:
                     osInformation.m_ShortName = "Windows NT";
                     break;
-                case OsTypeConstants::WinCe:
+                case OSTypeConstants::WinCE:
                     osInformation.m_ShortName = "Windows Embedded";
                     break;
                 default:
@@ -239,8 +239,8 @@ namespace Kitsune
 
     BatteryInformation SystemInformation::GetBatteryInformation()
     {
-        ComInitializer initializer_{};
-        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWmiQuery(
+        COMInitializer initializer{};
+        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
             L"SELECT EstimatedChargeRemaining, BatteryStatus FROM Win32_Battery");
 
         VARIANT variant;

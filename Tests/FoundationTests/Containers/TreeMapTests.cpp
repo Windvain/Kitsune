@@ -512,7 +512,7 @@ namespace
     // TreeMap<T, U, Comp, Alloc>::Clear()
     TEST(TreeMapTest, Clear)
     {
-        TreeMap<int, int, LessFunctor<int>, TrackingAllocator> map = {
+        TreeMap<int, int, LessThanFunctor<int>, TrackingAllocator> map = {
             { 3, 3 },
             { 1, 23 },
             { 12, 3 },
@@ -593,7 +593,7 @@ namespace
     TEST(TreeMapTest, Emplace)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -628,7 +628,7 @@ namespace
     TEST(TreeMapTest, InsertCopy)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -665,7 +665,7 @@ namespace
     TEST(TreeMapTest, InsertMove)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -700,7 +700,7 @@ namespace
     TEST(TreeMapTest, InsertRange)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -738,7 +738,7 @@ namespace
     TEST(TreeMapTest, InsertInitializerList)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -772,7 +772,7 @@ namespace
     TEST(TreeMapTest, InsertOrAssignMoveKey)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -811,7 +811,7 @@ namespace
     TEST(TreeMapTest, InsertOrAssignCopyKey)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -852,7 +852,7 @@ namespace
     TEST(TreeMapTest, Contains)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -874,7 +874,7 @@ namespace
     TEST(TreeMapTest, Find)
     {
         TreeMap<std::string, std::string,
-                LessFunctor<std::string>, TrackingAllocator> map = {
+                LessThanFunctor<std::string>, TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },
             { "dolor", "sit" },
@@ -892,7 +892,7 @@ namespace
     // TreeMap<T, U, Comp, Alloc>::Find(const T&) const
     TEST(TreeMapTest, FindConst)
     {
-        const TreeMap<std::string, std::string, LessFunctor<std::string>,
+        const TreeMap<std::string, std::string, LessThanFunctor<std::string>,
                       TrackingAllocator> map = {
             { "Hello", "World" },
             { "Lorem", "ipsum" },

@@ -115,7 +115,7 @@ namespace Kitsune
     {
         KITSUNE_ENGINE_INFO(Launch, "Checking SIMD support...");
 
-        CpuFeatures features = SystemInformation::GetCpuFeatures();
+        CPUFeatures features = SystemInformation::GetCPUFeatures();
         Array<bool> supported;
 
         const auto LogSupportMessage = [](bool supported, const char* featureName)
@@ -129,7 +129,7 @@ namespace Kitsune
 
 #if defined(KITSUNE_ARCH_X86)
         {
-            auto supportsAVX2 = bool(features & CpuFeatures::AVX2);
+            auto supportsAVX2 = bool(features & CPUFeatures::AVX2);
             LogSupportMessage(supportsAVX2, "AVX2");
 
             supported.PushBack(supportsAVX2);

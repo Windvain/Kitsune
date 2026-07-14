@@ -13,12 +13,12 @@ namespace Kitsune
     namespace Details
     {
         template<typename T>
-        using AddReference_ = T&;
+        using AddReference = T&;
 
         template<typename T>
-        concept CanReference_ = requires (T val)
+        concept CanReference = requires (T val)
         {
-            typename AddReference_<T>;
+            typename AddReference<T>;
         };
     }
 
@@ -29,7 +29,7 @@ namespace Kitsune
         std::copyable<Iter> &&
         requires (Iter iterator)
         {
-            { *iterator  } -> Details::CanReference_;
+            { *iterator  } -> Details::CanReference;
             { ++iterator } -> std::same_as<Iter&>;
             { iterator++ } -> std::same_as<Iter>;
 

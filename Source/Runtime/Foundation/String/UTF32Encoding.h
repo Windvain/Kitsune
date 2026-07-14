@@ -10,8 +10,8 @@ namespace Kitsune
     // An abstract representation of the UTF-32 encoding. it is a fixed-length
     // encoding, which means that it can be encoded into and decoded from relatively
     // quickly, at the price of a larger memory footprint.
-    template<Utf32Character T>
-    class Utf32Encoding
+    template<UTF32Character T>
+    class UTF32Encoding
     {
     public:
         using CodepointType = Uint32;

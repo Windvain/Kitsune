@@ -11,7 +11,7 @@ namespace Kitsune::Details
 }
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)
-    #define KITSUNE_ALWAYS_ASSERT_(expr, message)                           \
+    #define KITSUNE_INTERNAL_ALWAYS_ASSERT(expr, message)                   \
         do                                                                  \
         {                                                                   \
             if (!(expr) &&                                                  \
@@ -25,13 +25,13 @@ namespace Kitsune::Details
     // Make sure that the expression `expr` is always true. If it is not
     // true, then the specified message is logged, and the application
     // will break if a debugger is connected.
-    #define KITSUNE_ASSERT KITSUNE_ALWAYS_ASSERT_
+    #define KITSUNE_ASSERT KITSUNE_INTERNAL_ALWAYS_ASSERT
 
     // Same thing as `KITSUNE_ASSERT`, but when building in Production
     // mode, this macro will still run the expression passed in. Use this
     // instead of `KITSUNE_ASSERT` in cases where the expression has an impact
     // on the program's control flow.
-    #define KITSUNE_VERIFY KITSUNE_ALWAYS_ASSERT_
+    #define KITSUNE_VERIFY KITSUNE_INTERNAL_ALWAYS_ASSERT
 #else
     #define KITSUNE_ASSERT(expr, message) ((void)0)
     #define KITSUNE_VERIFY(expr, message) if (expr) { /* ... */ }

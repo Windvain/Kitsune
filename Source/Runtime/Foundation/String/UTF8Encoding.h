@@ -11,8 +11,8 @@ namespace Kitsune
     // An abstract representation of the UTF-8 encoding. This is the main encoding
     // used in most software and all of the content on the Web. Takes up less space
     // at the cost of computational speed.
-    template<Utf8Character T>
-    class Utf8Encoding
+    template<UTF8Character T>
+    class UTF8Encoding
     {
     public:
         using CodepointType = Uint32;

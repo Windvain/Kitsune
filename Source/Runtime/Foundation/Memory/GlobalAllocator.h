@@ -10,18 +10,19 @@ namespace Kitsune
     class GlobalAllocator
     {
     public:
-        [[nodiscard]]
-        KITSUNE_FORCEINLINE void* Allocate(Usize bytes)
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+        [[nodiscard]] KITSUNE_FORCEINLINE void* Allocate(Usize bytes)
         {
             return Memory::Allocate(bytes);
         }
 
-        [[nodiscard]]
-        KITSUNE_FORCEINLINE void* Allocate(Usize bytes, Usize alignment)
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+        [[nodiscard]] KITSUNE_FORCEINLINE void* Allocate(Usize bytes, Usize alignment)
         {
             return Memory::Allocate(bytes, alignment);
         }
 
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
         KITSUNE_FORCEINLINE void Free(void* pointer, Usize bytes)
         {
             Memory::Free(pointer, bytes);

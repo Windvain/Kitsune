@@ -42,7 +42,7 @@ namespace Kitsune::Details
 
     static String GetFullPath(StringView path)
     {
-        WideString widePath = Utf8ToUtf16<char, wchar_t>(path);
+        WideString widePath = UTF8ToUTF16<char, wchar_t>(path);
         DWORD length = ::GetFullPathNameW(widePath.Raw(), 0, nullptr, nullptr);
 
         if (length == 0)
@@ -59,7 +59,7 @@ namespace Kitsune::Details
         // rather just an estimate that fits the string.
         // Recalculate the size before returning.
         WideString absolutePath(tempBuffer.Data());
-        return Utf16ToUtf8<wchar_t, char>(absolutePath);
+        return UTF16ToUTF8<wchar_t, char>(absolutePath);
     }
 
     // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init)
@@ -240,7 +240,7 @@ namespace Kitsune::Details
         DWORD desiredAccess = GetDesiredAccess(accessMode);
         DWORD creationMode = GetCreationMode(openMode);
 
-        WideString wideFilePath = Utf8ToUtf16<char, wchar_t>(filePath);
+        WideString wideFilePath = UTF8ToUTF16<char, wchar_t>(filePath);
 
         auto* handleStore = reinterpret_cast<HANDLE*>(m_Buffer);
         *handleStore = ::CreateFileW(

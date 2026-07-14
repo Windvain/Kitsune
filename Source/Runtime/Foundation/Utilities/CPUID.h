@@ -10,24 +10,24 @@
         #include <cpuid.h>
     #endif
 #else
-    #error CpuId.h is only supported when compiling programs targetting x86.
+    #error CPUID.h is only supported when compiling programs targetting x86.
 #endif
 
 namespace Kitsune
 {
-    struct CpuIdResult
+    struct CPUIDResult
     {
-        unsigned int Eax, Ebx, Ecx, Edx;
+        unsigned int EAX, EBX, ECX, EDX;
     };
 
     // Returns the result of calling the CPUID instruction. Returns the values
     // of the registers EAX, EBX, ECX, and EDX.
-    inline CpuIdResult CallCpuId(Int32 eax, Int32 ecx)
+    inline CPUIDResult CallCPUID(Int32 eax, Int32 ecx)
     {
         unsigned int cpuInfo[4];
 #if defined(KITSUNE_COMPILER_MSVC)
         __cpuidex(reinterpret_cast<int(*)[4]>(cpuInfo), eax, ecx);
-        return CpuIdResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
+        return CPUIDResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
 #else
         __get_cpuid_count(
             eax, ecx,
@@ -36,7 +36,7 @@ namespace Kitsune
             cpuInfo + 2,
             cpuInfo + 3);
 
-        return CpuIdResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
+        return CPUIDResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
 #endif
     }
 }

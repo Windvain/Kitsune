@@ -267,12 +267,12 @@ namespace Kitsune
             if (newCapacity <= Capacity())
                 return;
 
-            Reallocate_(newCapacity * s_AllocationFactor);
+            ReallocateCapacity(newCapacity * s_AllocationFactor);
         }
 
         inline void ShrinkToFit()
         {
-            Reallocate_(Size());
+            ReallocateCapacity(Size());
         }
 
         inline void Resize(Usize count)
@@ -499,7 +499,7 @@ namespace Kitsune
         inline ConstIterator end() const { return GetEnd(); }
 
     private:
-        inline void Reallocate_(Usize newCapacity)
+        inline void ReallocateCapacity(Usize newCapacity)
         {
             T* pointer = static_cast<T*>(m_Allocator.Allocate(
                 newCapacity * sizeof(T), alignof(T)));

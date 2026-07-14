@@ -3,7 +3,7 @@
 namespace Kitsune
 {
     template<typename T>
-    class LessFunctor
+    class LessThanFunctor
     {
     public:
         inline bool operator()(const T& lhs, const T& rhs) const

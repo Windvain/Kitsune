@@ -35,8 +35,8 @@ namespace Kitsune
         class CallableStorage : public CallableStorageBase<Ret, Args...>
         {
         private:
-            using BaseType_ = CallableStorageBase<Ret, Args...>;
-            using ThisType_ = CallableStorage<T, Ret, Args...>;
+            using BaseType = CallableStorageBase<Ret, Args...>;
+            using ThisType = CallableStorage<T, Ret, Args...>;
 
         public:
             inline CallableStorage(const T& callable)
@@ -55,19 +55,19 @@ namespace Kitsune
                 return m_Callable(Forward<Args>(args)...);
             }
 
-            inline BaseType_* Clone(Byte (*smallStorage)[]) const override
+            inline BaseType* Clone(Byte (*smallStorage)[]) const override
             {
                 if constexpr (sizeof(*this) > sizeof(void*))
-                    return Memory::New<ThisType_>(m_Callable);
+                    return Memory::New<ThisType>(m_Callable);
                 else
-                    return Memory::ConstructAt<ThisType_>(*smallStorage, m_Callable);
+                    return Memory::ConstructAt<ThisType>(*smallStorage, m_Callable);
             }
 
-            inline BaseType_* MoveTo(Byte (*smallStorage)[]) override
+            inline BaseType* MoveTo(Byte (*smallStorage)[]) override
             {
                 if constexpr (sizeof(*this) <= sizeof(void*))
                 {
-                    return Memory::ConstructAt<ThisType_>(
+                    return Memory::ConstructAt<ThisType>(
                         *smallStorage,
                         Move(m_Callable));
                 }
@@ -111,11 +111,16 @@ namespace Kitsune
             }
 
             inline FunctorStorage(FunctorStorage&& storage)
-                : FunctorStorage()
             {
-                // Assign_() will check whether (*this) functor is empty. Make sure
-                // to construct it first, so we don't get UB.
-                Assign_(Move(storage));
+                if (!storage.IsLocal())
+                    m_Pointer = storage.m_Pointer;
+                else
+                {
+                    m_Pointer = storage.m_Pointer->MoveTo(&m_SmallStorage);
+                    Memory::DestroyAt(storage.m_Pointer);
+                }
+
+                storage.m_Pointer = nullptr;
             }
 
             inline ~FunctorStorage()
@@ -140,7 +145,16 @@ namespace Kitsune
                 if (this == &storage)
                     return *this;
 
-                Assign_(Move(storage));
+                Destroy();
+                if (!storage.IsLocal())
+                    m_Pointer = storage.m_Pointer;
+                else
+                {
+                    m_Pointer = storage.m_Pointer->MoveTo(&m_SmallStorage);
+                    Memory::DestroyAt(storage.m_Pointer);
+                }
+
+                storage.m_Pointer = nullptr;
                 return *this;
             }
 
@@ -150,7 +164,7 @@ namespace Kitsune
                 if (m_Pointer == nullptr)
                     return;
 
-                if (!IsLocal_())
+                if (!IsLocal())
                     Memory::Delete(m_Pointer);
                 else
                     Memory::DestroyAt(m_Pointer);
@@ -171,23 +185,9 @@ namespace Kitsune
 
         private:
             [[nodiscard]]
-            inline bool IsLocal_() const
+            inline bool IsLocal() const
             {
                 return (m_Pointer == static_cast<const void*>(m_SmallStorage));
-            }
-
-            inline void Assign_(FunctorStorage&& storage)
-            {
-                Destroy();
-                if (!storage.IsLocal_())
-                    m_Pointer = storage.m_Pointer;
-                else
-                {
-                    m_Pointer = storage.m_Pointer->MoveTo(&m_SmallStorage);
-                    Memory::DestroyAt(storage.m_Pointer);
-                }
-
-                storage.m_Pointer = nullptr;
             }
 
         private:
@@ -203,7 +203,7 @@ namespace Kitsune
     class Functor<Ret(Args...)>
     {
     private:
-        using StorageType_ = Details::FunctorStorage<Ret, Args...>;
+        using StorageType = Details::FunctorStorage<Ret, Args...>;
 
     public:
         Functor() = default;
@@ -270,7 +270,7 @@ namespace Kitsune
         }
 
     private:
-        StorageType_ m_Storage;
+        StorageType m_Storage;
     };
 
     template<typename Ret, typename... Args>

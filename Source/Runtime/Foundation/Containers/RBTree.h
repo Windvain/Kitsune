@@ -343,7 +343,7 @@ namespace Kitsune
 
     template<
         typename Key, typename Mapped,
-        InvocableReturn<bool, const Key&, const Key&> Compare = LessFunctor<Key>,
+        InvocableReturn<bool, const Key&, const Key&> Compare = LessThanFunctor<Key>,
         Allocator Alloc = GlobalAllocator>
     class RBTree
     {

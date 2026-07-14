@@ -8,7 +8,7 @@
 
 #include "Foundation/String/Valid.h"
 #include "Foundation/String/String.h"
-#include "Foundation/String/Utf8Encoding.h"
+#include "Foundation/String/UTF8Encoding.h"
 
 namespace Kitsune
 {
@@ -34,7 +34,7 @@ namespace Kitsune
     {
     public:
         static_assert(
-            BufferSize >= Utf8Encoding<char>::MaximumCodeunits(),
+            BufferSize >= UTF8Encoding<char>::MaximumCodeunits(),
             "BasicConsoleWriter<BufSize, Alloc> expects the buffer size to "
             "be at least 4 bytes.");
 
@@ -48,7 +48,7 @@ namespace Kitsune
 
         inline BasicConsoleWriter(BasicConsoleWriter&& consoleWriter)
         {
-            LockGuard lockGuard_(consoleWriter.m_Lock);
+            LockGuard lockGuard(consoleWriter.m_Lock);
 
             m_Buffer = Move(consoleWriter.m_Buffer);
             m_Type = consoleWriter.m_Type;
@@ -65,8 +65,8 @@ namespace Kitsune
             if (this == &consoleWriter)
                 return *this;
 
-            LockGuard lockGuard_(m_Lock);
-            LockGuard otherLockGuard_(consoleWriter.m_Lock);
+            LockGuard lockGuard(m_Lock);
+            LockGuard otherLockGuard(consoleWriter.m_Lock);
 
             m_Buffer = Move(consoleWriter.m_Buffer);
             m_Type = consoleWriter.m_Type;
@@ -82,7 +82,7 @@ namespace Kitsune
 
         inline void Write(StringView string)
         {
-            LockGuard lockGuard_(m_Lock);
+            LockGuard lockGuard(m_Lock);
             while (!string.IsEmpty())
             {
                 Usize writeCount = Maths::Minimum(
@@ -93,14 +93,14 @@ namespace Kitsune
                 string.RemovePrefix(writeCount);
 
                 if (m_Buffer.Size() == BufferSize)
-                    ThreadUnsafeFlush_();
+                    ThreadUnsafeFlush();
             }
         }
 
         inline void Flush() override
         {
-            LockGuard lockGuard_(m_Lock);
-            ThreadUnsafeFlush_();
+            LockGuard lockGuard(m_Lock);
+            ThreadUnsafeFlush();
         }
 
     public:
@@ -118,20 +118,20 @@ namespace Kitsune
 
         inline void Swap(BasicConsoleWriter& consoleWriter)
         {
-            LockGuard lockGuard_(m_Lock);
-            LockGuard otherLockGuard_(consoleWriter.m_Lock);
+            LockGuard lockGuard(m_Lock);
+            LockGuard otherLockGuard(consoleWriter.m_Lock);
 
             Kitsune::Swap(m_Buffer, consoleWriter.m_Buffer);
             Kitsune::Swap(m_Type, consoleWriter.m_Type);
         }
 
     private:
-        inline void ThreadUnsafeFlush_()
+        inline void ThreadUnsafeFlush()
         {
             StringView dataView = m_Buffer;
             while (!dataView.IsEmpty())
             {
-                auto invalidIter = FindInvalidEncoding<Utf8Encoding<char>>(
+                auto invalidIter = FindInvalidEncoding<UTF8Encoding<char>>(
                     dataView.GetBegin(), dataView.GetEnd());
 
                 if (invalidIter != dataView.GetBegin())
@@ -149,7 +149,7 @@ namespace Kitsune
                 // it is possible that it got cut off, bring the invalid character
                 // back to the front.
                 Usize difference = dataView.GetEnd() - invalidIter;
-                if (difference < Utf8Encoding<char>::MaximumCodeunits())
+                if (difference < UTF8Encoding<char>::MaximumCodeunits())
                 {
                     m_Buffer = String(invalidIter, difference);
                     return;     // Don't clear the buffer, we've cleared it already!
