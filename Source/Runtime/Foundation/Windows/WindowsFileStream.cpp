@@ -108,21 +108,21 @@ namespace Kitsune::Details
         KITSUNE_ASSERT(IsWritable(), "The file should be writable.");
 
         HANDLE handle = *reinterpret_cast<HANDLE*>(m_Buffer);
-        DWORD writtenCount_;
+        DWORD writtenCount;
 
         if (m_OpenMode == FileOpenMode::Append)
         {
-            LARGE_INTEGER filePointer_;
+            LARGE_INTEGER filePointer;
             LARGE_INTEGER zero = { .QuadPart = 0 };
 
-            if (!::SetFilePointerEx(handle, zero, &filePointer_, FILE_END))
+            if (!::SetFilePointerEx(handle, zero, &filePointer, FILE_END))
             {
                 throw SystemException(
                     "Failed to set the file pointer to the end of the file.");
             }
         }
 
-        if (!::WriteFile(handle, data, static_cast<DWORD>(dataCount), &writtenCount_,
+        if (!::WriteFile(handle, data, static_cast<DWORD>(dataCount), &writtenCount,
                          nullptr))
         {
             throw SystemException("Failed to write to the underlying file handle.");
@@ -246,7 +246,8 @@ namespace Kitsune::Details
         *handleStore = ::CreateFileW(
             wideFilePath.Raw(),
             desiredAccess,
-            0, nullptr,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
             creationMode,
             FILE_ATTRIBUTE_NORMAL,
             nullptr);
