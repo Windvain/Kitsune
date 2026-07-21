@@ -17,29 +17,28 @@ namespace Kitsune
     inline auto TranscodeString(
         BasicStringView<typename InEncoding::CodeunitType> string)
     {
-        BasicString<typename OutEncoding::CodeunitType> outputString;
-        while (!string.IsEmpty())
+        using StringType = BasicString<typename OutEncoding::CodeunitType>;
+
+        StringType output;
+        auto iter = string.GetBegin();
+
+        while (iter != string.GetEnd())
         {
-            auto [newIterator, newOutIter_] = Transcode<InEncoding, OutEncoding>(
-                string.GetBegin(), string.GetEnd(),
-                BackInsertIterator<decltype(outputString)>(outputString));
+            auto [newIter, _] = Transcode<InEncoding, OutEncoding>(
+                iter,
+                string.GetEnd(),
+                BackInsertIterator<StringType>(output));
 
-            string.RemovePrefix(newIterator - string.GetBegin());
-
-            // Append a unicode "replacement character" to the end of the string, no need
-            // for the function to continue.
-            if (newIterator != string.GetEnd())
+            if (iter == newIter)
             {
-                const char32_t InvalidCharacter = 0xFFFD;
-                KITSUNE_UNUSED(OutEncoding::EncodeSingle(
-                    &InvalidCharacter, &InvalidCharacter + 1,
-                    BackInsertIterator<decltype(outputString)>(outputString)));
-
-                string.RemovePrefix(1);
+                output += OutEncoding::GetReplacement();
+                ++iter;
             }
+
+            iter = newIter;
         }
 
-        return outputString;
+        return output;
     }
 
     // Transcodes a string from UTF-8 to UTF-16.

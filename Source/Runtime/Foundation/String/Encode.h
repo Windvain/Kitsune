@@ -1,28 +1,25 @@
 #pragma once
 
-#include "Foundation/String/Encoding.h"
-#include "Foundation/Iterators/Iterator.h"
+#include "Foundation/String/TextEncoding.h"
 
 namespace Kitsune
 {
     // Encodes codepoints in the range [begin, end] into the specified encoding.
     template<TextEncoding Encoding,
-             ForwardIterator InputIter,
-             OutputIterator<typename Encoding::CodeunitType> OutputIter>
-    inline EncodeResult<InputIter, OutputIter> Encode(InputIter begin, InputIter end,
-                                                      OutputIter outBegin)
+             ForwardIterator Iter,
+             OutputIterator<typename Encoding::CodeunitType> OutIter>
+    inline Pair<Iter, OutIter> Encode(Iter begin, Iter end, OutIter outBegin)
     {
-        using Result = EncodeResult<InputIter, OutputIter>;
         while (begin != end)
         {
-            auto [newBegin, newOutBegin] = Encoding::EncodeSingle(begin, end, outBegin);
+            auto [newBegin, newOutBegin] = Encoding::Encode(begin, end, outBegin);
             if (newBegin == begin)
-                return Result(newBegin, newOutBegin);
+                return { newBegin, newOutBegin };
 
             begin = newBegin;
             outBegin = newOutBegin;
         }
 
-        return Result(begin, outBegin);
+        return { begin, outBegin };
     }
 }

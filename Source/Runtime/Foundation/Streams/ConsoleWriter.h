@@ -6,7 +6,6 @@
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
-#include "Foundation/String/Valid.h"
 #include "Foundation/String/String.h"
 #include "Foundation/String/UTF8Encoding.h"
 
@@ -33,8 +32,11 @@ namespace Kitsune
     class BasicConsoleWriter : public Writer<char>
     {
     public:
+        using ValueType = char;
+        using EncodingType = UTF8Encoding<char>;
+
         static_assert(
-            BufferSize >= UTF8Encoding<char>::MaximumCodeunits(),
+            BufferSize >= EncodingType::MaxCodeunits(),
             "BasicConsoleWriter<BufSize, Alloc> expects the buffer size to "
             "be at least 4 bytes.");
 
@@ -131,7 +133,7 @@ namespace Kitsune
             StringView dataView = m_Buffer;
             while (!dataView.IsEmpty())
             {
-                auto invalidIter = FindInvalidEncoding<UTF8Encoding<char>>(
+                auto invalidIter = FindInvalidEncoding(
                     dataView.GetBegin(), dataView.GetEnd());
 
                 if (invalidIter != dataView.GetBegin())
@@ -149,19 +151,36 @@ namespace Kitsune
                 // it is possible that it got cut off, bring the invalid character
                 // back to the front.
                 Usize difference = dataView.GetEnd() - invalidIter;
-                if (difference < UTF8Encoding<char>::MaximumCodeunits())
+                if (difference < EncodingType::MaxCodeunits())
                 {
                     m_Buffer = String(invalidIter, difference);
                     return;     // Don't clear the buffer, we've cleared it already!
                 }
                 else
                 {
-                    Details::UnbufferedWriteConsole(m_Type, "\uFFFD");
+                    Details::UnbufferedWriteConsole(
+                        m_Type, EncodingType::GetReplacement());
+
                     dataView.RemovePrefix(1);
                 }
             }
 
             m_Buffer.Clear();
+        }
+
+        inline const char* FindInvalidEncoding(const char* begin, const char* end)
+        {
+            Uint32 codepoint;
+            while (begin != end)
+            {
+                auto [newBegin, _] = EncodingType::Decode(begin, end, &codepoint);
+                if (newBegin == begin)
+                    return newBegin;
+
+                begin = newBegin;
+            }
+
+            return end;
         }
 
     private:

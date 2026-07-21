@@ -49,6 +49,7 @@ namespace Kitsune::Testing
         {
             return m_Pointer;
         }
+
     public:
         inline bool operator==(const ForwardIterator& iter) const
         {

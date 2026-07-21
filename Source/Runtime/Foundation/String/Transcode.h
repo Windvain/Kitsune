@@ -1,49 +1,40 @@
 #pragma once
 
-#include "Foundation/String/Encoding.h"
 #include "Foundation/Memory/AddressOf.h"
+#include "Foundation/String/TextEncoding.h"
 
 namespace Kitsune
 {
-    template<Iterator InputIter, Iterator OutputIter>
-    struct TranscodeResult
-    {
-        InputIter InputPosition;
-        OutputIter OutputPosition;
-    };
-
     // Transcodes the characters in the range [begin, end] from `InEncoding` to
     // `OutEncoding`.
-    template<TextEncoding InEncoding, TextEncoding OutEncoding,
-             ForwardIterator InputIter,
-             OutputIterator<typename OutEncoding::CodeunitType> OutputIter>
-    inline TranscodeResult<InputIter, OutputIter> Transcode(
-        InputIter begin, InputIter end, OutputIter outBegin)
+    template<
+        TextEncoding InEncoding,
+        TextEncoding OutEncoding,
+        ForwardIterator Iter,
+        OutputIterator<typename OutEncoding::CodeunitType> OutIter>
+    inline Pair<Iter, OutIter> Transcode(Iter begin, Iter end, OutIter outBegin)
+        requires std::same_as<
+            typename InEncoding::CodepointType, typename OutEncoding::CodepointType>
     {
-        using Result = TranscodeResult<InputIter, OutputIter>;
-
         typename InEncoding::CodepointType codepoint;
-        auto* codepointPtr = AddressOf(codepoint);
+        auto* pointer = AddressOf(codepoint);
 
         while (begin != end)
         {
-            auto [newBegin, newOutIter_] = InEncoding::DecodeSingle(
-                begin, end, codepointPtr);
-
+            auto [newBegin, newOutIter] = InEncoding::Decode(begin, end, pointer);
             if (newBegin == begin)
-                return Result(newBegin, outBegin);
+                return { newBegin, outBegin };
 
             begin = newBegin;
+            auto [newPointer, newOutBegin] = OutEncoding::Encode(
+                pointer, pointer + 1, outBegin);
 
-            auto [newCodepointPtr, newOutBegin] = OutEncoding::EncodeSingle(
-                codepointPtr, codepointPtr + 1, outBegin);
-
-            if (newCodepointPtr == codepointPtr)
-                return Result(newBegin, outBegin);
+            if (newPointer == pointer)
+                return { newBegin, outBegin };
 
             outBegin = newOutBegin;
         }
 
-        return Result(begin, outBegin);
+        return { begin, outBegin };
     }
 }
