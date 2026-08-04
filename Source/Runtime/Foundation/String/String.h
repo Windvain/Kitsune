@@ -458,36 +458,38 @@ namespace Kitsune
             Clear();
         }
 
-        inline void Insert(Index index, const T* string)
+        inline Iterator Insert(ConstIterator iter, const T* string)
         {
-            Insert(index, BasicStringView<T>(string));
+            return Insert(iter, BasicStringView<T>(string));
         }
 
-        inline void Insert(Index index, const T* string, Usize size)
+        inline Iterator Insert(ConstIterator iter, const T* string, Usize size)
         {
-            Insert(index, string, string + size);
+            return Insert(iter, string, string + size);
         }
 
-        inline void Insert(Index index, BasicStringView<T> string)
+        inline Iterator Insert(ConstIterator iter, BasicStringView<T> string)
         {
-            Insert(index, string.GetBegin(), string.GetEnd());
+            return Insert(iter, string.GetBegin(), string.GetEnd());
         }
 
-        inline void Insert(Index index, T character)
+        inline Iterator Insert(ConstIterator iter, T character)
         {
-            Insert(index, BasicStringView<T>(&character, 1));
+            return Insert(iter, BasicStringView<T>(&character, 1));
         }
 
-        inline void Insert(Index index, Usize count, T character)
+        inline Iterator Insert(ConstIterator iter, Usize count, T character)
         {
-            if ((index < 0) || (index > Size()))
+            if ((iter < GetBegin()) || (iter > GetEnd()))
                 throw OutOfRangeException();
 
+            Index index = iter - GetBegin();
             Usize newSize = Size() + count;
+
             if (newSize > Capacity())
                 Reserve(newSize);
 
-            T* position = Data() + index;
+            Iterator position = GetBegin() + index;
             std::memmove(
                 position + count,
                 position,
@@ -495,26 +497,29 @@ namespace Kitsune
 
             Algorithms::UninitializedFillN(position, count, character);
             m_Size = newSize;
+
+            return position;
         }
 
-        inline void Insert(Index index, const BasicString& string)
+        inline Iterator Insert(ConstIterator iter, const BasicString& string)
         {
-            Insert(index, BasicStringView<T>(string));
+            return Insert(iter, string.GetBegin(), string.GetEnd());
         }
 
         template<ForwardIterator Iter>
-        inline void Insert(Index index, Iter begin, Iter end)
+        inline Iterator Insert(ConstIterator iter, Iter begin, Iter end)
         {
-            if ((index < 0) || (index > Size()))
+            if ((iter < GetBegin()) || (iter > GetEnd()))
                 throw OutOfRangeException();
 
             auto count = Algorithms::Distance(begin, end);
-            Usize newSize = Size() + count;
+            Index index = iter - GetBegin();
 
+            Usize newSize = Size() + count;
             if (newSize > Capacity())
                 Reserve(newSize);
 
-            T* position = Data() + index;
+            Iterator position = GetBegin() + index;
             std::memmove(
                 position + count,
                 position,
@@ -527,25 +532,33 @@ namespace Kitsune
                 Algorithms::UninitializedCopy(begin, end, position);
 
             m_Size = newSize;
+            return position;
         }
 
-        inline void Insert(Index index, std::initializer_list<T> initList)
+        inline Iterator Insert(ConstIterator iter, std::initializer_list<T> initList)
         {
-            Insert(index, initList.begin(), initList.end());
+            return Insert(iter, initList.begin(), initList.end());
         }
 
-        inline void Remove(Index index)
+        inline void Remove(ConstIterator iter)
         {
-            Remove(index, 1);
+            Remove(iter, iter + 1);
         }
 
-        inline void Remove(Index beginPos, Usize count)
+        inline void Remove(ConstIterator begin, ConstIterator end)
         {
-            T* begin = Data() + beginPos;
-            T* end = begin + count;
+            if ((begin < GetBegin()) || (begin >= GetEnd()) || (end < GetBegin()) ||
+                (end > GetEnd()))
+            {
+                throw OutOfRangeException();
+            }
 
-            std::memmove(begin, end, (GetEnd() - end + 1) * sizeof(T));
-            m_Size -= count;
+            std::memmove(
+                Data() + (begin - GetBegin()),      // == begin.
+                end,
+                (GetEnd() - end + 1) * sizeof(T));
+
+            m_Size -= (end - begin);
         }
 
         inline void PushBack(T character)
@@ -603,55 +616,55 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool StartsWith(BasicStringView<T> string)
+        inline bool StartsWith(BasicStringView<T> string) const
         {
             return BasicStringView<T>(*this).StartsWith(string);
         }
 
         [[nodiscard]]
-        inline bool StartsWith(T character)
+        inline bool StartsWith(T character) const
         {
             return BasicStringView<T>(*this).StartsWith(character);
         }
 
         [[nodiscard]]
-        inline bool StartsWith(const T* string)
+        inline bool StartsWith(const T* string) const
         {
             return BasicStringView<T>(*this).StartsWith(string);
         }
 
         [[nodiscard]]
-        inline bool EndsWith(BasicStringView<T> string)
+        inline bool EndsWith(BasicStringView<T> string) const
         {
             return BasicStringView<T>(*this).EndsWith(string);
         }
 
         [[nodiscard]]
-        inline bool EndsWith(T character)
+        inline bool EndsWith(T character) const
         {
             return BasicStringView<T>(*this).EndsWith(character);
         }
 
         [[nodiscard]]
-        inline bool EndsWith(const T* string)
+        inline bool EndsWith(const T* string) const
         {
             return BasicStringView<T>(*this).EndsWith(string);
         }
 
         [[nodiscard]]
-        inline bool Contains(BasicStringView<T> string)
+        inline bool Contains(BasicStringView<T> string) const
         {
             return BasicStringView<T>(*this).Contains(string);
         }
 
         [[nodiscard]]
-        inline bool Contains(T character)
+        inline bool Contains(T character) const
         {
             return BasicStringView<T>(*this).Contains(character);
         }
 
         [[nodiscard]]
-        inline bool Contains(const T* string)
+        inline bool Contains(const T* string) const
         {
             return BasicStringView<T>(*this).Contains(string);
         }
@@ -767,6 +780,22 @@ namespace Kitsune
                 m_Pointer = pointer;
                 m_SharedData.Capacity = Size();
             }
+        }
+
+        inline void Resize(Usize count)
+        {
+            Resize(count, T());
+        }
+
+        inline void Resize(Usize count, T ch)
+        {
+            if (Size() == count)
+                return;
+
+            if (Size() < count)
+                Insert(Size(), count - Size(), ch);
+            else
+                Remove(count, Size() - count);
         }
 
     public:

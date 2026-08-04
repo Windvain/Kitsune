@@ -99,7 +99,6 @@ add_library(KitsuneRuntime SHARED
 
     "Foundation/String/Decode.h"
     "Foundation/String/Encode.h"
-    "Foundation/String/Encoding.h"
     "Foundation/String/Format.h"
     "Foundation/String/FormatArguments.h"
     "Foundation/String/FormatException.h"
@@ -107,11 +106,12 @@ add_library(KitsuneRuntime SHARED
     "Foundation/String/Formatter.h"
     "Foundation/String/String.h"
     "Foundation/String/StringView.h"
+    "Foundation/String/TextEncoding.h"
     "Foundation/String/Transcode.h"
     "Foundation/String/TranscodePresets.h"
-    "Foundation/String/UTF8Encoding.h"
     "Foundation/String/UTF16Encoding.h"
     "Foundation/String/UTF32Encoding.h"
+    "Foundation/String/UTF8Encoding.h"
     "Foundation/String/Valid.h"
 
     "Foundation/Templates/Exchange.h"
