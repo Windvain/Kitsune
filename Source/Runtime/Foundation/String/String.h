@@ -793,9 +793,9 @@ namespace Kitsune
                 return;
 
             if (Size() < count)
-                Insert(Size(), count - Size(), ch);
+                Insert(GetEnd(), count - Size(), ch);
             else
-                Remove(count, Size() - count);
+                Remove(GetBegin() + count, GetEnd());
         }
 
     public:

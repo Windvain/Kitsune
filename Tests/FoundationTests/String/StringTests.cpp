@@ -1211,6 +1211,31 @@ namespace
         EXPECT_GENERAL_STREQ(string.Data(), source.c_str());
     }
 
+    // BasicString<T, Alloc>::Resize(Usize)
+    // BasicString<T, Alloc>::Resize(Usize, T)
+    TYPED_TEST(StringTest, Resize)
+    {
+        // Resize(Usize) just calls Resize(Usize, T) with a null terminator.
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        BasicString<T> string = source.c_str();
+
+        string.Resize(5, T(12));
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+        EXPECT_EQ(string.Size(), 5);
+
+        string.Resize(8, T(12));
+
+        std::basic_string<T> expected2 = this->GetEncodedString("Hello");
+        expected2.append(3, T(12));
+
+        EXPECT_GENERAL_STREQ(string.Raw(), expected2.c_str());
+        EXPECT_EQ(string.Size(), 8);
+    }
+
     // BasicString<T, Alloc>::begin()
     // BasicString<T, Alloc>::end()
     TYPED_TEST(StringTest, RangedForLoop)
