@@ -1,11 +1,14 @@
 #include "Launch/EngineLoop.h"
-
 #include <cstdlib>
+
 #include "Foundation/Algorithms/Contains.h"
 #include "Foundation/Logging/ConsoleLogSink.h"
 
 #include "Foundation/Diagnostics/LogicException.h"
 #include "Foundation/Utilities/SystemInformation.h"
+
+#include "Foundation/Filesystem/ExecutablePath.h"
+#include "Foundation/Filesystem/CurrentDirectory.h"
 
 namespace Kitsune
 {
@@ -48,6 +51,16 @@ namespace Kitsune
             return;
         }
 #endif
+
+        // Get the current executable's path and use it as the application directory.
+        m_ApplicationDirectory = GetExecutablePath().GetParentPath();
+        KITSUNE_ENGINE_INFO_FORMAT(
+            Launch,
+            "Setting the current directory from {0} to {1}.",
+            GetCurrentDirectory(),
+            m_ApplicationDirectory);
+
+        SetCurrentDirectory(m_ApplicationDirectory);
 
         // TODO: Read this from a config file?
         String displayServer;

@@ -55,6 +55,8 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Diagnostics/SourceLocation.h"
     "Foundation/Diagnostics/SystemException.h"
 
+    "Foundation/Filesystem/CurrentDirectory.h"
+    "Foundation/Filesystem/ExecutablePath.h"
     "Foundation/Filesystem/FileStream.h"
     "Foundation/Filesystem/Path.h"
     "Foundation/Filesystem/PathView.h"
@@ -180,6 +182,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Display/Windows/WindowsWindowManager.h"
 
         "Foundation/Windows/WindowsConsoleWriter.cpp"
+        "Foundation/Windows/WindowsCurrentDirectory.cpp"
+        "Foundation/Windows/WindowsExecutablePath.cpp"
         "Foundation/Windows/WindowsFileStream.cpp"
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"

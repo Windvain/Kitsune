@@ -5,7 +5,9 @@
 
 #include "Display/WindowManager.h"
 #include "Display/DisplayManager.h"
+
 #include "Foundation/Logging/Logger.h"
+#include "Foundation/Filesystem/Path.h"
 
 namespace Kitsune
 {
@@ -58,6 +60,8 @@ namespace Kitsune
     public:
         CommandLineArguments m_CommandLineArguments;
         Logger* m_Logger = nullptr;
+
+        Path m_ApplicationDirectory;
 
         DisplayManager* m_DisplayManager = nullptr;
         WindowManager* m_WindowManager = nullptr;
