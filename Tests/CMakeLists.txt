@@ -86,6 +86,13 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/Main.cpp"
 )
 
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    target_sources(FoundationTests PRIVATE
+        "FoundationTests/Filesystem/WindowsPathTests.cpp"
+        "FoundationTests/Filesystem/WindowsPathViewTests.cpp"
+    )
+endif()
+
 add_test(FoundationTests COMMAND FoundationTests)
 
 target_include_directories(FoundationTests PRIVATE "FoundationTests/Include/")

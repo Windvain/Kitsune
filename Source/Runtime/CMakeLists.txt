@@ -56,6 +56,8 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Diagnostics/SystemException.h"
 
     "Foundation/Filesystem/FileStream.h"
+    "Foundation/Filesystem/Path.h"
+    "Foundation/Filesystem/PathView.h"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
@@ -182,6 +184,8 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"
+        "Foundation/Windows/WindowsPath.cpp"
+        "Foundation/Windows/WindowsPathView.cpp"
     )
 
     # Include WindowsSystemInformation.cpp for compilers other than MSVC, b.c. the
