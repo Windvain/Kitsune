@@ -2,7 +2,7 @@
 
 #include "Foundation/Filesystem/Path.h"
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
     // Retrieves a path to the current executable. Note that this function is NOT
     // thread-safe. Make sure that NO CODE will call OS APIs in the duration that this

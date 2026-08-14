@@ -2,6 +2,7 @@
 #include "Foundation/Filesystem/PathView.h"
 
 using namespace Kitsune;
+using namespace Kitsune::Filesystem;
 
 namespace
 {

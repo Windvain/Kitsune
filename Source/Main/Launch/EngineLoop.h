@@ -61,7 +61,7 @@ namespace Kitsune
         CommandLineArguments m_CommandLineArguments;
         Logger* m_Logger = nullptr;
 
-        Path m_ApplicationDirectory;
+        Filesystem::Path m_ApplicationDirectory;
 
         DisplayManager* m_DisplayManager = nullptr;
         WindowManager* m_WindowManager = nullptr;

@@ -2,7 +2,7 @@
 
 #include "Foundation/Streams/Stream.h"
 
-#include "Foundation/String/StringView.h"
+#include "Foundation/Filesystem/Path.h"
 #include "Foundation/Templates/Exchange.h"
 
 #include "Foundation/Memory/Allocator.h"
@@ -47,7 +47,7 @@ namespace Kitsune
             FileObject& operator=(FileObject&& fileObject);
 
         public:
-            bool Open(StringView filePath,
+            bool Open(Filesystem::PathView filePath,
                       FileAccessMode accessMode,
                       FileOpenMode openMode = FileOpenMode::Open);
 
@@ -71,7 +71,7 @@ namespace Kitsune
             Usize GetPosition() const;
 
             [[nodiscard]]
-            inline String GetName() const
+            inline const Filesystem::Path& GetName() const
             {
                 KITSUNE_ASSERT(IsOpen(), "Failed to get the path of this stream.");
                 return m_Name;
@@ -88,7 +88,7 @@ namespace Kitsune
             FileOpenMode m_OpenMode;
             FileAccessMode m_AccessMode;
 
-            String m_Name;
+            Filesystem::Path m_Name;
         };
     }
 
@@ -102,7 +102,7 @@ namespace Kitsune
         {
         }
 
-        inline BasicFileStream(StringView filePath,
+        inline BasicFileStream(Filesystem::PathView filePath,
                                FileAccessMode accessMode,
                                FileOpenMode openMode = FileOpenMode::Open)
             : BasicFileStream()
@@ -138,7 +138,7 @@ namespace Kitsune
         }
 
     public:
-        inline bool Open(StringView filePath,
+        inline bool Open(Filesystem::PathView filePath,
                          FileAccessMode accessMode,
                          FileOpenMode openMode = FileOpenMode::Open)
         {
@@ -399,7 +399,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline String GetPath() const
+        inline const Filesystem::Path& GetPath() const
         {
             return m_FileObject.GetName();
         }

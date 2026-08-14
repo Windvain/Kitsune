@@ -2,6 +2,7 @@
 #include "Foundation/Filesystem/Path.h"
 
 using namespace Kitsune;
+using namespace Kitsune::Filesystem;
 
 #if !defined(_WIN32)
     #error This test file is only meant for Windows.

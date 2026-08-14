@@ -4,7 +4,7 @@
 #include "Foundation/String/TranscodePresets.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
     Path GetExecutablePath()
     {

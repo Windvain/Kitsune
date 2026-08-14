@@ -1,7 +1,7 @@
-#include "Foundation/Filesystem/FileStream.h"
+#include "Foundation/Streams/FileStream.h"
 #include <Windows.h>
 
-#include "Foundation/String/TranscodePresets.h"
+#include "Foundation/Filesystem/ToAbsolute.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune::Details
@@ -38,28 +38,6 @@ namespace Kitsune::Details
         }
 
         KITSUNE_UNREACHABLE();
-    }
-
-    static String GetFullPath(StringView path)
-    {
-        WideString widePath = UTF8ToUTF16<char, wchar_t>(path);
-        DWORD length = ::GetFullPathNameW(widePath.Raw(), 0, nullptr, nullptr);
-
-        if (length == 0)
-        {
-            throw SystemException(
-                "Failed to convert the path from a relative "
-                "path to an absolute path.");
-        }
-
-        WideString tempBuffer(length - 1, '\0');
-        ::GetFullPathNameW(widePath.Data(), length, tempBuffer.Data(), nullptr);
-
-        // HACK: GetFullPathNameW() doesn't return the **exact** length of the string,
-        // rather just an estimate that fits the string.
-        // Recalculate the size before returning.
-        WideString absolutePath(tempBuffer.Data());
-        return UTF16ToUTF8<wchar_t, char>(absolutePath);
     }
 
     // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init)
@@ -222,7 +200,7 @@ namespace Kitsune::Details
         return position.QuadPart;
     }
 
-    bool FileObject::Open(StringView filePath,
+    bool FileObject::Open(Filesystem::PathView filePath,
                           FileAccessMode accessMode,
                           FileOpenMode openMode)
     {
@@ -240,9 +218,9 @@ namespace Kitsune::Details
         DWORD desiredAccess = GetDesiredAccess(accessMode);
         DWORD creationMode = GetCreationMode(openMode);
 
-        WideString wideFilePath = UTF8ToUTF16<char, wchar_t>(filePath);
-
+        WideString wideFilePath = filePath.Native();
         auto* handleStore = reinterpret_cast<HANDLE*>(m_Buffer);
+
         *handleStore = ::CreateFileW(
             wideFilePath.Raw(),
             desiredAccess,
@@ -261,8 +239,7 @@ namespace Kitsune::Details
         m_OpenMode = openMode;
         m_AccessMode = accessMode;
 
-        m_Name = GetFullPath(filePath);
-
+        m_Name = Filesystem::ToAbsolute(filePath);
         return true;
     }
 

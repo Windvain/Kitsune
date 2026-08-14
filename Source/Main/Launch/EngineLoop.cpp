@@ -53,11 +53,13 @@ namespace Kitsune
 #endif
 
         // Get the current executable's path and use it as the application directory.
-        m_ApplicationDirectory = GetExecutablePath().GetParentPath();
+        Filesystem::Path executablePath = Filesystem::GetExecutablePath();
+        m_ApplicationDirectory = executablePath.GetParentPath();
+
         KITSUNE_ENGINE_INFO_FORMAT(
             Launch,
             "Setting the current directory from {0} to {1}.",
-            GetCurrentDirectory(),
+            Filesystem::GetCurrentDirectory(),
             m_ApplicationDirectory);
 
         SetCurrentDirectory(m_ApplicationDirectory);

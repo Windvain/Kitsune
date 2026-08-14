@@ -57,9 +57,9 @@ add_library(KitsuneRuntime SHARED
 
     "Foundation/Filesystem/CurrentDirectory.h"
     "Foundation/Filesystem/ExecutablePath.h"
-    "Foundation/Filesystem/FileStream.h"
     "Foundation/Filesystem/Path.h"
     "Foundation/Filesystem/PathView.h"
+    "Foundation/Filesystem/ToAbsolute.h"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
@@ -98,6 +98,7 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Memory/SharedPtr.h"
 
     "Foundation/Streams/ConsoleWriter.h"
+    "Foundation/Streams/FileStream.h"
     "Foundation/Streams/Stream.h"
     "Foundation/Streams/WriterIterator.h"
 
@@ -190,6 +191,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Foundation/Windows/WindowsMutex.cpp"
         "Foundation/Windows/WindowsPath.cpp"
         "Foundation/Windows/WindowsPathView.cpp"
+        "Foundation/Windows/WindowsToAbsolute.cpp"
     )
 
     # Include WindowsSystemInformation.cpp for compilers other than MSVC, b.c. the

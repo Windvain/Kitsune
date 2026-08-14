@@ -1,7 +1,7 @@
 #include "Foundation/Filesystem/Path.h"
 #include "Foundation/Algorithms/Replace.h"
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
     Path& Path::operator/=(const Path& path)
     {

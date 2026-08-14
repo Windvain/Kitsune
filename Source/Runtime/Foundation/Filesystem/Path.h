@@ -2,7 +2,7 @@
 
 #include "Foundation/Filesystem/PathView.h"
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
     class KITSUNE_API Path
     {

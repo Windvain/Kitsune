@@ -9,9 +9,13 @@
 #undef SetCurrentDirectory
 #undef GetCurrentDirectory
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
-    Mutex g_CurrentDirectoryMutex{ /* ... */ };
+    // Put this in an inline namespace, make this inaccessible to other files.
+    namespace
+    {
+        Mutex g_CurrentDirectoryMutex{ /* ... */ };
+    }
 
     void SetCurrentDirectory(PathView path)
     {

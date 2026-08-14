@@ -3,7 +3,7 @@
 #include "Foundation/String/String.h"
 #include "Foundation/String/TranscodePresets.h"
 
-namespace Kitsune
+namespace Kitsune::Filesystem
 {
     class KITSUNE_API PathView
     {
