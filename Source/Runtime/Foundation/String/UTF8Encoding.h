@@ -31,10 +31,12 @@ namespace Kitsune
         [[nodiscard]]
         static constexpr BasicStringView<T> GetPreamble()
         {
+            // The Unicode Consortium recommends to not append a BOM for UTF-8 files to
+            // keep backwards compatibility with ASCII.
             if constexpr (std::is_same_v<T, char8_t>)
-                return U8StringView(u8"\uFEFF");
+                return U8StringView();
             else if constexpr (std::is_same_v<T, char>)
-                return StringView("\uFEFF");
+                return StringView();
 
             KITSUNE_UNREACHABLE();
         }

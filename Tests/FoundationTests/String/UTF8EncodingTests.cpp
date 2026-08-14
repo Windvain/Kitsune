@@ -52,9 +52,7 @@ namespace
     TYPED_TEST(UTF8EncodingTests, GetPreamble)
     {
         using Encoding = typename TestFixture::EncodingType;
-        auto expected = this->GetString("\uFEFF");
-
-        EXPECT_EQ(Encoding::GetPreamble(), expected.c_str());
+        EXPECT_TRUE(Encoding::GetPreamble().IsEmpty());
     }
 
     TYPED_TEST(UTF8EncodingTests, GetReplacement)
