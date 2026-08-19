@@ -36,12 +36,15 @@ namespace Kitsune::Filesystem
     {
         LockGuard lock(g_CurrentDirectoryMutex);
 
+        // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getcurrentdirectory
+        // The documentation is incorrect. GetCurrentDirectory() returns the length
+        // INCLUDING the null terminator.
         DWORD length = ::GetCurrentDirectoryW(0, nullptr);
         if (length == 0)
             throw SystemException("Failed to get the current directory path.");
 
-        WideString currentDir(length, L'\0');
-        ::GetCurrentDirectoryW(length + 1, currentDir.Data());
+        WideString currentDir(length - 1, L'\0');
+        ::GetCurrentDirectoryW(length, currentDir.Data());
 
         return TranscodeString<UTF16Encoding<wchar_t>, UTF8Encoding<char>>(currentDir);
     }
