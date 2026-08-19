@@ -111,6 +111,8 @@ namespace Kitsune
                 throw SystemException("Failed to open the specified file.");
         }
 
+        inline BasicFileStream(const BasicFileStream&) = delete;
+
         inline BasicFileStream(BasicFileStream&& fileStream)
             : m_FileObject(Move(fileStream.m_FileObject)),
               m_Buffer(Exchange(fileStream.m_Buffer, nullptr)),
@@ -128,6 +130,8 @@ namespace Kitsune
         }
 
     public:
+        inline BasicFileStream& operator=(const BasicFileStream&) = delete;
+
         inline BasicFileStream& operator=(BasicFileStream&& fileStream)
         {
             if (this == &fileStream)
@@ -145,14 +149,17 @@ namespace Kitsune
             if (IsOpen())
                 return false;
 
-            if (m_Buffer == nullptr)
-            {
-                m_Buffer = static_cast<Byte*>(m_Allocator.Allocate(BufferSize));
-                m_ReadPosition = m_WritePosition = m_SeekPosition =
-                    m_Buffer;
-            }
+            bool success = m_FileObject.Open(filePath, accessMode, openMode);
+            if (!success)
+                return success;
 
-            return m_FileObject.Open(filePath, accessMode, openMode);
+            KITSUNE_ASSERT(m_Buffer == nullptr, "m_Buffer should not have been set.");
+
+            m_Buffer = static_cast<Byte*>(m_Allocator.Allocate(BufferSize));
+            m_ReadPosition = m_WritePosition = m_SeekPosition =
+                m_Buffer;
+
+            return success;
         }
 
         inline void Close()
@@ -164,14 +171,12 @@ namespace Kitsune
             if (IsWritable())
                 Flush();
 
-            if (m_Buffer != nullptr)
-            {
-                m_Allocator.Free(m_Buffer, BufferSize);
-                m_Buffer = nullptr;
+            KITSUNE_ASSERT(m_Buffer != nullptr, "m_Buffer should have been allocated.");
 
-                m_ReadPosition = m_WritePosition = m_SeekPosition =
-                    m_Buffer;
-            }
+            m_Allocator.Free(m_Buffer, BufferSize);
+            m_Buffer = nullptr;
+
+            m_ReadPosition = m_WritePosition = m_SeekPosition = m_Buffer;
 
             m_FileObject.Close();
         }
