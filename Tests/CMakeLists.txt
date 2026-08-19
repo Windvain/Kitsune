@@ -49,8 +49,6 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/Diagnostics/BacktraceFrameTests.cpp"
     "FoundationTests/Diagnostics/SourceLocationTests.cpp"
 
-    "FoundationTests/Filesystem/FileStreamTests.cpp"
-
     "FoundationTests/Include/FlippableCompare.h"
     "FoundationTests/Include/PushBackContainer.h"
     "FoundationTests/Include/StatefulAllocator.h"
@@ -78,6 +76,9 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/String/UTF8EncodingTests.cpp"
     "FoundationTests/String/UTF16EncodingTests.cpp"
     "FoundationTests/String/UTF32EncodingTests.cpp"
+
+    "FoundationTests/Streams/FileStreamTests.cpp"
+    "FoundationTests/Streams/FileWriterTests.cpp"
 
     "FoundationTests/Threading/AtomicTests.cpp"
 

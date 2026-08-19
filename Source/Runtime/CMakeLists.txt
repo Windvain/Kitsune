@@ -99,6 +99,7 @@ add_library(KitsuneRuntime SHARED
 
     "Foundation/Streams/ConsoleWriter.h"
     "Foundation/Streams/FileStream.h"
+    "Foundation/Streams/FileWriter.h"
     "Foundation/Streams/Stream.h"
     "Foundation/Streams/WriterIterator.h"
 
