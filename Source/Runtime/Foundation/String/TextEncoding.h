@@ -1,8 +1,9 @@
 #pragma once
 
 #include <concepts>
-
 #include "Foundation/Containers/Pair.h"
+
+#include "Foundation/String/LineEnding.h"
 #include "Foundation/String/StringView.h"
 
 namespace Kitsune
@@ -66,15 +67,18 @@ namespace Kitsune
     }
 
     template<typename T>
-    concept TextEncoding = requires
+    concept TextEncoding = requires (LineEndingOptions options)
     {
         typename T::CodepointType;      // The type to which the codeunit maps to.
         typename T::CodeunitType;       // Commonly known as the "character type".
 
         { T::MaxCodepointValue() } -> std::same_as<typename T::CodepointType>;
         { T::MaxCodeunits() } -> std::same_as<Usize>;
-        { T::GetPreamble() } -> std::same_as<BasicStringView<typename T::CodeunitType>>;
 
+        { T::GetLineEnding(options) }
+            -> std::same_as<BasicStringView<typename T::CodeunitType>>;
+
+        { T::GetPreamble() } -> std::same_as<BasicStringView<typename T::CodeunitType>>;
         { T::GetReplacement() }
             -> std::same_as<BasicStringView<typename T::CodeunitType>>;
     } &&

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Foundation/Containers/Pair.h"
+
+#include "Foundation/String/LineEnding.h"
 #include "Foundation/String/StringView.h"
 
 namespace Kitsune
@@ -28,6 +30,26 @@ namespace Kitsune
             return 2;
         }
 
+    public:
+        [[nodiscard]]
+        static constexpr BasicStringView<T> GetLineEnding(LineEndingOptions options)
+        {
+            // No constexpr ternary operator, no can do.
+            BasicStringView<T> lineEnding;
+            if constexpr (std::is_same_v<T, char16_t>)
+                lineEnding = u"\r\n";
+            else if constexpr (std::is_same_v<T, wchar_t>)
+                lineEnding = L"\r\n";
+            else
+                KITSUNE_UNREACHABLE();
+
+            if (options == LineEndingOptions::LF)
+                lineEnding.RemovePrefix(1);
+
+            return lineEnding;
+        }
+
+    public:
         [[nodiscard]]
         static constexpr BasicStringView<T> GetPreamble()
         {

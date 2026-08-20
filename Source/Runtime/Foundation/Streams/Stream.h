@@ -82,6 +82,8 @@ namespace Kitsune
         typename T::ValueType;
 
         writer.Write(data, dataCount);
+        writer.WriteLine(data, dataCount);
+
         writer.Flush();
     };
 

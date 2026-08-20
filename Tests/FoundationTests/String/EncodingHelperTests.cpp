@@ -32,6 +32,12 @@ namespace
         }
 
         [[nodiscard]]
+        inline static U16StringView GetLineEnding(LineEndingOptions)
+        {
+            return u"";
+        }
+
+        [[nodiscard]]
         inline static U16StringView GetPreamble()
         {
             return u"";
@@ -86,6 +92,12 @@ namespace
         inline static Usize MaxCodeunits()
         {
             return 2;
+        }
+
+        [[nodiscard]]
+        inline static U32StringView GetLineEnding(LineEndingOptions)
+        {
+            return U"";
         }
 
         [[nodiscard]]

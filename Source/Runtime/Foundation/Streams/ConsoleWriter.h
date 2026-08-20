@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Foundation/Streams/Stream.h"
-#include "Foundation/Threading/LockGuard.h"
-
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
+#include "Foundation/Threading/LockGuard.h"
+
 #include "Foundation/String/String.h"
+#include "Foundation/String/LineEnding.h"
 #include "Foundation/String/UTF8Encoding.h"
 
 namespace Kitsune
@@ -97,6 +97,18 @@ namespace Kitsune
                 if (m_Buffer.Size() == BufferSize)
                     ThreadUnsafeFlush();
             }
+        }
+
+        inline void WriteLine(const char* data, Usize dataCount)
+        {
+            Write(data, dataCount);
+            Write(EncodingType::GetLineEnding(NativeLineEnding));
+        }
+
+        inline void WriteLine(StringView string = "")
+        {
+            Write(string);
+            Write(EncodingType::GetLineEnding(NativeLineEnding));
         }
 
         inline void Flush()

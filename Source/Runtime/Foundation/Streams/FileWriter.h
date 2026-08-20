@@ -22,6 +22,9 @@ namespace Kitsune
 
         using EncodingType = Encoding;
 
+    private:
+        using StringViewType = BasicStringView<ValueType>;
+
     public:
         inline BasicFileWriter(const Alloc& allocator = Alloc())
             : m_Stream(allocator)
@@ -36,14 +39,31 @@ namespace Kitsune
         }
 
         inline BasicFileWriter(Filesystem::PathView filePath,
-                               FileOpenMode openMode)
-            : BasicFileWriter(filePath, FileAccessMode::Write, openMode)
+                               LineEndingOptions lineEnding)
+            : BasicFileWriter(filePath, FileAccessMode::Write,
+                              FileOpenMode::Open, lineEnding)
+        {
+        }
+
+        inline BasicFileWriter(Filesystem::PathView filePath,
+                               FileOpenMode openMode,
+                               LineEndingOptions lineEnding = NativeLineEnding)
+            : BasicFileWriter(filePath, FileAccessMode::Write, openMode, lineEnding)
+        {
+        }
+
+        inline BasicFileWriter(Filesystem::PathView filePath,
+                               FileAccessMode accessMode,
+                               LineEndingOptions lineEnding)
+            : BasicFileWriter(filePath, accessMode, FileOpenMode::Open, lineEnding)
         {
         }
 
         inline BasicFileWriter(Filesystem::PathView filePath,
                                FileAccessMode accessMode = FileAccessMode::Write,
-                               FileOpenMode openMode = FileOpenMode::Open)
+                               FileOpenMode openMode = FileOpenMode::Open,
+                               LineEndingOptions lineEnding = NativeLineEnding)
+            : m_LineEnding(lineEnding)
         {
             if (!Open(filePath, accessMode, openMode))
                 throw SystemException("Failed to open a stream to the file.");
@@ -126,9 +146,20 @@ namespace Kitsune
                 count * sizeof(ValueType));
         }
 
-        inline void Write(BasicStringView<ValueType> string)
+        inline void Write(StringViewType string)
         {
             Write(string.Data(), string.Size());
+        }
+
+        inline void WriteLine(const ValueType* data, Usize count)
+        {
+            Write(data, count);
+            Write(Encoding::GetLineEnding(m_LineEnding));
+        }
+
+        inline void WriteLine(StringViewType string = StringViewType())
+        {
+            WriteLine(string.Data(), string.Size());
         }
 
         inline void Flush()
@@ -138,6 +169,7 @@ namespace Kitsune
 
     private:
         BasicFileStream<BufSize, Alloc> m_Stream;
+        LineEndingOptions m_LineEnding = NativeLineEnding;
     };
 
     using FileWriter = BasicFileWriter<UTF8Encoding<char>, 4096>;

@@ -109,6 +109,7 @@ add_library(KitsuneRuntime SHARED
     "Foundation/String/FormatException.h"
     "Foundation/String/FormatScanner.h"
     "Foundation/String/Formatter.h"
+    "Foundation/String/LineEnding.h"
     "Foundation/String/String.h"
     "Foundation/String/StringView.h"
     "Foundation/String/TextEncoding.h"

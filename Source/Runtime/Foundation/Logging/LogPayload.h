@@ -54,7 +54,7 @@ namespace Kitsune
             // [12:34:56] [INFO] (My Topic/Subtopic): Hello, World! (file.cpp:78)
             return FormatTo(
                 context.GetOutput(),
-                "{0}{1}{2}{3}: {4}{5}\n",
+                "{0}{1}{2}{3}: {4}{5}",
                 GetTimeInformation(colored),
                 GetSeverityInformation(payload.Severity, colored),
                 GetTopicInformation(payload.Topic, colored),

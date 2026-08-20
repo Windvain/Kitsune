@@ -14,6 +14,7 @@ namespace Kitsune
         inline void Log(const LogPayload& payload) override
         {
             FormatTo(WriterIterator<ConsoleWriter>(m_Writer), "{0:c}", payload);
+            m_Writer.WriteLine();
         }
 
         inline void Flush() override
