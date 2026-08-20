@@ -54,7 +54,6 @@ namespace
         std::ofstream m_FileStream;
     };
 
-
     using FileWriterTestTypes = ::testing::Types<
         UTF8Encoding<char>,
         UTF8Encoding<char8_t>,
@@ -62,6 +61,11 @@ namespace
         UTF32Encoding<char32_t>>;
 
     TYPED_TEST_SUITE(FileWriterTest, FileWriterTestTypes);
+
+    TYPED_TEST(FileWriterTest, Concept)
+    {
+        EXPECT_TRUE(Writer<typename TestFixture::WriterType>);
+    }
 
     TYPED_TEST(FileWriterTest, DefaultConstructor)
     {

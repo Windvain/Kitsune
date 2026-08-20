@@ -37,7 +37,7 @@ namespace
             std::filesystem::remove("./example.txt");
         }
 
-        inline ~FileStreamTest()
+        inline ~FileStreamTest() override
         {
             // Remove the file again, just in case something happened in which the
             // TearDown() function was not called properly.
@@ -47,6 +47,17 @@ namespace
     private:
         std::ofstream m_FileStream;
     };
+
+    TEST_F(FileStreamTest, Concept)
+    {
+        EXPECT_TRUE(Stream<FileStream>);
+        EXPECT_TRUE(WritableStream<FileStream>);
+        EXPECT_TRUE(ReadableStream<FileStream>);
+
+        EXPECT_TRUE(BoundedStream<FileStream>);
+        EXPECT_TRUE(FlushableStream<FileStream>);
+        EXPECT_TRUE(SeekableStream<FileStream>);
+    }
 
     // FileStream<BufSize, Alloc>::FileStream()
     TEST_F(FileStreamTest, AllocatorConstructor)

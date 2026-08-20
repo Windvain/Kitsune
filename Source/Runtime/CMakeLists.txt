@@ -67,7 +67,6 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Iterators/ReverseIterator.h"
     "Foundation/Iterators/ToAddress.h"
 
-    "Foundation/Logging/ConsoleLogSink.cpp"
     "Foundation/Logging/ConsoleLogSink.h"
     "Foundation/Logging/Logger.cpp"
     "Foundation/Logging/Logger.h"

@@ -14,13 +14,13 @@ namespace Kitsune
         TextEncoding Encoding,
         Usize BufSize,
         Allocator Alloc = GlobalAllocator>
-    class BasicFileWriter : public Writer<typename Encoding::CodeunitType>
+    class BasicFileWriter
     {
     public:
         using ValueType = typename Encoding::CodeunitType;
-        using EncodingType = Encoding;
-
         using StreamType = BasicFileStream<BufSize, Alloc>;
+
+        using EncodingType = Encoding;
 
     public:
         inline BasicFileWriter(const Alloc& allocator = Alloc())
@@ -111,7 +111,7 @@ namespace Kitsune
         }
 
     public:
-        inline void Write(const ValueType* data, Usize count) override
+        inline void Write(const ValueType* data, Usize count)
         {
             if (m_Stream.GetPosition() == 0)
             {
@@ -131,7 +131,7 @@ namespace Kitsune
             Write(string.Data(), string.Size());
         }
 
-        inline void Flush() override
+        inline void Flush()
         {
             m_Stream.Flush();
         }

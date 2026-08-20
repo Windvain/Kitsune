@@ -29,7 +29,7 @@ namespace Kitsune
 
     // A `Writer` class which writes UTF-8 data into the console.
     template<Usize BufferSize, Allocator Alloc = GlobalAllocator>
-    class BasicConsoleWriter : public Writer<char>
+    class BasicConsoleWriter
     {
     public:
         using ValueType = char;
@@ -56,7 +56,7 @@ namespace Kitsune
             m_Type = consoleWriter.m_Type;
         }
 
-        inline ~BasicConsoleWriter() override
+        inline ~BasicConsoleWriter()
         {
             Flush();
         }
@@ -77,7 +77,7 @@ namespace Kitsune
         }
 
     public:
-        inline void Write(const char* data, Usize dataCount) override
+        inline void Write(const char* data, Usize dataCount)
         {
             return Write(StringView(data, dataCount));
         }
@@ -99,7 +99,7 @@ namespace Kitsune
             }
         }
 
-        inline void Flush() override
+        inline void Flush()
         {
             LockGuard lockGuard(m_Lock);
             ThreadUnsafeFlush();

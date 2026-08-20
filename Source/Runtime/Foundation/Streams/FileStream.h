@@ -9,6 +9,7 @@
 #include "Foundation/Memory/GlobalAllocator.h"
 
 #include "Foundation/Diagnostics/Assert.h"
+#include "Foundation/Diagnostics/LogicException.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
@@ -94,7 +95,7 @@ namespace Kitsune
 
     // Provides platform-independent access to a file.
     template<Usize BufferSize, Allocator Alloc = GlobalAllocator>
-    class BasicFileStream : public Stream
+    class BasicFileStream
     {
     public:
         inline BasicFileStream(const Alloc& allocator = Alloc())
@@ -123,7 +124,7 @@ namespace Kitsune
         {
         }
 
-        inline ~BasicFileStream() override
+        inline ~BasicFileStream()
         {
             if (IsOpen())
                 Close();
@@ -188,7 +189,7 @@ namespace Kitsune
         }
 
     public:
-        inline void Write(const Byte* data, Usize dataCount) override
+        inline void Write(const Byte* data, Usize dataCount)
         {
             if (!IsWritable())
             {
@@ -239,7 +240,7 @@ namespace Kitsune
             }
         }
 
-        inline Usize Read(Byte* buffer, Usize bufferSize) override
+        inline Usize Read(Byte* buffer, Usize bufferSize)
         {
             if (!IsReadable())
             {
@@ -280,7 +281,7 @@ namespace Kitsune
             return writtenCount;
         }
 
-        inline Usize Seek(Ptrdiff offset, SeekOrigin origin) override
+        inline Usize Seek(Ptrdiff offset, SeekOrigin origin)
         {
             if (!IsSeekable())
             {
@@ -311,7 +312,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline Usize Length() const override
+        inline Usize Length() const
         {
             if (!IsOpen())
             {
@@ -325,7 +326,7 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline bool IsReadable() const override
+        inline bool IsReadable() const
         {
             if (!IsOpen())
             {
@@ -338,7 +339,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool IsWritable() const override
+        inline bool IsWritable() const
         {
             if (!IsOpen())
             {
@@ -351,7 +352,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool IsSeekable() const override
+        inline bool IsSeekable() const
         {
             if (!IsOpen())
             {
@@ -377,7 +378,7 @@ namespace Kitsune
         }
 
     public:
-        inline void Flush() override
+        inline void Flush()
         {
             if (!IsWritable())
                 throw LogicException("Cannot flush a read stream.");
@@ -387,7 +388,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline Usize GetPosition() const override
+        inline Usize GetPosition() const
         {
             if (!IsOpen())
             {
