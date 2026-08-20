@@ -25,12 +25,12 @@ namespace Kitsune::Details
     {
         switch (openMode)
         {
-        case FileOpenMode::Append: [[fallthrough]];
         case FileOpenMode::Open:
             return OPEN_EXISTING;
-
+        case FileOpenMode::Append: [[fallthrough]];
         case FileOpenMode::OpenOrCreate:
             return OPEN_ALWAYS;
+
         case FileOpenMode::CreateNew:
             return CREATE_NEW;
         case FileOpenMode::Truncate:
@@ -38,6 +38,32 @@ namespace Kitsune::Details
         }
 
         KITSUNE_UNREACHABLE();
+    }
+
+    // Used for FileOpenMode::Append implementation.
+    inline static Usize UncheckedSeek(HANDLE handle, Ptrdiff offset, SeekOrigin origin)
+    {
+        LARGE_INTEGER filePointer;
+        LARGE_INTEGER zero = { .QuadPart = offset };
+
+        DWORD winOrigin = FILE_CURRENT;     // Shut MSVC up.
+        switch (origin)
+        {
+        case SeekOrigin::Begin:
+            winOrigin = FILE_BEGIN;
+            break;
+        case SeekOrigin::Current:
+            winOrigin = FILE_CURRENT;
+            break;
+        case SeekOrigin::End:
+            winOrigin = FILE_END;
+            break;
+        }
+
+        if (!::SetFilePointerEx(handle, zero, &filePointer, winOrigin))
+            throw SystemException("Failed to set the file pointer.");
+
+        return filePointer.QuadPart;
     }
 
     // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init)
@@ -89,16 +115,7 @@ namespace Kitsune::Details
         DWORD writtenCount;
 
         if (m_OpenMode == FileOpenMode::Append)
-        {
-            LARGE_INTEGER filePointer;
-            LARGE_INTEGER zero = { .QuadPart = 0 };
-
-            if (!::SetFilePointerEx(handle, zero, &filePointer, FILE_END))
-            {
-                throw SystemException(
-                    "Failed to set the file pointer to the end of the file.");
-            }
-        }
+            UncheckedSeek(handle, 0, SeekOrigin::End);
 
         if (!::WriteFile(handle, data, static_cast<DWORD>(dataCount), &writtenCount,
                          nullptr))
@@ -126,29 +143,7 @@ namespace Kitsune::Details
     Usize FileObject::Seek(Ptrdiff offset, SeekOrigin origin)
     {
         KITSUNE_ASSERT(IsSeekable(), "The file should be seekable.");
-
-        LARGE_INTEGER filePointer;
-        LARGE_INTEGER zero = { .QuadPart = offset };
-
-        DWORD winOrigin = FILE_CURRENT;     // Shut MSVC up.
-        switch (origin)
-        {
-        case SeekOrigin::Begin:
-            winOrigin = FILE_BEGIN;
-            break;
-        case SeekOrigin::Current:
-            winOrigin = FILE_CURRENT;
-            break;
-        case SeekOrigin::End:
-            winOrigin = FILE_END;
-            break;
-        }
-
-        HANDLE handle = *reinterpret_cast<HANDLE*>(m_Buffer);
-        if (!::SetFilePointerEx(handle, zero, &filePointer, winOrigin))
-            throw SystemException("Failed to set the file pointer.");
-
-        return filePointer.QuadPart;
+        return UncheckedSeek(*reinterpret_cast<HANDLE*>(m_Buffer), offset, origin);
     }
 
     Usize FileObject::Size() const
@@ -234,7 +229,7 @@ namespace Kitsune::Details
             return false;
 
         if (openMode == FileOpenMode::Append)
-            Seek(0, SeekOrigin::End);
+            UncheckedSeek(*handleStore, 0, SeekOrigin::End);
 
         m_OpenMode = openMode;
         m_AccessMode = accessMode;

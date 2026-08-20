@@ -231,7 +231,7 @@ namespace
 
     // FileStream<BufSize, Alloc>::Open(
     //     StringView, FileAccessMode, FileOpenMode::OpenOrCreate)
-    TEST_F(FileStreamTest, OpenCreateOrOpen)
+    TEST_F(FileStreamTest, OpenOrCreate)
     {
         FileStream stream;
         EXPECT_TRUE(stream.Open(
@@ -249,7 +249,7 @@ namespace
 
     // FileStream<BufSize, Alloc>::Open(
     //     StringView, FileAccessMode, FileOpenMode::OpenOrCreate)
-    TEST_F(FileStreamTest, OpenCreateOrOpen2)
+    TEST_F(FileStreamTest, OpenOrCreate2)
     {
         FileStream stream;
         EXPECT_TRUE(stream.Open(
@@ -313,15 +313,17 @@ namespace
     }
 
     // FileStream<BufSize, Alloc>::Open(StringView, FileAccessMode, FileOpenMode::Append)
-    TEST_F(FileStreamTest, OpenAppendFailCase)
+    TEST_F(FileStreamTest, OpenAppend2)
     {
         FileStream stream;
-        EXPECT_FALSE(stream.Open(
+        EXPECT_TRUE(stream.Open(
             "./example2.txt",
             FileAccessMode::ReadWrite,
             FileOpenMode::Append));
 
-        EXPECT_FALSE(stream.IsOpen());
+        EXPECT_TRUE(stream.IsOpen());
+        stream.Close();
+
         EXPECT_FALSE(stream.Open(
             "./example.txt",
             FileAccessMode::Read,
