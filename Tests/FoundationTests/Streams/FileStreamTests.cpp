@@ -323,6 +323,7 @@ namespace
 
         EXPECT_TRUE(stream.IsOpen());
         stream.Close();
+        std::filesystem::remove("./example2.txt");
 
         EXPECT_FALSE(stream.Open(
             "./example.txt",

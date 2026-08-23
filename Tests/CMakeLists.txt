@@ -49,6 +49,8 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/Diagnostics/BacktraceFrameTests.cpp"
     "FoundationTests/Diagnostics/SourceLocationTests.cpp"
 
+    "FoundationTests/Filesystem/FilesystemTests.cpp"
+
     "FoundationTests/Include/FlippableCompare.h"
     "FoundationTests/Include/PushBackContainer.h"
     "FoundationTests/Include/StatefulAllocator.h"
