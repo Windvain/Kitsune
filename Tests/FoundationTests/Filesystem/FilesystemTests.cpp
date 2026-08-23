@@ -76,8 +76,13 @@ namespace
 
         std::filesystem::create_directory("MyDirectory");
 
-        EXPECT_THROW(Filesystem::GetFileSize("RandomFile"), InvalidArgumentException);
-        EXPECT_THROW(Filesystem::GetFileSize("MyDirectory"), InvalidArgumentException);
+        EXPECT_THROW(
+            (void)Filesystem::GetFileSize("RandomFile"),
+            InvalidArgumentException);
+
+        EXPECT_THROW(
+            (void)Filesystem::GetFileSize("MyDirectory"),
+            InvalidArgumentException);
 
         std::filesystem::remove("MyDirectory");
     }

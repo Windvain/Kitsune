@@ -5,5 +5,5 @@
 namespace Kitsune::Filesystem
 {
     [[nodiscard]]
-    Path ToAbsolute(PathView path);
+    KITSUNE_API Path ToAbsolute(PathView path);
 }

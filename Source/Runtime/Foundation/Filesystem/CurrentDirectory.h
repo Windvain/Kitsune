@@ -8,5 +8,6 @@ namespace Kitsune::Filesystem
     KITSUNE_API void SetCurrentDirectory(PathView path);
 
     // Retrieves the current directory of the process. This function is thread-safe.
+    [[nodiscard]]
     KITSUNE_API Path GetCurrentDirectory();
 }
