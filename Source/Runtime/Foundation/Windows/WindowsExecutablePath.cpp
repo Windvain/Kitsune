@@ -9,9 +9,7 @@ namespace Kitsune::Filesystem
     Path GetExecutablePath()
     {
         // HACK: GetModuleFileNameW() won't return the **exact** size needed to fit the
-        // executable path, so this code needs to "guess" it. This code is very much
-        // not thread-safe b.c. of the use of GetLastError().
-
+        // executable path, so this code needs to "guess" it.
         WideString path(MAX_PATH, L'\0');
         do
         {

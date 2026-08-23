@@ -4,12 +4,10 @@
 
 namespace Kitsune::Filesystem
 {
-    // Retrieves a path to the current executable. Note that this function is NOT
-    // thread-safe. Make sure that NO CODE will call OS APIs in the duration that this
-    // function is running.
+    // Retrieves a path to the current executable.
     [[nodiscard]] KITSUNE_API Path GetExecutablePath();
 
-    // Gets the name of the executable. This function is also not thread-safe.
+    // Gets the name of the executable.
     [[nodiscard]]
     inline Path GetExecutableName(bool removeExt = false)
     {
