@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Foundation/Streams/Stream.h"
+#include "Foundation/Memory/AddressOf.h"
 
 namespace Kitsune
 {

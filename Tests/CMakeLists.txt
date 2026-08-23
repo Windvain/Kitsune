@@ -81,6 +81,7 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
 
     "FoundationTests/Streams/FileStreamTests.cpp"
     "FoundationTests/Streams/FileWriterTests.cpp"
+    "FoundationTests/Streams/WriterIteratorTests.cpp"
 
     "FoundationTests/Threading/AtomicTests.cpp"
 
