@@ -72,7 +72,7 @@ namespace Kitsune
             Usize GetPosition() const;
 
             [[nodiscard]]
-            inline const Filesystem::Path& GetName() const
+            inline Filesystem::PathView GetName() const
             {
                 KITSUNE_ASSERT(IsOpen(), "Failed to get the path of this stream.");
                 return m_Name;
@@ -405,7 +405,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline const Filesystem::Path& GetPath() const
+        inline Filesystem::PathView GetPath() const
         {
             return m_FileObject.GetName();
         }

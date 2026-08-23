@@ -74,7 +74,7 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline const Filesystem::Path& GetPath() const
+        inline Filesystem::PathView GetPath() const
         {
             return m_Stream.GetPath();
         }
