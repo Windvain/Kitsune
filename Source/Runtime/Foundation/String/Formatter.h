@@ -66,22 +66,22 @@ namespace Kitsune
             if (specs.Contains('i') || specs.Contains('I'))
                 formatAsInteger = true;
 
-            StringView result = formatAsInteger ? FormatAsInteger_(boolean) :
-                                                  FormatAsBoolean_(boolean);
+            StringView result = formatAsInteger ? FormatAsInteger(boolean) :
+                                                  FormatAsBoolean(boolean);
 
             return Algorithms::Copy(result.GetBegin(), result.GetEnd(),
                                     context.GetOutput());
         }
 
     private:
-        inline static StringView FormatAsInteger_(bool boolean)
+        inline static StringView FormatAsInteger(bool boolean)
         {
             // A false value will be converted to zero, while a true value
             // to one, so there is no need to use the integer formatter.
             return boolean ? "1" : "0";
         }
 
-        inline static StringView FormatAsBoolean_(bool boolean)
+        inline static StringView FormatAsBoolean(bool boolean)
         {
             return boolean ? "true" : "false";
         }

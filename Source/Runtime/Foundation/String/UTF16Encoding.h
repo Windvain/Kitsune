@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Foundation/Common/Types.h"
-#include "Foundation/String/Encoding.h"
+#include "Foundation/Containers/Pair.h"
 
-#include "Foundation/Concepts/Character.h"
-#include "Foundation/Algorithms/Distance.h"
+#include "Foundation/String/LineEnding.h"
+#include "Foundation/String/StringView.h"
 
 namespace Kitsune
 {
@@ -19,72 +18,98 @@ namespace Kitsune
         using CodeunitType = T;
 
     public:
-        constexpr static CodepointType MaxCodepointValue()
+        [[nodiscard]]
+        static constexpr CodepointType MaxCodepointValue()
         {
             return 0x10FFFF;
         }
 
-        constexpr static Usize MaximumCodeunits()
+        [[nodiscard]]
+        static constexpr Usize MaxCodeunits()
         {
             return 2;
         }
 
     public:
-        template<ForwardIterator InputIter,
-                 OutputIterator<CodepointType> OutputIter>
-        inline static DecodeResult<InputIter, OutputIter> DecodeSingle(
-            InputIter begin, InputIter end,
-            OutputIter outBegin)
+        [[nodiscard]]
+        static constexpr BasicStringView<T> GetLineEnding(LineEndingOptions options)
         {
-            using Result = DecodeResult<InputIter, OutputIter>;
+            // No constexpr ternary operator, no can do.
+            BasicStringView<T> lineEnding;
+            if constexpr (std::is_same_v<T, char16_t>)
+                lineEnding = u"\r\n";
+            else if constexpr (std::is_same_v<T, wchar_t>)
+                lineEnding = L"\r\n";
+            else
+                KITSUNE_UNREACHABLE();
+
+            if (options == LineEndingOptions::LF)
+                lineEnding.RemovePrefix(1);
+
+            return lineEnding;
+        }
+
+    public:
+        [[nodiscard]]
+        static constexpr BasicStringView<T> GetPreamble()
+        {
+            if constexpr (std::is_same_v<T, char16_t>)
+                return U16StringView(u"\uFEFF");
+            else if constexpr (std::is_same_v<T, wchar_t>)
+                return WideStringView(L"\uFEFF");
+
+            KITSUNE_UNREACHABLE();
+        }
+
+        [[nodiscard]]
+        static constexpr BasicStringView<T> GetReplacement()
+        {
+            if constexpr (std::is_same_v<T, char16_t>)
+                return U16StringView(u"\uFFFD");
+            else if constexpr (std::is_same_v<T, wchar_t>)
+                return WideStringView(L"\uFFFD");
+        }
+
+    public:
+        template<ForwardIterator Iter, OutputIterator<CodepointType> OutIter>
+        inline static Pair<Iter, OutIter> Decode(Iter begin, Iter end, OutIter outBegin)
+        {
             if (begin == end)
-                return Result(begin, outBegin);
+                return { begin, outBegin };
 
-            auto originalBegin = begin;
+            // Low surrogates cannot come before a high surrogate.
+            if ((*begin & 0xFC00) == 0xDC00)
+                return { begin, outBegin };
 
-            auto distance = Algorithms::Distance(begin, end);
-            auto character = static_cast<char16_t>(*begin);
-
-            // Low surrogates cannot come before a high surrogate, this string
-            // is invalid.
-            if ((character & 0xFC00) == 0xDC00)
-                return Result(originalBegin, outBegin);
-
-            if ((character & 0xFC00) != 0xD800)
+            if ((*begin & 0xFC00) != 0xD800)
                 *outBegin = static_cast<CodepointType>(*begin);
             else
             {
-                if (distance <= 1)
-                    return Result(originalBegin, outBegin);
+                Iter high = begin++;        // high == high surr., begin == low surr.
 
-                CodepointType codepoint = ((*begin - 0xD800) << 10);
-                character = static_cast<char16_t>(*++begin);
+                // The high surrogate is not preceeded by a low surrogate.
+                if ((begin == end) || ((*begin & 0xFC00) != 0xDC00))
+                    return { high, outBegin };
 
-                if ((character & 0xFC00) != 0xDC00)
-                    return Result(originalBegin, outBegin);
-
-                codepoint |= (*begin - 0xDC00);
+                CodepointType codepoint = ((*high - 0xD800) << 10) | (*begin - 0xDC00);
                 codepoint += 0x10000;
 
                 *outBegin = codepoint;
             }
 
-            return Result(++begin, ++outBegin);
+            return { ++begin, ++outBegin };
         }
 
-        template<ForwardIterator InputIter,
-                 OutputIterator<CodeunitType> OutputIter>
-        inline static EncodeResult<InputIter, OutputIter> EncodeSingle(
-            InputIter begin, InputIter end, OutputIter outBegin)
+        template<ForwardIterator Iter, OutputIterator<CodeunitType> OutIter>
+        inline static Pair<Iter, OutIter> Encode(Iter begin, Iter end, OutIter outBegin)
         {
-            using Result = EncodeResult<InputIter, OutputIter>;
             if (begin == end)
-                return Result(begin, outBegin);
+                return { begin, outBegin };
 
             if ((*begin > MaxCodepointValue()) ||
                 ((*begin >= 0xD800) && (*begin <= 0xDFFF)))
             {
-                return Result(begin, outBegin);
+                return { begin, outBegin };
             }
 
             if (*begin <= 0xFFFF)
@@ -98,7 +123,7 @@ namespace Kitsune
                 *++outBegin = 0xDC00 + (codepoint & 0x3FF);
             }
 
-            return Result(++begin, ++outBegin);
+            return { ++begin, ++outBegin };
         }
     };
 }

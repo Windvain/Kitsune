@@ -353,41 +353,44 @@ namespace Kitsune
         }
 
     public:
-        inline Iterator Insert(Iterator position, const T& value)
+        inline Iterator Insert(ConstIterator position, const T& value)
         {
             return Emplace(position, value);
         }
 
-        inline Iterator Insert(Iterator position, T&& value)
+        inline Iterator Insert(ConstIterator position, T&& value)
         {
             return Emplace(position, Move(value));
         }
 
-        inline Iterator Insert(Iterator position, Usize count, const T& value)
+        inline Iterator Insert(ConstIterator position, Usize count, const T& value)
         {
-            for (Usize i = 0; i != count; ++i, ++position)
-                position = Insert(position, value);
+            Iterator newPosition = Data() + (position - GetBegin());
+            for (Usize i = 0; i != count; ++i, ++newPosition)
+                newPosition = Insert(newPosition, value);
 
-            return position - count;
+            return newPosition - count;
         }
 
         template<ForwardIterator Iter>
-        inline Iterator Insert(Iterator position, Iter begin, Iter end)
+        inline Iterator Insert(ConstIterator position, Iter begin, Iter end)
         {
             typename IteratorTraits<Iter>::DifferenceType rangeLen = 0;
-            for (; begin != end; ++begin, ++position, ++rangeLen)
-                position = Insert(position, *begin);
+            Iterator newPosition = Data() + (position - GetBegin());
 
-            return position - rangeLen;
+            for (; begin != end; ++begin, ++newPosition, ++rangeLen)
+                newPosition = Insert(newPosition, *begin);
+
+            return newPosition - rangeLen;
         }
 
-        inline Iterator Insert(Iterator position, std::initializer_list<T> initList)
+        inline Iterator Insert(ConstIterator position, std::initializer_list<T> initList)
         {
             return Insert(position, initList.begin(), initList.end());
         }
 
         template<typename... Args>
-        inline Iterator Emplace(Iterator position, Args&&... args)
+        inline Iterator Emplace(ConstIterator position, Args&&... args)
         {
             if ((position < GetBegin()) || (position > GetEnd()))
                 throw OutOfRangeException();
@@ -396,30 +399,31 @@ namespace Kitsune
             Index index = position - GetBegin();
 
             Reserve(newSize);
-            position = GetBegin() + index;
+            Iterator newPosition = GetBegin() + index;
 
             // Shift the elements of the range [pos, GetEnd()] starting from the end.
             auto sourceShift = GetReverseBegin();
             auto destShift = ReverseIterator(m_Begin + newSize);
 
-            for (; sourceShift != ReverseIterator(position); ++sourceShift, ++destShift)
+            for (; sourceShift != ReverseIterator(newPosition);
+                 ++sourceShift, ++destShift)
             {
                 Memory::ConstructAt<T>(AddressOf(*destShift), Move(*sourceShift));
                 Memory::DestroyAt(AddressOf(*sourceShift));
             }
 
-            Memory::ConstructAt<T>(AddressOf(*position), Forward<Args>(args)...);
+            Memory::ConstructAt<T>(AddressOf(*newPosition), Forward<Args>(args)...);
 
             ++m_End;
-            return position;
+            return newPosition;
         }
 
-        inline void Remove(Iterator position)
+        inline void Remove(ConstIterator position)
         {
             return Remove(position, position + 1);
         }
 
-        inline void Remove(Iterator begin, Iterator end)
+        inline void Remove(ConstIterator begin, ConstIterator end)
         {
             if (begin == end)
                 return;
@@ -430,21 +434,21 @@ namespace Kitsune
             Ptrdiff removedSize = end - begin;
             Algorithms::Destroy(begin, end);
 
-            for (auto it = end; it != GetEnd(); ++it, ++begin)
+            for (auto iter = end; iter != GetEnd(); ++iter, ++begin)
             {
-                Memory::ConstructAt<T>(begin, Move(*it));
-                Memory::DestroyAt(it);
+                Memory::ConstructAt<T>(Data() + (begin - GetBegin()), Move(*iter));
+                Memory::DestroyAt(iter);
             }
 
             m_End -= removedSize;
         }
 
-        inline void RemoveUnsorted(Iterator position)
+        inline void RemoveUnsorted(ConstIterator position)
         {
             RemoveUnsorted(position, position + 1);
         }
 
-        inline void RemoveUnsorted(Iterator begin, Iterator end)
+        inline void RemoveUnsorted(ConstIterator begin, ConstIterator end)
         {
             if (begin == end)
                 return;
@@ -457,7 +461,8 @@ namespace Kitsune
 
             Algorithms::UninitializedMoveN(
                 GetReverseBegin(),
-                Maths::Minimum(removedSize, GetEnd() - end), begin);
+                Maths::Minimum(removedSize, GetEnd() - end),
+                Data() + (begin - GetBegin()));
 
             m_End -= removedSize;
         }

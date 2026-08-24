@@ -55,7 +55,12 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Diagnostics/SourceLocation.h"
     "Foundation/Diagnostics/SystemException.h"
 
-    "Foundation/Filesystem/FileStream.h"
+    "Foundation/Filesystem/CurrentDirectory.h"
+    "Foundation/Filesystem/ExecutablePath.h"
+    "Foundation/Filesystem/Filesystem.h"
+    "Foundation/Filesystem/Path.h"
+    "Foundation/Filesystem/PathView.h"
+    "Foundation/Filesystem/ToAbsolute.h"
 
     "Foundation/Iterators/BackInsertIterator.h"
     "Foundation/Iterators/Iterator.h"
@@ -63,8 +68,8 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Iterators/ReverseIterator.h"
     "Foundation/Iterators/ToAddress.h"
 
-    "Foundation/Logging/ConsoleLogSink.cpp"
     "Foundation/Logging/ConsoleLogSink.h"
+    "Foundation/Logging/FileLogSink.h"
     "Foundation/Logging/Logger.cpp"
     "Foundation/Logging/Logger.h"
     "Foundation/Logging/LogPayload.h"
@@ -94,24 +99,27 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Memory/SharedPtr.h"
 
     "Foundation/Streams/ConsoleWriter.h"
+    "Foundation/Streams/FileStream.h"
+    "Foundation/Streams/FileWriter.h"
     "Foundation/Streams/Stream.h"
     "Foundation/Streams/WriterIterator.h"
 
     "Foundation/String/Decode.h"
     "Foundation/String/Encode.h"
-    "Foundation/String/Encoding.h"
     "Foundation/String/Format.h"
     "Foundation/String/FormatArguments.h"
     "Foundation/String/FormatException.h"
     "Foundation/String/FormatScanner.h"
     "Foundation/String/Formatter.h"
+    "Foundation/String/LineEnding.h"
     "Foundation/String/String.h"
     "Foundation/String/StringView.h"
+    "Foundation/String/TextEncoding.h"
     "Foundation/String/Transcode.h"
     "Foundation/String/TranscodePresets.h"
-    "Foundation/String/UTF8Encoding.h"
     "Foundation/String/UTF16Encoding.h"
     "Foundation/String/UTF32Encoding.h"
+    "Foundation/String/UTF8Encoding.h"
     "Foundation/String/Valid.h"
 
     "Foundation/Templates/Exchange.h"
@@ -178,10 +186,16 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "Display/Windows/WindowsWindowManager.h"
 
         "Foundation/Windows/WindowsConsoleWriter.cpp"
+        "Foundation/Windows/WindowsCurrentDirectory.cpp"
+        "Foundation/Windows/WindowsExecutablePath.cpp"
         "Foundation/Windows/WindowsFileStream.cpp"
+        "Foundation/Windows/WindowsFilesystem.cpp"
         "Foundation/Windows/WindowsMemory.cpp"
         "Foundation/Windows/WindowsMessageBox.cpp"
         "Foundation/Windows/WindowsMutex.cpp"
+        "Foundation/Windows/WindowsPath.cpp"
+        "Foundation/Windows/WindowsPathView.cpp"
+        "Foundation/Windows/WindowsToAbsolute.cpp"
     )
 
     # Include WindowsSystemInformation.cpp for compilers other than MSVC, b.c. the

@@ -2,13 +2,14 @@
 
 #include "Foundation/Streams/Stream.h"
 
-#include "Foundation/String/StringView.h"
+#include "Foundation/Filesystem/Path.h"
 #include "Foundation/Templates/Exchange.h"
 
 #include "Foundation/Memory/Allocator.h"
 #include "Foundation/Memory/GlobalAllocator.h"
 
 #include "Foundation/Diagnostics/Assert.h"
+#include "Foundation/Diagnostics/LogicException.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
@@ -47,7 +48,7 @@ namespace Kitsune
             FileObject& operator=(FileObject&& fileObject);
 
         public:
-            bool Open(StringView filePath,
+            bool Open(Filesystem::PathView filePath,
                       FileAccessMode accessMode,
                       FileOpenMode openMode = FileOpenMode::Open);
 
@@ -71,7 +72,7 @@ namespace Kitsune
             Usize GetPosition() const;
 
             [[nodiscard]]
-            inline String GetName() const
+            inline Filesystem::PathView GetName() const
             {
                 KITSUNE_ASSERT(IsOpen(), "Failed to get the path of this stream.");
                 return m_Name;
@@ -88,13 +89,13 @@ namespace Kitsune
             FileOpenMode m_OpenMode;
             FileAccessMode m_AccessMode;
 
-            String m_Name;
+            Filesystem::Path m_Name;
         };
     }
 
     // Provides platform-independent access to a file.
     template<Usize BufferSize, Allocator Alloc = GlobalAllocator>
-    class BasicFileStream : public Stream
+    class BasicFileStream
     {
     public:
         inline BasicFileStream(const Alloc& allocator = Alloc())
@@ -102,7 +103,7 @@ namespace Kitsune
         {
         }
 
-        inline BasicFileStream(StringView filePath,
+        inline BasicFileStream(Filesystem::PathView filePath,
                                FileAccessMode accessMode,
                                FileOpenMode openMode = FileOpenMode::Open)
             : BasicFileStream()
@@ -110,6 +111,8 @@ namespace Kitsune
             if (!Open(filePath, accessMode, openMode))
                 throw SystemException("Failed to open the specified file.");
         }
+
+        inline BasicFileStream(const BasicFileStream&) = delete;
 
         inline BasicFileStream(BasicFileStream&& fileStream)
             : m_FileObject(Move(fileStream.m_FileObject)),
@@ -121,13 +124,15 @@ namespace Kitsune
         {
         }
 
-        inline ~BasicFileStream() override
+        inline ~BasicFileStream()
         {
             if (IsOpen())
                 Close();
         }
 
     public:
+        inline BasicFileStream& operator=(const BasicFileStream&) = delete;
+
         inline BasicFileStream& operator=(BasicFileStream&& fileStream)
         {
             if (this == &fileStream)
@@ -138,21 +143,24 @@ namespace Kitsune
         }
 
     public:
-        inline bool Open(StringView filePath,
+        inline bool Open(Filesystem::PathView filePath,
                          FileAccessMode accessMode,
                          FileOpenMode openMode = FileOpenMode::Open)
         {
             if (IsOpen())
                 return false;
 
-            if (m_Buffer == nullptr)
-            {
-                m_Buffer = static_cast<Byte*>(m_Allocator.Allocate(BufferSize));
-                m_ReadPosition = m_WritePosition = m_SeekPosition =
-                    m_Buffer;
-            }
+            bool success = m_FileObject.Open(filePath, accessMode, openMode);
+            if (!success)
+                return success;
 
-            return m_FileObject.Open(filePath, accessMode, openMode);
+            KITSUNE_ASSERT(m_Buffer == nullptr, "m_Buffer should not have been set.");
+
+            m_Buffer = static_cast<Byte*>(m_Allocator.Allocate(BufferSize));
+            m_ReadPosition = m_WritePosition = m_SeekPosition =
+                m_Buffer;
+
+            return success;
         }
 
         inline void Close()
@@ -164,14 +172,12 @@ namespace Kitsune
             if (IsWritable())
                 Flush();
 
-            if (m_Buffer != nullptr)
-            {
-                m_Allocator.Free(m_Buffer, BufferSize);
-                m_Buffer = nullptr;
+            KITSUNE_ASSERT(m_Buffer != nullptr, "m_Buffer should have been allocated.");
 
-                m_ReadPosition = m_WritePosition = m_SeekPosition =
-                    m_Buffer;
-            }
+            m_Allocator.Free(m_Buffer, BufferSize);
+            m_Buffer = nullptr;
+
+            m_ReadPosition = m_WritePosition = m_SeekPosition = m_Buffer;
 
             m_FileObject.Close();
         }
@@ -183,7 +189,7 @@ namespace Kitsune
         }
 
     public:
-        inline void Write(const Byte* data, Usize dataCount) override
+        inline void Write(const Byte* data, Usize dataCount)
         {
             if (!IsWritable())
             {
@@ -234,7 +240,7 @@ namespace Kitsune
             }
         }
 
-        inline Usize Read(Byte* buffer, Usize bufferSize) override
+        inline Usize Read(Byte* buffer, Usize bufferSize)
         {
             if (!IsReadable())
             {
@@ -275,7 +281,7 @@ namespace Kitsune
             return writtenCount;
         }
 
-        inline Usize Seek(Ptrdiff offset, SeekOrigin origin) override
+        inline Usize Seek(Ptrdiff offset, SeekOrigin origin)
         {
             if (!IsSeekable())
             {
@@ -306,7 +312,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline Usize Length() const override
+        inline Usize Length() const
         {
             if (!IsOpen())
             {
@@ -320,7 +326,7 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline bool IsReadable() const override
+        inline bool IsReadable() const
         {
             if (!IsOpen())
             {
@@ -333,7 +339,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool IsWritable() const override
+        inline bool IsWritable() const
         {
             if (!IsOpen())
             {
@@ -346,7 +352,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool IsSeekable() const override
+        inline bool IsSeekable() const
         {
             if (!IsOpen())
             {
@@ -372,7 +378,7 @@ namespace Kitsune
         }
 
     public:
-        inline void Flush() override
+        inline void Flush()
         {
             if (!IsWritable())
                 throw LogicException("Cannot flush a read stream.");
@@ -382,7 +388,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline Usize GetPosition() const override
+        inline Usize GetPosition() const
         {
             if (!IsOpen())
             {
@@ -399,7 +405,7 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline String GetPath() const
+        inline Filesystem::PathView GetPath() const
         {
             return m_FileObject.GetName();
         }

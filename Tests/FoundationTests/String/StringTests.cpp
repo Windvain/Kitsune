@@ -902,7 +902,7 @@ namespace
         EXPECT_EQ(string.Data()[0], T());
     }
 
-    // BasicString<T, Alloc>::Insert(Index, const T*)
+    // BasicString<T, Alloc>::Insert(ConstIterator, const T*)
     TYPED_TEST(StringTest, InsertCstring)
     {
         using T = typename TestFixture::CharType;
@@ -910,7 +910,9 @@ namespace
         std::basic_string<T> source2 = this->GetEncodedString("llo, W");
 
         BasicString<T> string = source.c_str();
-        string.Insert(2, source2.c_str());
+        EXPECT_EQ(
+            string.Insert(string.GetBegin() + 2, source2.c_str()),
+            string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), source.size() + source2.size());
         EXPECT_GE(string.Capacity(), string.Size());
@@ -919,7 +921,7 @@ namespace
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
     }
 
-    // BasicString<T, Alloc>::Insert(Index, const T*, Usize)
+    // BasicString<T, Alloc>::Insert(ConstIterator, const T*, Usize)
     TYPED_TEST(StringTest, InsertCstringSize)
     {
         using T = typename TestFixture::CharType;
@@ -927,7 +929,9 @@ namespace
         std::basic_string<T> source2 = this->GetEncodedString("llo, World!");
 
         BasicString<T> string = source.c_str();
-        string.Insert(2, source2.c_str(), 6);
+        EXPECT_EQ(
+            string.Insert((std::as_const(string).GetBegin() + 2), source2.c_str(), 6),
+            string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
@@ -936,7 +940,7 @@ namespace
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
     }
 
-    // BasicString<T, Alloc>::Insert(Index, BasicStringView<T>)
+    // BasicString<T, Alloc>::Insert(ConstIterator, BasicStringView<T>)
     TYPED_TEST(StringTest, InsertStringView)
     {
         using T = typename TestFixture::CharType;
@@ -944,7 +948,9 @@ namespace
         std::basic_string<T> source2 = this->GetEncodedString("llo, World!");
 
         BasicString<T> string = source.c_str();
-        string.Insert(2, BasicStringView<T>(source2.c_str(), 6));
+        EXPECT_EQ(
+            string.Insert(string.GetBegin() + 2, BasicStringView<T>(source2.c_str(), 6)),
+            string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
@@ -953,7 +959,7 @@ namespace
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
     }
 
-    // BasicString<T, Alloc>::Insert(Index, const BasicString<T>&)
+    // BasicString<T, Alloc>::Insert(ConstIterator, const BasicString<T>&)
     TYPED_TEST(StringTest, InsertString)
     {
         using T = typename TestFixture::CharType;
@@ -963,7 +969,9 @@ namespace
         BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(13));
         BasicString<T, StatefulAllocator> string2 = source2.c_str();
 
-        string.Insert(2, string2);
+        EXPECT_EQ(
+            string.Insert(string.GetBegin() + 2, string2),
+            string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), source.size() + source2.size());
         EXPECT_GE(string.Capacity(), string.Size());
@@ -974,7 +982,7 @@ namespace
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
     }
 
-    // BasicString<T, Alloc>::Insert(Index, Iter, Iter)
+    // BasicString<T, Alloc>::Insert(ConstIterator, Iter, Iter)
     TYPED_TEST(StringTest, InsertRange)
     {
         using T = typename TestFixture::CharType;
@@ -984,7 +992,10 @@ namespace
         ForwardNonOwningTestContainer<T, 6> container(source2.data());
         BasicString<T> string(source.c_str(), StatefulAllocator(13));
 
-        string.Insert(2, container.GetBegin(), container.GetEnd());
+        EXPECT_EQ(
+            string.Insert(string.GetBegin() + 2,
+                          container.GetBegin(), container.GetEnd()),
+            string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), source.size() + source2.size());
         EXPECT_GE(string.Capacity(), string.Size());
@@ -993,7 +1004,7 @@ namespace
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
     }
 
-    // BasicString<T, Alloc>::Insert(Index, std::initializer_list<T>)
+    // BasicString<T, Alloc>::Insert(ConstIterator, std::initializer_list<T>)
     TYPED_TEST(StringTest, InsertInitializerList)
     {
         using T = typename TestFixture::CharType;
@@ -1001,7 +1012,9 @@ namespace
         std::basic_string<T> source = this->GetEncodedString("Heorld!");
         BasicString<T> string(source.c_str(), StatefulAllocator(13));
 
-        string.Insert(2, { 'l', 'l', 'o', ',', ' ', 'W' });
+        EXPECT_EQ(
+            string.Insert(string.GetBegin() + 2, { 'l', 'l', 'o', ',', ' ', 'W' }),
+            string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
@@ -1010,36 +1023,57 @@ namespace
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
     }
 
-    // BasicString<T, Alloc>::Remove(Index)
+    // BasicString<T, Alloc>::Remove(ConstIterator)
     TYPED_TEST(StringTest, RemoveCharacter)
     {
         using T = typename TestFixture::CharType;
         std::basic_string<T> source = this->GetEncodedString("Hello, mWorld!");
 
         BasicString<T> string = source.c_str();
-        string.Remove(7);
+        string.Remove(string.GetBegin() + 7);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
 
         std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+
+        EXPECT_THROW(string.Remove(string.GetEnd()), OutOfRangeException);
+        EXPECT_THROW(string.Remove(string.GetBegin() - 1), OutOfRangeException);
     }
 
-    // BasicString<T, Alloc>::Remove(Index, Usize)
+    // BasicString<T, Alloc>::Remove(ConstIterator, ConstIterator)
     TYPED_TEST(StringTest, RemoveRange)
     {
         using T = typename TestFixture::CharType;
         std::basic_string<T> source = this->GetEncodedString("Hello, mfaWorld!");
 
         BasicString<T> string = source.c_str();
-        string.Remove(7, 3);
+        string.Remove(string.GetBegin() + 7, string.GetBegin() + 10);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
 
         std::basic_string<T> expected = this->GetEncodedString("Hello, World!");
         EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+
+        EXPECT_THROW(string.Remove(string.GetBegin(), string.GetEnd() + 1),
+                     OutOfRangeException);
+
+        EXPECT_THROW(string.Remove(string.GetBegin() - 1, string.GetBegin() + 2),
+                     OutOfRangeException);
+
+        EXPECT_THROW(string.Remove(string.GetBegin() - 1, string.GetEnd() + 1),
+                     OutOfRangeException);
+
+        EXPECT_THROW(string.Remove(string.GetEnd() + 1, string.GetBegin()),
+                     OutOfRangeException);
+
+        EXPECT_THROW(string.Remove(string.GetBegin() + 2, string.GetBegin() - 1),
+                     OutOfRangeException);
+
+        EXPECT_THROW(string.Remove(string.GetEnd() + 1, string.GetBegin() - 1),
+                     OutOfRangeException);
     }
 
     // BasicString<T, ALloc>::PushBack(T)
@@ -1175,6 +1209,31 @@ namespace
 
         EXPECT_EQ(string.Size(), source.size());
         EXPECT_GENERAL_STREQ(string.Data(), source.c_str());
+    }
+
+    // BasicString<T, Alloc>::Resize(Usize)
+    // BasicString<T, Alloc>::Resize(Usize, T)
+    TYPED_TEST(StringTest, Resize)
+    {
+        // Resize(Usize) just calls Resize(Usize, T) with a null terminator.
+        using T = typename TestFixture::CharType;
+
+        std::basic_string<T> source = this->GetEncodedString("Hello, World!");
+        BasicString<T> string = source.c_str();
+
+        string.Resize(5, T(12));
+
+        std::basic_string<T> expected = this->GetEncodedString("Hello");
+        EXPECT_GENERAL_STREQ(string.Raw(), expected.c_str());
+        EXPECT_EQ(string.Size(), 5);
+
+        string.Resize(8, T(12));
+
+        std::basic_string<T> expected2 = this->GetEncodedString("Hello");
+        expected2.append(3, T(12));
+
+        EXPECT_GENERAL_STREQ(string.Raw(), expected2.c_str());
+        EXPECT_EQ(string.Size(), 8);
     }
 
     // BasicString<T, Alloc>::begin()

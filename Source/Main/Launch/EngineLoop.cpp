@@ -2,10 +2,16 @@
 
 #include <cstdlib>
 #include "Foundation/Algorithms/Contains.h"
+
+#include "Foundation/Logging/FileLogSink.h"
 #include "Foundation/Logging/ConsoleLogSink.h"
 
 #include "Foundation/Diagnostics/LogicException.h"
 #include "Foundation/Utilities/SystemInformation.h"
+
+#include "Foundation/Filesystem/Filesystem.h"
+#include "Foundation/Filesystem/ExecutablePath.h"
+#include "Foundation/Filesystem/CurrentDirectory.h"
 
 namespace Kitsune
 {
@@ -29,12 +35,17 @@ namespace Kitsune
 
     void EngineLoop::Initialize(int argc, char** argv)
     {
+        InitializeDirectoryPaths();
+
         m_CommandLineArguments = CommandLineArguments(argc, argv);
         m_Logger = Memory::New<Logger>();
 
 #if !defined(KITSUNE_BUILD_PRODUCTION)
         m_Logger->RegisterSink(MakeScoped<ConsoleLogSink>());
+        m_Logger->RegisterSink(
+            MakeScoped<FileLogSink>(m_LogDirectory / "Engine-dy-mn-yr.log"));
 #endif
+
         KITSUNE_ENGINE_INFO_FORMAT(
             Launch,
             "Initializing Kitsune Engine {0}. "
@@ -48,6 +59,14 @@ namespace Kitsune
             return;
         }
 #endif
+
+        KITSUNE_ENGINE_INFO_FORMAT(
+            Launch,
+            "Setting the current directory from {0} to {1}.",
+            Filesystem::GetCurrentDirectory(),
+            m_ApplicationDirectory);
+
+        SetCurrentDirectory(m_ApplicationDirectory);
 
         // TODO: Read this from a config file?
         String displayServer;
@@ -138,5 +157,13 @@ namespace Kitsune
 
         KITSUNE_ENGINE_INFO(Launch, "Finished SIMD checks.");
         return !Algorithms::Contains(supported.GetBegin(), supported.GetEnd(), false);
+    }
+
+    void EngineLoop::InitializeDirectoryPaths()
+    {
+        m_ApplicationDirectory = Filesystem::GetExecutablePath().GetParentPath();
+        m_LogDirectory = m_ApplicationDirectory / "Logs";
+
+        KITSUNE_UNUSED(CreateDirectory(m_LogDirectory));
     }
 }

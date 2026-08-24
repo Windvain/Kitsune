@@ -1,7 +1,7 @@
-#include "Foundation/Filesystem/FileStream.h"
+#include "Foundation/Streams/FileStream.h"
 #include <Windows.h>
 
-#include "Foundation/String/TranscodePresets.h"
+#include "Foundation/Filesystem/ToAbsolute.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune::Details
@@ -25,12 +25,12 @@ namespace Kitsune::Details
     {
         switch (openMode)
         {
-        case FileOpenMode::Append: [[fallthrough]];
         case FileOpenMode::Open:
             return OPEN_EXISTING;
-
+        case FileOpenMode::Append: [[fallthrough]];
         case FileOpenMode::OpenOrCreate:
             return OPEN_ALWAYS;
+
         case FileOpenMode::CreateNew:
             return CREATE_NEW;
         case FileOpenMode::Truncate:
@@ -40,26 +40,30 @@ namespace Kitsune::Details
         KITSUNE_UNREACHABLE();
     }
 
-    static String GetFullPath(StringView path)
+    // Used for FileOpenMode::Append implementation.
+    inline static Usize UncheckedSeek(HANDLE handle, Ptrdiff offset, SeekOrigin origin)
     {
-        WideString widePath = UTF8ToUTF16<char, wchar_t>(path);
-        DWORD length = ::GetFullPathNameW(widePath.Raw(), 0, nullptr, nullptr);
+        LARGE_INTEGER filePointer;
+        LARGE_INTEGER zero = { .QuadPart = offset };
 
-        if (length == 0)
+        DWORD winOrigin = FILE_CURRENT;     // Shut MSVC up.
+        switch (origin)
         {
-            throw SystemException(
-                "Failed to convert the path from a relative "
-                "path to an absolute path.");
+        case SeekOrigin::Begin:
+            winOrigin = FILE_BEGIN;
+            break;
+        case SeekOrigin::Current:
+            winOrigin = FILE_CURRENT;
+            break;
+        case SeekOrigin::End:
+            winOrigin = FILE_END;
+            break;
         }
 
-        WideString tempBuffer(length - 1, '\0');
-        ::GetFullPathNameW(widePath.Data(), length, tempBuffer.Data(), nullptr);
+        if (!::SetFilePointerEx(handle, zero, &filePointer, winOrigin))
+            throw SystemException("Failed to set the file pointer.");
 
-        // HACK: GetFullPathNameW() doesn't return the **exact** length of the string,
-        // rather just an estimate that fits the string.
-        // Recalculate the size before returning.
-        WideString absolutePath(tempBuffer.Data());
-        return UTF16ToUTF8<wchar_t, char>(absolutePath);
+        return filePointer.QuadPart;
     }
 
     // NOLINTBEGIN(cppcoreguidelines-pro-type-member-init)
@@ -108,21 +112,12 @@ namespace Kitsune::Details
         KITSUNE_ASSERT(IsWritable(), "The file should be writable.");
 
         HANDLE handle = *reinterpret_cast<HANDLE*>(m_Buffer);
-        DWORD writtenCount_;
+        DWORD writtenCount;
 
         if (m_OpenMode == FileOpenMode::Append)
-        {
-            LARGE_INTEGER filePointer_;
-            LARGE_INTEGER zero = { .QuadPart = 0 };
+            UncheckedSeek(handle, 0, SeekOrigin::End);
 
-            if (!::SetFilePointerEx(handle, zero, &filePointer_, FILE_END))
-            {
-                throw SystemException(
-                    "Failed to set the file pointer to the end of the file.");
-            }
-        }
-
-        if (!::WriteFile(handle, data, static_cast<DWORD>(dataCount), &writtenCount_,
+        if (!::WriteFile(handle, data, static_cast<DWORD>(dataCount), &writtenCount,
                          nullptr))
         {
             throw SystemException("Failed to write to the underlying file handle.");
@@ -148,29 +143,7 @@ namespace Kitsune::Details
     Usize FileObject::Seek(Ptrdiff offset, SeekOrigin origin)
     {
         KITSUNE_ASSERT(IsSeekable(), "The file should be seekable.");
-
-        LARGE_INTEGER filePointer;
-        LARGE_INTEGER zero = { .QuadPart = offset };
-
-        DWORD winOrigin = FILE_CURRENT;     // Shut MSVC up.
-        switch (origin)
-        {
-        case SeekOrigin::Begin:
-            winOrigin = FILE_BEGIN;
-            break;
-        case SeekOrigin::Current:
-            winOrigin = FILE_CURRENT;
-            break;
-        case SeekOrigin::End:
-            winOrigin = FILE_END;
-            break;
-        }
-
-        HANDLE handle = *reinterpret_cast<HANDLE*>(m_Buffer);
-        if (!::SetFilePointerEx(handle, zero, &filePointer, winOrigin))
-            throw SystemException("Failed to set the file pointer.");
-
-        return filePointer.QuadPart;
+        return UncheckedSeek(*reinterpret_cast<HANDLE*>(m_Buffer), offset, origin);
     }
 
     Usize FileObject::Size() const
@@ -222,7 +195,7 @@ namespace Kitsune::Details
         return position.QuadPart;
     }
 
-    bool FileObject::Open(StringView filePath,
+    bool FileObject::Open(Filesystem::PathView filePath,
                           FileAccessMode accessMode,
                           FileOpenMode openMode)
     {
@@ -240,13 +213,14 @@ namespace Kitsune::Details
         DWORD desiredAccess = GetDesiredAccess(accessMode);
         DWORD creationMode = GetCreationMode(openMode);
 
-        WideString wideFilePath = UTF8ToUTF16<char, wchar_t>(filePath);
-
+        WideString wideFilePath = filePath.Native();
         auto* handleStore = reinterpret_cast<HANDLE*>(m_Buffer);
+
         *handleStore = ::CreateFileW(
             wideFilePath.Raw(),
             desiredAccess,
-            0, nullptr,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
             creationMode,
             FILE_ATTRIBUTE_NORMAL,
             nullptr);
@@ -255,13 +229,12 @@ namespace Kitsune::Details
             return false;
 
         if (openMode == FileOpenMode::Append)
-            Seek(0, SeekOrigin::End);
+            UncheckedSeek(*handleStore, 0, SeekOrigin::End);
 
         m_OpenMode = openMode;
         m_AccessMode = accessMode;
 
-        m_Name = GetFullPath(filePath);
-
+        m_Name = Filesystem::ToAbsolute(filePath);
         return true;
     }
 

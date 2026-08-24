@@ -5,7 +5,7 @@
 #include "TrackingAllocator.h"
 #include "StatefulAllocator.h"
 
-#include "Foundation/Filesystem/FileStream.h"
+#include "Foundation/Streams/FileStream.h"
 
 namespace
 {
@@ -37,7 +37,7 @@ namespace
             std::filesystem::remove("./example.txt");
         }
 
-        inline ~FileStreamTest()
+        inline ~FileStreamTest() override
         {
             // Remove the file again, just in case something happened in which the
             // TearDown() function was not called properly.
@@ -47,6 +47,17 @@ namespace
     private:
         std::ofstream m_FileStream;
     };
+
+    TEST_F(FileStreamTest, Concept)
+    {
+        EXPECT_TRUE(Stream<FileStream>);
+        EXPECT_TRUE(WritableStream<FileStream>);
+        EXPECT_TRUE(ReadableStream<FileStream>);
+
+        EXPECT_TRUE(BoundedStream<FileStream>);
+        EXPECT_TRUE(FlushableStream<FileStream>);
+        EXPECT_TRUE(SeekableStream<FileStream>);
+    }
 
     // FileStream<BufSize, Alloc>::FileStream()
     TEST_F(FileStreamTest, AllocatorConstructor)
@@ -63,7 +74,7 @@ namespace
         // The details will be tested in the Open() test.
         FileStream stream("./example.txt", FileAccessMode::ReadWrite);
         EXPECT_TRUE(stream.IsOpen());
-        EXPECT_TRUE(stream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(stream.GetPath().GetFilename(), "example.txt");
     }
 
     // FileStream<BufSize, Alloc>::FileStream(StringView, FileAccessMode, FileOpenMode)
@@ -87,7 +98,7 @@ namespace
         EXPECT_FALSE(stream.IsOpen());
 
         EXPECT_TRUE(move.IsOpen());
-        EXPECT_TRUE(move.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(move.GetPath().GetFilename(), "example.txt");
     }
 
     // FileStream<BufSize, Alloc>::~FileStream()
@@ -117,7 +128,7 @@ namespace
         EXPECT_FALSE(stream.IsOpen());
 
         EXPECT_TRUE(move.IsOpen());
-        EXPECT_TRUE(move.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(move.GetPath().GetFilename(), "example.txt");
 
         std::filesystem::remove("./example2.txt");
     }
@@ -128,7 +139,7 @@ namespace
         FileStream readStream;
 
         EXPECT_TRUE(readStream.Open("./example.txt", FileAccessMode::Read));
-        EXPECT_TRUE(readStream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(readStream.GetPath().GetFilename(), "example.txt");
 
         EXPECT_TRUE(readStream.IsReadable());
         EXPECT_TRUE(readStream.IsSeekable());
@@ -141,7 +152,7 @@ namespace
         FileStream writeStream;
 
         EXPECT_TRUE(writeStream.Open("./example.txt", FileAccessMode::Write));
-        EXPECT_TRUE(writeStream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(writeStream.GetPath().GetFilename(), "example.txt");
 
         EXPECT_TRUE(writeStream.IsWritable());
         EXPECT_TRUE(writeStream.IsSeekable());
@@ -154,7 +165,7 @@ namespace
         FileStream rwStream;
 
         EXPECT_TRUE(rwStream.Open("./example.txt", FileAccessMode::ReadWrite));
-        EXPECT_TRUE(rwStream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(rwStream.GetPath().GetFilename(), "example.txt");
 
         EXPECT_TRUE(rwStream.IsReadable());
         EXPECT_TRUE(rwStream.IsWritable());
@@ -172,7 +183,7 @@ namespace
 
         EXPECT_TRUE(stream.IsOpen());
         EXPECT_TRUE(stream.IsSeekable());
-        EXPECT_TRUE(stream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(stream.GetPath().GetFilename(), "example.txt");
     }
 
     // FileStream<BufSize, Alloc>::Open(StringView, FileAccessMode, FileOpenMode::Open)
@@ -199,7 +210,7 @@ namespace
 
         EXPECT_TRUE(stream.IsOpen());
         EXPECT_TRUE(stream.IsSeekable());
-        EXPECT_TRUE(stream.GetPath().EndsWith("example2.txt"));
+        EXPECT_EQ(stream.GetPath().GetFilename(), "example2.txt");
 
         stream.Close();
         std::filesystem::remove("./example2.txt");
@@ -220,7 +231,7 @@ namespace
 
     // FileStream<BufSize, Alloc>::Open(
     //     StringView, FileAccessMode, FileOpenMode::OpenOrCreate)
-    TEST_F(FileStreamTest, OpenCreateOrOpen)
+    TEST_F(FileStreamTest, OpenOrCreate)
     {
         FileStream stream;
         EXPECT_TRUE(stream.Open(
@@ -230,7 +241,7 @@ namespace
 
         EXPECT_TRUE(stream.IsOpen());
         EXPECT_TRUE(stream.IsSeekable());
-        EXPECT_TRUE(stream.GetPath().EndsWith("example2.txt"));
+        EXPECT_EQ(stream.GetPath().GetFilename(), "example2.txt");
 
         stream.Close();
         std::filesystem::remove("./example2.txt");
@@ -238,7 +249,7 @@ namespace
 
     // FileStream<BufSize, Alloc>::Open(
     //     StringView, FileAccessMode, FileOpenMode::OpenOrCreate)
-    TEST_F(FileStreamTest, OpenCreateOrOpen2)
+    TEST_F(FileStreamTest, OpenOrCreate2)
     {
         FileStream stream;
         EXPECT_TRUE(stream.Open(
@@ -248,7 +259,7 @@ namespace
 
         EXPECT_TRUE(stream.IsOpen());
         EXPECT_TRUE(stream.IsSeekable());
-        EXPECT_TRUE(stream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(stream.GetPath().GetFilename(), "example.txt");
     }
 
     // FileStream<BufSize, Alloc>::Open(
@@ -263,7 +274,7 @@ namespace
 
         EXPECT_TRUE(stream.IsOpen());
         EXPECT_TRUE(stream.IsSeekable());
-        EXPECT_TRUE(stream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(stream.GetPath().GetFilename(), "example.txt");
 
         EXPECT_TRUE(std::filesystem::is_empty("example.txt"));
     }
@@ -298,19 +309,22 @@ namespace
 
         EXPECT_TRUE(stream.IsOpen());
         EXPECT_FALSE(stream.IsSeekable());
-        EXPECT_TRUE(stream.GetPath().EndsWith("example.txt"));
+        EXPECT_EQ(stream.GetPath().GetFilename(), "example.txt");
     }
 
     // FileStream<BufSize, Alloc>::Open(StringView, FileAccessMode, FileOpenMode::Append)
-    TEST_F(FileStreamTest, OpenAppendFailCase)
+    TEST_F(FileStreamTest, OpenAppend2)
     {
         FileStream stream;
-        EXPECT_FALSE(stream.Open(
+        EXPECT_TRUE(stream.Open(
             "./example2.txt",
             FileAccessMode::ReadWrite,
             FileOpenMode::Append));
 
-        EXPECT_FALSE(stream.IsOpen());
+        EXPECT_TRUE(stream.IsOpen());
+        stream.Close();
+        std::filesystem::remove("./example2.txt");
+
         EXPECT_FALSE(stream.Open(
             "./example.txt",
             FileAccessMode::Read,
@@ -438,7 +452,7 @@ namespace
         EXPECT_EQ(stream.GetAllocator().GetId(), 19);
         EXPECT_EQ(stream2.GetAllocator().GetId(), 65);
 
-        EXPECT_TRUE(stream2.GetPath().Contains("example.txt"));
+        EXPECT_EQ(stream2.GetPath().GetFilename(), "example.txt");
     }
 
     // FileStream<BufSize, Alloc>::GetAllocator()

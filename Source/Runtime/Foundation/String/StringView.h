@@ -302,8 +302,8 @@ namespace Kitsune
     };
 
     template<Character T>
-    inline bool operator==(const BasicStringView<T>& string1,
-                           const BasicStringView<T>& string2)
+    inline bool operator==(BasicStringView<T> string1,
+                           std::type_identity_t<BasicStringView<T>> string2)
     {
         return (string1.Size() == string2.Size()) &&
                (std::memcmp(string1.Data(), string2.Data(),

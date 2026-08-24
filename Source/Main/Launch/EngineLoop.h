@@ -5,7 +5,9 @@
 
 #include "Display/WindowManager.h"
 #include "Display/DisplayManager.h"
+
 #include "Foundation/Logging/Logger.h"
+#include "Foundation/Filesystem/Path.h"
 
 namespace Kitsune
 {
@@ -35,6 +37,19 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
+        inline Filesystem::Path GetApplicationDirectory() const
+        {
+            return m_ApplicationDirectory;
+        }
+
+        [[nodiscard]]
+        inline Filesystem::Path GetLogDirectory() const
+        {
+            return m_LogDirectory;
+        }
+
+    public:
+        [[nodiscard]]
         inline static String GetEngineVersion()
         {
             return KITSUNE_STRINGIFY(KITSUNE_VERSION_MAJOR) "."
@@ -50,7 +65,10 @@ namespace Kitsune
         }
 
     private:
-        [[nodiscard]] static bool CPUSupportsSIMDRequirements();
+        [[nodiscard]]
+        static bool CPUSupportsSIMDRequirements();
+
+        void InitializeDirectoryPaths();
 
     private:
         static EngineLoop* s_Instance;
@@ -58,6 +76,9 @@ namespace Kitsune
     public:
         CommandLineArguments m_CommandLineArguments;
         Logger* m_Logger = nullptr;
+
+        Filesystem::Path m_ApplicationDirectory;
+        Filesystem::Path m_LogDirectory;
 
         DisplayManager* m_DisplayManager = nullptr;
         WindowManager* m_WindowManager = nullptr;

@@ -1,26 +1,27 @@
 #pragma once
 
 #include "Foundation/Streams/Stream.h"
+#include "Foundation/Memory/AddressOf.h"
 
 namespace Kitsune
 {
     // An output iterator which is used for outputting elements into a writer.
-    template<typename T>
+    template<Writer T>
     class WriterIterator
     {
     public:
-        using ValueType = T;
+        using ValueType = typename T::ValueType;
         using DifferenceType = Ptrdiff;
 
     public:
         WriterIterator() = default;
-        inline explicit WriterIterator(Writer<T>& writer)
-            : m_Writer(&writer)
+        inline explicit WriterIterator(T& writer)
+            : m_Writer(AddressOf(writer))
         {
         }
 
     public:
-        inline WriterIterator& operator=(const T& value)
+        inline WriterIterator& operator=(const ValueType& value)
         {
             m_Writer->Write(&value, 1);
             return *this;
@@ -37,12 +38,12 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline Writer<T>* GetWriter() const
+        inline T* GetWriter() const
         {
             return m_Writer;
         }
 
     private:
-        Writer<T>* m_Writer = nullptr;
+        T* m_Writer = nullptr;
     };
 }

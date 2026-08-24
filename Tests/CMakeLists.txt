@@ -49,7 +49,8 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/Diagnostics/BacktraceFrameTests.cpp"
     "FoundationTests/Diagnostics/SourceLocationTests.cpp"
 
-    "FoundationTests/Filesystem/FileStreamTests.cpp"
+    "FoundationTests/Filesystem/FilesystemTests.cpp"
+    "FoundationTests/Filesystem/ToAbsoluteTests.cpp"
 
     "FoundationTests/Include/FlippableCompare.h"
     "FoundationTests/Include/PushBackContainer.h"
@@ -79,12 +80,23 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/String/UTF16EncodingTests.cpp"
     "FoundationTests/String/UTF32EncodingTests.cpp"
 
+    "FoundationTests/Streams/FileStreamTests.cpp"
+    "FoundationTests/Streams/FileWriterTests.cpp"
+    "FoundationTests/Streams/WriterIteratorTests.cpp"
+
     "FoundationTests/Threading/AtomicTests.cpp"
 
     "FoundationTests/Utilities/FunctorTests.cpp"
 
     "FoundationTests/Main.cpp"
 )
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    target_sources(FoundationTests PRIVATE
+        "FoundationTests/Filesystem/WindowsPathTests.cpp"
+        "FoundationTests/Filesystem/WindowsPathViewTests.cpp"
+    )
+endif()
 
 add_test(FoundationTests COMMAND FoundationTests)
 

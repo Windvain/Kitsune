@@ -2,18 +2,23 @@
 
 #include "Foundation/Logging/LogSink.h"
 
-#include "Foundation/Streams/ConsoleWriter.h"
+#include "Foundation/Streams/FileWriter.h"
 #include "Foundation/Streams/WriterIterator.h"
 
 namespace Kitsune
 {
-    // A log sink which outputs log payloads to the console.
-    class ConsoleLogSink : public LogSink
+    class FileLogSink : public LogSink
     {
+    public:
+        inline FileLogSink(Filesystem::PathView path)
+            : m_Writer(path, FileOpenMode::Append)
+        {
+        }
+
     public:
         inline void Log(const LogPayload& payload) override
         {
-            FormatTo(WriterIterator<ConsoleWriter>(m_Writer), "{0:c}", payload);
+            FormatTo(WriterIterator<FileWriter>(m_Writer), "{0}", payload);
             m_Writer.WriteLine();
         }
 
@@ -23,6 +28,6 @@ namespace Kitsune
         }
 
     private:
-        ConsoleWriter m_Writer{ ConsoleWriterType::StdOut };
+        FileWriter m_Writer;
     };
 }
