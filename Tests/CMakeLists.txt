@@ -50,6 +50,7 @@ add_executable(FoundationTests ${TEST_EXE_TYPE}
     "FoundationTests/Diagnostics/SourceLocationTests.cpp"
 
     "FoundationTests/Filesystem/FilesystemTests.cpp"
+    "FoundationTests/Filesystem/ToAbsoluteTests.cpp"
 
     "FoundationTests/Include/FlippableCompare.h"
     "FoundationTests/Include/PushBackContainer.h"
