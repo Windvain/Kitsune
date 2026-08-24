@@ -205,17 +205,21 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         target_sources(KitsuneRuntime PRIVATE "Foundation/Windows/WindowsSystemInformation.cpp")
     endif()
 
-    # Simulate the symbol visibility of DLLs. (Hidden until declared exported)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        # Simulate the symbol visibility of DLLs. (Hidden until declared exported)
         target_compile_options(KitsuneRuntime PRIVATE
             "-fvisibility=hidden"
             "-fvisibility-inlines-hidden"
         )
+
+        # Required for DLL to load the correct version of comctl32.dll.
+        target_sources(KitsuneRuntime PRIVATE "KitsuneRuntime.rc")
     endif()
 
 
     target_link_libraries(KitsuneRuntime PRIVATE
         "SHcore.lib"        # Used for DPI support, for example GetDpiForMonitor().
+        "comctl32.lib"      # Used in the code for the implementation of the message box.
     )
 
     target_compile_definitions(KitsuneRuntime PRIVATE
@@ -236,6 +240,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "Foundation/MSVC/MSVCBacktrace.cpp"
         "Foundation/MSVC/MSVCInterlocked.inl"
         "Foundation/MSVC/MSVCSystemInformation.cpp"
+
+        "KitsuneRuntime.manifest"
     )
 
     target_compile_definitions(KitsuneRuntime PRIVATE "KITSUNE_ENABLE_BACKTRACES=1")
