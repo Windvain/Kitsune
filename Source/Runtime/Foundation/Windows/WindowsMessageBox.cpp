@@ -8,37 +8,9 @@
 
 namespace Kitsune
 {
-    Pair<bool, MessageBoxButtonID> ShowFallbackMessageBox(
-        const MessageBoxSpecifications& specs)
-    {
-        // TODO: Unimplemented. Will implement once I iron out the needed changes.
-        KITSUNE_UNUSED(specs);
-        return { false, 0 };
-    }
-
     Pair<bool, MessageBoxButtonID> ShowMessageBox(
         const MessageBoxSpecifications& specs)
     {
-        // As of now, Windows will always load versions <6.0, which doesn't have
-        // TaskDialogIndirect(). Applications will have to use an application
-        // manifest to load the correct version.
-        HMODULE comctl32 = ::LoadLibraryW(L"comctl32.dll");
-        if (comctl32 == nullptr)
-            return ShowFallbackMessageBox(specs);
-
-        using TaskDialogIndirectProc =
-            HRESULT (*)(const TASKDIALOGCONFIG*, int*, int*, BOOL*);
-
-        auto taskDialogIndirect = (TaskDialogIndirectProc)(void*)(
-            ::GetProcAddress(comctl32, "TaskDialogIndirect"));
-
-        if (taskDialogIndirect == nullptr)
-        {
-            ::FreeLibrary(comctl32);
-            return ShowFallbackMessageBox(specs);
-        }
-
-        // The actual message box code.
         TASKDIALOGCONFIG config;
         ::ZeroMemory(&config, sizeof(config));
 
@@ -84,10 +56,11 @@ namespace Kitsune
         }
 
         int internalPressed;
-        HRESULT result = taskDialogIndirect(
-            &config, &internalPressed, nullptr, nullptr);
-
-        ::FreeLibrary(comctl32);
+        HRESULT result = ::TaskDialogIndirect(
+            &config,
+            &internalPressed,
+            nullptr,
+            nullptr);
 
         if (FAILED(result))
             return { false, 0 };
