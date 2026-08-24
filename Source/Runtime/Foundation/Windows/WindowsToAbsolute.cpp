@@ -7,6 +7,7 @@ namespace Kitsune::Filesystem
 {
     Path ToAbsolute(PathView path)
     {
+        // NOTE: Look at the note in WindowsCurrentDirectory.cpp.
         WideString widePath = path.Native();
         DWORD length = ::GetFullPathNameW(widePath.Raw(), 0, nullptr, nullptr);
 

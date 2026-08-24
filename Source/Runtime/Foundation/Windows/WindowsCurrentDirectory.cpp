@@ -1,9 +1,7 @@
 #include "Foundation/Filesystem/CurrentDirectory.h"
 #include <Windows.h>
 
-#include "Foundation/Threading/LockGuard.h"
 #include "Foundation/String/TranscodePresets.h"
-
 #include "Foundation/Diagnostics/SystemException.h"
 
 #undef SetCurrentDirectory
@@ -11,16 +9,10 @@
 
 namespace Kitsune::Filesystem
 {
-    // Put this in an inline namespace, make this inaccessible to other files.
-    namespace
-    {
-        Mutex g_CurrentDirectoryMutex{ /* ... */ };
-    }
-
+    // NOTE: There is no need to synchronize access to these functions.
+    // Source: https://devblogs.microsoft.com/oldnewthing/20210816-00/?p=105562
     void SetCurrentDirectory(PathView path)
     {
-        LockGuard lock(g_CurrentDirectoryMutex);
-
         NativeString nativePath = path.Native();
         BOOL success = ::SetCurrentDirectoryW(nativePath.Raw());
 
@@ -34,8 +26,6 @@ namespace Kitsune::Filesystem
 
     Path GetCurrentDirectory()
     {
-        LockGuard lock(g_CurrentDirectoryMutex);
-
         // https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getcurrentdirectory
         // The documentation is incorrect. GetCurrentDirectory() returns the length
         // INCLUDING the null terminator.
