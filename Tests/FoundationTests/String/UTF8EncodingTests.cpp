@@ -1,10 +1,11 @@
+#include <memory>
 #include <gtest/gtest.h>
+
 #include "TestContainer.h"
 
 #include "Foundation/String/TextEncoding.h"
 #include "Foundation/String/UTF8Encoding.h"
 
-#if 0
 namespace
 {
     using namespace Kitsune;
@@ -177,8 +178,14 @@ namespace
 
         using Codepoint = typename Encoding::CodepointType;
 
-        using Arr = std::array<Codepoint, 2>;
-        std::vector<std::tuple<Arr, int, std::basic_string<T>>> cases = {
+        struct MyStruct
+        {
+            std::vector<Codepoint> Codepoints;
+            int UnitCount;
+            std::basic_string<T> String;
+        };
+
+        std::vector<MyStruct> cases = {
             { { 0x0048, 0x0D74 }, 1, this->GetString("H") },
             { { 0x00A3, 0x0011 }, 2, this->GetString("£") },
             { { 0x0D74, 0xD87F }, 3, this->GetString("൴") },
@@ -207,11 +214,11 @@ namespace
         using Encoding = typename TestFixture::EncodingType;
 
         using Codepoint = typename Encoding::CodepointType;
-        std::vector<std::array<Codepoint, 2>> cases = {
-            { { 0xD800, 0x0D74 } },
-            { { 0xDC9A, 0x0011 } },
-            { { 0xDFFF, 0xD87F } },
-            { { 0x110000, 0xD800 } }
+        std::vector<std::vector<Codepoint>> cases = {
+            { 0xD800, 0x0D74 },
+            { 0xDC9A, 0x0011 },
+            { 0xDFFF, 0xD87F },
+            { 0x110000, 0xD800 }
         };
 
         for (auto& array : cases)
@@ -227,4 +234,3 @@ namespace
         }
     }
 }
-#endif

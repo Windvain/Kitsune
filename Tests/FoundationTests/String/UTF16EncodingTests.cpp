@@ -4,7 +4,6 @@
 #include "Foundation/String/TextEncoding.h"
 #include "Foundation/String/UTF16Encoding.h"
 
-#if 0
 namespace
 {
     using namespace Kitsune;
@@ -142,8 +141,14 @@ namespace
 
         using Codepoint = typename Encoding::CodepointType;
 
-        using Arr = std::array<Codepoint, 2>;
-        std::vector<std::tuple<Arr, int, std::basic_string<T>>> cases = {
+        struct MyStruct
+        {
+            std::vector<Codepoint> Codepoints;
+            int UnitCount;
+            std::basic_string<T> String;
+        };
+
+        std::vector<MyStruct> cases = {
             { { 0x0048, 0x0D74 }, 1, this->GetString(u"H") },
             { { 0x1F60A, 0xD800 }, 2, this->GetString(u"😊") }
         };
@@ -170,7 +175,7 @@ namespace
         using Encoding = typename TestFixture::EncodingType;
 
         using Codepoint = typename Encoding::CodepointType;
-        std::vector<std::array<Codepoint, 2>> cases = {
+        std::vector<std::vector<Codepoint>> cases = {
             { { 0xD800, 0x0D74 } },
             { { 0xDC9A, 0x0011 } },
             { { 0xDFFF, 0xD87F } },
@@ -190,4 +195,3 @@ namespace
         }
     }
 }
-#endif
