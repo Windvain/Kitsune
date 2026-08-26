@@ -3,6 +3,15 @@
 #include <exception>
 #include "Foundation/Common/Macros.h"
 
+KITSUNE_PUSH_COMPILER_WARNINGS()
+
+// C4275: non-DLL-interface class 'class_1' used as base for DLL-interface class
+// 'class_2'.
+// This warning can be ignored in Visual C++ if you are deriving from a type in the C++
+// Standard Library.
+// Source: https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-2-c4275?view=msvc-170
+KITSUNE_IGNORE_MSVC_WARNING(4275)
+
 namespace Kitsune
 {
     namespace Details
@@ -45,3 +54,5 @@ namespace Kitsune
         Details::ExceptionData* m_Data;
     };
 }
+
+KITSUNE_POP_COMPILER_WARNINGS()

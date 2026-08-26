@@ -12,11 +12,11 @@ namespace Kitsune
 {
     // A singleton class which provides an interface to interact with
     // "global" sinks.
-    class KITSUNE_API Logger : public NonCopyable
+    class Logger : public NonCopyable
     {
     public:
-        Logger();
-        ~Logger();
+        KITSUNE_API Logger();
+        KITSUNE_API ~Logger();
 
     public:
         inline void Log(StringView message, StringView topic,
@@ -117,7 +117,7 @@ namespace Kitsune
         }
 
     private:
-        static Logger* s_Instance;
+        KITSUNE_API static Logger* s_Instance;
 
     private:
         Array<ScopedPtr<LogSink>> m_Sinks;

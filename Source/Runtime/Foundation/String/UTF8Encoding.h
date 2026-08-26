@@ -69,7 +69,7 @@ namespace Kitsune
             if constexpr (std::is_same_v<T, char8_t>)
                 return U8StringView(u8"\uFFFD");
             else if constexpr (std::is_same_v<T, char>)
-                return StringView("\uFFFD");
+                return StringView("\xEF\xBF\xBD");
         }
 
     public:
@@ -79,14 +79,14 @@ namespace Kitsune
             if (begin == end)
                 return { begin, outBegin };
 
-            if (static_cast<char8_t>(*begin) <= u8'\x7F')
+            if (static_cast<Uint8>(*begin) <= Uint8(0x7F))
             {
                 *outBegin = static_cast<CodepointType>(*begin);
                 return { ++begin, ++outBegin };
             }
 
             Iter header = begin++;
-            char8_t headerVal = *header;
+            Uint8 headerVal = *header;
 
             if (IsContinuationByte(headerVal) || IsInvalidByte(headerVal))
                 return { header, outBegin };
@@ -103,25 +103,25 @@ namespace Kitsune
                 // Checks for overlong encodings. No need to check for continuation
                 // bytes, because we check it together w/ overlong encodings.
                 // Ex: U+0020 being represented as 0xC0 0xA0 instead of 0x20.
-                char8_t lowEnd = u8'\x80', highEnd = u8'\xBF';
+                Uint8 lowEnd = 0x80, highEnd = 0xBF;
                 if (index == 0)
                 {
                     // Comparisons only work when both operands are of the same sign.
-                    if (headerVal == u8'\xE0')      lowEnd = u8'\xA0';
-                    else if (headerVal == u8'\xED') highEnd = u8'\x9F';
-                    else if (headerVal == u8'\xF0') lowEnd = u8'\x90';
-                    else if (headerVal == u8'\xF4') highEnd = u8'\x8F';
+                    if (headerVal == Uint8(0xE0))      lowEnd = Uint8(0xA0);
+                    else if (headerVal == Uint8(0xED)) highEnd = Uint8(0x9F);
+                    else if (headerVal == Uint8(0xF0)) lowEnd = Uint8(0x90);
+                    else if (headerVal == Uint8(0xF4)) highEnd = Uint8(0x8F);
                 }
 
-                char8_t beginVal = *begin;
+                Uint8 beginVal = *begin;
                 if ((beginVal < lowEnd) || (beginVal > highEnd))
                     return { header, outBegin };
 
                 codepoint <<= 6;
-                codepoint |= (beginVal & u8'\x3F');
+                codepoint |= (beginVal & Uint8(0x3F));
             }
 
-            char8_t mask = (u8'\x1F' >> (trailingBytes - 1));
+            Uint8 mask = (Uint8(0x1F) >> (trailingBytes - 1));
             codepoint |= CodepointType(headerVal & mask) << (trailingBytes * 6);
 
             *outBegin++ = codepoint;
@@ -169,24 +169,24 @@ namespace Kitsune
         }
 
     private:
-        inline static bool IsContinuationByte(char8_t byte)
+        inline static bool IsContinuationByte(Uint8 byte)
         {
-            return ((byte & u8'\xC0') == u8'\x80');
+            return ((byte & Uint8(0xC0)) == Uint8(0x80));
         }
 
         inline static bool IsInvalidByte(char8_t byte)
         {
             // Uses of bytes ranging from 0xC0 - 0xC1 and 0xF5 - 0xFF are disallowed.
-            return ((byte == u8'\xC0') ||
-                    (byte == u8'\xC1') ||
-                    ((byte >= u8'\xF5') && (byte <= u8'\xFF')));
+            return ((byte == Uint8(0xC0)) ||
+                    (byte == Uint8(0xC1)) ||
+                    ((byte >= Uint8(0xF5)) && (byte <= Uint8(0xFF))));
         }
 
         inline static Usize GetTrailingBytes(char8_t byte)
         {
             // Only meant for non-ASCII characters.
             Usize trailing = 0;
-            for (; (byte & u8'\x80') != 0; byte <<= 1, ++trailing);
+            for (; (byte & Uint8(0x80)) != 0; byte <<= 1, ++trailing);
 
             return trailing - 1;
         }

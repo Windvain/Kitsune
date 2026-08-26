@@ -4,7 +4,7 @@
 
 namespace Kitsune::Filesystem
 {
-    class KITSUNE_API Path
+    class Path
     {
     public:
         using ValueType = typename PathView::ValueType;
@@ -97,7 +97,7 @@ namespace Kitsune::Filesystem
         }
 
     public:
-        Path& operator/=(const Path& path);
+        KITSUNE_API Path& operator/=(const Path& path);
 
         template<typename StrvLike>
             requires std::is_convertible_v<StrvLike, StringView>
@@ -232,7 +232,7 @@ namespace Kitsune::Filesystem
         }
 
     public:
-        void MakePreferredSeperator();
+        KITSUNE_API void MakePreferredSeperator();
 
         inline void RemoveExtension()
         {

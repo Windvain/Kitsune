@@ -26,7 +26,7 @@ namespace Kitsune
     {
         unsigned int cpuInfo[4];
 #if defined(KITSUNE_COMPILER_MSVC)
-        __cpuidex(reinterpret_cast<int(*)[4]>(cpuInfo), eax, ecx);
+        __cpuidex(reinterpret_cast<int*>(cpuInfo), eax, ecx);
         return CPUIDResult(cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
 #else
         __get_cpuid_count(

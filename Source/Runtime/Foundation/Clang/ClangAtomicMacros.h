@@ -2,7 +2,13 @@
 
 // IWYU pragma: private, include "Threading/AtomicMacros.h"
 #include <type_traits>                          // IWYU pragma: keep
+
+#include "Foundation/Common/Predefined.h"
 #include "Foundation/Threading/MemoryOrder.h"
+
+#if !defined(KITSUNE_COMPILER_CLANG)
+    #error This file should only be included when building with the LLVM-Clang compiler.
+#endif
 
 // Checks to make sure that calling the macros with MemoryOrder enumerations will
 // work.

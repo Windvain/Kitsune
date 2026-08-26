@@ -7,13 +7,16 @@ namespace Kitsune
 {
     // Implementation of the Memory API interface using the default
     // C runtime malloc and free. (Well, actually its std::aligned_alloc..)
-    class KITSUNE_API CMallocApi : public MemoryApi
+    class CMallocApi : public MemoryApi
     {
     public:
-        [[nodiscard]] void* TryAllocate(Usize bytes) override;
-        [[nodiscard]] void* TryAllocate(Usize bytes, Usize alignment) override;
+        [[nodiscard]]
+        KITSUNE_API void* TryAllocate(Usize bytes) override;
 
-        void Free(void* pointer, Usize bytes) override;
+        [[nodiscard]]
+        KITSUNE_API void* TryAllocate(Usize bytes, Usize alignment) override;
+
+        KITSUNE_API void Free(void* pointer, Usize bytes) override;
 
     public:
         [[nodiscard]]

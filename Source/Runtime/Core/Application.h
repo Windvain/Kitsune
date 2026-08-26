@@ -10,13 +10,13 @@ namespace Kitsune
         bool Headless = false;
     };
 
-    class KITSUNE_API Application : public NonCopyable
+    class Application : public NonCopyable
     {
     public:
-        Application(const ApplicationSpecifications& specs,
-                    const CommandLineArguments& arguments);
+        KITSUNE_API Application(const ApplicationSpecifications& specs,
+                                const CommandLineArguments& arguments);
 
-        virtual ~Application();
+        KITSUNE_API virtual ~Application();
 
     public:
         virtual void OnUpdate(double delta)
