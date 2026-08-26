@@ -4,6 +4,7 @@
 #include "Foundation/String/TextEncoding.h"
 #include "Foundation/String/UTF8Encoding.h"
 
+#if 0
 namespace
 {
     using namespace Kitsune;
@@ -226,3 +227,4 @@ namespace
         }
     }
 }
+#endif

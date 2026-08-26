@@ -5,7 +5,7 @@
 
 namespace
 {
-    using Kitsune::ThreadSafety;
+    using namespace Kitsune;
     using Testing::TrackingAllocator;
 
     template<typename T>
@@ -286,7 +286,7 @@ namespace
         {
             Ptr ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
 
-            int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
+            int* storedPointer = reinterpret_cast<int*>(0xDEADC0DEDEAD);
             Ptr pointer(ownedPointer, storedPointer);
 
             EXPECT_EQ(pointer.Get(), storedPointer);
@@ -403,7 +403,7 @@ namespace
         {
             Ptr ownedPointer(rawPointer, TrackingDeleter<int>(&deleted));
 
-            int* storedPointer = reinterpret_cast<int*>(0xDEADC0DE);
+            int* storedPointer = reinterpret_cast<int*>(0xDEADC0DEDEAD);
             Ptr pointer(std::move(ownedPointer), storedPointer);
 
             EXPECT_EQ(pointer.Get(), storedPointer);

@@ -910,9 +910,9 @@ namespace
         std::basic_string<T> source2 = this->GetEncodedString("llo, W");
 
         BasicString<T> string = source.c_str();
-        EXPECT_EQ(
-            string.Insert(string.GetBegin() + 2, source2.c_str()),
-            string.GetBegin() + 2);
+        auto iter = string.Insert(string.GetBegin() + 2, source2.c_str());
+
+        EXPECT_EQ(iter, string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), source.size() + source2.size());
         EXPECT_GE(string.Capacity(), string.Size());
@@ -929,9 +929,9 @@ namespace
         std::basic_string<T> source2 = this->GetEncodedString("llo, World!");
 
         BasicString<T> string = source.c_str();
-        EXPECT_EQ(
-            string.Insert((std::as_const(string).GetBegin() + 2), source2.c_str(), 6),
-            string.GetBegin() + 2);
+        auto iter = string.Insert((std::as_const(string).GetBegin() + 2), source2.c_str(), 6);
+
+        EXPECT_EQ(iter, string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
@@ -948,9 +948,11 @@ namespace
         std::basic_string<T> source2 = this->GetEncodedString("llo, World!");
 
         BasicString<T> string = source.c_str();
-        EXPECT_EQ(
-            string.Insert(string.GetBegin() + 2, BasicStringView<T>(source2.c_str(), 6)),
-            string.GetBegin() + 2);
+        auto iter = string.Insert(
+            string.GetBegin() + 2,
+            BasicStringView<T>(source2.c_str(), 6));
+
+        EXPECT_EQ(iter, string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
@@ -969,9 +971,8 @@ namespace
         BasicString<T, StatefulAllocator> string(source.c_str(), StatefulAllocator(13));
         BasicString<T, StatefulAllocator> string2 = source2.c_str();
 
-        EXPECT_EQ(
-            string.Insert(string.GetBegin() + 2, string2),
-            string.GetBegin() + 2);
+        auto iter = string.Insert(string.GetBegin() + 2, string2);
+        EXPECT_EQ(iter, string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), source.size() + source2.size());
         EXPECT_GE(string.Capacity(), string.Size());
@@ -992,11 +993,11 @@ namespace
         ForwardNonOwningTestContainer<T, 6> container(source2.data());
         BasicString<T> string(source.c_str(), StatefulAllocator(13));
 
-        EXPECT_EQ(
-            string.Insert(string.GetBegin() + 2,
-                          container.GetBegin(), container.GetEnd()),
-            string.GetBegin() + 2);
+        auto iter = string.Insert(
+            string.GetBegin() + 2,
+            container.GetBegin(), container.GetEnd());
 
+        EXPECT_EQ(iter, string.GetBegin() + 2);
         EXPECT_EQ(string.Size(), source.size() + source2.size());
         EXPECT_GE(string.Capacity(), string.Size());
 
@@ -1012,9 +1013,8 @@ namespace
         std::basic_string<T> source = this->GetEncodedString("Heorld!");
         BasicString<T> string(source.c_str(), StatefulAllocator(13));
 
-        EXPECT_EQ(
-            string.Insert(string.GetBegin() + 2, { 'l', 'l', 'o', ',', ' ', 'W' }),
-            string.GetBegin() + 2);
+        auto iter = string.Insert(string.GetBegin() + 2, { 'l', 'l', 'o', ',', ' ', 'W' });
+        EXPECT_EQ(iter, string.GetBegin() + 2);
 
         EXPECT_EQ(string.Size(), 13);
         EXPECT_GE(string.Capacity(), string.Size());
