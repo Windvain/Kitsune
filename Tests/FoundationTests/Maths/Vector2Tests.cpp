@@ -5,7 +5,6 @@
 #include "Foundation/Common/Types.h"
 #include "Foundation/Maths/Vector2.h"
 
-#if 0
 #define EXPECT_TEMPLATED_EQ(value1, value2)          \
     if constexpr (std::is_floating_point_v<T>)       \
         EXPECT_FLOAT_EQ(T(value1), T(value2));       \
@@ -25,30 +24,31 @@ namespace
     template<typename T>
     struct ToCast
     {
-        explicit ToCast(T value)
+        inline explicit ToCast(T value = T())
             : Number(value)
         {
         }
 
-        ToCast(const FromCast<T>& value)
+        inline ToCast(const FromCast<T>& value)
             : Number(value.Number)
         {
         }
 
-        ToCast(FromCast<T>&& value)
-            : Number(std::exchange(value.Number, 0))
+        inline ToCast(FromCast<T>&& value)
+            : Number(std::exchange(value.Number, T(0)))
         {
         }
 
-        ToCast& operator=(const FromCast<T>& value)
+    public:
+        inline ToCast& operator=(const FromCast<T>& value)
         {
             Number = value.Number;
             return *this;
         }
 
-        ToCast& operator=(FromCast<T>&& value)
+        inline ToCast& operator=(FromCast<T>&& value)
         {
-            Number = std::exchange(value.Number, 0);
+            Number = std::exchange(value.Number, T(0));
             return *this;
         }
 
@@ -137,11 +137,11 @@ namespace
         T scalarX(this->GetRandomValue());
         T scalarY(this->GetRandomValue());
 
-        Vector2<T> vector(scalarX, scalarY);
-        Vector2<T> copy = vector;
+        Vector2<FromCast<T>> vector{ FromCast<T>(scalarX), FromCast<T>(scalarY) };
+        Vector2<ToCast<T>> copy = vector;
 
-        EXPECT_TEMPLATED_EQ(copy.X, scalarX);
-        EXPECT_TEMPLATED_EQ(copy.Y, scalarY);
+        EXPECT_TEMPLATED_EQ(copy.X.Number, scalarX);
+        EXPECT_TEMPLATED_EQ(copy.Y.Number, scalarY);
     }
 
     // Vector2<T>::Vector2(Vector<U, 2>&&)
@@ -169,7 +169,7 @@ namespace
 
         Vector2<FromCast<T>> vector = { FromCast<T>(scalarX), FromCast<T>(scalarY) };
         Vector2<ToCast<T>> copy = { ToCast<T>(this->GetRandomValue()),
-                               ToCast<T>(this->GetRandomValue()) };
+                                    ToCast<T>(this->GetRandomValue()) };
 
         copy = vector;
 
@@ -352,4 +352,3 @@ namespace
         EXPECT_TRUE(vector != unequalVector);
     }
 }
-#endif
