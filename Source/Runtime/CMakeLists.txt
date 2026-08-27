@@ -226,8 +226,8 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_sources(KitsuneRuntime PRIVATE
+        "Foundation/MSVC/MSVCAtomic.h"
         "Foundation/MSVC/MSVCBacktrace.cpp"
-        "Foundation/MSVC/MSVCInterlocked.inl"
         "Foundation/MSVC/MSVCSystemInformation.cpp"
 
         "KitsuneRuntime.manifest"
@@ -246,7 +246,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_sources(KitsuneRuntime PRIVATE
-        "Foundation/Clang/ClangAtomicMacros.h"
+        "Foundation/Clang/ClangAtomic.h"
         "Foundation/Clang/ClangBacktrace.cpp"
     )
 
