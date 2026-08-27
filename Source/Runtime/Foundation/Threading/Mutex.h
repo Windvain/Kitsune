@@ -9,17 +9,17 @@ namespace Kitsune
 {
     // A multithreading primitive for synchronizing access to a shared resource or
     // a function.
-    class KITSUNE_API Mutex : public NonCopyable
+    class Mutex : public NonCopyable
     {
     public:
-        Mutex();
-        ~Mutex();
+        KITSUNE_API Mutex();
+        KITSUNE_API ~Mutex();
 
     public:
-        void Acquire();
-        bool TryAcquire();
+        KITSUNE_API void Acquire();
+        KITSUNE_API bool TryAcquire();
 
-        void Release();
+        KITSUNE_API void Release();
 
     private:
         static constexpr Usize s_BufferSize = 64;

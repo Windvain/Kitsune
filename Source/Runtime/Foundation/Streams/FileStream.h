@@ -39,37 +39,39 @@ namespace Kitsune
     {
         // Contains platform-specific implementations for file operations.
         // Kind of like the FILE struct in C.
-        class KITSUNE_API FileObject
+        class FileObject
         {
         public:
-            FileObject();
+            KITSUNE_API FileObject();
 
-            FileObject(FileObject&& fileObject);
-            FileObject& operator=(FileObject&& fileObject);
-
-        public:
-            bool Open(Filesystem::PathView filePath,
-                      FileAccessMode accessMode,
-                      FileOpenMode openMode = FileOpenMode::Open);
-
-            void Close();
+            KITSUNE_API FileObject(FileObject&& fileObject);
+            KITSUNE_API FileObject& operator=(FileObject&& fileObject);
 
         public:
-            void Write(const Byte* data, Usize count);
-            Usize Read(Byte* buffer, Usize bufferSize);
+            KITSUNE_API bool Open(Filesystem::PathView filePath,
+                                  FileAccessMode accessMode,
+                                  FileOpenMode openMode = FileOpenMode::Open);
 
-            Usize Seek(Ptrdiff offset, SeekOrigin origin);
-            [[nodiscard]] Usize Size() const;
+            KITSUNE_API void Close();
 
         public:
-            [[nodiscard]] bool IsOpen() const;
+            KITSUNE_API void Write(const Byte* data, Usize count);
+            KITSUNE_API Usize Read(Byte* buffer, Usize bufferSize);
 
-            [[nodiscard]] bool IsReadable() const;
-            [[nodiscard]] bool IsWritable() const;
-            [[nodiscard]] bool IsSeekable() const;
+            KITSUNE_API Usize Seek(Ptrdiff offset, SeekOrigin origin);
 
             [[nodiscard]]
-            Usize GetPosition() const;
+            KITSUNE_API Usize Size() const;
+
+        public:
+            [[nodiscard]] KITSUNE_API bool IsOpen() const;
+
+            [[nodiscard]] KITSUNE_API bool IsReadable() const;
+            [[nodiscard]] KITSUNE_API bool IsWritable() const;
+            [[nodiscard]] KITSUNE_API bool IsSeekable() const;
+
+            [[nodiscard]]
+            KITSUNE_API Usize GetPosition() const;
 
             [[nodiscard]]
             inline Filesystem::PathView GetName() const

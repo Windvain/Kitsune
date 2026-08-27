@@ -8,27 +8,10 @@ namespace
     using namespace Kitsune;
     using Testing::ForwardTestContainer, Testing::BidirectionalTestContainer;
 
-    class MoveTest : public ::testing::Test
-    {
-    protected:
-        using Type = std::shared_ptr<int>;
-        using ContainerType = ForwardTestContainer<Type, 5>;
-
-    protected:
-        template<Usize N>
-        inline ForwardTestContainer<Type, N> MakeContainer()
-        {
-            ForwardTestContainer<Type, N> container;
-            for (Usize index = 0; index < N; ++index)
-                container[index] = std::make_shared<int>(index * index);
-
-            return container;
-        }
-    };
-
     // Algorithms::Move(Iter, Iter, OutIter)
-    TEST_F(MoveTest, Move)
+    TEST(MoveTest, Move)
     {
+        using ContainerType = ForwardTestContainer<std::shared_ptr<int>, 5>;
         ContainerType container = {
             std::make_shared<int>(20),
             std::make_shared<int>(32),
@@ -40,7 +23,14 @@ namespace
         for (int index = 0; index < 5; ++index)
             ASSERT_EQ(container[index].use_count(), 1);
 
-        ContainerType destination = MakeContainer<5>();
+        ContainerType destination = {
+            std::make_shared<int>(213123),
+            std::make_shared<int>(4517),
+            std::make_shared<int>(81),
+            std::make_shared<int>(23),
+            std::make_shared<int>(91),
+        };
+
         auto iterator = Algorithms::Move(
             container.GetBegin(), container.GetEnd(),
             destination.GetBegin());
@@ -58,8 +48,9 @@ namespace
     }
 
     // Algorithms::MoveN(Iter, Size, OutIter)
-    TEST_F(MoveTest, MoveN)
+    TEST(MoveTest, MoveN)
     {
+        using ContainerType = ForwardTestContainer<std::shared_ptr<int>, 5>;
         ContainerType container = {
             std::make_shared<int>(20),
             std::make_shared<int>(32),
@@ -71,7 +62,14 @@ namespace
         for (int index = 0; index < 5; ++index)
             ASSERT_EQ(container[index].use_count(), 1);
 
-        ContainerType destination = MakeContainer<5>();
+        ContainerType destination = {
+            std::make_shared<int>(213123),
+            std::make_shared<int>(4517),
+            std::make_shared<int>(81),
+            std::make_shared<int>(23),
+            std::make_shared<int>(91),
+        };
+
         auto iterator = Algorithms::MoveN(
             container.GetBegin(), 5,
             destination.GetBegin());
@@ -89,9 +87,10 @@ namespace
     }
 
     // Algorithms::MoveBackwards(Iter, Iter, OutIter)
-    TEST_F(MoveTest, MoveBackwards)
+    TEST(MoveTest, MoveBackwards)
     {
-        BidirectionalTestContainer<Type, 5> container = {
+        using ContainerType = BidirectionalTestContainer<std::shared_ptr<int>, 5>;
+        ContainerType container = {
             std::make_shared<int>(20),
             std::make_shared<int>(32),
             std::make_shared<int>(14),
@@ -99,7 +98,7 @@ namespace
             std::make_shared<int>(1),
         };
 
-        BidirectionalTestContainer<Type, 5> destination = {
+        ContainerType destination = {
             std::make_shared<int>(1134),
             std::make_shared<int>(220),
             std::make_shared<int>(123232),

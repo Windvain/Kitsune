@@ -13,7 +13,7 @@ namespace Kitsune::Filesystem
         WideString path(MAX_PATH, L'\0');
         do
         {
-            if (::GetModuleFileNameW(nullptr, path.Data(), path.Size() + 1) == 0)
+            if (::GetModuleFileNameW(nullptr, path.Data(), DWORD(path.Size() + 1)) == 0)
                 throw SystemException("Failed to get the executable's path.");
 
             path.Resize(path.Size() * 2);

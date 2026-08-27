@@ -5,7 +5,7 @@
 
 namespace Kitsune::Filesystem
 {
-    class KITSUNE_API PathView
+    class PathView
     {
     public:
         using ValueType = char;
@@ -84,22 +84,22 @@ namespace Kitsune::Filesystem
         }
 
     public:
-        [[nodiscard]] bool IsValidPath() const;
+        [[nodiscard]] KITSUNE_API bool IsValidPath() const;
 
-        [[nodiscard]] bool IsAbsolute() const;
-        [[nodiscard]] bool IsRelative() const;
+        [[nodiscard]] KITSUNE_API bool IsAbsolute() const;
+        [[nodiscard]] KITSUNE_API bool IsRelative() const;
 
-        [[nodiscard]] PathView GetRootName() const;
-        [[nodiscard]] PathView GetRootDirectory() const;
+        [[nodiscard]] KITSUNE_API PathView GetRootName() const;
+        [[nodiscard]] KITSUNE_API PathView GetRootDirectory() const;
 
-        [[nodiscard]] PathView GetRootPath() const;
-        [[nodiscard]] PathView GetRelativePath() const;
+        [[nodiscard]] KITSUNE_API PathView GetRootPath() const;
+        [[nodiscard]] KITSUNE_API PathView GetRelativePath() const;
 
-        [[nodiscard]] PathView GetParentPath() const;
+        [[nodiscard]] KITSUNE_API PathView GetParentPath() const;
 
-        [[nodiscard]] PathView GetFilename() const;
-        [[nodiscard]] PathView GetFileStem() const;
-        [[nodiscard]] PathView GetExtension() const;
+        [[nodiscard]] KITSUNE_API PathView GetFilename() const;
+        [[nodiscard]] KITSUNE_API PathView GetFileStem() const;
+        [[nodiscard]] KITSUNE_API PathView GetExtension() const;
 
     public:
         inline void Swap(PathView& path)

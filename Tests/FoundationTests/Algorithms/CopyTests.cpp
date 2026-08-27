@@ -9,27 +9,10 @@ namespace
     using namespace Kitsune;
     using Testing::ForwardTestContainer, Testing::BidirectionalTestContainer;
 
-    class CopyTest : public ::testing::Test
-    {
-    protected:
-        using Type = std::shared_ptr<int>;
-        using ContainerType = ForwardTestContainer<Type, 5>;
-
-    protected:
-        template<Usize N>
-        inline ForwardTestContainer<Type, N> MakeContainer()
-        {
-            ForwardTestContainer<Type, N> container;
-            for (Usize index = 0; index < N; ++index)
-                container[index] = std::make_shared<int>(index * index);
-
-            return container;
-        }
-    };
-
     // Algorithms::Copy(Iter, Iter, OutIter)
-    TEST_F(CopyTest, Copy)
+    TEST(CopyTest, Copy)
     {
+        using ContainerType = ForwardTestContainer<std::shared_ptr<int>, 5>;
         ContainerType source = {
             std::make_shared<int>(20),
             std::make_shared<int>(32),
@@ -41,7 +24,14 @@ namespace
         for (int index = 0; index < 5; ++index)
             ASSERT_EQ(source[index].use_count(), 1);
 
-        ContainerType destination = MakeContainer<5>();
+        ContainerType destination = {
+            std::make_shared<int>(213123),
+            std::make_shared<int>(4517),
+            std::make_shared<int>(81),
+            std::make_shared<int>(23),
+            std::make_shared<int>(91),
+        };
+
         auto iterator = Algorithms::Copy(
             source.GetBegin(),
             source.GetEnd(),
@@ -61,8 +51,9 @@ namespace
     }
 
     // Algorithms::CopyN(Iter, Size, OutIter)
-    TEST_F(CopyTest, CopyN)
+    TEST(CopyTest, CopyN)
     {
+        using ContainerType = ForwardTestContainer<std::shared_ptr<int>, 5>;
         ContainerType source = {
             std::make_shared<int>(20),
             std::make_shared<int>(32),
@@ -74,7 +65,14 @@ namespace
         for (int index = 0; index < 5; ++index)
             ASSERT_EQ(source[index].use_count(), 1);
 
-        ContainerType destination = MakeContainer<5>();
+        ContainerType destination = {
+            std::make_shared<int>(213123),
+            std::make_shared<int>(4517),
+            std::make_shared<int>(81),
+            std::make_shared<int>(23),
+            std::make_shared<int>(91),
+        };
+
         auto iterator = Algorithms::CopyN(
             source.GetBegin(),
             5,
@@ -94,8 +92,9 @@ namespace
     }
 
     // Algorithms::CopyIf(Iter, Iter, OutIter, Pred)
-    TEST_F(CopyTest, CopyIf)
+    TEST(CopyTest, CopyIf)
     {
+        using ContainerType = ForwardTestContainer<std::shared_ptr<int>, 5>;
         ContainerType source = {
             std::make_shared<int>(20),
             std::make_shared<int>(32),
@@ -107,8 +106,15 @@ namespace
         for (int index = 0; index < 5; ++index)
             ASSERT_EQ(source[index].use_count(), 1);
 
-        ForwardTestContainer<Type, 4> destination = MakeContainer<4>();
-        const auto predicate = [](const Type& pointer) -> bool
+        ContainerType destination = {
+            std::make_shared<int>(213123),
+            std::make_shared<int>(4517),
+            std::make_shared<int>(81),
+            std::make_shared<int>(23),
+            std::make_shared<int>(23231),
+        };
+
+        const auto predicate = [](const std::shared_ptr<int>& pointer) -> bool
         {
             return ((*pointer % 2) == 0);
         };
@@ -119,13 +125,14 @@ namespace
             destination.GetBegin(),
             predicate);
 
-        EXPECT_EQ(iterator, destination.GetEnd());
+        auto expected = destination.GetEnd();
+        EXPECT_EQ(iterator.Pointer(), &destination[4]);
 
         std::vector<int> sourceExpected = { 20, 32, 14, 698, 1 };
         for (int index = 0; index < 5; ++index)
             EXPECT_EQ(*source[index], sourceExpected[index]);
 
-        std::vector<int> destExpected = { 20, 32, 14, 698 };
+        std::vector<int> destExpected = { 20, 32, 14, 698, 23231 };
         for (int index = 0; index < 4; ++index)
         {
             EXPECT_EQ(source[index].use_count(), 2);
@@ -135,12 +142,14 @@ namespace
         }
 
         EXPECT_EQ(source[4].use_count(), 1);
+        EXPECT_EQ(destination[4].use_count(), 1);
     }
 
     // Algorithms::CopyBackwards(Iter, Iter, OutIter)
-    TEST_F(CopyTest, CopyBackwards)
+    TEST(CopyTest, CopyBackwards)
     {
-        BidirectionalTestContainer<Type, 5> source = {
+        using ContainerType = BidirectionalTestContainer<std::shared_ptr<int>, 5>;
+        ContainerType source = {
             std::make_shared<int>(20),
             std::make_shared<int>(32),
             std::make_shared<int>(14),
@@ -148,7 +157,7 @@ namespace
             std::make_shared<int>(1),
         };
 
-        BidirectionalTestContainer<Type, 5> destination = {
+        ContainerType destination = {
             std::make_shared<int>(1134),
             std::make_shared<int>(220),
             std::make_shared<int>(123232),

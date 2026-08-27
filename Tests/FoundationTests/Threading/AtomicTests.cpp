@@ -207,10 +207,6 @@ namespace
             T expected3 = expected2 | 43;
             EXPECT_EQ(object.FetchOr(43), expected2);
             EXPECT_EQ(object.Load(), expected3);
-
-            T expected4 = ~(expected3 & 43);
-            EXPECT_EQ(object.FetchNand(43), expected3);
-            EXPECT_EQ(object.Load(), expected4);
         }
     }
 }

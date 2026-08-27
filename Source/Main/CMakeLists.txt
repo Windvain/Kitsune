@@ -5,6 +5,7 @@ add_library(KitsuneMain STATIC
 )
 
 add_library(Kitsune::Main ALIAS KitsuneMain)
+kitsune_set_base_settings(KitsuneMain)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     target_sources(KitsuneMain PRIVATE

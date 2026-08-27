@@ -143,6 +143,7 @@ add_library(KitsuneRuntime SHARED
 )
 
 add_library(Kitsune::Runtime ALIAS KitsuneRuntime)
+kitsune_set_base_settings(KitsuneRuntime)
 
 # CPUID.h should only be included on x86_64 targets. Contains the use of the CPUID
 # instruction, which is specific to the x86 architecture.
@@ -221,24 +222,12 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
         "SHcore.lib"        # Used for DPI support, for example GetDpiForMonitor().
         "comctl32.lib"      # Used in the code for the implementation of the message box.
     )
-
-    target_compile_definitions(KitsuneRuntime PRIVATE
-        # Enable the usage of "wide" functions in the Win32 API.
-        "UNICODE=1"
-        "_UNICODE=1"
-
-        # Undefines MIN() and MAX() macros from the <Windows.h> header.
-        "NOMINMAX=1"
-
-        # Disable warnings from MSVC about using unsafe C functions.
-        "_CRT_SECURE_NO_WARNINGS=1"
-    )
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_sources(KitsuneRuntime PRIVATE
+        "Foundation/MSVC/MSVCAtomic.h"
         "Foundation/MSVC/MSVCBacktrace.cpp"
-        "Foundation/MSVC/MSVCInterlocked.inl"
         "Foundation/MSVC/MSVCSystemInformation.cpp"
 
         "KitsuneRuntime.manifest"
@@ -250,39 +239,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         "dbghelp.lib"       # Used in the backtrace code for retrieving stack traces.
     )
 
-    target_compile_options(KitsuneRuntime PRIVATE
-        "/Zc:wchar_t"                 # Treat wchar_t as a native type.
-        "/Zc:preprocessor"            # Use a C++ standard conforming preprocessor.
-
-        "/utf-8"                      # Specifies the source and execution charset as UTF-8.
-        "/MP"                         # Compile the engine source with multiple processes.
-
-        "/W4"                         # Enable all reasonable warnings.
-        "/WX"                         # Turn all warnings into errors.
-        "/permissive"                 # Enable standards conformance.
-
-        "/wd4244"                     # Disable "conversion from "type1" to "type2"  possible loss of data".
-
-        "/external:anglebrackets"     # Treat files included with angle brackets as external files.
-        "/external:W0"                # Ignore external file warnings & errors.
-    )
-
-    target_compile_options(KitsuneRuntime PRIVATE
-        # /Zi: Create a seperate PDB file with symbols.
-        # /MDd: Link to the debug runtime library.
-        # /Od: Disable optimizations.
-        "$<$<CONFIG:Debug>:/Zi;/MDd;/Od>"
-
-        # /Zi: Create a seperate PDB file with symbols.
-        # /MD: Link to the release runtime library.
-        # /O2: Enable level 2 optimizations.
-        "$<$<CONFIG:Optimized>:/Zi;/MD;/O2>"
-
-        # /MD: Link to the release runtime library.
-        # /Ox: Optimize for speed.
-        "$<$<CONFIG:Production>:/MD;/Ox>"
-    )
-
     # Intrinsics are used in header files, which means that all executables using
     # this library will also require this flag to compile successfully.
     if (KITSUNE_ENABLE_SIMD_OPTIMIZATIONS AND ${KITSUNE_TARGET_ARCHITECTURE} STREQUAL "x86_64")
@@ -290,7 +246,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_sources(KitsuneRuntime PRIVATE
-        "Foundation/Clang/ClangAtomicMacros.h"
+        "Foundation/Clang/ClangAtomic.h"
         "Foundation/Clang/ClangBacktrace.cpp"
     )
 
@@ -308,28 +264,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         message(STATUS "libbacktrace FOUND: FALSE")
         message(WARNING "Dependency libbacktrace required for obtaining backtraces was not found. Backtraces will be disabled.")
     endif()
-
-    target_compile_options(KitsuneRuntime PRIVATE
-        "-Wall"                          # Enable all warnings about construction.
-        "-Wextra"                        # Enable warnings that aren"t enabled by -Wall.
-        "-Werror"                        # Turn all warnings into errors.
-
-        "-pedantic"                      # Enable warnings about compiler extensions.
-        "-Wshadow"                       # Warn when a local declaration shadows another.
-    )
-
-    target_compile_options(KitsuneRuntime PRIVATE
-        # /-g: Generate debug info.
-        # /O0: Disable optimizations.
-        "$<$<CONFIG:Debug>:-g;-O0>"
-
-        # -g: Generate debug info.
-        # -O2: Enable level 2 optimizations.
-        "$<$<CONFIG:Optimized>:-g;-O2>"
-
-        # /Ox: Optimize level 3 optimizations.
-        "$<$<CONFIG:Production>:-O3>"
-    )
 
     # Intrinsics are used in header files, which means that all executables using
     # this library will also require this flag to compile successfully.

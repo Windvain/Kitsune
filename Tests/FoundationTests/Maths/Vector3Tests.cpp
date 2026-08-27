@@ -24,30 +24,31 @@ namespace
     template<typename T>
     struct ToCast
     {
-        explicit ToCast(T value)
+        inline explicit ToCast(T value = T())
             : Number(value)
         {
         }
 
-        ToCast(const FromCast<T>& value)
+        inline ToCast(const FromCast<T>& value)
             : Number(value.Number)
         {
         }
 
-        ToCast(FromCast<T>&& value)
-            : Number(std::exchange(value.Number, 0))
+        inline ToCast(FromCast<T>&& value)
+            : Number(std::exchange(value.Number, T(0)))
         {
         }
 
-        ToCast& operator=(const FromCast<T>& value)
+    public:
+        inline ToCast& operator=(const FromCast<T>& value)
         {
             Number = value.Number;
             return *this;
         }
 
-        ToCast& operator=(FromCast<T>&& value)
+        inline ToCast& operator=(FromCast<T>&& value)
         {
-            Number = std::exchange(value.Number, 0);
+            Number = std::exchange(value.Number, T(0));
             return *this;
         }
 
