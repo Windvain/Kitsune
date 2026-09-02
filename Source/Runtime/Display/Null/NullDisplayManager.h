@@ -30,15 +30,15 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline Array<DisplayID> GetDisplays() const override
+        inline Array<DisplayId> GetDisplays() const override
         {
             return { GetMainDisplay() };
         }
 
         [[nodiscard]]
-        inline DisplayID GetMainDisplay() const override
+        inline DisplayId GetMainDisplay() const override
         {
-            return DisplayID();
+            return DisplayId();
         }
 
         [[nodiscard]]
@@ -50,9 +50,9 @@ namespace Kitsune
     public:
         [[nodiscard]]
         inline DisplayInformation GetDisplayInformation(
-            DisplayID displayID) const override
+            DisplayId displayId) const override
         {
-            if (!IsDisplayConnected(displayID))
+            if (!IsDisplayConnected(displayId))
             {
                 throw InvalidArgumentException(
                     "Tried to set the orientation of an invalid display.");
@@ -62,17 +62,17 @@ namespace Kitsune
         }
 
         [[nodiscard]]
-        inline bool IsDisplayConnected(DisplayID displayID) const override
+        inline bool IsDisplayConnected(DisplayId displayId) const override
         {
-            return (displayID == GetMainDisplay());
+            return (displayId == GetMainDisplay());
         }
 
     public:
         inline void SetDisplayOrientation(
-            DisplayID displayID,
+            DisplayId displayId,
             DisplayOrientation orientation) override
         {
-            if (!IsDisplayConnected(displayID))
+            if (!IsDisplayConnected(displayId))
             {
                 throw InvalidArgumentException(
                     "Tried to set the orientation of an invalid display.");

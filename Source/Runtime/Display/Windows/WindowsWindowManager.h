@@ -29,43 +29,43 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        WindowID CreateWindow(const WindowConfigurations& configs) override;
+        WindowId CreateWindow(const WindowConfigurations& configs) override;
 
-        void DestroyWindow(WindowID windowID) override;
+        void DestroyWindow(WindowId windowId) override;
 
         [[nodiscard]]
-        inline bool IsWindowClosed(WindowID windowID) const override
+        inline bool IsWindowClosed(WindowId windowId) const override
         {
             return !Algorithms::Contains(
                 m_Windows.GetBegin(), m_Windows.GetEnd(),
-                reinterpret_cast<WindowsWindow*>(windowID));
+                reinterpret_cast<WindowsWindow*>(windowId));
         }
 
     public:
         [[nodiscard]]
-        Vector2<Uint32> GetWindowSize(WindowID windowID) const override;
+        Vector2<Uint32> GetWindowSize(WindowId windowId) const override;
 
         [[nodiscard]]
-        Vector2<Int32> GetWindowPosition(WindowID windowID) const override;
+        Vector2<Int32> GetWindowPosition(WindowId windowId) const override;
 
         [[nodiscard]]
-        String GetWindowTitle(WindowID windowID) const override;
+        String GetWindowTitle(WindowId windowId) const override;
 
         [[nodiscard]]
-        WindowState GetWindowState(WindowID windowID) const override;
+        WindowState GetWindowState(WindowId windowId) const override;
 
         [[nodiscard]]
-        bool IsWindowVisible(WindowID windowID) const override;
+        bool IsWindowVisible(WindowId windowId) const override;
 
     public:
-        void SetWindowSize(WindowID windowID, const Vector2<Uint32>& size) override;
+        void SetWindowSize(WindowId windowId, const Vector2<Uint32>& size) override;
         void SetWindowPosition(
-            WindowID windowID, const Vector2<Int32>& position) override;
+            WindowId windowId, const Vector2<Int32>& position) override;
 
-        void SetWindowTitle(WindowID windowID, StringView title) override;
-        void SetWindowState(WindowID windowID, WindowState state) override;
+        void SetWindowTitle(WindowId windowId, StringView title) override;
+        void SetWindowState(WindowId windowId, WindowState state) override;
 
-        void SetWindowVisibility(WindowID windowID, bool visible) override;
+        void SetWindowVisibility(WindowId windowId, bool visible) override;
 
     private:
         [[nodiscard]] static DWORD GetWindowStyles(WindowCreationFlags flags);

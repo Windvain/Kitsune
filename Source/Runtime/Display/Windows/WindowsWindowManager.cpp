@@ -54,7 +54,7 @@ namespace Kitsune
         }
     }
 
-    WindowID WindowsWindowManager::CreateWindow(const WindowConfigurations& configs)
+    WindowId WindowsWindowManager::CreateWindow(const WindowConfigurations& configs)
     {
         DWORD styles = GetWindowStyles(configs.Flags) | WS_VISIBLE;
         DWORD exStyles = GetWindowExStyles();
@@ -100,22 +100,22 @@ namespace Kitsune
             throw SystemException("Failed to create a window using CreateWindowExW().");
 
         WindowsWindow* windowPointer = window.Get();
-        auto windowID = reinterpret_cast<WindowID>(windowPointer);
+        auto windowId = reinterpret_cast<WindowId>(windowPointer);
 
         m_Windows.PushBack(Move(window));
-        SetWindowState(windowID, configs.State);
+        SetWindowState(windowId, configs.State);
 
         KITSUNE_UNUSED(::SetWindowLongPtrW(
             windowPointer->Handle,
             GWLP_USERDATA,
             reinterpret_cast<LPARAM>(windowPointer)));
 
-        return windowID;
+        return windowId;
     }
 
-    void WindowsWindowManager::DestroyWindow(WindowID windowID)
+    void WindowsWindowManager::DestroyWindow(WindowId windowId)
     {
-        auto* window = reinterpret_cast<WindowsWindow*>(windowID);
+        auto* window = reinterpret_cast<WindowsWindow*>(windowId);
         auto iter = Algorithms::Find(
             m_Windows.GetBegin(), m_Windows.GetEnd(), window);
 
@@ -126,15 +126,15 @@ namespace Kitsune
         m_Windows.RemoveUnsorted(iter);
     }
 
-    Vector2<Uint32> WindowsWindowManager::GetWindowSize(WindowID windowID) const
+    Vector2<Uint32> WindowsWindowManager::GetWindowSize(WindowId windowId) const
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
-        auto handle = reinterpret_cast<WindowsWindow*>(windowID)->Handle;
+        auto handle = reinterpret_cast<WindowsWindow*>(windowId)->Handle;
         RECT rect = { 0, 0, 0, 0 };
 
         if (!::GetClientRect(handle, &rect))
@@ -143,16 +143,16 @@ namespace Kitsune
         return { Uint32(rect.right), Uint32(rect.bottom) };
     }
 
-    Vector2<Int32> WindowsWindowManager::GetWindowPosition(WindowID windowID) const
+    Vector2<Int32> WindowsWindowManager::GetWindowPosition(WindowId windowId) const
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
         POINT position = { 0, 0 };
-        auto handle = reinterpret_cast<WindowsWindow*>(windowID)->Handle;
+        auto handle = reinterpret_cast<WindowsWindow*>(windowId)->Handle;
 
         if (!::ClientToScreen(handle, &position))
             throw SystemException("Failed to get the window's position.");
@@ -160,15 +160,15 @@ namespace Kitsune
         return { position.x, position.y };
     }
 
-    String WindowsWindowManager::GetWindowTitle(WindowID windowID) const
+    String WindowsWindowManager::GetWindowTitle(WindowId windowId) const
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
-        auto handle = reinterpret_cast<WindowsWindow*>(windowID)->Handle;
+        auto handle = reinterpret_cast<WindowsWindow*>(windowId)->Handle;
         int length = ::GetWindowTextLengthW(handle);
 
         if (length == 0)
@@ -184,15 +184,15 @@ namespace Kitsune
         return UTF16ToUTF8<wchar_t, char>(wideTitle);
     }
 
-    WindowState WindowsWindowManager::GetWindowState(WindowID windowID) const
+    WindowState WindowsWindowManager::GetWindowState(WindowId windowId) const
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
-        auto* window = reinterpret_cast<WindowsWindow*>(windowID);
+        auto* window = reinterpret_cast<WindowsWindow*>(windowId);
         if (::IsZoomed(window->Handle))
             return WindowState::Maximized;
         else if (::IsIconic(window->Handle))
@@ -206,37 +206,37 @@ namespace Kitsune
             return WindowState::Windowed;
     }
 
-    bool WindowsWindowManager::IsWindowVisible(WindowID windowID) const
+    bool WindowsWindowManager::IsWindowVisible(WindowId windowId) const
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
-        return ::IsWindowVisible(reinterpret_cast<WindowsWindow*>(windowID)->Handle);
+        return ::IsWindowVisible(reinterpret_cast<WindowsWindow*>(windowId)->Handle);
     }
 
     void WindowsWindowManager::SetWindowSize(
-        WindowID windowID, const Vector2<Uint32>& size)
+        WindowId windowId, const Vector2<Uint32>& size)
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
-        if (GetWindowState(windowID) != WindowState::Windowed)
+        if (GetWindowState(windowId) != WindowState::Windowed)
         {
             KITSUNE_WARN_FORMAT(
                 "Tried to set the size of a window (ID: {0}) when the window is "
                 "not in the WindowState::Windowed state.",
-                windowID);
+                windowId);
 
             return;
         }
 
-        auto handle = reinterpret_cast<WindowsWindow*>(windowID)->Handle;
+        auto handle = reinterpret_cast<WindowsWindow*>(windowId)->Handle;
 
         DWORD style = ::GetWindowLongPtrW(handle, GWL_STYLE);
         DWORD exStyle = ::GetWindowLongPtrW(handle, GWL_EXSTYLE);
@@ -257,30 +257,30 @@ namespace Kitsune
     }
 
     void WindowsWindowManager::SetWindowPosition(
-        WindowID windowID, const Vector2<Int32>& position)
+        WindowId windowId, const Vector2<Int32>& position)
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
-        if (GetWindowState(windowID) != WindowState::Windowed)
+        if (GetWindowState(windowId) != WindowState::Windowed)
         {
             KITSUNE_WARN_FORMAT(
                 "Tried to set the position of a window (ID: {0}) when the window is "
                 "not in the WindowState::Windowed state.",
-                windowID);
+                windowId);
 
             return;
         }
 
-        auto handle = reinterpret_cast<WindowsWindow*>(windowID)->Handle;
+        auto handle = reinterpret_cast<WindowsWindow*>(windowId)->Handle;
 
         DWORD style = ::GetWindowLongPtrW(handle, GWL_STYLE);
         DWORD exStyle = ::GetWindowLongPtrW(handle, GWL_EXSTYLE);
 
-        auto size = static_cast<Vector2<LONG>>(GetWindowSize(windowID));
+        auto size = static_cast<Vector2<LONG>>(GetWindowSize(windowId));
         RECT rect = { position.X, position.Y, size.X, size.Y };
 
         AdjustWindowRect(&rect, style, false, exStyle, GetWindowDPI(handle));
@@ -288,46 +288,46 @@ namespace Kitsune
             throw SystemException("Failed to set the window's position.");
     }
 
-    void WindowsWindowManager::SetWindowTitle(WindowID windowID, StringView title)
+    void WindowsWindowManager::SetWindowTitle(WindowId windowId, StringView title)
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
         WideString wideTitle = UTF8ToUTF16<char, wchar_t>(title);
-        auto handle = reinterpret_cast<WindowsWindow*>(windowID)->Handle;
+        auto handle = reinterpret_cast<WindowsWindow*>(windowId)->Handle;
 
         if (!::SetWindowTextW(handle, wideTitle.Raw()))
             throw SystemException("Failed to set the window's title.");
     }
 
-    void WindowsWindowManager::SetWindowState(WindowID windowID, WindowState state)
+    void WindowsWindowManager::SetWindowState(WindowId windowId, WindowState state)
     {
-        auto* window = reinterpret_cast<WindowsWindow*>(windowID);
-        if (IsWindowClosed(windowID))
+        auto* window = reinterpret_cast<WindowsWindow*>(windowId);
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
         }
 
-        if (!IsWindowVisible(windowID))
+        if (!IsWindowVisible(windowId))
         {
             KITSUNE_WARN_FORMAT(
                 "Tried to set the state of an invisible window. (ID: {0}) This "
                 "behaviour is platform-specific and will therefore be ignored. "
                 "Call SetWindowVisibility() first.",
-                windowID);
+                windowId);
 
             return;
         }
 
-        if (state == GetWindowState(windowID))
+        if (state == GetWindowState(windowId))
             return;
 
         // Revert fullscreen mode before calling ::ShowWindow.
-        if (GetWindowState(windowID) == WindowState::Fullscreen)
+        if (GetWindowState(windowId) == WindowState::Fullscreen)
         {
             ::SetWindowLongPtrW(window->Handle, GWL_STYLE, window->PrevStyle);
             if (!::SetWindowPlacement(window->Handle, &window->PrevPlacement))
@@ -363,7 +363,7 @@ namespace Kitsune
         case WindowState::Fullscreen:
         {
             // Set the window back to windowed mode.
-            if (GetWindowState(windowID) != WindowState::Windowed)
+            if (GetWindowState(windowId) != WindowState::Windowed)
                 ::ShowWindow(window->Handle, SW_RESTORE);
 
             // Thank you Raymond!
@@ -410,9 +410,9 @@ namespace Kitsune
         }
     }
 
-    void WindowsWindowManager::SetWindowVisibility(WindowID windowID, bool visible)
+    void WindowsWindowManager::SetWindowVisibility(WindowId windowId, bool visible)
     {
-        if (IsWindowClosed(windowID))
+        if (IsWindowClosed(windowId))
         {
             throw InvalidArgumentException(
                 "The specified window is invalid. It has been closed.");
@@ -420,7 +420,7 @@ namespace Kitsune
 
         DWORD showFlags = visible ? SW_SHOW : SW_HIDE;
         KITSUNE_UNUSED(::ShowWindow(
-            reinterpret_cast<WindowsWindow*>(windowID)->Handle,
+            reinterpret_cast<WindowsWindow*>(windowId)->Handle,
             showFlags));
     }
 
@@ -441,18 +441,18 @@ namespace Kitsune
     LRESULT WindowsWindowManager::WindowProcedure(
         HWND handle, UINT message, WPARAM wparam, LPARAM lparam)
     {
-        auto windowID = reinterpret_cast<WindowID>(
+        auto windowId = reinterpret_cast<WindowId>(
             ::GetWindowLongPtrW(handle, GWLP_USERDATA));
 
         // The window hasn't been fully created yet, send the messages over to
         // DefWindowProc.
-        if (windowID == nullptr)
+        if (windowId == nullptr)
             return DefWindowProcW(handle, message, wparam, lparam);
 
         switch (message)
         {
         case WM_CLOSE:
-            WindowManager::GetInstance()->DestroyWindow(windowID);
+            WindowManager::GetInstance()->DestroyWindow(windowId);
             break;
 
         default:

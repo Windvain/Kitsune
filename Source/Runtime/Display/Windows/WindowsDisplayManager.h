@@ -21,25 +21,25 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline Array<DisplayID> GetDisplays() const override
+        inline Array<DisplayId> GetDisplays() const override
         {
-            Array<DisplayID> displayIDs;
+            Array<DisplayId> displayIds;
             for (const ScopedPtr<WindowsDisplay>& display : m_Displays)
-                displayIDs.PushBack(static_cast<void*>(display.Get()));
+                displayIds.PushBack(static_cast<void*>(display.Get()));
 
-            return displayIDs;
+            return displayIds;
         }
 
         [[nodiscard]]
-        inline DisplayID GetMainDisplay() const override
+        inline DisplayId GetMainDisplay() const override
         {
             // During the updating of all of our displays, we will insert the main
             // display at the beginning.
-            DisplayID displayID = nullptr;
+            DisplayId displayId = nullptr;
             if (!m_Displays.IsEmpty())
-                displayID = static_cast<void*>(m_Displays[0].Get());
+                displayId = static_cast<void*>(m_Displays[0].Get());
 
-            return displayID;
+            return displayId;
         }
 
         [[nodiscard]]
@@ -50,18 +50,18 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        DisplayInformation GetDisplayInformation(DisplayID displayID) const override;
+        DisplayInformation GetDisplayInformation(DisplayId displayId) const override;
 
         [[nodiscard]]
-        inline bool IsDisplayConnected(DisplayID displayID) const override
+        inline bool IsDisplayConnected(DisplayId displayId) const override
         {
             return Algorithms::Contains(
-                m_Displays.GetBegin(), m_Displays.GetEnd(), displayID);
+                m_Displays.GetBegin(), m_Displays.GetEnd(), displayId);
         }
 
     public:
         void SetDisplayOrientation(
-            DisplayID displayID,
+            DisplayId displayId,
             DisplayOrientation orientation) override;
 
     private:

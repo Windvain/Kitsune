@@ -79,9 +79,9 @@ namespace Kitsune
     }
 
     DisplayInformation WindowsDisplayManager::GetDisplayInformation(
-        DisplayID displayID) const
+        DisplayId displayId) const
     {
-        auto* displayPointer = static_cast<WindowsDisplay*>(displayID);
+        auto* displayPointer = static_cast<WindowsDisplay*>(displayId);
         auto iter = Algorithms::Find(
             m_Displays.GetBegin(), m_Displays.GetEnd(), displayPointer);
 
@@ -151,7 +151,7 @@ namespace Kitsune
     }
 
     void WindowsDisplayManager::SetDisplayOrientation(
-        DisplayID displayID,
+        DisplayId displayId,
         DisplayOrientation orientation)
     {
         KITSUNE_ENGINE_WARN(
@@ -181,7 +181,7 @@ namespace Kitsune
             break;
         }
 
-        auto* displayPointer = static_cast<WindowsDisplay*>(displayID);
+        auto* displayPointer = static_cast<WindowsDisplay*>(displayId);
         auto iter = Algorithms::Find(
             m_Displays.GetBegin(), m_Displays.GetEnd(), displayPointer);
 
