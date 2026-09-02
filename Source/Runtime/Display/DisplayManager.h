@@ -73,14 +73,14 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        virtual DisplayInformation GetDisplayInformation(DisplayId displayID) const = 0;
+        virtual DisplayInformation GetDisplayInformation(DisplayId displayId) const = 0;
 
         [[nodiscard]]
-        virtual bool IsDisplayConnected(DisplayId displayID) const = 0;
+        virtual bool IsDisplayConnected(DisplayId displayId) const = 0;
 
     public:
         virtual void SetDisplayOrientation(
-            DisplayId displayID,
+            DisplayId displayId,
             DisplayOrientation orientation) = 0;
 
     private:
