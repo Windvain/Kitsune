@@ -6,7 +6,7 @@
 #include "Foundation/Common/Types.h"
 #include "Foundation/Templates/Forward.h"
 
-#include "Foundation/Memory/MemoryApi.h"
+#include "Foundation/Memory/MemoryAPI.h"
 #include "Foundation/Memory/BadAllocException.h"
 
 namespace Kitsune
@@ -60,7 +60,7 @@ namespace Kitsune
         [[nodiscard]]
         inline static T* New(Args&&... args)
         {
-            void* pointer = s_MemoryApi->TryNew(sizeof(T), alignof(T));
+            void* pointer = s_MemoryAPI->TryNew(sizeof(T), alignof(T));
             if (pointer == nullptr)
                 throw BadAllocException();
 
@@ -71,7 +71,7 @@ namespace Kitsune
         inline static void Delete(T* pointer)
         {
             DestroyAt(pointer);
-            s_MemoryApi->Delete(pointer);
+            s_MemoryAPI->Delete(pointer);
         }
 
     public:
@@ -80,6 +80,6 @@ namespace Kitsune
 
     private:
         static bool s_Initialized;
-        static MemoryApi* s_MemoryApi;
+        static MemoryAPI* s_MemoryAPI;
     };
 }
