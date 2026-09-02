@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/Threading/Atomic.h"
+#include "Foundation/Threading/Atomic.h"        // IWYU pragma: keep
 #include "Foundation/Threading/ThreadSafety.h"
 
 #include "Foundation/Memory/ScopedPtr.h"

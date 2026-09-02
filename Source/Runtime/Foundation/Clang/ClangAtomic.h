@@ -2,7 +2,6 @@
 
 // IWYU pragma: private, include "Threading/Atomic.h"
 #include <concepts>
-#include "Foundation/Common/Macros.h"
 
 #include "Foundation/Memory/AddressOf.h"
 #include "Foundation/Diagnostics/Assert.h"
