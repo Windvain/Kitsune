@@ -24,7 +24,7 @@ namespace Kitsune
 
     public:
         [[nodiscard]]
-        inline WindowID CreateWindow(const WindowConfigurations& configs) override
+        inline WindowId CreateWindow(const WindowConfigurations& configs) override
         {
             NullWindow window = {
                 .Title = configs.Title,
@@ -36,14 +36,14 @@ namespace Kitsune
             };
 
             m_Windows.PushBack(MakeScoped<NullWindow>(window));
-            return reinterpret_cast<WindowID>(m_Windows.Back().Get());
+            return reinterpret_cast<WindowId>(m_Windows.Back().Get());
         }
 
-        inline void DestroyWindow(WindowID windowID) override
+        inline void DestroyWindow(WindowId windowId) override
         {
             auto iter = Algorithms::Find(
                 m_Windows.GetBegin(), m_Windows.GetEnd(),
-                reinterpret_cast<NullWindow*>(windowID));
+                reinterpret_cast<NullWindow*>(windowId));
 
             if (iter == m_Windows.GetEnd())
                 throw InvalidArgumentException("The window is invalid.");
@@ -51,91 +51,91 @@ namespace Kitsune
             m_Windows.RemoveUnsorted(iter);
         }
 
-        inline bool IsWindowClosed(WindowID windowID) const override
+        inline bool IsWindowClosed(WindowId windowId) const override
         {
             return !Algorithms::Contains(
                 m_Windows.GetBegin(), m_Windows.GetEnd(),
-                reinterpret_cast<NullWindow*>(windowID));
+                reinterpret_cast<NullWindow*>(windowId));
         }
 
     public:
         [[nodiscard]]
-        inline Vector2<Uint32> GetWindowSize(WindowID windowID) const override
+        inline Vector2<Uint32> GetWindowSize(WindowId windowId) const override
         {
-            return GetWindow(windowID)->Size;
+            return GetWindow(windowId)->Size;
         }
 
         [[nodiscard]]
-        inline Vector2<Int32> GetWindowPosition(WindowID windowID) const override
+        inline Vector2<Int32> GetWindowPosition(WindowId windowId) const override
         {
-            return GetWindow(windowID)->Position;
+            return GetWindow(windowId)->Position;
         }
 
         [[nodiscard]]
-        inline String GetWindowTitle(WindowID windowID) const override
+        inline String GetWindowTitle(WindowId windowId) const override
         {
-            return GetWindow(windowID)->Title;
+            return GetWindow(windowId)->Title;
         }
 
         [[nodiscard]]
-        inline WindowState GetWindowState(WindowID windowID) const override
+        inline WindowState GetWindowState(WindowId windowId) const override
         {
-            return GetWindow(windowID)->State;
+            return GetWindow(windowId)->State;
         }
 
         [[nodiscard]]
-        inline bool IsWindowVisible(WindowID windowID) const override
+        inline bool IsWindowVisible(WindowId windowId) const override
         {
-            return GetWindow(windowID)->Visible;
+            return GetWindow(windowId)->Visible;
         }
 
     public:
-        inline void SetWindowSize(WindowID windowID, const Vector2<Uint32>& size) override
+        inline void SetWindowSize(WindowId windowId, const Vector2<Uint32>& size) override
         {
-            auto& window = GetWindow(windowID);
+            auto& window = GetWindow(windowId);
             if (window->State != WindowState::Windowed)
                 return;
 
             if (!bool(window->Flags & WindowCreationFlags::ResizeEnabled))
                 return;
 
-            GetWindow(windowID)->Size = size;
+            GetWindow(windowId)->Size = size;
         }
 
         inline void SetWindowPosition(
-            WindowID windowID, const Vector2<Int32>& position) override
+            WindowId windowId, const Vector2<Int32>& position) override
         {
-            auto& window = GetWindow(windowID);
+            auto& window = GetWindow(windowId);
             if (window->State != WindowState::Windowed)
                 return;
 
-            GetWindow(windowID)->Position = position;
+            GetWindow(windowId)->Position = position;
         }
 
-        inline void SetWindowTitle(WindowID windowID, StringView title) override
+        inline void SetWindowTitle(WindowId windowId, StringView title) override
         {
-            GetWindow(windowID)->Title = title;
+            GetWindow(windowId)->Title = title;
         }
 
-        inline void SetWindowState(WindowID windowID, WindowState state) override
+        inline void SetWindowState(WindowId windowId, WindowState state) override
         {
-            if (!IsWindowVisible(windowID))
+            if (!IsWindowVisible(windowId))
                 return;
 
-            GetWindow(windowID)->State = state;
+            GetWindow(windowId)->State = state;
         }
 
-        inline void SetWindowVisibility(WindowID windowID, bool visible) override
+        inline void SetWindowVisibility(WindowId windowId, bool visible) override
         {
-            GetWindow(windowID)->Visible = visible;
+            GetWindow(windowId)->Visible = visible;
         }
 
     private:
-        inline ScopedPtr<NullWindow>& GetWindow(WindowID windowID)
+        inline ScopedPtr<NullWindow>& GetWindow(WindowId windowId)
         {
             auto iter = Algorithms::Find(
                 m_Windows.GetBegin(), m_Windows.GetEnd(),
-                reinterpret_cast<NullWindow*>(windowID));
+                reinterpret_cast<NullWindow*>(windowId));
 
             if (iter == m_Windows.GetEnd())
                 throw InvalidArgumentException("The window ID is invalid.");
@@ -143,11 +143,11 @@ namespace Kitsune
             return *iter;
         }
 
-        inline const ScopedPtr<NullWindow>& GetWindow(WindowID windowID) const
+        inline const ScopedPtr<NullWindow>& GetWindow(WindowId windowId) const
         {
             auto iter = Algorithms::Find(
                 m_Windows.GetBegin(), m_Windows.GetEnd(),
-                reinterpret_cast<NullWindow*>(windowID));
+                reinterpret_cast<NullWindow*>(windowId));
 
             if (iter == m_Windows.GetEnd())
                 throw InvalidArgumentException("The window ID is invalid.");

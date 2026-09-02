@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Foundation/Common/Macros.h"
-#include "Foundation/Memory/MemoryApi.h"
+#include "Foundation/Memory/MemoryAPI.h"
 
 namespace Kitsune
 {
     // Implementation of the Memory API interface using the default
     // C runtime malloc and free. (Well, actually its std::aligned_alloc..)
-    class CMallocApi : public MemoryApi
+    class CMallocAPI : public MemoryAPI
     {
     public:
         [[nodiscard]]

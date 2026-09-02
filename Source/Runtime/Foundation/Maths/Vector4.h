@@ -33,8 +33,8 @@ namespace Kitsune
         template<
             typename T,
             typename Vec,
-            bool IsSseOptimized = std::is_trivial_v<T> && (sizeof(T) == 4),
-            bool IsAvxOptimized = std::is_trivial_v<T> && (sizeof(T) == 8)>
+            bool IsSSEOptimized = std::is_trivial_v<T> && (sizeof(T) == 4),
+            bool IsAVXOptimized = std::is_trivial_v<T> && (sizeof(T) == 8)>
         struct Vector4Base
         {
             using StorageType = T[4];

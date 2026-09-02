@@ -1,4 +1,4 @@
-#include "Foundation/Memory/CMallocApi.h"
+#include "Foundation/Memory/CMallocAPI.h"
 #include "Foundation/Maths/Maximum.h"
 
 #include "Foundation/Common/Predefined.h"
@@ -12,12 +12,12 @@
 
 namespace Kitsune
 {
-    void* CMallocApi::TryAllocate(Usize bytes)
+    void* CMallocAPI::TryAllocate(Usize bytes)
     {
         return TryAllocate(bytes, s_DefaultAlignment);
     }
 
-    void* CMallocApi::TryAllocate(Usize bytes, Usize alignment)
+    void* CMallocAPI::TryAllocate(Usize bytes, Usize alignment)
     {
         KITSUNE_ASSERT(
             bytes != 0,
@@ -28,7 +28,7 @@ namespace Kitsune
             (alignment & (alignment - 1)) == 0,
             "Alignment has to be a power of two. This should have been "
             "checked in the Memory class before sending a request for "
-            "memory to MemoryApi.");
+            "memory to MemoryAPI.");
 
         alignment = Maths::Maximum(alignment, s_DefaultAlignment);
 
@@ -40,7 +40,7 @@ namespace Kitsune
 #endif
     }
 
-    void CMallocApi::Free(void* pointer, Usize bytes)
+    void CMallocAPI::Free(void* pointer, Usize bytes)
     {
         KITSUNE_UNUSED(bytes);
         KITSUNE_ASSERT(

@@ -1,10 +1,10 @@
 #include "Foundation/Memory/Memory.h"
-#include "Foundation/Memory/CMallocApi.h"
+#include "Foundation/Memory/CMallocAPI.h"
 
 namespace Kitsune
 {
     bool Memory::s_Initialized = false;
-    MemoryApi* Memory::s_MemoryApi = nullptr;
+    MemoryAPI* Memory::s_MemoryAPI = nullptr;
 
     bool Memory::InitializeExplicit()
     {
@@ -13,8 +13,8 @@ namespace Kitsune
         if (s_Initialized)
             return true;
 
-        s_MemoryApi = new (std::nothrow) CMallocApi();
-        if (s_MemoryApi != nullptr)
+        s_MemoryAPI = new (std::nothrow) CMallocAPI();
+        if (s_MemoryAPI != nullptr)
             s_Initialized = true;
 
         return s_Initialized;
@@ -22,7 +22,7 @@ namespace Kitsune
 
     void Memory::Shutdown()
     {
-        delete s_MemoryApi;
+        delete s_MemoryAPI;
         s_Initialized = false;
     }
 
@@ -31,7 +31,7 @@ namespace Kitsune
         if ((bytes == 0) || !Memory::InitializeExplicit())
             return nullptr;
 
-        return s_MemoryApi->TryAllocate(bytes);
+        return s_MemoryAPI->TryAllocate(bytes);
     }
 
     void* Memory::TryAllocate(Usize bytes, Usize alignment)
@@ -42,7 +42,7 @@ namespace Kitsune
             return nullptr;
         }
 
-        return s_MemoryApi->TryAllocate(bytes, alignment);
+        return s_MemoryAPI->TryAllocate(bytes, alignment);
     }
 
     void* Memory::Allocate(Usize bytes)
@@ -70,6 +70,6 @@ namespace Kitsune
 
         // No need to lazily initialize. If the user called Free() without calling
         // Allocate(), that means that the pointer is invalid anyways.
-        s_MemoryApi->Free(pointer, bytes);
+        s_MemoryAPI->Free(pointer, bytes);
     }
 }

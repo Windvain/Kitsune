@@ -8,7 +8,7 @@
 #include "Foundation/Diagnostics/SystemException.h"
 
 template<typename T>
-using ComPtr = Microsoft::WRL::ComPtr<T>;
+using COMPtr = Microsoft::WRL::ComPtr<T>;
 
 namespace Kitsune
 {
@@ -37,12 +37,12 @@ namespace Kitsune
         }
     };
 
-    static ComPtr<IEnumWbemClassObject> ExecuteWMIQuery(WideStringView wqlQuery)
+    static COMPtr<IEnumWbemClassObject> ExecuteWMIQuery(WideStringView wqlQuery)
     {
         HRESULT result;
 
         // Get a pointer to the ROOT\CIMV2 namespace.
-        ComPtr<IWbemLocator> wbemLocator;
+        COMPtr<IWbemLocator> wbemLocator;
         result = ::CoCreateInstance(
             CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator,
             &wbemLocator);
@@ -50,7 +50,7 @@ namespace Kitsune
         if (FAILED(result))
             throw SystemException("Failed to create an instance of IWbemLocator.");
 
-        ComPtr<IWbemServices> wbemServices;
+        COMPtr<IWbemServices> wbemServices;
         result = wbemLocator->ConnectServer(
             bstr_t("ROOT\\CIMV2"), nullptr, nullptr,
             nullptr, 0, nullptr, nullptr, &wbemServices);
@@ -67,7 +67,7 @@ namespace Kitsune
             throw SystemException("Failed to set authentication information.");
 
         // Execute our query.
-        ComPtr<IEnumWbemClassObject> enumerator;
+        COMPtr<IEnumWbemClassObject> enumerator;
         result = wbemServices->ExecQuery(
             bstr_t("WQL"), bstr_t(wqlQuery.Data()),
             WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
@@ -80,11 +80,11 @@ namespace Kitsune
     }
 
     template<Invocable<IWbemClassObject*> Func>
-    static void EnumerateWmiObject(const ComPtr<IEnumWbemClassObject>& enumerator,
+    static void EnumerateWMIObject(const COMPtr<IEnumWbemClassObject>& enumerator,
                                    Func func)
     {
         ULONG objectCount = 0;
-        ComPtr<IWbemClassObject> classObject;
+        COMPtr<IWbemClassObject> classObject;
 
         while (enumerator)
         {
@@ -121,7 +121,7 @@ namespace Kitsune
     Array<CPUInformation> SystemInformation::GetCPUInformation()
     {
         COMInitializer initializer{};
-        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
+        COMPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
             L"SELECT Architecture, Manufacturer, Name, NumberOfCores, "
             L"NumberOfLogicalProcessors "
             L"FROM Win32_Processor");
@@ -130,7 +130,7 @@ namespace Kitsune
         ::VariantInit(&variant);
 
         Array<CPUInformation> cpuInfoArray;
-        EnumerateWmiObject(enumerator,
+        EnumerateWMIObject(enumerator,
             [&](IWbemClassObject* classObject)
             {
                 CPUInformation cpuInformation;
@@ -187,7 +187,7 @@ namespace Kitsune
     OperatingSystemInformation SystemInformation::GetOperatingSystemInformation()
     {
         COMInitializer initializer{};
-        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
+        COMPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
             L"SELECT Caption, OSType FROM Win32_OperatingSystem");
 
         VARIANT variant;
@@ -203,7 +203,7 @@ namespace Kitsune
         };
 
         OperatingSystemInformation osInformation;
-        EnumerateWmiObject(enumerator, [&](IWbemClassObject* classObject)
+        EnumerateWMIObject(enumerator, [&](IWbemClassObject* classObject)
         {
             if (SUCCEEDED(GetClassObjectValue(classObject, L"Caption", &variant)))
                 osInformation.m_Name = BstrToUTF8(variant.bstrVal);
@@ -240,7 +240,7 @@ namespace Kitsune
     BatteryInformation SystemInformation::GetBatteryInformation()
     {
         COMInitializer initializer{};
-        ComPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
+        COMPtr<IEnumWbemClassObject> enumerator = ExecuteWMIQuery(
             L"SELECT EstimatedChargeRemaining, BatteryStatus FROM Win32_Battery");
 
         VARIANT variant;
@@ -255,7 +255,7 @@ namespace Kitsune
         };
 
         BatteryInformation batteryInformation;
-        EnumerateWmiObject(enumerator, [&](IWbemClassObject* classObject)
+        EnumerateWMIObject(enumerator, [&](IWbemClassObject* classObject)
         {
             batteryInformation.m_UsesBattery = true;
             if (SUCCEEDED(GetClassObjectValue(

@@ -10,7 +10,7 @@
 
 namespace Kitsune::Details
 {
-    enum AssertButtonConstants : MessageBoxButtonID
+    enum AssertButtonConstants : MessageBoxButtonId
     {
         Abort = 1,
         Ignore = 2
@@ -31,7 +31,7 @@ namespace Kitsune::Details
             location.Line());
     }
 
-    MessageBoxButtonID ShowAssertMessageBox(
+    MessageBoxButtonId ShowAssertMessageBox(
         const char* expression, const char* message,
         const SourceLocation& location)
     {
@@ -76,7 +76,7 @@ namespace Kitsune::Details
                 expression, message);
         }
 
-        MessageBoxButtonID result = ShowAssertMessageBox(
+        MessageBoxButtonId result = ShowAssertMessageBox(
             expression, message, location);
 
         return (result == AssertButtonConstants::Abort);

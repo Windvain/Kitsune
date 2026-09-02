@@ -19,7 +19,7 @@ namespace Kitsune
     };
 
 #if defined(KITSUNE_OS_WINDOWS)
-    using DisplayID = void*;
+    using DisplayId = void*;
 #endif
 
     struct DisplayInformation
@@ -66,21 +66,21 @@ namespace Kitsune
         virtual void Update(double delta) = 0;
 
     public:
-        [[nodiscard]] virtual Array<DisplayID> GetDisplays() const = 0;
-        [[nodiscard]] virtual DisplayID GetMainDisplay() const = 0;
+        [[nodiscard]] virtual Array<DisplayId> GetDisplays() const = 0;
+        [[nodiscard]] virtual DisplayId GetMainDisplay() const = 0;
 
         [[nodiscard]] virtual Usize GetDisplayCount() const = 0;
 
     public:
         [[nodiscard]]
-        virtual DisplayInformation GetDisplayInformation(DisplayID displayID) const = 0;
+        virtual DisplayInformation GetDisplayInformation(DisplayId displayId) const = 0;
 
         [[nodiscard]]
-        virtual bool IsDisplayConnected(DisplayID displayID) const = 0;
+        virtual bool IsDisplayConnected(DisplayId displayId) const = 0;
 
     public:
         virtual void SetDisplayOrientation(
-            DisplayID displayID,
+            DisplayId displayId,
             DisplayOrientation orientation) = 0;
 
     private:
