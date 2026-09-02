@@ -7,7 +7,7 @@
 
 namespace Kitsune
 {
-    using MessageBoxButtonID = Uint16;
+    using MessageBoxButtonId = Uint16;
 
     // Specifies the icon that is shown on the created message box.
     // The visuals of the shown icon is dependent on the operating system.
@@ -22,7 +22,7 @@ namespace Kitsune
     // Represents a button on the created message box.
     struct MessageBoxButton
     {
-        MessageBoxButtonID Id;
+        MessageBoxButtonId Id;
         String Text;
     };
 
@@ -38,8 +38,8 @@ namespace Kitsune
 
     // Shows a platform native message box.
     // Returns a pair of values, the former is true when the message box
-    // was successfully shown, else it is false. The latter returns the ID
+    // was successfully shown, else it is false. The latter returns the Id
     // of the button pressed by the user.
-    KITSUNE_API Pair<bool, MessageBoxButtonID> ShowMessageBox(
+    KITSUNE_API Pair<bool, MessageBoxButtonId> ShowMessageBox(
         const MessageBoxSpecifications& specs);
 }

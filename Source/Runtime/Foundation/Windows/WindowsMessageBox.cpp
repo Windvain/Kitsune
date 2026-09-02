@@ -8,7 +8,7 @@
 
 namespace Kitsune
 {
-    Pair<bool, MessageBoxButtonID> ShowMessageBox(
+    Pair<bool, MessageBoxButtonId> ShowMessageBox(
         const MessageBoxSpecifications& specs)
     {
         TASKDIALOGCONFIG config;
