@@ -1,7 +1,7 @@
 #include "Foundation/Logging/Logger.h"
 
 #include "Foundation/Diagnostics/Assert.h"
-#include "Foundation/Diagnostics/LogicException.h"
+#include "Foundation/Diagnostics/SingletonException.h"
 
 namespace Kitsune
 {
@@ -10,11 +10,7 @@ namespace Kitsune
     Logger::Logger()
     {
         if (s_Instance != nullptr)
-        {
-            throw LogicException(
-                "The Logger class has already been initialized. Please "
-                "do not instantiate another instance of the logger.");
-        }
+            throw SingletonException();
 
         s_Instance = this;
     }

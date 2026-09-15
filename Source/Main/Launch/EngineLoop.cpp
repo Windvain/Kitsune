@@ -6,8 +6,8 @@
 #include "Foundation/Logging/FileLogSink.h"
 #include "Foundation/Logging/ConsoleLogSink.h"
 
-#include "Foundation/Diagnostics/LogicException.h"
 #include "Foundation/Utilities/SystemInformation.h"
+#include "Foundation/Diagnostics/SingletonException.h"
 
 #include "Foundation/Filesystem/Filesystem.h"
 #include "Foundation/Filesystem/ExecutablePath.h"
@@ -20,10 +20,7 @@ namespace Kitsune
     EngineLoop::EngineLoop()
     {
         if (s_Instance != nullptr)
-        {
-            throw LogicException(
-                "An instance of the engine loop has already been created.");
-        }
+            throw SingletonException();
 
         s_Instance = this;
     }
