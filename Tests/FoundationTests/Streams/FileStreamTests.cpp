@@ -372,7 +372,7 @@ namespace
 
         EXPECT_THROW(
             stream.Write(reinterpret_cast<const Byte*>(data), 5),
-            LogicException);
+            IOException);
     }
 
     // FileStream<BufSize, Alloc>::Read(Byte*, Usize)
@@ -395,7 +395,7 @@ namespace
         FileStream stream("./example.txt", FileAccessMode::Write);
         Byte buffer[5];
 
-        EXPECT_THROW(stream.Read(buffer, 5), LogicException);
+        EXPECT_THROW(stream.Read(buffer, 5), IOException);
     }
 
     // FileStream<BufSize, Alloc>::Seek(Ptrdiff, SeekOrigin)

@@ -49,9 +49,9 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Diagnostics/Exception.cpp"
     "Foundation/Diagnostics/Exception.h"
     "Foundation/Diagnostics/InvalidArgumentException.h"
-    "Foundation/Diagnostics/LogicException.h"
     "Foundation/Diagnostics/MessageBox.h"
     "Foundation/Diagnostics/OutOfRangeException.h"
+    "Foundation/Diagnostics/SingletonException.h"
     "Foundation/Diagnostics/SourceLocation.h"
     "Foundation/Diagnostics/SystemException.h"
 
@@ -101,6 +101,7 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Streams/ConsoleWriter.h"
     "Foundation/Streams/FileStream.h"
     "Foundation/Streams/FileWriter.h"
+    "Foundation/Streams/IOException.h"
     "Foundation/Streams/Stream.h"
     "Foundation/Streams/WriterIterator.h"
 

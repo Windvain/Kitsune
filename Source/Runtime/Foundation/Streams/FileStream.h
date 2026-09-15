@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Foundation/Streams/Stream.h"
+#include "Foundation/Streams/IOException.h"
 
 #include "Foundation/Filesystem/Path.h"
 #include "Foundation/Templates/Exchange.h"
@@ -9,7 +10,6 @@
 #include "Foundation/Memory/GlobalAllocator.h"
 
 #include "Foundation/Diagnostics/Assert.h"
-#include "Foundation/Diagnostics/LogicException.h"
 #include "Foundation/Diagnostics/SystemException.h"
 
 namespace Kitsune
@@ -195,7 +195,7 @@ namespace Kitsune
         {
             if (!IsWritable())
             {
-                throw LogicException(
+                throw IOException(
                     "The stream does not have write permissions to "
                     "the opened file.");
             }
@@ -246,7 +246,7 @@ namespace Kitsune
         {
             if (!IsReadable())
             {
-                throw LogicException(
+                throw IOException(
                     "The stream does not have read permissions to "
                     "the opened file.");
             }
@@ -287,7 +287,7 @@ namespace Kitsune
         {
             if (!IsSeekable())
             {
-                throw LogicException(
+                throw IOException(
                     "The file stream is not seekable. If you had called Open() "
                     "with FileOpenMode::Append, the file stream will not be seekable.");
             }
@@ -318,7 +318,7 @@ namespace Kitsune
         {
             if (!IsOpen())
             {
-                throw LogicException(
+                throw IOException(
                     "Could not get the length of a file stream which does not hold "
                     "a file handle/descriptor.");
             }
@@ -332,7 +332,7 @@ namespace Kitsune
         {
             if (!IsOpen())
             {
-                throw LogicException(
+                throw IOException(
                     "Cannot get the properties of a stream without an opened "
                     "file. Did you forget to call Open()?");
             }
@@ -345,7 +345,7 @@ namespace Kitsune
         {
             if (!IsOpen())
             {
-                throw LogicException(
+                throw IOException(
                     "Cannot get the properties of a stream without an opened "
                     "file. Did you forget to call Open()?");
             }
@@ -358,7 +358,7 @@ namespace Kitsune
         {
             if (!IsOpen())
             {
-                throw LogicException(
+                throw IOException(
                     "Cannot get the properties of a stream without an opened "
                     "file. Did you forget to call Open()?");
             }
@@ -383,7 +383,7 @@ namespace Kitsune
         inline void Flush()
         {
             if (!IsWritable())
-                throw LogicException("Cannot flush a read stream.");
+                throw IOException("Cannot flush a read stream.");
 
             m_FileObject.Write(m_Buffer, m_WritePosition - m_Buffer);
             m_WritePosition = m_Buffer;
@@ -394,7 +394,7 @@ namespace Kitsune
         {
             if (!IsOpen())
             {
-                throw LogicException(
+                throw IOException(
                     "Cannot get the properties of a stream without an opened "
                     "file. Did you forget to call Open()?");
             }
