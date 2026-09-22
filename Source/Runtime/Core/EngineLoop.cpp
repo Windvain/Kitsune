@@ -1,4 +1,4 @@
-#include "Launch/EngineLoop.h"
+#include "Core/EngineLoop.h"
 
 #include <cstdlib>
 #include "Foundation/Algorithms/Contains.h"
@@ -65,10 +65,6 @@ namespace Kitsune
 
         SetCurrentDirectory(m_ApplicationDirectory);
 
-        m_Application = CreateApplication(m_CommandLineArguments);
-        if (m_Application == nullptr)
-            Exit(EXIT_FAILURE);
-
         KITSUNE_ENGINE_INFO(
             Launch,
             "Kitsune Engine initialization step ran successfully.");
@@ -77,13 +73,17 @@ namespace Kitsune
     // NOTE: This is done just to suppress warnings. Remove the NOLINT comment once
     // Run() is made non-const.
     // NOLINTNEXTLINE(readability-make-member-function-const)
-    void EngineLoop::Run()
+    void EngineLoop::Run(Application* application)
     {
         KITSUNE_ENGINE_INFO(
             Launch,
             "Running the application, application callbacks will start to be called "
             "from here on!");
 
+        if (application == nullptr)
+            Exit(EXIT_FAILURE);
+
+        m_Application = application;
         while (!m_ExitRequested)
         {
             const auto& window = m_Application->GetWindow();

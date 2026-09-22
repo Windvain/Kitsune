@@ -2,6 +2,8 @@ add_library(KitsuneRuntime SHARED
     "Core/Application.cpp"
     "Core/Application.h"
     "Core/CommandLineArguments.h"
+    "Core/EngineLoop.cpp"
+    "Core/EngineLoop.h"
 
     "Display/Null/NullDisplay.h"
     "Display/Null/NullDisplayManager.h"
@@ -185,6 +187,8 @@ target_compile_definitions(KitsuneRuntime
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     target_sources(KitsuneRuntime PRIVATE
+        "Core/Windows/WindowsEngineLoop.cpp"
+
         "Display/Windows/WindowsDisplay.cpp"
         "Display/Windows/WindowsDisplay.h"
         "Display/Windows/WindowsDisplayManager.cpp"

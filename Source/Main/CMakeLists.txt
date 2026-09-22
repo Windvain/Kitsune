@@ -1,6 +1,4 @@
 add_library(KitsuneMain STATIC
-    "Launch/EngineLoop.cpp"
-    "Launch/EngineLoop.h"
     "UniversalMain.cpp"
 )
 
@@ -9,7 +7,6 @@ kitsune_set_base_settings(KitsuneMain)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     target_sources(KitsuneMain PRIVATE
-        "Windows/WindowsEngineLoop.cpp"
         "Windows/WindowsEntry.cpp"
     )
 else()

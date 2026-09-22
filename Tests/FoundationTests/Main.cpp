@@ -1,7 +1,7 @@
 #include "Core/Application.h"
-#include <gtest/gtest.h>
+#include "Core/EngineLoop.h"
 
-#include "Launch/EngineLoop.h"
+#include <gtest/gtest.h>
 #include "Foundation/Memory/Memory.h"
 
 using namespace Kitsune;
