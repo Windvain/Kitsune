@@ -3,9 +3,6 @@
 #include "Core/Application.h"
 #include "Core/CommandLineArguments.h"
 
-#include "Display/WindowManager.h"
-#include "Display/DisplayManager.h"
-
 #include "Foundation/Logging/Logger.h"
 #include "Foundation/Filesystem/Path.h"
 
@@ -79,9 +76,6 @@ namespace Kitsune
 
         Filesystem::Path m_ApplicationDirectory;
         Filesystem::Path m_LogDirectory;
-
-        DisplayManager* m_DisplayManager = nullptr;
-        WindowManager* m_WindowManager = nullptr;
 
         Int32 m_ExitCode = 0;
         bool m_ExitRequested = false;

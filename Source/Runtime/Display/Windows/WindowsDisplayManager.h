@@ -1,80 +1,78 @@
 #pragma once
 
 #include <Windows.h>
+#undef CreateWindow
+
 #include "Display/DisplayManager.h"
 
-#include "Foundation/Memory/ScopedPtr.h"
-#include "Foundation/Algorithms/Contains.h"
+#include "Display/Windows/WindowsWindow.h"
+#include "Display/Windows/WindowsDisplay.h"
 
 namespace Kitsune
 {
     class WindowsDisplayManager : public DisplayManager
     {
     public:
-        inline WindowsDisplayManager()
-        {
-            Update(0);
-        }
+        KITSUNE_API explicit WindowsDisplayManager(WideStringView className);
+        KITSUNE_API ~WindowsDisplayManager() override;
 
     public:
-        void Update(double delta) override;
+        KITSUNE_API void Update() override;
 
     public:
         [[nodiscard]]
-        inline Array<DisplayId> GetDisplays() const override
+        inline ScopedPtr<Window> CreateWindow(
+            const WindowConfigurations& configurations) override
         {
-            Array<DisplayId> displayIds;
-            for (const ScopedPtr<WindowsDisplay>& display : m_Displays)
-                displayIds.PushBack(static_cast<void*>(display.Get()));
-
-            return displayIds;
-        }
-
-        [[nodiscard]]
-        inline DisplayId GetMainDisplay() const override
-        {
-            // During the updating of all of our displays, we will insert the main
-            // display at the beginning.
-            DisplayId displayId = nullptr;
-            if (!m_Displays.IsEmpty())
-                displayId = static_cast<void*>(m_Displays[0].Get());
-
-            return displayId;
-        }
-
-        [[nodiscard]]
-        inline Usize GetDisplayCount() const override
-        {
-            return m_Displays.Size();
+            return MakeScoped<WindowsWindow>(configurations);
         }
 
     public:
         [[nodiscard]]
-        DisplayInformation GetDisplayInformation(DisplayId displayId) const override;
+        inline Array<SharedPtr<Display>> GetDisplays() const override
+        {
+            Array<SharedPtr<Display>> displays;
+            for (const auto& display : m_Displays)
+                displays.PushBack(display);
+
+            return displays;
+        }
 
         [[nodiscard]]
-        inline bool IsDisplayConnected(DisplayId displayId) const override
+        inline SharedPtr<Display> GetMainDisplay() const override
         {
-            return Algorithms::Contains(
-                m_Displays.GetBegin(), m_Displays.GetEnd(), displayId);
+            if (m_Displays.IsEmpty())
+                return nullptr;
+
+            return m_Displays[0];
         }
 
     public:
-        void SetDisplayOrientation(
-            DisplayId displayId,
-            DisplayOrientation orientation) override;
+        [[nodiscard]]
+        inline const wchar_t* GetWindowClassName()
+        {
+            return m_WindowClassName.Raw();
+        }
+
+    public:
+        inline static WindowsDisplayManager* GetInstance()
+        {
+            return s_Instance;
+        }
 
     private:
-        static BOOL MonitorEnumerationProc(
-            HMONITOR monitor, HDC deviceContext, LPRECT rect, LPARAM lparam);
+        void UpdateDisplays();
+
+        static LRESULT WindowProcedure(
+            HWND handle, UINT message, WPARAM wparam, LPARAM lparam);
 
     private:
-        struct WindowsDisplay
-        {
-            wchar_t DeviceName[32];
-        };
+        static WindowsDisplayManager* s_Instance;
 
-        Array<ScopedPtr<WindowsDisplay>> m_Displays;
-        Array<ScopedPtr<WindowsDisplay>> m_OldDisplays;
+    private:
+        WideString m_WindowClassName;
+
+        Array<SharedPtr<WindowsDisplay>> m_Displays;
+        Array<SharedPtr<WindowsDisplay>> m_OldDisplays;
     };
 }

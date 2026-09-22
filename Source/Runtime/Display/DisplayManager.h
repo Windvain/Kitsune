@@ -1,60 +1,38 @@
 #pragma once
 
-#include "Foundation/Maths/Vector2.h"
-#include "Foundation/String/StringView.h"
+#include "Display/Window.h"
+#include "Display/Display.h"
 
+#include "Foundation/Memory/SharedPtr.h"
 #include "Foundation/Containers/Array.h"
 
 namespace Kitsune
 {
-    // The display's orientation.
-    // Note: Setting a display's orientation to 90° twice doesn't make the display
-    //       rotate 180°, a.k.a display rotations don't stack.
-    enum class DisplayOrientation
-    {
-        Default,
-        Rotated90,
-        Rotated180,
-        Rotated270
-    };
-
-#if defined(KITSUNE_OS_WINDOWS)
-    using DisplayId = void*;
-#endif
-
-    struct DisplayInformation
-    {
-        Vector2<Uint32> Size;
-        Vector2<Int32> Position;
-
-        Uint32 RefreshRate;
-        float Scaling;
-
-        DisplayOrientation Orientation;
-        bool MainDisplay;
-    };
-
     struct DisplayManagerConfigurations
     {
-        StringView DisplayServer;
+        String DisplayServer;
+        String WindowClassName;     // NOTE: Only applies on Windows, will be ignored
+                                    // on other platforms.
 
-        // Ignored when DisplayServer != "Null".
+        // Only applies when DisplayServer == "Null".
         struct
         {
-            Vector2<Uint32> Size;
-            Uint32 RefreshRate;
-            DisplayOrientation Orientation;
-        } NullDisplay;
+            Vector2<Uint32> Size = { 1920, 1080 };
+            Uint32 RefreshRate = 60;
+            float Scaling = 1.0f;
+        } VirtualDisplay;
     };
 
-    class KITSUNE_API DisplayManager
+    class DisplayManager
     {
     public:
         virtual ~DisplayManager() = default;
 
     public:
-        static DisplayManager* Initialize(const DisplayManagerConfigurations& configs);
-        static void Shutdown();
+        KITSUNE_API static DisplayManager* Initialize(
+            const DisplayManagerConfigurations& configs);
+
+        KITSUNE_API static void Shutdown();
 
         [[nodiscard]]
         inline static DisplayManager* GetInstance()
@@ -63,25 +41,21 @@ namespace Kitsune
         }
 
     public:
-        virtual void Update(double delta) = 0;
-
-    public:
-        [[nodiscard]] virtual Array<DisplayId> GetDisplays() const = 0;
-        [[nodiscard]] virtual DisplayId GetMainDisplay() const = 0;
-
-        [[nodiscard]] virtual Usize GetDisplayCount() const = 0;
+        virtual void Update() = 0;
 
     public:
         [[nodiscard]]
-        virtual DisplayInformation GetDisplayInformation(DisplayId displayId) const = 0;
-
-        [[nodiscard]]
-        virtual bool IsDisplayConnected(DisplayId displayId) const = 0;
+        virtual ScopedPtr<Window> CreateWindow(
+            const WindowConfigurations& configurations) = 0;
 
     public:
-        virtual void SetDisplayOrientation(
-            DisplayId displayId,
-            DisplayOrientation orientation) = 0;
+        // The returned array from this function will never be empty.
+        // The first member of the array (i.e. array[0]) is the main display.
+        [[nodiscard]]
+        virtual Array<SharedPtr<Display>> GetDisplays() const = 0;
+
+        [[nodiscard]]
+        virtual SharedPtr<Display> GetMainDisplay() const = 0;
 
     private:
         static DisplayManager* s_Instance;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Display/DisplayManager.h"
 #include "Core/CommandLineArguments.h"
 
 namespace Kitsune
@@ -7,22 +8,41 @@ namespace Kitsune
     struct ApplicationSpecifications
     {
         String Name;
-        bool Headless = false;
+        String DisplayServer;
+
+        WindowConfigurations MainWindow;
     };
 
     class Application : public NonCopyable
     {
     public:
-        KITSUNE_API Application(const ApplicationSpecifications& specs,
-                                const CommandLineArguments& arguments);
+        KITSUNE_API Application(ApplicationSpecifications specifications,
+                                CommandLineArguments arguments);
 
         KITSUNE_API virtual ~Application();
 
     public:
-        virtual void OnUpdate(double delta)
+        KITSUNE_API void Update(float delta);
+
+    public:
+        [[nodiscard]]
+        inline ScopedPtr<Window>& GetWindow()
         {
-            KITSUNE_UNUSED(delta);
+            return m_Window;
         }
+
+        [[nodiscard]]
+        inline const ScopedPtr<Window>& GetWindow() const
+        {
+            return m_Window;
+        }
+
+    private:
+        DisplayManager* m_DisplayManager;
+        ScopedPtr<Window> m_Window;
+
+        ApplicationSpecifications m_Specifications;
+        CommandLineArguments m_Arguments;
     };
 
     extern Application* CreateApplication(const CommandLineArguments& arguments);

@@ -1,17 +1,34 @@
 #include "Core/Application.h"
-#include "Foundation/Common/Macros.h"
 
 namespace Kitsune
 {
-    Application::Application(const ApplicationSpecifications& specs,
-                             const CommandLineArguments& arguments)
+    Application::Application(ApplicationSpecifications specifications,
+                             CommandLineArguments arguments)
     {
-        KITSUNE_UNUSED(specs);
-        KITSUNE_UNUSED(arguments);
+        m_DisplayManager = DisplayManager::Initialize({
+            .DisplayServer = specifications.DisplayServer,
+            .WindowClassName = "Kitsune Window",
+            .VirtualDisplay = {
+                .Size = { 1920, 1080 },
+                .RefreshRate = 60,
+                .Scaling = 1.0f
+            }
+        });
+
+        m_Window = m_DisplayManager->CreateWindow(specifications.MainWindow);
+
+        m_Specifications = Move(specifications);
+        m_Arguments = Move(arguments);
     }
 
     Application::~Application()
     {
-        (void)0;
+        m_Window->Close();
+    }
+
+    void Application::Update(float delta)
+    {
+        KITSUNE_UNUSED(delta);
+        m_DisplayManager->Update();
     }
 }

@@ -65,31 +65,13 @@ namespace Kitsune
 
         SetCurrentDirectory(m_ApplicationDirectory);
 
-        // TODO: Read this from a config file?
-        String displayServer;
-#if defined(KITSUNE_OS_WINDOWS)
-        displayServer = "Windows";
-#endif
-
-        m_DisplayManager = DisplayManager::Initialize({
-            .DisplayServer = displayServer,
-            .NullDisplay = {
-                .Size = { 1920, 1080 },
-                .RefreshRate = 60,
-                .Orientation = DisplayOrientation::Default
-            }
-        });
-
-        m_WindowManager = WindowManager::Initialize(displayServer);
-
-        KITSUNE_ENGINE_INFO(
-            Launch,
-            "Kitsune Engine initialization step ran successfully. Calling the "
-            "application's constructor.");
-
         m_Application = CreateApplication(m_CommandLineArguments);
         if (m_Application == nullptr)
             Exit(EXIT_FAILURE);
+
+        KITSUNE_ENGINE_INFO(
+            Launch,
+            "Kitsune Engine initialization step ran successfully.");
     }
 
     // NOTE: This is done just to suppress warnings. Remove the NOLINT comment once
@@ -104,10 +86,11 @@ namespace Kitsune
 
         while (!m_ExitRequested)
         {
-            m_DisplayManager->Update(/* Temp */ 0);
-            m_WindowManager->Update(/* Temp */ 0);
+            const auto& window = m_Application->GetWindow();
+            if (!window->IsOpen())
+                Exit(0);
 
-            m_Application->OnUpdate(/* Temp */ 0);
+            m_Application->Update(/* Temp */ 0);
         }
     }
 

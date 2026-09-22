@@ -3,10 +3,13 @@ add_library(KitsuneRuntime SHARED
     "Core/Application.h"
     "Core/CommandLineArguments.h"
 
+    "Display/Null/NullDisplay.h"
+    "Display/Null/NullDisplayManager.h"
+    "Display/Null/NullWindow.h"
+
     "Display/DisplayManager.cpp"
     "Display/DisplayManager.h"
-    "Display/WindowManager.cpp"
-    "Display/WindowManager.h"
+    "Display/Window.h"
 
     "Foundation/Algorithms/Advance.h"
     "Foundation/Algorithms/Contains.h"
@@ -182,10 +185,12 @@ target_compile_definitions(KitsuneRuntime
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     target_sources(KitsuneRuntime PRIVATE
+        "Display/Windows/WindowsDisplay.cpp"
+        "Display/Windows/WindowsDisplay.h"
         "Display/Windows/WindowsDisplayManager.cpp"
         "Display/Windows/WindowsDisplayManager.h"
-        "Display/Windows/WindowsWindowManager.cpp"
-        "Display/Windows/WindowsWindowManager.h"
+        "Display/Windows/WindowsWindow.cpp"
+        "Display/Windows/WindowsWindow.h"
 
         "Foundation/Windows/WindowsConsoleWriter.cpp"
         "Foundation/Windows/WindowsCurrentDirectory.cpp"
