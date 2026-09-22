@@ -70,7 +70,7 @@ namespace Kitsune
                     StringView argsView(leftBrace + 1, rightBrace);
                     return {
                         StringView(rightBrace + 1, substring.GetEnd()),
-                        HandleFormatting_(arguments, argsView, outputIter)
+                        HandleFormatting(arguments, argsView, outputIter)
                     };
                 }
                 else
@@ -101,13 +101,13 @@ namespace Kitsune
 
     private:
         template<OutputIterator<const char&> OutputIter, Usize ArgCount>
-        inline static OutputIter HandleFormatting_(
+        inline static OutputIter HandleFormatting(
             const FormatArgumentPack<ArgCount, OutputIter>& arguments,
             StringView argsView,
             OutputIter outputIter)
         {
             StringView indexSubstring(argsView.GetBegin(), argsView.Find(':'));
-            Index index = GetIndex_(indexSubstring);
+            Index index = GetIndex(indexSubstring);
 
             argsView.RemovePrefix(indexSubstring.Size());
             if (!argsView.IsEmpty())
@@ -130,7 +130,7 @@ namespace Kitsune
             return outputIter;
         }
 
-        inline static Index GetIndex_(StringView indexView)
+        inline static Index GetIndex(StringView indexView)
         {
             Index index = 0;
             for (char digit : indexView)
