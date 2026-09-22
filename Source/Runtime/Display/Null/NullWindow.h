@@ -26,9 +26,9 @@ namespace Kitsune
         {
             if (m_IsOpen)
             {
-                KITSUNE_ENGINE_WARN(
-                    Display,
-                    "Failed to open the window. The window object is already open.");
+                throw SystemException(
+                    "Failed to open the window. The window object has already been "
+                    "opened.");
             }
 
             m_IsOpen = true;
