@@ -1,4 +1,4 @@
-#include "Launch/EngineLoop.h"
+#include "Core/EngineLoop.h"
 
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Logging/Logger.h"
@@ -46,7 +46,8 @@ namespace Kitsune
         try
         {
             engineLoop.Initialize(argc, argv);
-            engineLoop.Run();
+            engineLoop.Run(
+                CreateApplication(engineLoop.GetCommandLineArguments()));
         }
         catch (const std::exception& exception)
         {

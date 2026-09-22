@@ -1,7 +1,7 @@
 #include "Core/Application.h"
-#include <gtest/gtest.h>
+#include "Core/EngineLoop.h"
 
-#include "Launch/EngineLoop.h"
+#include <gtest/gtest.h>
 #include "Foundation/Memory/Memory.h"
 
 using namespace Kitsune;
@@ -29,7 +29,7 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
 {
     ApplicationSpecifications specs;
     specs.Name = "FoundationTests";
-    specs.Headless = true;
+    specs.DisplayServer = "Null";
 
     return Memory::New<FoundationTests>(specs, arguments);
 }

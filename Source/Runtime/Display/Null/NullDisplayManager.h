@@ -1,87 +1,48 @@
 #pragma once
 
 #include "Display/DisplayManager.h"
-#include "Foundation/Diagnostics/InvalidArgumentException.h"
+
+#include "Display/Null/NullWindow.h"
+#include "Display/Null/NullDisplay.h"
 
 namespace Kitsune
 {
     class NullDisplayManager : public DisplayManager
     {
     public:
-        inline NullDisplayManager(
-            const Vector2<Uint32>& displaySize, Uint32 refreshRate,
-            DisplayOrientation orientation)
-            : m_DisplayInfo{
-                  .Size = displaySize,
-                  .Position = { 0, 0 },
-                  .RefreshRate = refreshRate,
-                  .Scaling = 1.0f,
-                  .Orientation = orientation,
-                  .MainDisplay = true
-              }
+        inline NullDisplayManager(const Vector2<Uint32>& size, Uint32 refreshRate,
+                                  float scaling)
+            : m_Display(MakeShared<NullDisplay>(size, refreshRate, scaling))
         {
         }
 
     public:
-        inline void Update(double delta) override
+        inline void Update() override
         {
-            KITSUNE_UNUSED(delta);
         }
 
     public:
         [[nodiscard]]
-        inline Array<DisplayId> GetDisplays() const override
+        inline ScopedPtr<Window> CreateWindow(
+            const WindowConfigurations& configurations) override
         {
-            return { GetMainDisplay() };
-        }
-
-        [[nodiscard]]
-        inline DisplayId GetMainDisplay() const override
-        {
-            return DisplayId();
-        }
-
-        [[nodiscard]]
-        inline Usize GetDisplayCount() const override
-        {
-            return 1;
+            return MakeScoped<NullWindow>(configurations);
         }
 
     public:
         [[nodiscard]]
-        inline DisplayInformation GetDisplayInformation(
-            DisplayId displayId) const override
+        inline Array<SharedPtr<Display>> GetDisplays() const override
         {
-            if (!IsDisplayConnected(displayId))
-            {
-                throw InvalidArgumentException(
-                    "Tried to set the orientation of an invalid display.");
-            }
-
-            return m_DisplayInfo;
+            return { m_Display };
         }
 
         [[nodiscard]]
-        inline bool IsDisplayConnected(DisplayId displayId) const override
+        inline SharedPtr<Display> GetMainDisplay() const override
         {
-            return (displayId == GetMainDisplay());
-        }
-
-    public:
-        inline void SetDisplayOrientation(
-            DisplayId displayId,
-            DisplayOrientation orientation) override
-        {
-            if (!IsDisplayConnected(displayId))
-            {
-                throw InvalidArgumentException(
-                    "Tried to set the orientation of an invalid display.");
-            }
-
-            m_DisplayInfo.Orientation = orientation;
+            return m_Display;
         }
 
     private:
-        DisplayInformation m_DisplayInfo;
+        SharedPtr<NullDisplay> m_Display;
     };
 }

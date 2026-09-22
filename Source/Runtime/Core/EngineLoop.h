@@ -3,9 +3,6 @@
 #include "Core/Application.h"
 #include "Core/CommandLineArguments.h"
 
-#include "Display/WindowManager.h"
-#include "Display/DisplayManager.h"
-
 #include "Foundation/Logging/Logger.h"
 #include "Foundation/Filesystem/Path.h"
 
@@ -15,18 +12,18 @@ namespace Kitsune
     class EngineLoop : public NonCopyable
     {
     public:
-        EngineLoop();
-        ~EngineLoop();
+        KITSUNE_API EngineLoop();
+        KITSUNE_API ~EngineLoop();
 
     public:
-        void Initialize(int argc, char** argv);
-        void Run();
+        KITSUNE_API void Initialize(int argc, char** argv);
+        KITSUNE_API void Run(Application* application);
 
-        int Shutdown();
+        KITSUNE_API int Shutdown();
 
     public:
-        void Exit(int exitCode);
-        [[noreturn]] void ForceExit(int exitCode);
+        KITSUNE_API void Exit(int exitCode);
+        [[noreturn]] KITSUNE_API void ForceExit(int exitCode);
 
     public:
         [[nodiscard]]
@@ -71,7 +68,7 @@ namespace Kitsune
         void InitializeDirectoryPaths();
 
     private:
-        static EngineLoop* s_Instance;
+        KITSUNE_API static EngineLoop* s_Instance;
 
     public:
         CommandLineArguments m_CommandLineArguments;
@@ -79,9 +76,6 @@ namespace Kitsune
 
         Filesystem::Path m_ApplicationDirectory;
         Filesystem::Path m_LogDirectory;
-
-        DisplayManager* m_DisplayManager = nullptr;
-        WindowManager* m_WindowManager = nullptr;
 
         Int32 m_ExitCode = 0;
         bool m_ExitRequested = false;

@@ -1,5 +1,4 @@
 #include "Core/Application.h"
-#include "Launch/EngineLoop.h"
 
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Logging/Logger.h"
@@ -14,7 +13,6 @@ public:
         : Application(specs, arguments)
     {
         KITSUNE_TRACE("Hello, World!");
-        EngineLoop::GetInstance()->Exit(1);
     }
 };
 
@@ -22,6 +20,14 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
 {
     ApplicationSpecifications specs;
     specs.Name = "Sandbox";
+    specs.DisplayServer = "Windows";
+
+    specs.MainWindow = {
+        .Title = "Sandbox",
+        .Size = { 640, 480 },
+        .Flags = WindowCreationFlags::None,
+        .State = WindowState::Maximized
+    };
 
     return Memory::New<Sandbox>(specs, arguments);
 }
