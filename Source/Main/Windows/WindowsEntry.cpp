@@ -21,31 +21,6 @@ namespace Kitsune
     extern int UniversalMain(int argc, char** argv);
 }
 
-static void SetPerMonitorDpiAwareness()
-{
-    using SetThreadDpiAwarenessContextFunc =
-        DPI_AWARENESS_CONTEXT (*)(DPI_AWARENESS_CONTEXT);
-
-    SetThreadDpiAwarenessContextFunc setThreadDpiAwarenessContext;
-
-#if !defined(KITSUNE_COMPILER_MINGW_TOOLCHAIN)
-    setThreadDpiAwarenessContext = ::SetThreadDpiAwarenessContext;
-#else
-    // MinGW doesn't load the DPI-aware functions.
-    HMODULE user32 = ::GetModuleHandleW(L"user32.dll");
-    if (user32 == nullptr)
-        return;
-
-    setThreadDpiAwarenessContext = (SetThreadDpiAwarenessContextFunc)(void*)(
-        ::GetProcAddress(user32, "SetThreadDpiAwarenessContext"));
-
-    if (setThreadDpiAwarenessContext == nullptr)
-        return;
-#endif
-
-    setThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-}
-
 #if !defined(KITSUNE_BUILD_PRODUCTION)
 static bool TryCreateTerminal()
 {
@@ -233,7 +208,7 @@ int WINAPI WinMain(
         return EXIT_FAILURE;
 #endif
 
-    SetPerMonitorDpiAwareness();
+    ::SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     // NOLINTNEXTLINE(bugprone-branch-clone): When building with MinGW, SEH is disabled.
     if (::IsDebuggerPresent())
