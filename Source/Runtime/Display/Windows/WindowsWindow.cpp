@@ -1,7 +1,6 @@
 #include "Display/Windows/WindowsWindow.h"
 #include <ShellScalingApi.h>
 
-#include "Foundation/Windows/WindowsErrorCode.h"
 #include "Display/Windows/WindowsDisplayManager.h"
 
 #include "Foundation/Logging/Logger.h"
