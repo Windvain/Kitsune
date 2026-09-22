@@ -30,6 +30,9 @@ namespace Kitsune
         [[nodiscard]] KITSUNE_API bool IsVisible() const override;
 
     public:
+        [[nodiscard]] KITSUNE_API bool IsUserResizable() const override;
+
+    public:
         KITSUNE_API void SetSize(const Vector2<Uint32>& size) override;
         KITSUNE_API void SetPosition(const Vector2<Int32>& position) override;
 

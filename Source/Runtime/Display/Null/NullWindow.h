@@ -90,6 +90,21 @@ namespace Kitsune
         }
 
     public:
+        [[nodiscard]]
+        inline bool IsUserResizable() const override
+        {
+            VerifyWindowIsOpen();
+
+            if ((m_Configurations.State == WindowState::Fullscreen) ||
+                (m_Configurations.State == WindowState::Minimized))
+            {
+                return false;
+            }
+
+            return bool(m_Configurations.Flags & WindowCreationFlags::ResizeEnabled);
+        }
+
+    public:
         inline void SetSize(const Vector2<Uint32>& size) override
         {
             VerifyWindowIsOpen();

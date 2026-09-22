@@ -1,5 +1,4 @@
 #include "Core/Application.h"
-#include "Launch/EngineLoop.h"
 
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Logging/Logger.h"
@@ -27,7 +26,7 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
         .Title = "Sandbox",
         .Size = { 640, 480 },
         .Flags = WindowCreationFlags::None,
-        .State = WindowState::Windowed
+        .State = WindowState::Maximized
     };
 
     return Memory::New<Sandbox>(specs, arguments);

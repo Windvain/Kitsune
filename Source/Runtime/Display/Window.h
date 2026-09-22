@@ -57,6 +57,9 @@ namespace Kitsune
         [[nodiscard]] virtual bool IsVisible() const = 0;
 
     public:
+        [[nodiscard]] virtual bool IsUserResizable() const = 0;
+
+    public:
         virtual void SetSize(const Vector2<Uint32>& size) = 0;
         virtual void SetPosition(const Vector2<Int32>& position) = 0;
 

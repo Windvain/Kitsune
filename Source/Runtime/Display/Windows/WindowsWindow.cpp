@@ -174,6 +174,18 @@ namespace Kitsune
         return ::IsWindowVisible(m_Handle);
     }
 
+    bool WindowsWindow::IsUserResizable() const
+    {
+        VerifyWindowIsOpen();
+
+        WindowState state = GetState();
+        if ((state == WindowState::Minimized) || (state == WindowState::Fullscreen))
+            return false;
+
+        DWORD styles = ::GetWindowLongW(m_Handle, GWL_STYLE);
+        return bool(styles & WS_SIZEBOX);
+    }
+
     void WindowsWindow::SetSize(const Vector2<Uint32>& size)
     {
         VerifyWindowIsOpen();

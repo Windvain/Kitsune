@@ -128,15 +128,30 @@ namespace Kitsune
         auto* window = reinterpret_cast<WindowsWindow*>(
             ::GetWindowLongPtrW(handle, GWLP_USERDATA));
 
-        // TEMP: There will be more cases in this switch statement, this is temporary.
-        // NOLINTNEXTLINE(hicpp-multiway-paths-covered)
         switch (message)
         {
         case WM_CLOSE:
             window->Close();
+            return 0;
 
-        default:
-            return DefWindowProcW(handle, message, wparam, lparam);
+        case WM_SYSCOMMAND:
+        {
+            // HACK: Even if we remove WS_SIZEBOX, the window can still be restored from
+            // a maximized state to a windowed state. Catch that this is happening and
+            // block it.
+            if (window->IsUserResizable())
+                break;
+
+            WPARAM command = (wparam & ~0xF);       // The low 4 bits should be ignored.
+            if (((command == SC_MOVE) || (command == SC_RESTORE)) && ::IsZoomed(handle))
+                return 0;
+
+            break;
         }
+        default:
+            break;      // Go to DefWindowProc!
+        }
+
+        return DefWindowProcW(handle, message, wparam, lparam);
     }
 }
