@@ -38,7 +38,7 @@ namespace Kitsune
 
         public:
             template<typename... Args>
-            inline RBTStorage(Args&&... args)
+            inline explicit RBTStorage(Args&&... args)
                 : m_Value(Forward<Args>(args)...)
             {
             }
@@ -98,7 +98,7 @@ namespace Kitsune
 
         public:
             template<typename... Args>
-            inline RBTNode(RBTNodeColor color, Args&&... args)
+            inline explicit RBTNode(RBTNodeColor color, Args&&... args)
                 : m_Storage(Forward<Args>(args)...), m_Color(color)
             {
             }

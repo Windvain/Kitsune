@@ -14,18 +14,18 @@ namespace Kitsune
         {
         }
 
-        inline InvalidArgumentException(const char* description)
+        inline explicit InvalidArgumentException(const char* description)
             : Exception("InvalidArgumentException", description)
         {
         }
 
-        inline InvalidArgumentException(const String& description)
+        inline explicit InvalidArgumentException(const String& description)
             : InvalidArgumentException(description.Raw())
         {
         }
 
         template<typename... Args>
-        inline InvalidArgumentException(const char* format, Args&&... args)
+        inline explicit InvalidArgumentException(const char* format, Args&&... args)
             : InvalidArgumentException(Format(format, Forward<Args>(args)...))
         {
         }

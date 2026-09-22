@@ -26,7 +26,7 @@ namespace Kitsune
         using StringViewType = BasicStringView<ValueType>;
 
     public:
-        inline BasicFileWriter(const Alloc& allocator = Alloc())
+        inline explicit BasicFileWriter(const Alloc& allocator = Alloc())
             : m_Stream(allocator)
         {
         }

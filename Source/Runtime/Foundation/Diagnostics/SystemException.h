@@ -9,18 +9,23 @@ namespace Kitsune
     class SystemException : public Exception
     {
     public:
-        inline SystemException(const char* description = "Unknown system error.")
+        inline SystemException()
+            : SystemException("An unknown system error occurred.")
+        {
+        }
+
+        inline explicit SystemException(const char* description)
             : Exception("SystemException", description)
         {
         }
 
-        inline SystemException(const String& description)
+        inline explicit SystemException(const String& description)
             : SystemException(description.Raw())
         {
         }
 
         template<typename... Args>
-        inline SystemException(const char* format, Args&&... args)
+        inline explicit SystemException(const char* format, Args&&... args)
             : SystemException(Format(format, Forward<Args>(args)...))
         {
         }

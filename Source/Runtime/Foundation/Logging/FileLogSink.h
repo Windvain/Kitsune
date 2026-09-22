@@ -10,7 +10,7 @@ namespace Kitsune
     class FileLogSink : public LogSink
     {
     public:
-        inline FileLogSink(Filesystem::PathView path)
+        inline explicit FileLogSink(Filesystem::PathView path)
             : m_Writer(path, FileOpenMode::Append)
         {
         }

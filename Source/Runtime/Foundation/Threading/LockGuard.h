@@ -10,13 +10,13 @@ namespace Kitsune
     class LockGuard : public NonCopyable
     {
     public:
-        LockGuard(Mutex& mutex)
+        inline explicit LockGuard(Mutex& mutex)
             : m_Mutex(mutex)
         {
             m_Mutex.Acquire();
         }
 
-        ~LockGuard()
+        inline ~LockGuard()
         {
             m_Mutex.Release();
         }

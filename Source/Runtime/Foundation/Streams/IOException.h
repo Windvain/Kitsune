@@ -14,18 +14,18 @@ namespace Kitsune
         {
         }
 
-        inline IOException(const char* description)
+        inline explicit IOException(const char* description)
             : Exception("IOException", description)
         {
         }
 
-        inline IOException(const String& description)
+        inline explicit IOException(const String& description)
             : IOException(description.Raw())
         {
         }
 
         template<typename... Args>
-        inline IOException(const char* format, Args&&... args)
+        inline explicit IOException(const char* format, Args&&... args)
             : IOException(Format(format, Forward<Args>(args)...))
         {
         }

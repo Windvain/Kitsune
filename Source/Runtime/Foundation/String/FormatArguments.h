@@ -78,6 +78,8 @@ namespace Kitsune
         using HandleType = CustomTypeHandle;
 
     public:
+        // NOTE: Do not declare this function with the explicit keyword. We need the
+        // implicit construction when creating a format argument pack.
         template<typename T>
         inline BasicFormatArgument(const T& value)
             : m_EnumType(GetFormatType<T>())
