@@ -649,6 +649,22 @@ namespace
         EXPECT_GENERAL_STREQ(string.Raw(), expectedOutput.c_str());
     }
 
+    // operator+(BasicStringView<T> string1, const BasicString<T, Alloc>& string2)
+    TYPED_TEST(StringTest, FlippedStringViewAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("EFG");
+        std::basic_string<T> source2 = this->GetEncodedString("ABCD");
+
+        BasicStringView<T> string = source2.c_str();
+        BasicString<T> appended = source.c_str();
+
+        BasicString<T> result = string + appended;
+        std::basic_string<T> expected = this->GetEncodedString("ABCDEFG");
+
+        EXPECT_GENERAL_STREQ(result.Raw(), expected.c_str());
+    }
+
     // BasicString<T, Alloc>::operator+=(T)
     // BasicString<T, Alloc>::operator+(T)
     TYPED_TEST(StringTest, CharacterAppendOperator)
@@ -672,6 +688,22 @@ namespace
 
         std::basic_string<T> expectedOutput2 = this->GetEncodedString("Hello, World!");
         EXPECT_GENERAL_STREQ(result.Raw(), expectedOutput2.c_str());
+    }
+
+    // operator+(T character, const BasicString<T>& string)
+    TYPED_TEST(StringTest, FlippedCharacterAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("EFGHU");
+        std::basic_string<T> source2 = this->GetEncodedString("A");
+
+        T string = *source2.c_str();
+        BasicString<T> appended = source.c_str();
+
+        BasicString<T> result = string + appended;
+        std::basic_string<T> expected = this->GetEncodedString("AEFGHU");
+
+        EXPECT_GENERAL_STREQ(result.Raw(), expected.c_str());
     }
 
     // BasicString<T, Alloc>::operator+=(const T*)
@@ -706,6 +738,22 @@ namespace
             "Far far away, behind the word mountains, there lived the blind texts.");
 
         EXPECT_GENERAL_STREQ(result.Raw(), expected2.c_str());
+    }
+
+    // operator+(const T* string1, const BasicString<T>& string2)
+    TYPED_TEST(StringTest, FlippedCStringAppendOperator)
+    {
+        using T = typename TestFixture::CharType;
+        std::basic_string<T> source = this->GetEncodedString("EFGHU");
+        std::basic_string<T> source2 = this->GetEncodedString("ADL");
+
+        const T* string = source2.c_str();
+        BasicString<T> appended = source.c_str();
+
+        BasicString<T> result = string + appended;
+        std::basic_string<T> expected = this->GetEncodedString("ADLEFGHU");
+
+        EXPECT_GENERAL_STREQ(result.Raw(), expected.c_str());
     }
 
     // BasicString<T, Alloc>::operator+=(std::initializer_list<T>)
