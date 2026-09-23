@@ -8,7 +8,7 @@ namespace Kitsune
     class BadWeakPtrException : public Exception
     {
     public:
-        inline explicit BadWeakPtrException()
+        inline BadWeakPtrException()
             : Exception(
                 "BadWeakPtrException",
                 "Requested SharedPtr<T> to manage a deleted object.")

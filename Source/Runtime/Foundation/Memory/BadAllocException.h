@@ -8,7 +8,7 @@ namespace Kitsune
     class BadAllocException : public Exception
     {
     public:
-        inline explicit BadAllocException()
+        inline BadAllocException()
             : Exception("BadAllocException", "An allocation request failed.")
         {
         }
