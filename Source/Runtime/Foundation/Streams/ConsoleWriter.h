@@ -85,30 +85,20 @@ namespace Kitsune
         inline void Write(StringView string)
         {
             LockGuard lockGuard(m_Lock);
-            while (!string.IsEmpty())
-            {
-                Usize writeCount = Maths::Minimum(
-                    string.Size(),
-                    BufferSize - m_Buffer.Size());
-
-                m_Buffer.Append(string.Data(), writeCount);
-                string.RemovePrefix(writeCount);
-
-                if (m_Buffer.Size() == BufferSize)
-                    ThreadUnsafeFlush();
-            }
+            ThreadUnsafeWrite(string);
         }
 
         inline void WriteLine(const char* data, Usize dataCount)
         {
-            Write(data, dataCount);
-            Write(EncodingType::GetLineEnding(NativeLineEnding));
+            WriteLine(StringView(data, dataCount));
         }
 
         inline void WriteLine(StringView string = "")
         {
-            Write(string);
-            Write(EncodingType::GetLineEnding(NativeLineEnding));
+            LockGuard lockGuard(m_Lock);
+
+            ThreadUnsafeWrite(string);
+            ThreadUnsafeWrite(EncodingType::GetLineEnding(NativeLineEnding));
         }
 
         inline void Flush()
@@ -140,6 +130,22 @@ namespace Kitsune
         }
 
     private:
+        inline void ThreadUnsafeWrite(StringView string)
+        {
+            while (!string.IsEmpty())
+            {
+                Usize writeCount = Maths::Minimum(
+                    string.Size(),
+                    BufferSize - m_Buffer.Size());
+
+                m_Buffer.Append(string.Data(), writeCount);
+                string.RemovePrefix(writeCount);
+
+                if (m_Buffer.Size() == BufferSize)
+                    ThreadUnsafeFlush();
+            }
+        }
+
         inline void ThreadUnsafeFlush()
         {
             StringView dataView = m_Buffer;
