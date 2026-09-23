@@ -836,6 +836,27 @@ namespace Kitsune
         KITSUNE_MAYBE_OVERLAPPING Alloc m_Allocator;
     };
 
+    template<Character T, Allocator Alloc>
+    inline BasicString<T, Alloc> operator+(
+        T character, const BasicString<T, Alloc>& string)
+    {
+        return BasicString<T, Alloc>(&character, 1) + string;
+    }
+
+    template<Character T, Allocator Alloc>
+    inline BasicString<T, Alloc> operator+(
+        const T* string1, const BasicString<T, Alloc>& string2)
+    {
+        return BasicString<T, Alloc>(string1) + string2;
+    }
+
+    template<Character T, Allocator Alloc>
+    inline BasicString<T, Alloc> operator+(
+        BasicStringView<T> string1, const BasicString<T, Alloc>& string2)
+    {
+        return BasicString<T, Alloc>(string1) + string2;
+    }
+
     template<Character T, Allocator Alloc1, Allocator Alloc2>
     inline bool operator==(const BasicString<T, Alloc1>& string1,
                            const BasicString<T, Alloc2>& string2)
