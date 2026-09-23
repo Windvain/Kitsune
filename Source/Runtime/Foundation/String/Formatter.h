@@ -17,7 +17,7 @@ namespace Kitsune
         using Iterator = Iter;
 
     public:
-        inline explicit BasicFormatContext(
+        inline BasicFormatContext(
             BasicStringView<Char> formatSpecs,
             Iter outputIter)
             : m_FormatSpecs(formatSpecs), m_OutputIter(outputIter)

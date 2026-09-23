@@ -410,7 +410,7 @@ namespace Kitsune
         {
         }
 
-        inline Vector(const T& scalar)
+        inline explicit Vector(const T& scalar)
             : X(scalar), Y(scalar), Z(scalar), W(scalar)
         {
         }

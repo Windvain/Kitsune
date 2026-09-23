@@ -100,7 +100,7 @@ namespace Kitsune
     class BasicFileStream
     {
     public:
-        inline BasicFileStream(const Alloc& allocator = Alloc())
+        inline explicit BasicFileStream(const Alloc& allocator = Alloc())
             : m_Allocator(allocator)
         {
         }
