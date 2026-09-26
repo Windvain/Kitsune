@@ -5,12 +5,17 @@
 
 namespace Kitsune
 {
+    class GraphicsInstance;
+
     struct ApplicationSpecifications
     {
         String Name;
-        String DisplayServer;
 
+        String DisplayServer;
         WindowConfigurations MainWindow;
+
+        String GraphicsBackend;
+        bool DebugGraphics;
     };
 
     class Application : public NonCopyable
@@ -39,6 +44,8 @@ namespace Kitsune
 
     private:
         DisplayManager* m_DisplayManager;
+        GraphicsInstance* m_GraphicsInstance;
+
         ScopedPtr<Window> m_Window;
 
         ApplicationSpecifications m_Specifications;

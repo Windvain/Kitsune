@@ -15,6 +15,7 @@ Follow the instructions below to build and run Kitsune from source. As of now, K
     - [MinGW-w64](https://www.mingw-w64.org/) with Clang can also be used, but keep in mind that some features will be disabled because of compiler support.
 - The [CMake](https://cmake.org/) build system. The later the release version, the better.
 - [Git](https://git-scm.com/), which will be required to clone this repository.
+- The [Vulkan SDK](https://vulkan.lunarg.com/sdk/home), if the Vulkan backend was enabled. (It is enabled by default.)
 
 **2. Additional Requirements**
 - If you are building with a compiler other than MSVC, the following have to be installed:

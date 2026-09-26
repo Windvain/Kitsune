@@ -30,6 +30,7 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
     ApplicationSpecifications specs;
     specs.Name = "FoundationTests";
     specs.DisplayServer = "Null";
+    specs.GraphicsBackend = "Null";
 
     return Memory::New<FoundationTests>(specs, arguments);
 }

@@ -146,6 +146,10 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Utilities/NonCopyable.h"
     "Foundation/Utilities/SystemInformation.cpp"
     "Foundation/Utilities/SystemInformation.h"
+
+    "Graphics/GraphicsDevice.h"
+    "Graphics/GraphicsInstance.cpp"
+    "Graphics/GraphicsInstance.h"
 )
 
 add_library(Kitsune::Runtime ALIAS KitsuneRuntime)
@@ -163,7 +167,11 @@ if (KITSUNE_ENABLE_VULKAN_BACKEND)
     target_compile_definitions(KitsuneRuntime PRIVATE "KITSUNE_ENABLE_VULKAN_BACKEND=1")
     target_link_libraries(KitsuneRuntime PRIVATE Vulkan::Vulkan)
 
-    target_sources(KitsuneRuntime PRIVATE)
+    target_sources(KitsuneRuntime PRIVATE
+        "Graphics/Vulkan/VulkanGraphicsInstance.cpp"
+        "Graphics/Vulkan/VulkanGraphicsInstance.h"
+        "Graphics/Vulkan/VulkanHeader.h"
+    )
 endif()
 
 set_target_properties(KitsuneRuntime PROPERTIES FOLDER "Engine")

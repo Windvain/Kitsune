@@ -20,14 +20,17 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
 {
     ApplicationSpecifications specs;
     specs.Name = "Sandbox";
-    specs.DisplayServer = "Windows";
 
+    specs.DisplayServer = "Windows";
     specs.MainWindow = {
         .Title = "Sandbox",
         .Size = { 640, 480 },
         .Flags = WindowCreationFlags::None,
         .State = WindowState::Maximized
     };
+
+    specs.GraphicsBackend = "Vulkan";
+    specs.DebugGraphics = true;
 
     return Memory::New<Sandbox>(specs, arguments);
 }

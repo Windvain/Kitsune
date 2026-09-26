@@ -51,6 +51,7 @@ Application* Kitsune::CreateApplication(const CommandLineArguments& arguments)
     ApplicationSpecifications specs;
     specs.Name = "SystemInformation";
     specs.DisplayServer = "Null";
+    specs.GraphicsBackend = "Null";
 
     return Memory::New<SystemInformationTests>(specs, arguments);
 }

@@ -187,7 +187,7 @@ namespace Kitsune
 
 #define KITSUNE_ENGINE_WARN_FORMAT(subsystem, message, ...) \
     KITSUNE_ENGINE_LOG_FORMAT(                              \
-        subsystem, ::Kitsune::LogSeverity::Warn,            \
+        subsystem, ::Kitsune::LogSeverity::Warning,         \
         ::Kitsune::SourceLocation(), message,               \
         __VA_ARGS__)                                        \
 

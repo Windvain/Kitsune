@@ -1,10 +1,17 @@
 #include "Core/Application.h"
+#include "Graphics/GraphicsInstance.h"
 
 namespace Kitsune
 {
     Application::Application(ApplicationSpecifications specifications,
                              CommandLineArguments arguments)
     {
+        m_GraphicsInstance = GraphicsInstance::Initialize({
+            .Backend = specifications.GraphicsBackend,
+            .DebugName = specifications.Name,
+            .DebugEnabled = specifications.DebugGraphics
+        });
+
         m_DisplayManager = DisplayManager::Initialize({
             .DisplayServer = specifications.DisplayServer,
             .WindowClassName = "Kitsune Window",
@@ -24,6 +31,9 @@ namespace Kitsune
     Application::~Application()
     {
         m_Window->Close();
+
+        DisplayManager::Shutdown();
+        GraphicsInstance::Shutdown();
     }
 
     void Application::Update(float delta)
