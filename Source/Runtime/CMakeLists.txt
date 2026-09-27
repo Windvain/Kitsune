@@ -168,6 +168,8 @@ if (KITSUNE_ENABLE_VULKAN_BACKEND)
     target_link_libraries(KitsuneRuntime PRIVATE Vulkan::Vulkan)
 
     target_sources(KitsuneRuntime PRIVATE
+        "Graphics/Vulkan/VulkanGraphicsDevice.cpp"
+        "Graphics/Vulkan/VulkanGraphicsDevice.h"
         "Graphics/Vulkan/VulkanGraphicsInstance.cpp"
         "Graphics/Vulkan/VulkanGraphicsInstance.h"
         "Graphics/Vulkan/VulkanHeader.h"

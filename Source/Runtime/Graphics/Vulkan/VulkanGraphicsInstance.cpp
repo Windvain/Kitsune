@@ -1,4 +1,5 @@
 #include "Graphics/Vulkan/VulkanGraphicsInstance.h"
+#include "Graphics/Vulkan/VulkanGraphicsDevice.h"
 
 #include "Foundation/Logging/Logger.h"
 #include "Foundation/Diagnostics/Assert.h"
@@ -18,6 +19,39 @@ namespace Kitsune
             return LogSeverity::Info;
 
         return LogSeverity::Trace;
+    }
+
+    [[nodiscard]]
+    inline static String ToVendorString(Uint32 vendorID)
+    {
+        switch (vendorID)
+        {
+        case 0x10DE: return "NVidia";
+        case 0x1022: return "AMD";
+        case 0x8086: return "Intel";
+        default:
+            return "Unknown";
+        }
+
+        KITSUNE_UNREACHABLE();
+    }
+
+    [[nodiscard]]
+    inline static GraphicsDeviceType ToGraphicsDeviceType(VkPhysicalDeviceType type)
+    {
+        switch (type)
+        {
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+            return GraphicsDeviceType::Discrete;
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+            return GraphicsDeviceType::Integrated;
+
+        case VK_PHYSICAL_DEVICE_TYPE_CPU:           [[fallthrough]];
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:   [[fallthrough]];
+        case VK_PHYSICAL_DEVICE_TYPE_OTHER:         [[fallthrough]];
+        default:
+            return GraphicsDeviceType::Unknown;
+        }
     }
 
     // m_Instance is initialized by vkCreateInstance().
@@ -58,12 +92,66 @@ namespace Kitsune
 
         if (enableDebug)
             RegisterDebugCallback();
+
+        InitializePhysicalDevices();
     }
 
     VulkanGraphicsInstance::~VulkanGraphicsInstance()
     {
         UnregisterDebugCallback();
         vkDestroyInstance(m_Instance, nullptr);
+    }
+
+    SharedPtr<GraphicsDevice> VulkanGraphicsInstance::RequestDevice()
+    {
+        return MakeShared<VulkanGraphicsDevice>(
+            m_Devices[0],
+            GetVulkanDeviceDescription(m_Devices[0]));
+    }
+
+    SharedPtr<GraphicsDevice> VulkanGraphicsInstance::RequestDevice(
+        const GraphicsDeviceUUID& uuid)
+    {
+        auto iter = Algorithms::FindIf(
+            m_DeviceDescriptions.GetBegin(), m_DeviceDescriptions.GetEnd(),
+            [&](const GraphicsDeviceDescription& description)
+            {
+                return (description.UUID() == uuid);
+            });
+
+        if (iter == m_DeviceDescriptions.GetEnd())
+            return nullptr;
+
+        Index index = iter - m_DeviceDescriptions.GetBegin();
+        return MakeShared<VulkanGraphicsDevice>(
+            m_Devices[index],
+            GetVulkanDeviceDescription(m_Devices[index]));
+    }
+
+    SharedPtr<GraphicsDevice> VulkanGraphicsInstance::RequestDevice(
+        GraphicsDevicePreference preference)
+    {
+        // For now, just map GraphicsDeviceType::PowerSaving to dntegrated GPUs,
+        // and GraphicsDeviceType::HighPerformance to discrete GPUs.
+        GraphicsDeviceType requestedType =
+            (preference == GraphicsDevicePreference::HighPerformance) ?
+                GraphicsDeviceType::Discrete :
+                GraphicsDeviceType::Integrated;
+
+        auto iter = Algorithms::FindIf(
+            m_DeviceDescriptions.GetBegin(), m_DeviceDescriptions.GetEnd(),
+            [&](const GraphicsDeviceDescription& description)
+            {
+                return (description.Type() == requestedType);
+            });
+
+        if (iter == m_DeviceDescriptions.GetEnd())
+            return RequestDevice();
+
+        Index index = iter - m_DeviceDescriptions.GetBegin();
+        return MakeShared<VulkanGraphicsDevice>(
+            m_Devices[index],
+            GetVulkanDeviceDescription(m_Devices[index]));
     }
 
     Array<const char*> VulkanGraphicsInstance::GetExtensions(bool enableDebug)
@@ -284,5 +372,45 @@ namespace Kitsune
             data->pMessage);
 
         return VK_FALSE;
+    }
+
+    void VulkanGraphicsInstance::InitializePhysicalDevices()
+    {
+        Uint32 deviceCount;
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr),
+            "Failed to enumerate through all of the physical devices on this device.");
+
+        if (deviceCount == 0)
+            throw SystemException("Failed to find devices which support Vulkan.");
+
+        m_Devices.Resize(deviceCount);
+        KITSUNE_VK_THROW_IF_FAIL(
+            ::vkEnumeratePhysicalDevices(m_Instance, &deviceCount, m_Devices.Data()),
+            "Failed to enumerate throught all of the physical devices on this device.");
+
+        for (VkPhysicalDevice device : m_Devices)
+            m_DeviceDescriptions.PushBack(GetVulkanDeviceDescription(device));
+    }
+
+    GraphicsDeviceDescription VulkanGraphicsInstance::GetVulkanDeviceDescription(
+        VkPhysicalDevice device)
+    {
+        VkPhysicalDeviceIDProperties idProperties;
+        idProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+        idProperties.pNext = nullptr;
+
+        VkPhysicalDeviceProperties2 properties2;
+        properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        properties2.pNext = &idProperties;
+
+        const VkPhysicalDeviceProperties& properties = properties2.properties;
+        ::vkGetPhysicalDeviceProperties2(device, &properties2);
+
+        return GraphicsDeviceDescription(
+            properties.deviceName,
+            ToVendorString(properties.vendorID),
+            ToGraphicsDeviceType(properties.deviceType),
+            GraphicsDeviceUUID(reinterpret_cast<const Byte*>(idProperties.deviceUUID)));
     }
 }

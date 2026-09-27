@@ -19,6 +19,25 @@ namespace Kitsune
         KITSUNE_API VulkanGraphicsInstance(bool enableDebug, const String& debugName);
         KITSUNE_API ~VulkanGraphicsInstance() override;
 
+    public:
+        [[nodiscard]]
+        inline Array<GraphicsDeviceDescription> GetDeviceDescriptions() const override
+        {
+            return m_DeviceDescriptions;
+        }
+
+    public:
+        [[nodiscard]]
+        KITSUNE_API SharedPtr<GraphicsDevice> RequestDevice() override;
+
+        [[nodiscard]]
+        KITSUNE_API SharedPtr<GraphicsDevice> RequestDevice(
+            const GraphicsDeviceUUID& uuid) override;
+
+        [[nodiscard]]
+        KITSUNE_API SharedPtr<GraphicsDevice> RequestDevice(
+            GraphicsDevicePreference preference) override;
+
     private:
         [[nodiscard]] static Array<const char*> GetExtensions(bool enableDebug);
         [[nodiscard]] static Array<const char*> GetLayers(bool enableDebug);
@@ -38,10 +57,20 @@ namespace Kitsune
             void* userData);
 
     private:
+        void InitializePhysicalDevices();
+
+        [[nodiscard]]
+        static GraphicsDeviceDescription GetVulkanDeviceDescription(
+            VkPhysicalDevice device);
+
+    private:
         static constexpr Uint32 s_APIVersion = VK_API_VERSION_1_4;
 
     private:
         VkInstance m_Instance;
+
+        Array<VkPhysicalDevice> m_Devices;
+        Array<GraphicsDeviceDescription> m_DeviceDescriptions;
 
         CreateDebugMessengerFunc m_CreateDebugMessenger = nullptr;
         DestroyDebugMessengerFunc m_DestroyDebugMessenger = nullptr;

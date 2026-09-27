@@ -1,11 +1,20 @@
 #pragma once
 
+#include "Graphics/GraphicsDevice.h"
+
 #include "Foundation/String/String.h"
+#include "Foundation/Containers/Array.h"
+
+#include "Foundation/Memory/SharedPtr.h"
 #include "Foundation/Utilities/NonCopyable.h"
 
 namespace Kitsune
 {
-    class Window;
+    enum GraphicsDevicePreference
+    {
+        PowerSaving,
+        HighPerformance
+    };
 
     // Contains information for creating a graphics instance.
     struct GraphicsInstanceConfigurations
@@ -28,7 +37,30 @@ namespace Kitsune
 
         KITSUNE_API static void Shutdown();
 
+    public:
+        [[nodiscard]]
+        inline static GraphicsInstance* GetInstance()
+        {
+            return s_Instance;
+        }
+
+    public:
+        [[nodiscard]]
+        virtual Array<GraphicsDeviceDescription> GetDeviceDescriptions() const = 0;
+
+    public:
+        [[nodiscard]]
+        virtual SharedPtr<GraphicsDevice> RequestDevice() = 0;
+
+        [[nodiscard]]
+        virtual SharedPtr<GraphicsDevice> RequestDevice(
+            const GraphicsDeviceUUID& uuid) = 0;
+
+        [[nodiscard]]
+        virtual SharedPtr<GraphicsDevice> RequestDevice(
+            GraphicsDevicePreference preference) = 0;
+
     private:
-        static GraphicsInstance* s_Instance;
+        KITSUNE_API static GraphicsInstance* s_Instance;
     };
 }
