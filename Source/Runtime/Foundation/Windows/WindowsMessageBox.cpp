@@ -8,7 +8,7 @@
 
 namespace Kitsune
 {
-    Pair<bool, MessageBoxButtonId> ShowMessageBox(
+    Pair<bool, MessageBoxButtonID> ShowMessageBox(
         const MessageBoxSpecifications& specs)
     {
         TASKDIALOGCONFIG config;
@@ -25,7 +25,7 @@ namespace Kitsune
             buttonTexts.PushBack(UTF8ToUTF16<char, wchar_t>(button.Text));
 
             TASKDIALOG_BUTTON nativeButton;
-            nativeButton.nButtonID = IDCONTINUE + button.Id + 1;
+            nativeButton.nButtonID = IDCONTINUE + button.ID + 1;
             nativeButton.pszButtonText = buttonTexts.Back().Data();
 
             buttons.PushBack(nativeButton);
@@ -72,10 +72,10 @@ namespace Kitsune
         //
         // If no buttons were specified, then the message box automatically adds
         // an Ok button.
-        Uint16 pressedId = (!buttons.IsEmpty()) ?
+        Uint16 pressedID = (!buttons.IsEmpty()) ?
             internalPressed - (IDCONTINUE + 1) :
             0;
 
-        return { true, pressedId };
+        return { true, pressedID };
     }
 }
