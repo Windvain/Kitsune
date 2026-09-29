@@ -41,9 +41,11 @@ add_library(KitsuneRuntime SHARED
     "Foundation/Concepts/Invocable.h"
     "Foundation/Concepts/Swappable.h"
 
+    "Foundation/Containers/Details/BinarySearchTree.h"
+    "Foundation/Containers/Details/RedBlackTree.h"
+
     "Foundation/Containers/Array.h"
     "Foundation/Containers/Pair.h"
-    "Foundation/Containers/RBTree.h"
     "Foundation/Containers/TreeMap.h"
     "Foundation/Containers/TreeSet.h"
 

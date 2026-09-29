@@ -1,9 +1,12 @@
 #pragma once
 
 #include <initializer_list>
-#include "Foundation/Algorithms/Equal.h"
+#include "Details/RedBlackTree.h"
 
-#include "Foundation/Containers/RBTree.h"
+#include "Foundation/Algorithms/Equal.h"
+#include "Foundation/Memory/GlobalAllocator.h"
+
+#include "Foundation/Utilities/Comparators.h"
 #include "Foundation/Diagnostics/OutOfRangeException.h"
 
 namespace Kitsune
@@ -12,10 +15,10 @@ namespace Kitsune
         typename Key, typename Value,
         InvocableReturn<bool, const Key&, const Key&> Compare = LessThanFunctor<Key>,
         Allocator Alloc = GlobalAllocator>
-    class TreeMap : public RBTree<Key, Value, Compare, Alloc>
+    class TreeMap : public Details::RedBlackTree<Key, Value, Compare, Alloc>
     {
     private:
-        using BaseType = RBTree<Key, Value, Compare, Alloc>;
+        using BaseType = Details::RedBlackTree<Key, Value, Compare, Alloc>;
         static_assert(!std::is_void_v<Value>, "The MappedType should not be void.");
 
     public:
@@ -144,7 +147,7 @@ namespace Kitsune
     public:
         inline void Swap(TreeMap& map)
         {
-            // Hide any signatures from RBTree.
+            // Hide any signatures from RedBlackTree.
             return BaseType::Swap(map);
         }
 

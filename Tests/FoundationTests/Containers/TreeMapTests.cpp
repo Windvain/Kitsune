@@ -529,7 +529,7 @@ namespace
     }
 
     // TreeMap<T, U, Comp, Alloc>::Swap(TreeMap&)
-    TEST(TreeSetTest, Swap)
+    TEST(TreeMapTest, Swap)
     {
         TreeMap<int, int, FlippableCompare<int>, StatefulAllocator> map1(
             {
@@ -938,7 +938,7 @@ namespace
 
     // TreeMap<T, U, Comp, Alloc>::Iterator::operator*()
     // TreeMap<T, U, Comp, Alloc>::ConstIterator::operator*()
-    TEST(TreeSetTest, IteratorDereference)
+    TEST(TreeMapTest, IteratorDereference)
     {
         // The end user must not be able to modify the key, but be freely able to
         // modify the value.
@@ -971,7 +971,7 @@ namespace
 
     // TreeMap<T, U, Comp, Alloc>::Iterator::operator->()
     // TreeMap<T, U, Comp, Alloc>::ConstIterator::operator->()
-    TEST(TreeSetTest, IteratorArrowOperator)
+    TEST(TreeMapTest, IteratorArrowOperator)
     {
         // The end user must not be able to modify the key, but be freely able to
         // modify the value.
@@ -1002,7 +1002,7 @@ namespace
 
     // TreeMap<T, U, Comp, Alloc>::Iterator::operator++()
     // TreeMap<T, U, Comp, Alloc>::ConstIterator::operator++(int)
-    TEST(TreeSetTest, IteratorIncrement)
+    TEST(TreeMapTest, IteratorIncrement)
     {
         // The end user must not be able to modify the key, but be freely able to
         // modify the value.
@@ -1026,7 +1026,7 @@ namespace
     // operator==(
     //     const TreeMap<T, U, Comp, Alloc>::[Const]Iterator&,
     //     const TreeMap<T, U, Comp, Alloc>::[Const]Iterator&)
-    TEST(TreeSetTest, IteratorEqual)
+    TEST(TreeMapTest, IteratorEqual)
     {
         TreeMap<int, int> map = {
             { 8, 3 },

@@ -1,9 +1,12 @@
 #pragma once
 
 #include <initializer_list>
+#include "Details/RedBlackTree.h"
 
 #include "Foundation/Algorithms/Equal.h"
-#include "Foundation/Containers/RBTree.h"
+#include "Foundation/Memory/GlobalAllocator.h"
+
+#include "Foundation/Utilities/Comparators.h"
 
 namespace Kitsune
 {
@@ -11,10 +14,10 @@ namespace Kitsune
         typename T,
         InvocableReturn<bool, const T&, const T&> Compare = LessThanFunctor<T>,
         Allocator Alloc = GlobalAllocator>
-    class TreeSet : public RBTree<T, void, Compare, Alloc>
+    class TreeSet : public Details::RedBlackTree<T, void, Compare, Alloc>
     {
     private:
-        using BaseType = RBTree<T, void, Compare, Alloc>;
+        using BaseType = Details::RedBlackTree<T, void, Compare, Alloc>;
 
     public:
         using ValueType = T;
@@ -104,7 +107,7 @@ namespace Kitsune
     public:
         inline void Swap(TreeSet& set)
         {
-            // Hide any signatures from RBTree.
+            // Hide any signatures from RedBlackTree.
             return BaseType::Swap(set);
         }
     };
