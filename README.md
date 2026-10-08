@@ -1,4 +1,7 @@
 # Kitsune Engine
+> This repository is archived and will not be updated anymore. 
+This was a project I started 2 years ago with learning C++ in mind. I've learnt a lot since then (A lot of knowledge about computers, enough to be able to go through uni classes even with a language barrier) and I think its time to move on from this. Looking back at this project, the scope of this project was too large for just one person to maintain & continue updating, which I've felt with development stalling to a halt starting last year. Most of the actually okay code is on the `dev` branch, so if anyone is interested in learning how some of the STL works without having to comb through GCC or MSVC's super verbose implementation, you are welcome to look at that branch. Thanks to anyone who has seen this repo ig.
+
 Kitsune Engine is an up-and-coming open-sourced game engine written in C++20. This project is mainly for learning low-level systems programming, so expect a whole lot of bugs. Kitsune is licensed under the [MIT license](https://opensource.org/license/mit).
 \
 \
